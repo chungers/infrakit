@@ -1,0 +1,17 @@
+FROM alpine:3.3
+
+MAINTAINER Ken Cochrane <Ken.Cochrane@Docker.com>
+
+RUN apk add --update bash ca-certificates jq groff curl less python py-pip \
+    && pip install awscli \
+    && apk --purge -v del py-pip \
+    && rm -rf /var/cache/apk/*
+
+# needed in order for go binary to work.
+RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
+
+# setup init
+COPY aws/node-debug/entry.sh /entry.sh
+RUN chmod 755 /entry.sh
+
+CMD ["/entry.sh"]

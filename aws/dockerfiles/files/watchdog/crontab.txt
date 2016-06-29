@@ -1,0 +1,3 @@
+# crontab
+*/1 * * * * /usr/docker/bin/watcher.sh >> /var/log/docker/watcher.log
+*/5 * * * * /usr/docker/bin/cleanup.sh >> /var/log/docker/cleanup.log
