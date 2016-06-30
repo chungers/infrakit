@@ -1,0 +1,15 @@
+{{ partial "header.html" . }}
+<div id="docs" class="row">
+    <div class="large-3 columns">
+        {{ partial "editions-navbar.html" . }}
+    </div>
+    <div class="large-9 columns">
+        <div class="tabs-content">
+    {{ range where .Data.Pages "Title" "Docker for AWS and Azure" }}
+                <p>{{ .Content }}</p>
+      {{ end }}
+        </div>
+    </div>
+</div>
+{{ partial "container-footer.html" . }}
+{{ partial "footer.html" . }}
