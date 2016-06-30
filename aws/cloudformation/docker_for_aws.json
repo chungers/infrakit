@@ -401,7 +401,7 @@
                 "SecurityGroupIngress": [
                     {"IpProtocol": "tcp","FromPort": "22","ToPort": "22","CidrIp": "0.0.0.0/0"},
                     {"IpProtocol": "tcp","FromPort": "2375","ToPort": "2375", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
-                    {"IpProtocol" : "tcp", "FromPort" : "4500", "ToPort" : "4500", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
+                    {"IpProtocol" : "tcp", "FromPort" : "2377", "ToPort" : "2377", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
                     {"IpProtocol" : "udp", "FromPort" : "4789", "ToPort" : "4789", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
                     {"IpProtocol" : "tcp", "FromPort" : "7946", "ToPort" : "7946", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
                     {"IpProtocol" : "udp", "FromPort" : "7946", "ToPort" : "7946", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } }
