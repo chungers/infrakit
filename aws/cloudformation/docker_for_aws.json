@@ -549,7 +549,7 @@
                                 "docker run --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
-                                "docker4x/controller:RC2 run --log=4 --all=true\n"
+                                "docker4x/controller:RC3 run --log=4 --all=true\n"
                             ]
                         ]
                     }
