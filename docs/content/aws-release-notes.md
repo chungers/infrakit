@@ -23,5 +23,5 @@ weight="100"
 
 ### Errata
 
- * The Docker Engine API is available internally in the AWS VPC on TCP port 2375. This is not immediately exploitable, but if a container running on the swarm is compromised the weakness can be used to get additional privileges. In future releases, workers and manager Docker engine APIs will not be bound to network interfaces.
- * Swarm-mode is configured to auto-accept both manager and worker nodes. This is not immediately exploitable, but if a container running on the swarm is compromised an attacker can masquerade as a joining node and get additional privileges. In future releases the swarm accept policy will be changed to not auto-accept workers or managers.
+ * To assist with debugging, the Docker Engine API is available internally in the AWS VPC on TCP port 2375. These ports cannot be accessed from outside the cluster, but could be used from within the cluster to obtain privileged access on other cluster nodes. In future releases, direct remote access to the Docker API will not be available.
+ * Likewise, swarm-mode is configured to auto-accept both manager and worker nodes inside the VPC. This policy will be changed to be more restrictive by default in the future.
