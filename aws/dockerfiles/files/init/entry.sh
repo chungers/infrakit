@@ -53,7 +53,7 @@ join_as_secondary_manager()
     # we try and join.
     sleep 30
     # we are not, join as secondary manager.
-    docker swarm join --manager --listen-addr $PRIVATE_IP:4500 $MANAGER_IP:4500
+    docker swarm join --manager --listen-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
     docker swarm update --auto-accept manager --auto-accept worker
     echo "   Secondary Manager complete"
 }
@@ -81,7 +81,7 @@ setup_manager()
         if [ $PRIMARY_RESULT -eq 0 ]; then
             echo "   Primary Manager init"
             # we are the primary, so init the cluster
-            docker swarm init --auto-accept manager --auto-accept worker --listen-addr $PRIVATE_IP:4500
+            docker swarm init --auto-accept manager --auto-accept worker --listen-addr $PRIVATE_IP:2377
             echo "   Primary Manager init complete"
         else
             echo " Error is normal, it is because we already have a primary node, lets setup a secondary manager instead."
@@ -101,7 +101,7 @@ setup_node()
         confirm_primary_ready
     fi
     echo "   MANAGER_IP=$MANAGER_IP"
-    docker swarm join $MANAGER_IP:4500
+    docker swarm join $MANAGER_IP:2377
 }
 
 # see if the primary manager IP is already set.
