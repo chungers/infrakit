@@ -38,10 +38,9 @@ You can now start creating containers and services.
 
 You can run websites too. Ports exposed with `-p` are automatically exposed through the platform load balancer:
 
-    $ docker network create -d overlay nginx_net
-    $ docker service create --name nginx --scale 1 --network nginx_net -p 80:80 nginx
+    $ docker service create --name nginx -p 80:80 nginx
 
-Once up, find the `DefaultDNSTarget` output in either the AWS or Azure portals to access the site. You can also
+Once up, find the `DefaultDNSTarget` output in either the AWS or Azure portals to access the site.
 
 To deploy complex multi-container apps, you can use [distributed application bundles](https://github.com/docker/docker/blob/master/experimental/docker-stacks.md). You can either run `docker deploy` to deploy a bundle on your machine over an SSH tunnel, or copy the bundle (for example using `scp`) to a manager node, SSH into the manager and then run `docker deploy` (if you have multiple managers, you have to ensure that your session is on one that has the bundle file).
 
