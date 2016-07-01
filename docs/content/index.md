@@ -14,7 +14,7 @@ weight="1"
 
 # Docker for AWS and Docker for Azure beta
 
-Docker for AWS and Azure are the best ways to install, configure and maintain Docker deployments on AWS and Azure. Docker for AWS and Azure both configure Docker 1.12  with swarm-mode enabled out of the box.
+Docker for AWS lets you quickly setup and configure a working Docker 1.12 swarm-mode install on Amazon Web Services and on Azure.
 
 Docker for AWS and Azure are available in private beta for testing. They’re free to use (AWS and Azure will charge for resource use).
 
@@ -37,13 +37,13 @@ For more details, check out the rest of the documentation:
  * [Docker for AWS](aws.md) 
  * [Docker for Azure](azure.md)
  * [Deploying your Apps](deploy.md)
+ * [AWS release notes](aws-release-notes.md)
 
 <p style="margin-bottom:50px">&nbsp;</p>
 
-
 ## Getting help
 
-If you need help or would like to discuss setup, 2 forums are available:
+Reach out to <docker-for-iaas@docker.com> with questions, comments and feedback. The forums are available for public discussions:
 
 * For AWS Help, use the [AWS Forum](https://forums.docker.com/c/docker-for-aws)
 * For Azure Help, use the [Azure Forum](https://forums.docker.com/c/docker-for-azure)
