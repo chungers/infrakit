@@ -510,6 +510,9 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export PRIVATE_IP=`wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4`\n",
+                                "chown -R docker /home/docker/.ssh\n",
+                                "chgrp -R docker /home/docker/.ssh\n",
+                                "passwd -u docker\n",
                                 "sleep 5\n",
 
                                 "docker run --restart=no -d ",
@@ -538,12 +541,15 @@
                                 "docker4x/watchdog-aws:0.1.0\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
-                                "-v /home/docker/.ssh:/root/.ssh:ro ",
+                                "-v /home/docker/.ssh:/home/docker/.ssh:ro ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
                                 "-v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "-v /var/log:/var/log ",
+                                "-v /etc/passwd:/etc/passwd:ro ",
+                                "-v /etc/shadow:/etc/shadow:ro ",
+                                "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:0.1.0\n",
 
                                 "docker run --restart=always -d --name=editions_controller ",
@@ -889,7 +895,7 @@
         "SSH" : {
             "Description" : "Use this command to login to your Docker console.",
             "Value" : {
-                "Fn::Join": [ "", ["ssh root@", {"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] } ] ]
+                "Fn::Join": [ "", ["ssh docker@", {"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] } ] ]
             }
         }
     }
