@@ -71,8 +71,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "number": "0.1.0",
-                "label": "beta1"
+                "docker": "1.12.0-rc3",
+                "forAws": "aws-v1.12.0-rc3-beta1"
             }
         },
 
@@ -513,6 +513,7 @@
                                 "chown -R docker /home/docker/.ssh\n",
                                 "chgrp -R docker /home/docker/.ssh\n",
                                 "passwd -u docker\n",
+                                "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
 
                                 "docker run --restart=no -d ",
@@ -524,7 +525,7 @@
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "-v /var/log:/var/log ",
-                                "docker4x/init-aws:0.1.0\n",
+                                "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
@@ -538,7 +539,7 @@
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
-                                "docker4x/watchdog-aws:0.1.0\n",
+                                "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
                                 "-v /home/docker/.ssh:/home/docker/.ssh:ro ",
@@ -550,12 +551,12 @@
                                 "-v /etc/passwd:/etc/passwd:ro ",
                                 "-v /etc/shadow:/etc/shadow:ro ",
                                 "-v /etc/group:/etc/group:ro ",
-                                "docker4x/shell-aws:0.1.0\n",
+                                "docker4x/shell-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
-                                "docker4x/controller:RC3 run --log=4 --all=true\n"
+                                "docker4x/controller:$DOCKER_FOR_AWS_VERSION run --log=4 --all=true\n"
                             ]
                         ]
                     }
@@ -622,6 +623,7 @@
                         "Fn::Join": [
                             "", [
                                 "#!/bin/sh\n",
+                                "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
                                 "docker run --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
@@ -632,7 +634,7 @@
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "-v /var/log:/var/log ",
-                                "docker4x/init-aws:0.1.0\n",
+                                "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
@@ -646,7 +648,7 @@
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
-                                "docker4x/watchdog-aws:0.1.0\n"
+                                "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n"
                             ]
                         ]
                     }
