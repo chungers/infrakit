@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.1.0
+VERSION=aws-v1.12.0-rc3-beta1
 
 docker build -t docker4x/shell-aws:$VERSION -f Dockerfile.shell .
 docker push docker4x/shell-aws:$VERSION
