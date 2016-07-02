@@ -510,8 +510,8 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export PRIVATE_IP=`wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4`\n",
-                                "chown -R docker /home/docker/.ssh\n",
-                                "chgrp -R docker /home/docker/.ssh\n",
+                                "chown -R docker /home/docker/\n",
+                                "chgrp -R docker /home/docker/\n",
                                 "passwd -u docker\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
@@ -542,7 +542,7 @@
                                 "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
-                                "-v /home/docker/.ssh:/home/docker/.ssh:ro ",
+                                "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
                                 "-v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config ",
@@ -623,6 +623,9 @@
                         "Fn::Join": [
                             "", [
                                 "#!/bin/sh\n",
+                                "chown -R docker /home/docker/\n",
+                                "chgrp -R docker /home/docker/\n",
+                                "passwd -u docker\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
                                 "docker run --restart=no -d ",
