@@ -16,7 +16,7 @@ weight="100"
 ### New
 
  * First release of Docker for AWS!
- * Cloudformation-based installer
+ * CloudFormation based installer
  * ELB integration for running public-facing services
  * Swarm access with SSH
  * Worker scaling using AWS ASG

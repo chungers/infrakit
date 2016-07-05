@@ -22,7 +22,7 @@ Sign up for the beta on [beta.docker.com](https://beta.docker.com/).
 
 ## What to know before installing
 
-When setting up Docker for AWS or Azure, you'll be prompted to select manager and worker counts and instance sizes. If you're testing, 1 manager and `t2.micro` instances is fine. Both worker count and worker and manager instance size can be changed later, but manager count should not be modified.
+When setting up Docker for AWS or Azure, you'll be prompted to select manager and worker counts and instance sizes. If you're testing, 1 manager and `small` instances are fine. Both worker count and worker and manager instance size can be changed later, but manager count should not be modified.
 
 When choosing manager count, consider the level of durability you need:
 
@@ -34,7 +34,7 @@ When choosing manager count, consider the level of durability you need:
 
 For more details, check out the rest of the documentation:
 
- * [Docker for AWS](aws.md) 
+ * [Docker for AWS](aws.md)
  * [Docker for Azure](azure.md)
  * [Deploying your Apps](deploy.md)
  * [AWS release notes](aws-release-notes.md)
