@@ -15,19 +15,6 @@ weight="2"
 
 Docker for AWS is currently in private beta. [Sign up](https://beta.docker.com) to get access. When you get into the beta, you will receive an email with an install link and details.
 
-When you fill out the sign-up form, make sure you fill in all of the fields, especially the AWS Account Number (12 digit value, i.e. 012345678901). Docker for AWS uses a custom AMI that is currently private, and we need your AWS ID in order to give your account access to the AMI. If you have more than one AWS account that you use (testing, stage, production, etc), email us  <docker-for-iaas@docker.com> after you have filled out the form with the list of additional account numbers you need access too. Make sure you put the account in the form that you , as it might take time for the other account numbers to get added to your profile.
-
-You can find your AWS account ID by doing the following.
-
-1. Login to the [AWS Console](https://console.aws.amazon.com/console/home).
-2. Click on the [Support link](https://console.aws.amazon.com/support/home?region=us-east-1#/) in the upper right hand corner of the top navigation menu, and click on "Support Center".
-
-    <img src="/img/aws/aws_support_center_link.png">
-
-3. On the Support Center page, in the upper right hand corner you will find your AWS Account Number.
-
-    <img src="/img/aws/aws_account_number.png">
-
 ## Prerequisites
 
 - Welcome email
@@ -61,7 +48,30 @@ You can scale the worker count using the AWS Node Autoscaling group. Docker will
 Changing manager count live is _not_ currently supported.
 
 ### Upgrading Docker and changing instance sizes
-
 In the AWS Console, find your CloudFormation stack and select "Update stack". Use the CloudFormation template link. This will let you change the input parameters for the template. AWS will summarize the proposed changes, whether that's changing the AMIs to upgrade Docker or to change instance sizes.
 
 Docker will ensure that upgrade and instance size changes are handled with minimal impact to running apps.
+
+## Docker for AWS Upgrades
+There is currently limited support for upgrades, we will be improving this in future releases. The way upgrades work is as follows. We will release a new CloudFormation template, and you will update your CloudFormation stack with the new CloudFormation template. CloudFormation will look at your current stack, and see what is different, and let you know what it is about to do. If you confirm the changes it will start to update your stack.
+
+If there is a change to the AMI, then one by one the old nodes will be shut down, and replaced by newer nodes. How long this takes will depend on how many nodes you have. We do a slow rolling update, so the more nodes, the longer it will take. Eventually when complete, all of the older nodes will be gone, and replaced with a completely new set of nodes.
+
+Since we are doing a slow rolling upgrade, the services that are running on a node that is getting shut down, will be rescheduled by swarm, and put on to a new healthy node. If your service is properly scaled it should not notice any downtime.
+
+Since this feature is still very new, there is a chance things could go wrong, so we don't recommend using Docker for AWS for production critical workloads at this time.
+
+## How it works
+Docker for AWS starts with a CloudFormation template that will create everything that you need from scratch. There are only a few Prerequisites that are listed above.
+
+It first starts off by creating a new VPC along with it's subnets and security groups. Once the networking is setup, it will create two Auto scaling groups, one for the managers and one for the workers, and set the desired capacity that was selected in the CloudFormation setup form. The Managers will start up first and create a Swarm manager quorum using Raft. The workers will then start up and join the swarm one by one, until all of the workers are up and running. At this point you will have x number of managers and y number of workers in your swarm, that are ready to handle your application deployments. See the [deployment](deploy.md) docs for your next steps.
+
+If you increase the number of instances running in your worker auto scaling group (via the AWS console, or updating the CloudFormation configuration), the new nodes that will start up will automatically join the swarm.
+
+Elastic Load Balancers (ELBs) are setup to help with routing traffic to your swarm.
+
+## System containers
+Each node will have a few system containers running on them to help run your swarm cluster. In order for everything to run smoothly, please keep those containers running, and don't make any changes. If you make any changes, we can't guarantee that Docker for AWS will work correctly.
+
+## AMIs
+Docker for AWS currently only supports our custom AMI, which is a highly optimized AMI built specifically for running Docker on AWS. This AMI's are not currently public, and in order to use them, we need to give you access to them. As we roll out new AMI's your account will automatically get access to these new versions.
