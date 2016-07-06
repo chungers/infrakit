@@ -22,7 +22,7 @@ Sign up for the beta on [beta.docker.com](https://beta.docker.com/).
 
 ## Docker for AWS signup details
 
-When you fill out the sign-up form, make sure you fill in all of the fields, especially the AWS Account Number (12 digit value, i.e. 012345678901). Docker for AWS uses a custom AMI that is currently private, and we need your AWS ID in order to give your account access to the AMI. If you have more than one AWS account that you use (testing, stage, production, etc), email us  <docker-for-iaas@docker.com> after you have filled out the form with the list of additional account numbers you need access too. Make sure you put the account in the form that you , as it might take time for the other account numbers to get added to your profile.
+When you fill out the sign-up form, make sure you fill in all of the fields, especially the AWS Account Number (12 digit value, i.e. 012345678901). Docker for AWS uses a custom AMI that is currently private, and we need your AWS ID in order to give your account access to the AMI. If you have more than one AWS account that you use (testing, stage, production, etc), email us <docker-for-iaas@docker.com> after you have filled out the form with the list of additional account numbers you need access too. Make sure you put the account in the form that you, as it might take time for the other account numbers to get added to your profile.
 
 You can find your AWS account ID by doing the following.
 

@@ -74,4 +74,4 @@ Elastic Load Balancers (ELBs) are setup to help with routing traffic to your swa
 Each node will have a few system containers running on them to help run your swarm cluster. In order for everything to run smoothly, please keep those containers running, and don't make any changes. If you make any changes, we can't guarantee that Docker for AWS will work correctly.
 
 ## AMIs
-Docker for AWS currently only supports our custom AMI, which is a highly optimized AMI built specifically for running Docker on AWS. This AMI's are not currently public, and in order to use them, we need to give you access to them. As we roll out new AMI's your account will automatically get access to these new versions.
+Docker for AWS currently only supports our custom AMI, which is a highly optimized AMI built specifically for running Docker on AWS. These AMI's are not currently public, and in order to use them, we need to give you access to them. As we roll out new AMI's your account will automatically get access to these new versions.

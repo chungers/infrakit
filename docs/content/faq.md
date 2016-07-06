@@ -32,7 +32,7 @@ Not at this time, but it is on our roadmap for future releases.
 Not at this time, but it is on our roadmap for future releases.
 
 ### Which AWS regions will this work with.
-Docker for AWS should work with all regions except for AWS China, which is a little different then the other regions.
+Docker for AWS should work with all regions except for AWS China, which is a little different than the other regions.
 
 ### How many Availability Zones does Docker for AWS use?
 All of Amazons regions have at least 2 AZ's, and some have more. To make sure we work in all regions, we currently only support 2 AZ's even if there are more available.
