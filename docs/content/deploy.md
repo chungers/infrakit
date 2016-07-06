@@ -25,7 +25,7 @@ Once you are logged into the container you can run Docker commands on the cluste
     $ docker swarm info
     $ docker node ls
 
-You can also tunnel the Docker socket over SSH to remotely run commands on the cluster:
+You can also tunnel the Docker socket over SSH to remotely run commands on the cluster (requires [OpenSSH 6.7](https://lwn.net/Articles/609321/) or later):
 
     $ ssh -NL localhost:2375:/var/run/docker.sock root@<ssh-host-name> &
     $ docker -H localhost:2375 info
