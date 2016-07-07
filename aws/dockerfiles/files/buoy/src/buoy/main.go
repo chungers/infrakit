@@ -34,18 +34,19 @@ func main() {
 	if *isIdentify {
 		// fmt.Println("Sending Identify")
 		client.Identify(&analytics.Identify{
-			UserId: stackID,
+			UserId: accountID,
 			Traits: map[string]interface{}{
-				"aws_account_id": accountID,
-				"aws_region":     region,
+				"aws_region": region,
 			},
 		})
 	} else {
 		// fmt.Println("Sending Ping")
 		client.Track(&analytics.Track{
 			Event:  "ping",
-			UserId: stackID,
+			UserId: accountID,
 			Properties: map[string]interface{}{
+				"cluster_id":             stackID,
+				"aws_region":             region,
 				"service_count":          *numServices,
 				"manager_count":          *numManagers,
 				"worker_count":           *numWorkers,
