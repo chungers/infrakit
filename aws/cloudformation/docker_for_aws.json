@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 1 (docker 1.12.0-rc3)",
+    "Description": "Docker for AWS Beta 2 (docker 1.12.0-rc3)",
 
     "Parameters": {
         "KeyName": {
@@ -72,7 +72,7 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.12.0-rc3",
-                "forAws": "aws-v1.12.0-rc3-beta1"
+                "forAws": "aws-v1.12.0-rc3-beta2"
             }
         },
 
@@ -446,7 +446,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta1" },
+                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta2" },
                 "LoadBalancerNames" : [ { "Ref" : "SSHLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
@@ -460,7 +460,14 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key" : "swarm-stack-id",
                       "Value" : { "Ref" : "AWS::StackId"},
-                      "PropagateAtLaunch" : "true" }
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_FOR_AWS_VERSION",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] },
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_VERSION",
+                     "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
+                     "PropagateAtLaunch" : "true"
+                    }
                 ]
             },
             "CreationPolicy": {
@@ -479,7 +486,7 @@
            }
         },
 
-        "ManagerLaunchConfigBeta1": {
+        "ManagerLaunchConfigBeta2": {
             "DependsOn": "ExternalLoadBalancer",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -512,6 +519,8 @@
                                 "export PRIVATE_IP=`wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4`\n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
+                                "chown -R docker /var/log/docker.log\n",
+                                "chgrp -R docker /var/log/docker.log\n",
                                 "passwd -u docker\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
@@ -521,7 +530,10 @@
                                 "-e NODE_TYPE='manager' ",
                                 "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
+                                "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
+                                "-e DOCKER_FOR_AWS_VERSION=$DOCKER_FOR_AWS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "-v /var/log:/var/log ",
@@ -535,8 +547,10 @@
                                 "-e INSTANCE_NAME='ManagerAsg' ",
                                 "-e VPC_ID='",{ "Ref" : "Vpc" }, "' ",
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
+                                "-e DOCKER_FOR_AWS_VERSION=$DOCKER_FOR_AWS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
@@ -568,7 +582,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta1" },
+                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta2" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "1000",
@@ -582,7 +596,14 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key" : "swarm-stack-id",
                       "Value" : { "Ref" : "AWS::StackId"},
-                      "PropagateAtLaunch" : "true" }
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_FOR_AWS_VERSION",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] },
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_VERSION",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
+                      "PropagateAtLaunch" : "true"
+                    }
                 ]
             },
             "CreationPolicy": {
@@ -600,7 +621,7 @@
               }
            }
         },
-        "NodeLaunchConfigBeta1": {
+        "NodeLaunchConfigBeta2": {
             "DependsOn": "ManagerAsg",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -625,6 +646,8 @@
                                 "#!/bin/sh\n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
+                                "chown -R docker /var/log/docker.log\n",
+                                "chgrp -R docker /var/log/docker.log\n",
                                 "passwd -u docker\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
@@ -633,7 +656,10 @@
                                 "-e NODE_TYPE='worker' ",
                                 "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
+                                "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
+                                "-e DOCKER_FOR_AWS_VERSION=$DOCKER_FOR_AWS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "-v /var/log:/var/log ",
@@ -647,8 +673,10 @@
                                 "-e INSTANCE_NAME='NodeAsg' ",
                                 "-e VPC_ID='",{ "Ref" : "Vpc" }, "' ",
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
+                                "-e DOCKER_FOR_AWS_VERSION=$DOCKER_FOR_AWS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
                                 "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n"

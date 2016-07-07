@@ -105,10 +105,9 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         # this is a little less risky then the AMZ API query since we know these are already in the swarm
         # and they are reachable. We try and set the dynamodb primary ip to the current leader
         # if we are the leader, then we will look at the other managers in the list, and fine one, that isn't us
-        CURRENT_LEADER_IP=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Leader == true) | .ManagerStatus.Addr | split(":")[0]')
-
-        # if the current leader ip, is my ip, then we are the leader, and we don't want to use that one.
-        if [[ "$CURRENT_LEADER_IP" == "$MYIP" ]]; then
+        IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
+        # if we are the leader, we don't want to use that one.
+        if [[ "$IS_LEADER" == "true" ]]; then
             # find the current reachable manager list, using docker node list
             MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
             # Find first node that's not myself
@@ -124,6 +123,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
                 break
             done
         else
+            CURRENT_LEADER_IP=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Leader == true) | .ManagerStatus.Addr | split(":")[0]')
             echo "We are not the leader, let's use the Leader = $CURRENT_LEADER_IP"
             # we are not the leader, lets use the leader as the new primary IP in dynamodb.
             NEW_MANAGER_IP=$CURRENT_LEADER_IP

@@ -14,7 +14,9 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 COPY files/etc/ /etc/
 
 # setup init
+RUN mkdir -p /usr/docker/bin/ /var/log/docker/
 COPY files/init/entry.sh /entry.sh
-RUN chmod 755 /entry.sh
+ADD files/bin/buoy /usr/docker/bin
+RUN chmod 755 /entry.sh /usr/docker/bin/buoy
 
 CMD ["/entry.sh"]
