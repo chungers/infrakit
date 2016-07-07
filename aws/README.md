@@ -14,11 +14,11 @@ Once you have all of the above you are ready to move onto the next step.
 
 You can use the AWS CLI to invoke the template:
 
-    $ aws cloudformation create-stack --stack-name friismteststack --template-url https://s3-us-west-2.amazonaws.com/docker-cf-templates/docker_on_aws_brc_1.json --parameters ParameterKey=KeyName,ParameterValue=friism-us-west-1 ParameterKey=InstanceType,ParameterValue=t2.micro ParameterKey=ManagerInstanceType,ParameterValue=t2.micro ParameterKey=ClusterSize,ParameterValue=1 --capabilities CAPABILITY_IAM`
+    $ aws cloudformation create-stack --stack-name friismteststack --template-url https://docker-for-aws.s3.amazonaws.com/v1.12.0-rc3-beta1/docker_for_aws.json --parameters ParameterKey=KeyName,ParameterValue=friism-us-west-1 ParameterKey=InstanceType,ParameterValue=t2.micro ParameterKey=ManagerInstanceType,ParameterValue=t2.micro ParameterKey=ClusterSize,ParameterValue=1 --capabilities CAPABILITY_IAM`
 
 ... or click this button:
 
-[![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Docker&templateURL=https://s3-us-west-2.amazonaws.com/docker-cf-templates/docker_on_aws_brc_1.json)
+[![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/v1.12.0-rc3-beta1/docker_for_aws.json)
 
 This will take you to the AWS console and preload the CloudFormation template. Hit "Next" on the first prompt.
 

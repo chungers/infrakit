@@ -14,7 +14,7 @@ make
 ```
 Then browse to `http://localhost:8000/` to look at the doc.
 
-In development mode, if you run Docker for Mac, you can leverage the dev target, that will autorefresh the site when you modify any file on your Mac (Thank you Cambridge team!).
+In development mode, if you run Docker for Mac, you can leverage the dev target, that will auto refresh the site when you modify any file on your Mac (Thank you Cambridge team!).
 ```
 make dev
 ```
@@ -37,4 +37,3 @@ will generate static html docs in the public directory in current directory.
 make clean DOCS_EXPORT=public
 ```
 to clean it up.
-
