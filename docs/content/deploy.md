@@ -30,6 +30,8 @@ You can also tunnel the Docker socket over SSH to remotely run commands on the c
     $ ssh -NL localhost:2374:/var/run/docker.sock docker@<ssh-host-name> &
     $ docker -H localhost:2374 info
 
+If you don't want to pass `-H` when using the tunnel, you can set the `DOCKER_HOST` environment variable to point to the localhost tunnel opening.
+
 ## Running apps
 
 You can now start creating containers and services.
