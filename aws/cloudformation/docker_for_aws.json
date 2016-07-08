@@ -553,7 +553,7 @@
                                 "-e DOCKER_FOR_AWS_VERSION=$DOCKER_FOR_AWS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
-                                "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/guide-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
@@ -679,7 +679,7 @@
                                 "-e DOCKER_FOR_AWS_VERSION=$DOCKER_FOR_AWS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/docker/bin/docker ",
-                                "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n"
+                                "docker4x/guide-aws:$DOCKER_FOR_AWS_VERSION\n"
                             ]
                         ]
                     }

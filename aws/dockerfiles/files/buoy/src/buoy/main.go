@@ -1,10 +1,20 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"flag"
 	"os"
 )
 import "github.com/segmentio/analytics-go"
+
+func computeHmac256(message string, secret string) string {
+	key := []byte(secret)
+	h := hmac.New(sha256.New, key)
+	h.Write([]byte(message))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+}
 
 func main() {
 
@@ -13,39 +23,32 @@ func main() {
 	numServices := flag.Int("services", 0, "Number of Services")
 	isIdentify := flag.Bool("identify", false, "Do we need to Identify?")
 	dockerVersion := flag.String("docker_version", "n/a", "Docker Version")
+	swarmID := flag.String("swarm_id", "n/a", "Swarm ID")
 	dockerForAWSVersion := os.Getenv("DOCKER_FOR_AWS_VERSION")
-	stackID := os.Getenv("STACK_ID")
 	accountID := os.Getenv("ACCOUNT_ID")
 	region := os.Getenv("AWS_DEFAULT_REGION")
 
 	flag.Parse()
-	// fmt.Println("Services:", *numServices)
-	// fmt.Println("Managers:", *numManagers)
-	// fmt.Println("Workers:", *numWorkers)
-	// fmt.Println("isIdentify:", *isIdentify)
-	// fmt.Println("dockerVersion:", *dockerVersion)
-	// fmt.Println("stackID:", stackID)
-	// fmt.Println("accountID:", accountID)
-	// fmt.Println("dockerForAWSVersion:", dockerForAWSVersion)
+
+	// Hash the accountId so we don't know what it is.
+	hashedAccountID := computeHmac256(accountID, "ZQM7q96ar8g1y7Id")
 
 	client := analytics.New("0Euz80odMWb07uI6cnhFENW3ohikKpb8")
 	client.Size = 1 // We only send one message at a time, no need to cache
 
 	if *isIdentify {
-		// fmt.Println("Sending Identify")
 		client.Identify(&analytics.Identify{
-			UserId: accountID,
+			UserId: hashedAccountID,
 			Traits: map[string]interface{}{
 				"aws_region": region,
 			},
 		})
 	} else {
-		// fmt.Println("Sending Ping")
 		client.Track(&analytics.Track{
 			Event:  "ping",
-			UserId: accountID,
+			UserId: hashedAccountID,
 			Properties: map[string]interface{}{
-				"cluster_id":             stackID,
+				"cluster_id":             *swarmID,
 				"aws_region":             region,
 				"service_count":          *numServices,
 				"manager_count":          *numManagers,

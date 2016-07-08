@@ -16,6 +16,8 @@ if [[ "$IS_LEADER" == "true" ]]; then
     NUM_WORKERS=$(expr $TOTAL_NODES - $NUM_MANAGERS)
     NUM_SERVICES=$(docker service ls -q | wc -w)
     DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')
+    SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
 
-    /usr/docker/bin/buoy -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES -docker_version=$DOCKER_VERSION
+    /usr/docker/bin/buoy -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
+        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID
 fi

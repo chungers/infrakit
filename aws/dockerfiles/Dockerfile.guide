@@ -14,12 +14,12 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 # setup cron
 RUN mkdir -p /usr/docker/bin/ /var/log/docker/
-ADD files/watchdog/crontab.txt /usr/docker/crontab.txt
-ADD files/watchdog/watcher.sh /usr/docker/bin
-ADD files/watchdog/cleanup.sh /usr/docker/bin
-ADD files/watchdog/buoy.sh /usr/docker/bin
+ADD files/guide/crontab.txt /usr/docker/crontab.txt
+ADD files/guide/watcher.sh /usr/docker/bin
+ADD files/guide/cleanup.sh /usr/docker/bin
+ADD files/guide/buoy.sh /usr/docker/bin
 ADD files/bin/buoy /usr/docker/bin
-COPY files/watchdog/entry.sh /entry.sh
+COPY files/guide/entry.sh /entry.sh
 RUN chmod 755 /usr/docker/bin/watcher.sh /entry.sh /usr/docker/bin/cleanup.sh \
     /usr/docker/bin/buoy /usr/docker/bin/buoy.sh
 RUN /usr/bin/crontab /usr/docker/crontab.txt
