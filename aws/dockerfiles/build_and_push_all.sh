@@ -12,3 +12,6 @@ docker push $NAMESPACE/init-aws:$VERSION
 
 docker build -t $NAMESPACE/guide-aws:$VERSION -f Dockerfile.guide .
 docker push $NAMESPACE/guide-aws:$VERSION
+
+docker build -t docker4x/ddc-init-aws:$VERSION -f Dockerfile.ddc-init .
+docker push docker4x/ddc-init-aws:$VERSION
