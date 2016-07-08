@@ -27,8 +27,8 @@ Once you are logged into the container you can run Docker commands on the cluste
 
 You can also tunnel the Docker socket over SSH to remotely run commands on the cluster:
 
-    $ ssh -NL localhost:2375:/var/run/docker.sock docker@<ssh-host-name> &
-    $ docker -H localhost:2375 info
+    $ ssh -NL localhost:2374:/var/run/docker.sock docker@<ssh-host-name> &
+    $ docker -H localhost:2374 info
 
 ## Running apps
 
