@@ -1,11 +1,14 @@
 #!/bin/bash
-VERSION=aws-v1.12.0-rc3-beta1
+set -e
 
-docker build -t docker4x/shell-aws:$VERSION -f Dockerfile.shell .
-docker push docker4x/shell-aws:$VERSION
+NAMESPACE=docker4x
+VERSION=aws-v1.12.0-rc3-beta2
 
-docker build -t docker4x/init-aws:$VERSION -f Dockerfile.init .
-docker push docker4x/init-aws:$VERSION
+docker build -t $NAMESPACE/shell-aws:$VERSION -f Dockerfile.shell .
+docker push $NAMESPACE/shell-aws:$VERSION
 
-docker build -t docker4x/watchdog-aws:$VERSION -f Dockerfile.watchdog .
-docker push docker4x/watchdog-aws:$VERSION
+docker build -t $NAMESPACE/init-aws:$VERSION -f Dockerfile.init .
+docker push $NAMESPACE/init-aws:$VERSION
+
+docker build -t $NAMESPACE/guide-aws:$VERSION -f Dockerfile.guide .
+docker push $NAMESPACE/guide-aws:$VERSION

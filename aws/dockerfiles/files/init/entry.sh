@@ -83,6 +83,8 @@ setup_manager()
             # we are the primary, so init the cluster
             docker swarm init --auto-accept manager --auto-accept worker --listen-addr $PRIVATE_IP:2377
             echo "   Primary Manager init complete"
+            # send identify message
+            buoy -identify
         else
             echo " Error is normal, it is because we already have a primary node, lets setup a secondary manager instead."
             join_as_secondary_manager
