@@ -22,7 +22,7 @@ The output will show how to SSH to an SSH host. Your SSH session will be on one 
 
 Once you are logged into the container you can run Docker commands on the cluster:
 
-    $ docker swarm info
+    $ docker swarm inspect
     $ docker node ls
 
 You can also tunnel the Docker socket over SSH to remotely run commands on the cluster (requires [OpenSSH 6.7](https://lwn.net/Articles/609321/) or later):
