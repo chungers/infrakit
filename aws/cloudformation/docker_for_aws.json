@@ -636,11 +636,6 @@
                         "Fn::Join": [
                             "", [
                                 "#!/bin/sh\n",
-                                "chown -R docker /home/docker/\n",
-                                "chgrp -R docker /home/docker/\n",
-                                "chown -R docker /var/log/docker.log\n",
-                                "chgrp -R docker /var/log/docker.log\n",
-                                "passwd -u docker\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
                                 "docker run --restart=no -d ",
