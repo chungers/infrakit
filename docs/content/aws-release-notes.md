@@ -13,7 +13,7 @@ weight="100"
 
 ## 1.12.0-rc4-beta2
 
-Release date: 7/12/2016
+Release date: 7/13/2016
 
 ### New
 
