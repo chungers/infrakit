@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 2 (docker 1.12.0-rc3)",
+    "Description": "Docker for AWS Beta 2 (docker 1.12.0-rc4)",
 
     "Parameters": {
         "KeyName": {
@@ -515,6 +515,8 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "chown -R docker /home/docker/\n",
+                                "chgrp -R docker /home/docker/\n",
                                 "sleep 5\n",
 
                                 "docker run --restart=no -d ",
@@ -637,6 +639,8 @@
                             "", [
                                 "#!/bin/sh\n",
                                 "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "chown -R docker /home/docker/\n",
+                                "chgrp -R docker /home/docker/\n",
                                 "sleep 5\n",
                                 "docker run --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
