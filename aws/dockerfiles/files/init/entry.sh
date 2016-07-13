@@ -81,7 +81,7 @@ setup_manager()
         if [ $PRIMARY_RESULT -eq 0 ]; then
             echo "   Primary Manager init"
             # we are the primary, so init the cluster
-            docker swarm init --auto-accept manager --auto-accept worker --listen-addr $PRIVATE_IP:2377
+            docker swarm init --secret "" --auto-accept manager --auto-accept worker --listen-addr $PRIVATE_IP:2377
             echo "   Primary Manager init complete"
             # send identify message
             buoy -identify

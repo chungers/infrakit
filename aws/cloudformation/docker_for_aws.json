@@ -71,8 +71,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.0-rc3",
-                "forAws": "aws-v1.12.0-rc3-beta2"
+                "docker": "1.12.0-rc4",
+                "forAws": "aws-v1.12.0-rc4-beta2"
             }
         },
 
