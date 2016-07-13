@@ -11,6 +11,15 @@ weight="100"
 
 # Docker for AWS Release notes
 
+## 1.12.0-rc4-beta2
+
+Release date: 7/12/2016
+
+### New
+
+ * Docker Engine upgraded to 1.12.0-rc4
+ * EC2 instance tags
+
 ## 1.12.0-rc3-beta1
 
 ### New
