@@ -19,6 +19,7 @@ Release date: 7/13/2016
 
  * Docker Engine upgraded to 1.12.0-rc4
  * EC2 instance tags
+ * Beta Docker for AWS sends anonymous analytics
 
 ### Errata
 
