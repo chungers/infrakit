@@ -379,7 +379,7 @@
                 "ReceiveMessageWaitTimeSeconds": 10
             }
         },
-        "SwarmUpgradeHook": {
+        "SwarmManagerUpgradeHook": {
             "Type": "AWS::AutoScaling::LifecycleHook",
             "DependsOn" : "SwarmSQS",
             "Properties": {
@@ -389,7 +389,16 @@
                 "RoleARN": { "Fn::GetAtt": [ "ProxyRole", "Arn" ] }
             }
         },
-
+        "SwarmWorkerUpgradeHook": {
+            "Type": "AWS::AutoScaling::LifecycleHook",
+            "DependsOn" : "SwarmSQS",
+            "Properties": {
+                "AutoScalingGroupName": { "Ref": "NodeAsg" },
+                "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
+                "NotificationTargetARN": { "Fn::GetAtt": [ "SwarmSQS", "Arn" ] },
+                "RoleARN": { "Fn::GetAtt": [ "ProxyRole", "Arn" ] }
+            }
+        },
         "ManagerVpcSG": {
             "DependsOn": "NodeVpcSG",
             "Type": "AWS::EC2::SecurityGroup",

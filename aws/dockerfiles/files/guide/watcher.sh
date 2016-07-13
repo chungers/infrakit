@@ -19,7 +19,13 @@ then
 fi
 
 echo "Find our NODE:"
-NODE_ID=$(docker node inspect self | jq -r '.[].ID')
+if [ "$NODE_TYPE" == "manager" ] ; then
+    # manager
+    NODE_ID=$(docker node inspect self | jq -r '.[].ID')
+else
+    # worker
+    NODE_ID=$(docker info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+fi
 echo "NODE: $NODE_ID"
 echo "NODE_TYPE=$NODE_TYPE"
 
