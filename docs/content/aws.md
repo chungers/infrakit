@@ -45,7 +45,29 @@ To fully automate installs, you can use the [AWS Cloudformation API](http://docs
 
 You can scale the worker count using the AWS Node Autoscaling group. Docker will automatically join or remove new instances to the Swarm.
 
+There are currently two ways to scale your worker group. You can "update" your stack, and change the number of workers in the CloudFormation template parameters, or you can manually update the Autoscaling group in the AWS console for EC2 auto scaling groups.
+
 Changing manager count live is _not_ currently supported.
+
+#### AWS Console
+Login to the AWS console, and go to the EC2 dashboard. On the lower left hand side select the "Auto Scaling Groups" link.
+
+Look for the Autoscaling group with the name that looks like $STACK_NAME-NodeASG-* Where `$STACK_NAME` is the name of the stack you created when filling out the CloudFormation template for Docker for AWS. Once you find it, click the checkbox, next to the name. Then Click on the "Edit" button on the lower detail pane.
+
+<img src="/img/aws/autoscale_update.png">
+
+Change the "Desired" field to the size of the worker pool that you would like, and hit "Save".
+
+<img src="/img/aws/autoscale_save.png">
+
+This will take a few minutes and add the new workers to your swarm automatically. To lower the number of workers back down, you just need to update "Desired" again, with the lower number, and it will shrink the worker pool until it reaches the new size.
+
+#### CloudFormation Update
+Go to the CloudFormation management page, and click the checkbox next to the stack you want to update. Then Click on the action button at the top, and select "Update Stack".
+
+<img src="/img/aws/cloudformation_update.png">
+
+Pick "Use current template", and then click "Next". Fill out the same parameters you have specified before, but this time, change your worker count to the new count, click "Next". Answer the rest of the form questions. CloudFormation will show you a preview of the changes it will make. Review the changes and if they look good, click "Update". CloudFormation will change the worker pool size to the new value you specified. It will take a few minutes (longer for a larger increase / decrease of nodes), but when complete you will have your swarm with the new worker pool size.
 
 ### Upgrading Docker and changing instance sizes
 In the AWS Console, find your CloudFormation stack and select "Update stack". Use the CloudFormation template link. This will let you change the input parameters for the template. AWS will summarize the proposed changes, whether that's changing the AMIs to upgrade Docker or to change instance sizes.

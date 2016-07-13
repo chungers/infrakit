@@ -17,7 +17,7 @@ weight="3"
 Once you've created the stack, you can go to the "outputs" section in the CloudFormation stack list detail page.
 The output will show how to SSH to an SSH host. Your SSH session will be on one of the manager nodes.
 
-    $ ssh -i <path-to-ssh-key> <ssh-host-name>
+    $ ssh -i <path-to-ssh-key> docker@<ssh-host-name>
     Welcome to Docker!
 
 Once you are logged into the container you can run Docker commands on the cluster:
