@@ -44,7 +44,7 @@ You can run websites too. Ports exposed with `-p` are automatically exposed thro
 
 Once up, find the `DefaultDNSTarget` output in either the AWS or Azure portals to access the site.
 
-To deploy complex multi-container apps, you can use [distributed application bundles](https://github.com/docker/docker/blob/master/experimental/docker-stacks.md). You can either run `docker deploy` to deploy a bundle on your machine over an SSH tunnel, or copy the bundle (for example using `scp`) to a manager node, SSH into the manager and then run `docker deploy` (if you have multiple managers, you have to ensure that your session is on one that has the bundle file).
+To deploy complex multi-container apps, you can use [distributed application bundles](https://github.com/docker/docker/blob/master/experimental/docker-stacks-and-bundles.md). You can either run `docker deploy` to deploy a bundle on your machine over an SSH tunnel, or copy the bundle (for example using `scp`) to a manager node, SSH into the manager and then run `docker deploy` (if you have multiple managers, you have to ensure that your session is on one that has the bundle file).
 
 A good sample app to test application bundles is the [Docker voting app](https://github.com/docker/example-voting-app).
 
