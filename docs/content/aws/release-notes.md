@@ -5,7 +5,9 @@ description = "Docker for AWS Release notes"
 keywords = ["iaas, aws"]
 [menu.iaas]
 identifier="aws-release-notes"
-weight="100"
+parent = "docs-aws"
+name = "Release Notes"
+weight="400"
 +++
 <![end-metadata]-->
 

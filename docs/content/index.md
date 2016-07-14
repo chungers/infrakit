@@ -49,10 +49,10 @@ When choosing manager count, consider the level of durability you need:
 
 For more details, check out the rest of the documentation:
 
- * [Docker for AWS](aws.md)
+ * [Docker for AWS](aws/index.md)
  * [Docker for Azure](azure.md)
  * [Deploying your Apps](deploy.md)
- * [Docker for AWS release notes](aws-release-notes.md)
+ * [Docker for AWS release notes](aws/release-notes.md)
 
 <p style="margin-bottom:50px">&nbsp;</p>
 
