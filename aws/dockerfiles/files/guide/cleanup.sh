@@ -1,8 +1,5 @@
 #!/bin/bash
 # this script cleans up and nodes that have been upgraded and no longer need to be in the swarm.
-PATH=$PATH:/usr/docker/bin
-REGION=$AWS_DEFAULT_REGION
-
 if [ "$NODE_TYPE" == "worker" ] ; then
     # this doesn't run on workers, only managers.
     exit 0
@@ -33,6 +30,8 @@ for((i=0;i<$COUNT;i++)); do
         echo "We were able to remove node from swarm, delete message from queue"
         aws sqs delete-message --region $REGION --queue-url $CLEANUP_QUEUE --receipt-handle $RECEIPT
         echo "message deleted"
+        SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
+        buoy -event="node:remove" -swarm_id=$SWARM_ID -flavor=aws -node_id=$BODY
     else
         echo "We were not able to remove node from swarm, don't delete. RESULT=$RESULT"
     fi

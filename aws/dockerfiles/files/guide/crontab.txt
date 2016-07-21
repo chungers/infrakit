@@ -1,4 +1,4 @@
 # crontab
-*/1 * * * * /usr/docker/bin/watcher.sh >> /var/log/docker/watcher.log
-*/5 * * * * /usr/docker/bin/cleanup.sh >> /var/log/docker/cleanup.log
-24 * * * * /usr/docker/bin/buoy.sh >> /var/log/docker/buoy.log
+*/1 * * * * /usr/bin/watcher.sh >> /var/log/docker/watcher.log
+*/5 * * * * /usr/bin/cleanup.sh >> /var/log/docker/cleanup.log
+24 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log

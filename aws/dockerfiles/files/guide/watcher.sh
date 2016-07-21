@@ -1,11 +1,9 @@
 #!/bin/bash
 # This script will prevent autoscaling from terminating until we leave the swarm
 set -e
-PATH=$PATH:/usr/docker/bin
 MYIP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 MYNODE=$(wget -qO- http://169.254.169.254/latest/meta-data/instance-id)
 
-REGION=$AWS_DEFAULT_REGION
 QUEUE=$SWARM_QUEUE
 VPC_ID=$VPC_ID # TODO pass in.
 STACK_ID=$STACK_ID # TODO pass in.
@@ -22,9 +20,11 @@ echo "Find our NODE:"
 if [ "$NODE_TYPE" == "manager" ] ; then
     # manager
     NODE_ID=$(docker node inspect self | jq -r '.[].ID')
+    SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
 else
     # worker
     NODE_ID=$(docker info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+    SWARM_ID='n/a' #TODO:FIX add this for workers.
 fi
 echo "NODE: $NODE_ID"
 echo "NODE_TYPE=$NODE_TYPE"
@@ -146,6 +146,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     echo "demote the node from manager to worker for NODE: $NODE_ID"
     docker node demote $NODE_ID
     echo "Give time for the demotation to take place"
+    buoy -event="node:demote" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     sleep 30
 fi
 

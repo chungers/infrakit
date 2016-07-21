@@ -3,7 +3,6 @@ echo "#================"
 echo "Start Swarm setup"
 
 # Setup path with the docker binaries
-PATH=$PATH:/usr/docker/bin
 export MYHOST=`wget -qO- http://169.254.169.254/latest/meta-data/hostname`
 
 echo "PATH=$PATH"
@@ -12,10 +11,25 @@ echo "DYNAMODB_TABLE=$DYNAMODB_TABLE"
 echo "HOSTNAME=$MYHOST"
 echo "STACK_NAME=$STACK_NAME"
 echo "INSTANCE_NAME=$INSTANCE_NAME"
-echo "AWS_REGION=$AWS_DEFAULT_REGION"
+echo "AWS_REGION=$REGION"
 echo "MANAGER_IP=$MANAGER_IP"
 echo "#================"
 
+get_swarm_id()
+{
+    if [ "$NODE_TYPE" == "manager" ] ; then
+        export SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
+    else
+        # not available in docker info. might be available in future release.
+        export SWARM_ID='n/a'
+    fi
+}
+
+get_node_id()
+{
+    export NODE_ID=$(docker info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+    echo "NODE: $NODE_ID"
+}
 
 get_primary_manager_ip()
 {
@@ -55,6 +69,7 @@ join_as_secondary_manager()
     # we are not, join as secondary manager.
     docker swarm join --manager --listen-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
     docker swarm update --auto-accept manager --auto-accept worker
+    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     echo "   Secondary Manager complete"
 }
 
@@ -84,7 +99,7 @@ setup_manager()
             docker swarm init --secret "" --auto-accept manager --auto-accept worker --listen-addr $PRIVATE_IP:2377
             echo "   Primary Manager init complete"
             # send identify message
-            buoy -identify
+            buoy -event=identify -swarm_id=$SWARM_ID -flavor=aws
         else
             echo " Error is normal, it is because we already have a primary node, lets setup a secondary manager instead."
             join_as_secondary_manager
@@ -104,6 +119,7 @@ setup_node()
     fi
     echo "   MANAGER_IP=$MANAGER_IP"
     docker swarm join $MANAGER_IP:2377
+    buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
 }
 
 # see if the primary manager IP is already set.
@@ -125,6 +141,6 @@ echo "#================ docker node ls ==="
 docker node ls
 echo "#==================================="
 echo "Notify AWS that server is ready"
-cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $AWS_DEFAULT_REGION
+cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $REGION
 
 echo "Complete Swarm setup"

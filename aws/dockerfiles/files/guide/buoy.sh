@@ -1,7 +1,5 @@
 #!/bin/bash
 # this script calls buoy with correct parameters
-PATH=$PATH:/usr/docker/bin
-
 if [ "$NODE_TYPE" == "worker" ] ; then
     # this doesn't run on workers, only managers.
     exit 0
@@ -18,6 +16,6 @@ if [[ "$IS_LEADER" == "true" ]]; then
     DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')
     SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
 
-    /usr/docker/bin/buoy -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
-        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID
+    /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
+        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -flavor=aws
 fi
