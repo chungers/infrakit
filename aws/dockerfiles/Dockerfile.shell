@@ -2,7 +2,7 @@ FROM alpine:3.3
 
 MAINTAINER KenCochrane <Ken.Cochrane@Docker.com>
 RUN apk add --update bash openssh ca-certificates && \
-    echo -e "Port 22\n" >> /etc/ssh/sshd_config && \
+    echo -e "Port 22\nClientAliveInterval 180\n" >> /etc/ssh/sshd_config && \
     cp -a /etc/ssh /etc/ssh.cache && \
     rm -rf /var/cache/apk/*
 
