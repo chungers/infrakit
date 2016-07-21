@@ -35,7 +35,7 @@ get_primary_manager_ip()
 {
     echo "Get Primary Manager IP"
     # query dynamodb and get the Ip for the primary manager.
-    export MANAGER_IP=$(aws dynamodb get-item --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}' | jq -r '.Item.ip.S')
+    export MANAGER_IP=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}' | jq -r '.Item.ip.S')
 }
 
 confirm_primary_ready()
@@ -87,6 +87,7 @@ setup_manager()
         # that is there, as the primary manager, and join that swarm.
         aws dynamodb put-item \
             --table-name $DYNAMODB_TABLE \
+            --region $REGION \
             --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$PRIVATE_IP"'"}}' \
             --condition-expression 'attribute_not_exists(node_type)' \
             --return-consumed-capacity TOTAL

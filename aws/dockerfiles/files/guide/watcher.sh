@@ -86,7 +86,7 @@ date
 if [ "$NODE_TYPE" == "manager" ] ; then
     # we are a manager, handle manager shutdown.
 
-    CURRENT_MANAGER_IP=$(aws dynamodb get-item --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}' | jq -r '.Item.ip.S')
+    CURRENT_MANAGER_IP=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}' | jq -r '.Item.ip.S')
 
     echo "Current manager IP = $CURRENT_MANAGER_IP ; my IP = $MYIP"
 
@@ -139,6 +139,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         # update the primary manager IP item in dynamodb
         aws dynamodb put-item \
             --table-name $DYNAMODB_TABLE \
+            --region $REGION \
             --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$NEW_MANAGER_IP"'"}}' \
             --return-consumed-capacity TOTAL
     fi
@@ -156,7 +157,7 @@ echo "Remove the node"
 # send a message to one of them to cleanup after us.
 #docker node rm $NODE_ID
 echo "Send NODE_ID=$NODE_ID to CLEANUP_QUEUE=$CLEANUP_QUEUE"
-aws sqs send-message --queue-url $CLEANUP_QUEUE --message-body "$NODE_ID" --delay-seconds 10
+aws sqs send-message --region $REGION --queue-url $CLEANUP_QUEUE --message-body "$NODE_ID" --delay-seconds 10
 
 echo "Lets AWS know we can shut down now."
 # let autoscaler know it can continue.

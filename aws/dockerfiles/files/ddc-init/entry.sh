@@ -41,7 +41,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     SSH_ELB_HOSTNAME=$(aws elb describe-load-balancers --load-balancer-names ${SSH_ELB_PHYS_ID} --region=$REGION | jq -r ".LoadBalancerDescriptions[0].DNSName")
     echo "SSH_ELB_HOSTNAME=$SSH_ELB_HOSTNAME"
     # Add port 443 since we'll need it later...
-    aws elb create-load-balancer-listeners --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
+    aws elb create-load-balancer-listeners --region $REGION --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
 
     echo "Run the DDC install script"
     docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock dockerorcadev/ucp:1.2.0-alpha1 install --image-version dev: --san $SSH_ELB_HOSTNAME

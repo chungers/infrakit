@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 2 (docker 1.12.0-rc4)",
+    "Description": "Docker for AWS Beta 3 (docker 1.12.0-rc5)",
 
     "Parameters": {
         "KeyName": {
@@ -71,8 +71,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.0-rc4",
-                "forAws": "aws-v1.12.0-rc4-beta2"
+                "docker": "1.12.0-rc5",
+                "forAws": "aws-v1.12.0-rc5-beta3"
             }
         },
 
@@ -455,7 +455,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta2" },
+                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "SSHLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
@@ -495,7 +495,7 @@
            }
         },
 
-        "ManagerLaunchConfigBeta2": {
+        "ManagerLaunchConfigBeta3": {
             "DependsOn": "ExternalLoadBalancer",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -540,7 +540,7 @@
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
-                                "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
@@ -556,7 +556,7 @@
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
-                                "docker4x/guide-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
@@ -568,12 +568,12 @@
                                 "-v /etc/passwd:/etc/passwd:ro ",
                                 "-v /etc/shadow:/etc/shadow:ro ",
                                 "-v /etc/group:/etc/group:ro ",
-                                "docker4x/shell-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
-                                "docker4x/controller:$DOCKER_FOR_AWS_VERSION run --log=4 --all=true\n"
+                                "docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n"
                             ]
                         ]
                     }
@@ -585,7 +585,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta2" },
+                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "1000",
@@ -624,7 +624,7 @@
               }
            }
         },
-        "NodeLaunchConfigBeta2": {
+        "NodeLaunchConfigBeta3": {
             "DependsOn": "ManagerAsg",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
