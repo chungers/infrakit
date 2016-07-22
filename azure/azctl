@@ -1,0 +1,17 @@
+#!/bin/sh
+
+VMSS="swarm-agent-vmss"
+ACTIVE_GROUP="$(cat groupname.out)"
+
+case "$1" in
+groups)
+    azure group list
+    ;;
+vmss)
+    azure vmssvm list "${ACTIVE_GROUP}" "${VMSS}"
+    ;;
+*)
+    >&2 echo "Command not found."
+    exit 1
+    ;;
+esac
