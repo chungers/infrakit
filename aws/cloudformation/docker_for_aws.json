@@ -224,7 +224,7 @@
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-d88d0ecf",
+                "HVM64": "ami-3c58d22b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
