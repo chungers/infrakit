@@ -3,7 +3,7 @@
 title = "Deploying Apps on AWS/Azure"
 description = "Deploying Apps on AWS/Azure"
 keywords = ["iaas, aws, azure"]
-[menu.iaas]
+[menu.main]
 name="Deploying Apps"
 identifier="docs-apps"
 weight="3"

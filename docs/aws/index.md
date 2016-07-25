@@ -3,7 +3,7 @@
 title = "Docker for AWS"
 description = "Docker for AWS"
 keywords = ["iaas, aws, azure"]
-[menu.iaas]
+[menu.main]
 identifier="docs-aws-index"
 parent = "docs-aws"
 name = "Setup & Prerequisites"

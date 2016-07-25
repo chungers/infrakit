@@ -3,7 +3,7 @@
 title = "Docker for AWS and Azure"
 description = "Docker for AWS and Azure"
 keywords = ["iaas, aws, azure"]
-[menu.iaas]
+[menu.main]
 identifier="docs"
 name = "Getting Started"
 weight="1"
