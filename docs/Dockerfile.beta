@@ -1,4 +1,4 @@
-FROM appaws/docs-editions:latest
+FROM appaws/docs-beta:latest
 MAINTAINER French Ben <frenchben@docker.com> (@frenchben)
 
 ENV PROJECT=editions
