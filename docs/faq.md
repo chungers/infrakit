@@ -3,7 +3,7 @@
 title = "FAQ"
 description = "Docker for AWS Azure FAQ"
 keywords = ["iaas, aws, azure"]
-[menu.iaas]
+[menu.main]
 identifier="docs-aws-azure-faq"
 weight="100"
 +++

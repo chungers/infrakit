@@ -3,7 +3,7 @@
 title = "Docker for AWS Release notes"
 description = "Docker for AWS Release notes"
 keywords = ["iaas, aws"]
-[menu.iaas]
+[menu.main]
 identifier="aws-release-notes"
 parent = "docs-aws"
 name = "Release Notes"

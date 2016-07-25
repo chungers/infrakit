@@ -9,7 +9,7 @@ DOCKER_DOCS_IMAGE := docs-base:editions
 DOCKER_RUN_DOCS := docker run --rm -t $(DOCS_MOUNT) $(DOCS_EXPORT_MOUNT) -e NOCACHE
 
 docs-build:
-	docker build -t "$(DOCKER_DOCS_IMAGE)" .
+	docker build -t "$(DOCKER_DOCS_IMAGE)" -f Dockerfile.beta .
 
 docs-export: docs-build
 	mkdir -p $(DOCS_EXPORT)
