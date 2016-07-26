@@ -1,12 +1,14 @@
 #!/bin/sh
 
-# Why echo or cp these files around in the Azure Linux agent container?  We
-# need to bind mount in /etc/ from the host (Linux agent expects this to be
+# We need to bind mount in /etc/ from the host (Linux agent expects this to be
 # accessible for a variety of reasons, such as user management and SSH key
 # management), so we need to ensure these files come in after the fact and
 # don't get over-written.
 cp /opt/waagent.conf /etc/waagent.conf
-cp /opt/lsb-release /etc/lsb-release
+cp /opt/sshd_config /etc/ssh/sshd_config
+
+# Azure wants this setting.
+echo "ClientAliveInterval 180" >>/etc/ssh/sshd_config
 
 # Workaround due to 'gawk' name.
 # Azure agent just hardcodes shelling out to 'awk' and it chokes on Busybox awk

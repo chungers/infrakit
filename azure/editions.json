@@ -16,7 +16,7 @@
         },
         "agentCount": {
             "type": "int",
-            "defaultValue": 3,
+            "defaultValue": 1,
             "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         },
         "agentVMSize": {
@@ -42,7 +42,7 @@
         "sshKeyPath": "[concat('/home/', variables('adminUsername'), '/.ssh/authorized_keys')]",
         "sshRSAPublicKey": "[parameters('sshPublicKey')]",
         "agentVMSize": "[parameters('agentVMSize')]",
-        "linuxImageURL": "https://dockereditions.blob.core.windows.net/mobylinux/bff2dd71561b5783f2252ca48d8c2a84-mobylinux.vhd",
+        "linuxImageURL": "https://dockereditions.blob.core.windows.net/mobylinux/9528f914b581abd4e29fad4ad04a95b3-mobylinux.vhd",
         "storageLocation": "centralus",
         "basePrefix": "[parameters('clusterName')]",
         "masterVMSize": "Standard_A2",

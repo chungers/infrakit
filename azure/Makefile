@@ -1,11 +1,14 @@
 GROUPNAME := $(shell cat groupname.out)
 GROUPFILE := "groupname.out"
-CHECKSUM := $(shell sha1sum editions.json | awk '{ print $$1; }') 
+TIMESTAMP := $(shell date +'%s') 
 
-default: clean
-	echo editions-$(CHECKSUM) >$(GROUPFILE)
-	azure group create --name editions-$(CHECKSUM) --location centralus --template-file editions.json
+default: clean walinuxagent
+	echo editions-$(TIMESTAMP) >$(GROUPFILE)
+	azure group create --name editions-$(TIMESTAMP) --location centralus --template-file editions.json
 
 clean:
 	azure group delete $(GROUPNAME) -q --nowait || true
 	rm -f $(GROUPFILE)
+
+walinuxagent:
+	make -C dockerfiles/walinuxagent push
