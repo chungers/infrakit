@@ -18,7 +18,7 @@ echo "#================"
 get_swarm_id()
 {
     if [ "$NODE_TYPE" == "manager" ] ; then
-        export SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
+        export SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
     else
         # not available in docker info. might be available in future release.
         export SWARM_ID='n/a'

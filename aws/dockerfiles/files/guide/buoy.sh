@@ -14,7 +14,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     NUM_WORKERS=$(expr $TOTAL_NODES - $NUM_MANAGERS)
     NUM_SERVICES=$(docker service ls -q | wc -w)
     DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')
-    SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
+    SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
 
     /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
         -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -flavor=aws

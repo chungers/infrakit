@@ -20,7 +20,7 @@ echo "Find our NODE:"
 if [ "$NODE_TYPE" == "manager" ] ; then
     # manager
     NODE_ID=$(docker node inspect self | jq -r '.[].ID')
-    SWARM_ID=$(docker swarm inspect -f '{{.ID}}')
+    SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
 else
     # worker
     NODE_ID=$(docker info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
