@@ -2,9 +2,10 @@
 +++
 title = "Docker for Azure"
 description = "Docker for Azure"
-keywords = ["iaas, aws, azure"]
+keywords = ["iaas, azure"]
 [menu.main]
-identifier="docs-azure"
+identifier="docs-azure-index"
+parent = "docs-azure"
 weight="2"
 +++
 <![end-metadata]-->
