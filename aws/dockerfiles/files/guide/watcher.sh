@@ -16,7 +16,7 @@ then
     exit 0
 fi
 
-echo "Find our NODE:"
+# echo "Find our NODE:"
 if [ "$NODE_TYPE" == "manager" ] ; then
     # manager
     NODE_ID=$(docker node inspect self | jq -r '.[].ID')
@@ -26,41 +26,33 @@ else
     NODE_ID=$(docker info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
     SWARM_ID='n/a' #TODO:FIX add this for workers.
 fi
-echo "NODE: $NODE_ID"
-echo "NODE_TYPE=$NODE_TYPE"
+# echo "NODE: $NODE_ID"
+# echo "NODE_TYPE=$NODE_TYPE"
 
 # script runs via cron every minute, so all of them will start at the same time. Add a random
 # delay so they don't step on each other when pulling items from the queue.
-echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
+# echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
 sleep $[ ( $RANDOM % 10 )  + 1 ]
-echo "Finished sleep, lets get going."
+# echo "Finished sleep, lets get going."
 
 # Find SQS message with termination message
 FOUND=false
 MESSAGES=$(aws sqs receive-message --region $REGION --queue-url $QUEUE --max-number-of-messages 10 --wait-time-seconds 10 --visibility-timeout 1 )
-echo "$MESSAGES"
+# echo "$MESSAGES"
 COUNT=$(echo $MESSAGES | jq -r '.Messages | length')
-echo "$COUNT messages"
+# echo "$COUNT messages"
 for((i=0;i<$COUNT;i++)); do
-    echo "Loop $i"
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
-    echo "BODY=$BODY"
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
-    echo "RECEIPT=$RECEIPT"
     LIFECYCLE=$(echo $BODY | jq --raw-output '.LifecycleTransition')
     INSTANCE=$(echo $BODY | jq --raw-output '.EC2InstanceId')
-    echo "LIFECYCLE=$LIFECYCLE ; $INSTANCE == $MYNODE ?"
     if [[ $LIFECYCLE == 'autoscaling:EC2_INSTANCE_TERMINATING' ]] && [[ $INSTANCE == $MYNODE ]]; then
           echo "Found a shutdown event for $MYNODE"
           TOKEN=$(echo $BODY | jq --raw-output '.LifecycleActionToken')
-          echo "TOKEN=$TOKEN"
           HOOK=$(echo $BODY | jq --raw-output '.LifecycleHookName')
-          echo "HOOK=$HOOK"
           ASG=$(echo $BODY | jq --raw-output '.AutoScalingGroupName')
-          echo "ASG=$ASG"
           FOUND=true
           echo "Delete the record from SQS"
-          echo "RECEIPT = $RECEIPT"
           aws sqs delete-message --region $REGION --queue-url $QUEUE --receipt-handle $RECEIPT
           echo "Finished deleting the sqs record."
           break
@@ -72,7 +64,6 @@ for((i=0;i<$COUNT;i++)); do
 done
 # If not not found, exit
 if [[ $FOUND == false ]]; then
-    echo "Nothing found, all done!"
     exit 0
 fi
 

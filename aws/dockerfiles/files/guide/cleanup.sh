@@ -7,9 +7,7 @@ fi
 
 # script runs via cron every 5 minutes, so all of them will start at the same time. Add a random
 # delay so they don't step on each other when pulling items from the queue.
-echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
 sleep $[ ( $RANDOM % 10 )  + 1 ]
-echo "Finished sleep, lets get going."
 
 # find any nodes that are marked as down, and remove from the
 # DOWN_LIST=$(docker node inspect $(docker node ls -q) | jq -r '.[] | select(.Status.State == "down") | .ID')
@@ -17,14 +15,11 @@ echo "Finished sleep, lets get going."
 MESSAGES=$(aws sqs receive-message --region $REGION --queue-url $CLEANUP_QUEUE  --max-number-of-messages 10 --wait-time-seconds 10 --visibility-timeout 5 )
 
 COUNT=$(echo $MESSAGES | jq -r '.Messages | length')
-echo "$COUNT messages"
 for((i=0;i<$COUNT;i++)); do
-    echo "Loop $i"
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
-    echo "BODY=$BODY"
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
-    echo "RECEIPT=$RECEIPT"
     docker node rm $BODY
+    echo "Remove NodeID=$BODY"
     RESULT=$?
     if [ $RESULT -eq 0 ]; then
         echo "We were able to remove node from swarm, delete message from queue"
