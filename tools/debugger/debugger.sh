@@ -6,7 +6,7 @@ VERSION=0.1
 LOGFILE="DEBUG_`date +'%Y-%m-%d_%H_%M_%s'`.log"
 docker run \
 -v /var/run/docker.sock:/var/run/docker.sock \
--v /usr/bin/docker:/usr/docker/bin/docker \
+-v /usr/bin/docker:/usr/bin/docker \
 docker4x/debugger:$VERSION 2>&1 > $LOGFILE
 
 echo "Debug Collection Complete, your log is located in $LOGFILE"

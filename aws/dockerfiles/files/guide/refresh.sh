@@ -1,0 +1,29 @@
+#!/bin/bash
+# this script refreshes the swarm tokens in dynamodb if they have changed.
+if [ "$NODE_TYPE" == "worker" ] ; then
+    # this doesn't run on workers, only managers.
+    exit 0
+fi
+
+IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
+
+if [[ "$IS_LEADER" == "true" ]]; then
+    # we are the leader, We only need to call once, so we only call from the current leader.
+    MANAGER=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}')
+    MANAGER_IP=$(echo $MANAGER | jq -r '.Item.ip.S')
+    STORED_MANAGER_TOKEN=$(echo $MANAGER | jq -r '.Item.manager_token.S')
+    STORED_WORKER_TOKEN=$(echo $MANAGER | jq -r '.Item.worker_token.S')
+
+    MANAGER_TOKEN=$(docker swarm join-token manager -q)
+    WORKER_TOKEN=$(docker swarm join-token worker -q)
+
+    if [[ "$STORED_MANAGER_TOKEN" != "$MANAGER_TOKEN" ]] || [[ "$STORED_WORKER_TOKEN" != "$WORKER_TOKEN" ]]; then
+        echo "Swarm tokens changed, updating dynamodb with new tokens"
+        aws dynamodb put-item \
+            --table-name $DYNAMODB_TABLE \
+            --region $REGION \
+            --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$MANAGER_IP"'"},"manager_token": {"S":"'"$MANAGER_TOKEN"'"},"worker_token": {"S":"'"$WORKER_TOKEN"'"}}' \
+            --return-consumed-capacity TOTAL
+    fi
+
+fi

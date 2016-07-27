@@ -538,7 +538,7 @@
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
 
@@ -553,7 +553,7 @@
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
@@ -561,7 +561,7 @@
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
                                 "-v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
                                 "-v /etc/passwd:/etc/passwd:ro ",
                                 "-v /etc/shadow:/etc/shadow:ro ",
@@ -580,7 +580,7 @@
                                 "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='",{ "Ref" : "InstallDDC" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/ddc-init-aws:$DOCKER_FOR_AWS_VERSION\n"
                             ]
                         ]
@@ -661,7 +661,7 @@
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
 
@@ -676,7 +676,7 @@
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
 
                                 "docker run --restart=no -d ",
@@ -686,7 +686,7 @@
                                 "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='",{ "Ref" : "InstallDDC" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "-v /usr/bin/docker:/usr/docker/bin/docker ",
+                                "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/ddc-init-aws:$DOCKER_FOR_AWS_VERSION\n"
                             ]
                         ]

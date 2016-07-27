@@ -1,11 +1,9 @@
 #!/bin/bash
 # This script will prevent autoscaling from terminating until we leave the swarm
 set -e
-PATH=$PATH:/usr/docker/bin
 MYIP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 MYNODE=$(wget -qO- http://169.254.169.254/latest/meta-data/instance-id)
 
-REGION=$AWS_DEFAULT_REGION
 QUEUE=$SWARM_QUEUE
 VPC_ID=$VPC_ID # TODO pass in.
 STACK_ID=$STACK_ID # TODO pass in.
@@ -18,49 +16,43 @@ then
     exit 0
 fi
 
-echo "Find our NODE:"
+# echo "Find our NODE:"
 if [ "$NODE_TYPE" == "manager" ] ; then
     # manager
     NODE_ID=$(docker node inspect self | jq -r '.[].ID')
+    SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
 else
     # worker
     NODE_ID=$(docker info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+    SWARM_ID='n/a' #TODO:FIX add this for workers.
 fi
-echo "NODE: $NODE_ID"
-echo "NODE_TYPE=$NODE_TYPE"
+# echo "NODE: $NODE_ID"
+# echo "NODE_TYPE=$NODE_TYPE"
 
 # script runs via cron every minute, so all of them will start at the same time. Add a random
 # delay so they don't step on each other when pulling items from the queue.
-echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
+# echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
 sleep $[ ( $RANDOM % 10 )  + 1 ]
-echo "Finished sleep, lets get going."
+# echo "Finished sleep, lets get going."
 
 # Find SQS message with termination message
 FOUND=false
 MESSAGES=$(aws sqs receive-message --region $REGION --queue-url $QUEUE --max-number-of-messages 10 --wait-time-seconds 10 --visibility-timeout 1 )
-echo "$MESSAGES"
+# echo "$MESSAGES"
 COUNT=$(echo $MESSAGES | jq -r '.Messages | length')
-echo "$COUNT messages"
+# echo "$COUNT messages"
 for((i=0;i<$COUNT;i++)); do
-    echo "Loop $i"
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
-    echo "BODY=$BODY"
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
-    echo "RECEIPT=$RECEIPT"
     LIFECYCLE=$(echo $BODY | jq --raw-output '.LifecycleTransition')
     INSTANCE=$(echo $BODY | jq --raw-output '.EC2InstanceId')
-    echo "LIFECYCLE=$LIFECYCLE ; $INSTANCE == $MYNODE ?"
     if [[ $LIFECYCLE == 'autoscaling:EC2_INSTANCE_TERMINATING' ]] && [[ $INSTANCE == $MYNODE ]]; then
           echo "Found a shutdown event for $MYNODE"
           TOKEN=$(echo $BODY | jq --raw-output '.LifecycleActionToken')
-          echo "TOKEN=$TOKEN"
           HOOK=$(echo $BODY | jq --raw-output '.LifecycleHookName')
-          echo "HOOK=$HOOK"
           ASG=$(echo $BODY | jq --raw-output '.AutoScalingGroupName')
-          echo "ASG=$ASG"
           FOUND=true
           echo "Delete the record from SQS"
-          echo "RECEIPT = $RECEIPT"
           aws sqs delete-message --region $REGION --queue-url $QUEUE --receipt-handle $RECEIPT
           echo "Finished deleting the sqs record."
           break
@@ -72,7 +64,6 @@ for((i=0;i<$COUNT;i++)); do
 done
 # If not not found, exit
 if [[ $FOUND == false ]]; then
-    echo "Nothing found, all done!"
     exit 0
 fi
 
@@ -86,7 +77,7 @@ date
 if [ "$NODE_TYPE" == "manager" ] ; then
     # we are a manager, handle manager shutdown.
 
-    CURRENT_MANAGER_IP=$(aws dynamodb get-item --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}' | jq -r '.Item.ip.S')
+    CURRENT_MANAGER_IP=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}' | jq -r '.Item.ip.S')
 
     echo "Current manager IP = $CURRENT_MANAGER_IP ; my IP = $MYIP"
 
@@ -139,6 +130,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         # update the primary manager IP item in dynamodb
         aws dynamodb put-item \
             --table-name $DYNAMODB_TABLE \
+            --region $REGION \
             --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$NEW_MANAGER_IP"'"}}' \
             --return-consumed-capacity TOTAL
     fi
@@ -146,6 +138,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     echo "demote the node from manager to worker for NODE: $NODE_ID"
     docker node demote $NODE_ID
     echo "Give time for the demotation to take place"
+    buoy -event="node:demote" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     sleep 30
 fi
 
@@ -155,7 +148,7 @@ echo "Remove the node"
 # send a message to one of them to cleanup after us.
 #docker node rm $NODE_ID
 echo "Send NODE_ID=$NODE_ID to CLEANUP_QUEUE=$CLEANUP_QUEUE"
-aws sqs send-message --queue-url $CLEANUP_QUEUE --message-body "$NODE_ID" --delay-seconds 10
+aws sqs send-message --region $REGION --queue-url $CLEANUP_QUEUE --message-body "$NODE_ID" --delay-seconds 10
 
 echo "Lets AWS know we can shut down now."
 # let autoscaler know it can continue.

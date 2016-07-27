@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-PATH=$PATH:/usr/docker/bin
 
 DEBUG_VERSION="0.1"
 
@@ -25,7 +24,7 @@ NODES=$(docker node inspect $(docker node ls -q) | jq -r '.[] | .Description.Hos
 for I in $NODES; do
     h1 "Start $I"
     docker -H $I:2375 pull docker4x/node-debug:$DEBUG_VERSION
-    docker -H $I:2375 run -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/docker/bin/docker -v /var/lib/docker/swarm:/var/lib/docker/swarm -v /var/log:/var/log docker4x/node-debug:$DEBUG_VERSION
+    docker -H $I:2375 run -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/lib/docker/swarm:/var/lib/docker/swarm -v /var/log:/var/log docker4x/node-debug:$DEBUG_VERSION
     h1 "Finished $I"
 done
 

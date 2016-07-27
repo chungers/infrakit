@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-PATH=$PATH:/usr/docker/bin
-
 function h1 () {
     echo " ======== [" "$@" "] ========"
 }
