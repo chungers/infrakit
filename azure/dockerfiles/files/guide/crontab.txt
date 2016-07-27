@@ -1,0 +1,2 @@
+# crontab
+36 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log

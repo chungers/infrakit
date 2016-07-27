@@ -20,7 +20,7 @@ RUN apk add --no-cache --update \
 
 # Windows Azure Linux agent section
 RUN pip install pyasn1
-ENV AGENT_REVISION 6d6dbcfc28e0a6fb0c90d1e52e6a8d736c1390c3 
+ENV AGENT_REVISION 78bf8336d57d8349d78ba75cabf224930479fce6
 
 # TODO: Move back to upstream (a PR is out for this on the Azure agent --
 # https://github.com/Azure/WALinuxAgent/pull/341), for now we have to use this

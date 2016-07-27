@@ -9,6 +9,35 @@
                 "description": "Define how the cluster resources should be named."
             }
         },
+        "vmLocation": {
+          "type": "string",
+          "allowedValues": [
+            "North Europe",
+            "West Europe",
+            "Central US",
+            "East US",
+            "East US 2",
+            "North Central US",
+            "South Central US",
+            "West US",
+            "West US 2",
+            "West Central US",
+            "East Asia",
+            "Southeast Asia",
+            "Japan East",
+            "Japan West",
+            "Brazil South",
+            "Australia East",
+            "Australia Southeast",
+            "Central India",
+            "South India",
+            "West India",
+            "China East",
+            "China North",
+            "Canada Central",
+            "Canada East"
+          ]
+        },
         "masterCount": {
             "type": "int",
             "defaultValue": 1,
@@ -27,6 +56,21 @@
                 "description": "The size of the created machines"
             }
         },
+        "managerVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2",
+            "allowedValues": ["Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4"],
+            "metadata": {
+                "description": "The size of the created Manager machines"
+            }
+        },
+        "storageAccountName": {
+          "type": "string",
+          "minLength": 3,
+          "metadata": {
+            "description": "Globally unique storage account name to use for Virtual Disks"
+          }
+      },
         "sshPublicKey": {
             "type": "string",
             "metadata": {
@@ -35,22 +79,24 @@
         }
     },
     "variables": {
+        "dockerForIAASVersion": "azure-v1.12.0-beta4",
+        "dockerVersion": "1.12.0",
         "apiVersion": "2016-03-30",
+        "accountID": "[subscription().subscriptionId]",
         "masterCount": "[parameters('masterCount')]",
         "agentCount": "[parameters('agentCount')]",
         "adminUsername": "docker",
         "sshKeyPath": "[concat('/home/', variables('adminUsername'), '/.ssh/authorized_keys')]",
         "sshRSAPublicKey": "[parameters('sshPublicKey')]",
         "agentVMSize": "[parameters('agentVMSize')]",
-        "linuxImageURL": "https://dockereditions.blob.core.windows.net/mobylinux/9528f914b581abd4e29fad4ad04a95b3-mobylinux.vhd",
-        "storageLocation": "centralus",
+        "linuxImageURL": "https://dockereditions.blob.core.windows.net/mobylinux/5d981db36adb578bf857d64cf7dd2388-mobylinux.vhd",
+        "storageLocation": "[parameters('vmLocation')]",
         "basePrefix": "[parameters('clusterName')]",
-        "masterVMSize": "Standard_A2",
+        "masterVMSize": "[parameters('managerVMSize')]",
         "agentVMNamePrefix": "[concat(variables('basePrefix'), '-agent-')]",
         "masterEndpointDNSNamePrefix": "manager",
         "vmssName": "[concat(variables('agentVMNamePrefix'), 'vmss')]",
-
-        "diskStorageAccount": "dockereditions",
+        "diskStorageAccount": "[parameters('storageAccountName')]",
         "diskStorageURL": "[concat('https://', variables('diskStorageAccount'), '.blob.core.windows.net')]",
 
         "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
@@ -126,6 +172,19 @@
                     "destinationAddressPrefix": "[variables('subnetPrefix')]",
                     "access": "Allow",
                     "priority": 202,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "docker-port",
+                "properties": {
+                    "description": "Allow 'docker' ingress to master node",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "2375",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 205,
                     "direction": "Inbound"
                 }
             }, {
@@ -205,7 +264,7 @@
             "osProfile": {
                 "computername": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
                 "adminUsername": "[variables('adminUsername')]",
-                "customData": "[base64('export ROLE=MANAGER')]",
+                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
                 "linuxConfiguration": {
                     "disablePasswordAuthentication": true,
                     "ssh": {
@@ -275,7 +334,7 @@
                 "osProfile": {
                     "computerNamePrefix": "[variables('agentVMNamePrefix')]",
                     "adminUsername": "[variables('adminUsername')]",
-                    "customData": "[base64(concat('export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress))]",
+                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
@@ -293,6 +352,7 @@
                             "primary": "true",
                             "ipConfigurations": [{
                                 "name": "nicipconfig",
+                                "privateIPAllocationMethod": "dynamic",
                                 "properties": {
                                     "subnet": {
                                         "id": "[variables('subnetRef')]"
