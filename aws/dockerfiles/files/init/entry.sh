@@ -23,6 +23,7 @@ get_swarm_id()
         # not available in docker info. might be available in future release.
         export SWARM_ID='n/a'
     fi
+    echo "SWARM_ID: $SWARM_ID"
 }
 
 get_node_id()
@@ -86,6 +87,8 @@ join_as_secondary_manager()
     # we are not, join as secondary manager.
     docker swarm join --token $MANAGER_TOKEN --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
 
+    get_swarm_id
+    get_node_id
     buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     echo "   Secondary Manager complete"
 }
@@ -117,6 +120,8 @@ setup_manager()
             docker swarm init --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377
             # we can now get the tokens.
             get_tokens
+            get_swarm_id
+            get_node_id
 
             # update dynamodb with the tokens
             aws dynamodb put-item \
@@ -127,7 +132,7 @@ setup_manager()
 
             echo "   Primary Manager init complete"
             # send identify message
-            buoy -event=identify -swarm_id=$SWARM_ID -flavor=aws
+            buoy -event=identify -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
         else
             echo " Error is normal, it is because we already have a primary node, lets setup a secondary manager instead."
             join_as_secondary_manager
@@ -147,6 +152,8 @@ setup_node()
     fi
     echo "   MANAGER_IP=$MANAGER_IP"
     docker swarm join --token $WORKER_TOKEN $MANAGER_IP:2377
+    get_swarm_id
+    get_node_id
     buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
 }
 

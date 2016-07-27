@@ -66,6 +66,7 @@ func main() {
 			Properties: map[string]interface{}{
 				"swarm_id": *swarmID,
 				"region":   region,
+				"node_id":  *nodeID,
 			},
 		})
 	} else if *event == "swarm:init" {
@@ -75,6 +76,7 @@ func main() {
 			Properties: map[string]interface{}{
 				"swarm_id": *swarmID,
 				"region":   region,
+				"node_id":  *nodeID,
 			},
 		})
 	} else if strings.HasPrefix(*event, "node:") {
