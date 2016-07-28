@@ -23,7 +23,7 @@ Release date: 7/28/2016
 
 ### Errata
 
- * Upgrading from previous Docker for AWS versions to 1.12.0-beta4 is not possible because of backwards incompatibilities introduced in Docker 1.12.0 GA
+ * Upgrading from previous Docker for AWS versions to 1.12.0-beta4 is not possible because of RC-incompatibilities between Docker 1.12.0 release canditate 5 and previous release candidates.
 
 ## 1.12.0-rc5-beta3
 
