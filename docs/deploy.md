@@ -50,4 +50,4 @@ A good sample app to test application bundles is the [Docker voting app](https:/
 
 By default, apps deployed with bundles do not have ports publicly exposed. Update port mappings for services, and Docker will automatically wire up the underlying platform load balancers:
 
-    docker service update -p 80:80 <example-service>
+    docker service update --publish-add 80:80 <example-service>
