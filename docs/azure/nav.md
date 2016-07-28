@@ -1,7 +1,7 @@
 <!--[metadata]>
 +++
-title = "Docker for AWS"
-description = "Docker for AWS"
+title = "Docker for Azure"
+description = "Docker for Azure"
 keywords = ["iaas, aws, azure"]
 [menu.main]
 identifier="docs-azure"
