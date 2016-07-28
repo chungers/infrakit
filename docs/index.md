@@ -46,7 +46,7 @@ You can find your Azure subscription ID by doing the following.
 
     <img src="/img/azure/subscription.png">
 
-3. Select the subscription you will be using for testing the offer
+3. Select the subscription you will be using for testing.
 3. Copy the subscription identifier from the right-hand column. If you currently do not have an Azure subscription, you can create one on that page.
 
 
