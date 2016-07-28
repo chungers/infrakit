@@ -2,7 +2,7 @@
 set -e
 
 NAMESPACE=docker4x
-VERSION=aws-v1.12.0-rc5-beta3
+VERSION=aws-v1.12.0-beta4
 
 docker build -t $NAMESPACE/shell-aws:$VERSION -f Dockerfile.shell .
 docker push $NAMESPACE/shell-aws:$VERSION
