@@ -13,6 +13,22 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.12.0-beta4
+
+Release date: 7/28/2016
+
+### New
+
+ * Docker Engine upgraded to 1.12.0
+
+### Errata
+
+ * Upgrading from previous Docker for AWS versions to 1.12.0-beta4 is not possible because of RC-incompatibilities between Docker 1.12.0 release canditate 5 and previous release candidates.
+
+## 1.12.0-rc5-beta3
+
+(internal release)
+
 ## 1.12.0-rc4-beta2
 
 Release date: 7/13/2016
@@ -24,7 +40,6 @@ Release date: 7/13/2016
  * Beta Docker for AWS sends anonymous analytics
 
 ### Errata
-
  * When upgrading, old Docker nodes may not be removed from the swarm and show up when running `docker node ls`. Marooned nodes can be removed with `docker node rm`
 
 ## 1.12.0-rc3-beta1
