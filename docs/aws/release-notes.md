@@ -1,5 +1,8 @@
 <!--[metadata]>
 +++
+aliases = [
+"/aws-release-notes/"
+]
 title = "Docker for AWS Release notes"
 description = "Docker for AWS Release notes"
 keywords = ["iaas, aws"]
