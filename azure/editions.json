@@ -9,34 +9,34 @@
                 "description": "Define how the cluster resources should be named."
             }
         },
-        "vmLocation": {
-          "type": "string",
-          "allowedValues": [
-            "North Europe",
-            "West Europe",
-            "Central US",
-            "East US",
-            "East US 2",
-            "North Central US",
-            "South Central US",
-            "West US",
-            "West US 2",
-            "West Central US",
-            "East Asia",
-            "Southeast Asia",
-            "Japan East",
-            "Japan West",
-            "Brazil South",
-            "Australia East",
-            "Australia Southeast",
-            "Central India",
-            "South India",
-            "West India",
-            "China East",
-            "China North",
-            "Canada Central",
-            "Canada East"
-          ]
+        "storageLocation": {
+            "type": "string",
+            "allowedValues": [
+                "northeurope",
+                "westeurope",
+                "centralus",
+                "eastus",
+                "eastus2",
+                "northcentralus",
+                "southcentralus",
+                "westus",
+                "westus2",
+                "westcentralus",
+                "eastasia",
+                "southeastasia",
+                "japaneast",
+                "japanwest",
+                "brazilsouth",
+                "australiaeast",
+                "australiasoutheast",
+                "centralindia",
+                "southindia",
+                "westindia",
+                "chinaeast",
+                "chinanorth",
+                "canadacentral",
+                "canadaeast"
+            ]
         },
         "masterCount": {
             "type": "int",
@@ -64,13 +64,6 @@
                 "description": "The size of the created Manager machines"
             }
         },
-        "storageAccountName": {
-          "type": "string",
-          "minLength": 3,
-          "metadata": {
-            "description": "Globally unique storage account name to use for Virtual Disks"
-          }
-      },
         "sshPublicKey": {
             "type": "string",
             "metadata": {
@@ -79,6 +72,7 @@
         }
     },
     "variables": {
+        "storageLocation": "[parameters('storageLocation')]",
         "dockerForIAASVersion": "azure-v1.12.0-beta4",
         "dockerVersion": "1.12.0",
         "apiVersion": "2016-03-30",
@@ -89,15 +83,11 @@
         "sshKeyPath": "[concat('/home/', variables('adminUsername'), '/.ssh/authorized_keys')]",
         "sshRSAPublicKey": "[parameters('sshPublicKey')]",
         "agentVMSize": "[parameters('agentVMSize')]",
-        "linuxImageURL": "https://dockereditions.blob.core.windows.net/mobylinux/5d981db36adb578bf857d64cf7dd2388-mobylinux.vhd",
-        "storageLocation": "[parameters('vmLocation')]",
         "basePrefix": "[parameters('clusterName')]",
         "masterVMSize": "[parameters('managerVMSize')]",
         "agentVMNamePrefix": "[concat(variables('basePrefix'), '-agent-')]",
         "masterEndpointDNSNamePrefix": "manager",
         "vmssName": "[concat(variables('agentVMNamePrefix'), 'vmss')]",
-        "diskStorageAccount": "[parameters('storageAccountName')]",
-        "diskStorageURL": "[concat('https://', variables('diskStorageAccount'), '.blob.core.windows.net')]",
 
         "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
         "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
@@ -109,9 +99,30 @@
         "masterNSGName": "[concat(variables('basePrefix'), '-master-nsg')]",
         "masterNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('masterNSGName'))]",
         "masterVMNamePrefix": "[concat(variables('basePrefix'), '-master')]",
-        "masterFirstAddr": 5
+        "masterFirstAddr": 5,
+        "storageAccountSuffix": "docker",
+        "vhdContainerName": "dockervhd",
+        "uniqueStringArray": [
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '0')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '1')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '2')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '3')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
+        ]
     },
     "resources": [{
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[concat(variables('uniqueStringArray')[copyIndex()], variables('storageAccountSuffix'))]",
+        "location": "[variables('storageLocation')]",
+        "copy": {
+            "name": "storageLoop",
+            "count": "[length(variables('uniqueStringArray'))]"
+        },
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Network/virtualNetworks",
         "name": "[variables('virtualNetworkName')]",
@@ -250,12 +261,18 @@
         "type": "Microsoft.Compute/virtualMachines",
         "name": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
         "location": "[variables('storageLocation')]",
+        "plan": {
+            "publisher": "docker",
+            "name": "docker4azure",
+            "product": "docker4azure-preview"
+        },
         "copy": {
             "name": "vmLoopNode",
             "count": "[variables('masterCount')]"
         },
         "dependsOn": [
-            "[concat('Microsoft.Network/networkInterfaces/', variables('masterVMNamePrefix'), 'nic-', copyIndex())]"
+            "[concat('Microsoft.Network/networkInterfaces/', variables('masterVMNamePrefix'), 'nic-', copyIndex())]",
+            "storageLoop"
         ],
         "properties": {
             "hardwareProfile": {
@@ -276,14 +293,16 @@
                 }
             },
             "storageProfile": {
+                "imageReference": {
+                    "publisher": "docker",
+                    "offer": "docker4azure-preview",
+                    "sku": "docker4azure",
+                    "version": "latest"
+                },
                 "osDisk": {
-                    "osType": "Linux",
                     "name": "[concat(variables('masterVMNamePrefix'), copyIndex(),'-osdisk')]",
-                    "image": {
-                        "uri": "[variables('linuxImageURL')]"
-                    },
                     "vhd": {
-                        "uri": "[concat(variables('diskStorageURL'), '/vhds/', variables('masterVMNamePrefix'), copyIndex(), uniqueString(resourceGroup().id), '-osdisk.vhd')]"
+                        "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager.vhd')]"
                     },
                     "caching": "ReadWrite",
                     "createOption": "FromImage"
@@ -297,7 +316,7 @@
             "diagnosticsProfile": {
                 "bootDiagnostics": {
                     "enabled": true,
-                    "storageUri": "[variables('diskStorageURL')]"
+                    "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
                 }
             }
         }
@@ -307,12 +326,18 @@
         "name": "[variables('vmssName')]",
         "location": "[variables('storageLocation')]",
         "dependsOn": [
-            "[variables('vnetID')]"
+            "[variables('vnetID')]",
+            "storageLoop"
         ],
         "sku": {
             "name": "[variables('agentVMSize')]",
             "tier": "Standard",
             "capacity": "[variables('agentCount')]"
+        },
+        "plan": {
+            "publisher": "docker",
+            "name": "docker4azure",
+            "product": "docker4azure-preview"
         },
         "properties": {
             "overprovision": true,
@@ -321,12 +346,21 @@
             },
             "virtualMachineProfile": {
                 "storageProfile": {
+                    "imageReference": {
+                        "publisher": "docker",
+                        "offer": "docker4azure-preview",
+                        "sku": "docker4azure",
+                        "version": "latest"
+                    },
                     "osDisk": {
-                        "osType": "Linux",
+                        "vhdContainers": [
+                            "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[1], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[2], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[3], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[4], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
+                        ],
                         "name": "[concat(variables('agentVMNamePrefix'), 'vmssosdisk', 0)]",
-                        "image": {
-                            "uri": "[variables('linuxImageURL')]"
-                        },
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -365,7 +399,7 @@
                 "diagnosticsProfile": {
                     "bootDiagnostics": {
                         "enabled": true,
-                        "storageUri": "[variables('diskStorageURL')]"
+                        "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
                     }
                 }
             }
