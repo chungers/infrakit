@@ -27,6 +27,14 @@
                 "description": "The size of the created machines"
             }
         },
+        "managerVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2",
+            "allowedValues": ["Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4"],
+            "metadata": {
+                "description": "The size of the created Manager machines"
+            }
+        },
         "sshPublicKey": {
             "type": "string",
             "metadata": {
@@ -35,23 +43,22 @@
         }
     },
     "variables": {
+        "storageLocation": "[resourceGroup().location]",
+        "dockerForIAASVersion": "azure-v1.12.0-beta4",
+        "dockerVersion": "1.12.0",
         "apiVersion": "2016-03-30",
+        "accountID": "[subscription().subscriptionId]",
         "masterCount": "[parameters('masterCount')]",
         "agentCount": "[parameters('agentCount')]",
         "adminUsername": "docker",
         "sshKeyPath": "[concat('/home/', variables('adminUsername'), '/.ssh/authorized_keys')]",
         "sshRSAPublicKey": "[parameters('sshPublicKey')]",
         "agentVMSize": "[parameters('agentVMSize')]",
-        "linuxImageURL": "https://dockereditions.blob.core.windows.net/mobylinux/9528f914b581abd4e29fad4ad04a95b3-mobylinux.vhd",
-        "storageLocation": "centralus",
         "basePrefix": "[parameters('clusterName')]",
-        "masterVMSize": "Standard_A2",
+        "masterVMSize": "[parameters('managerVMSize')]",
         "agentVMNamePrefix": "[concat(variables('basePrefix'), '-agent-')]",
         "masterEndpointDNSNamePrefix": "manager",
         "vmssName": "[concat(variables('agentVMNamePrefix'), 'vmss')]",
-
-        "diskStorageAccount": "dockereditions",
-        "diskStorageURL": "[concat('https://', variables('diskStorageAccount'), '.blob.core.windows.net')]",
 
         "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
         "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
@@ -63,9 +70,30 @@
         "masterNSGName": "[concat(variables('basePrefix'), '-master-nsg')]",
         "masterNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('masterNSGName'))]",
         "masterVMNamePrefix": "[concat(variables('basePrefix'), '-master')]",
-        "masterFirstAddr": 5
+        "masterFirstAddr": 5,
+        "storageAccountSuffix": "docker",
+        "vhdContainerName": "dockervhd",
+        "uniqueStringArray": [
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '0')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '1')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '2')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '3')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
+        ]
     },
     "resources": [{
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[concat(variables('uniqueStringArray')[copyIndex()], variables('storageAccountSuffix'))]",
+        "location": "[variables('storageLocation')]",
+        "copy": {
+            "name": "storageLoop",
+            "count": "[length(variables('uniqueStringArray'))]"
+        },
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Network/virtualNetworks",
         "name": "[variables('virtualNetworkName')]",
@@ -126,6 +154,19 @@
                     "destinationAddressPrefix": "[variables('subnetPrefix')]",
                     "access": "Allow",
                     "priority": 202,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "docker-port",
+                "properties": {
+                    "description": "Allow 'docker' ingress to master node",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "2375",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 205,
                     "direction": "Inbound"
                 }
             }, {
@@ -191,12 +232,18 @@
         "type": "Microsoft.Compute/virtualMachines",
         "name": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
         "location": "[variables('storageLocation')]",
+        "plan": {
+            "publisher": "docker",
+            "name": "docker4azure",
+            "product": "docker4azure-preview"
+        },
         "copy": {
             "name": "vmLoopNode",
             "count": "[variables('masterCount')]"
         },
         "dependsOn": [
-            "[concat('Microsoft.Network/networkInterfaces/', variables('masterVMNamePrefix'), 'nic-', copyIndex())]"
+            "[concat('Microsoft.Network/networkInterfaces/', variables('masterVMNamePrefix'), 'nic-', copyIndex())]",
+            "storageLoop"
         ],
         "properties": {
             "hardwareProfile": {
@@ -205,7 +252,7 @@
             "osProfile": {
                 "computername": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
                 "adminUsername": "[variables('adminUsername')]",
-                "customData": "[base64('export ROLE=MANAGER')]",
+                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
                 "linuxConfiguration": {
                     "disablePasswordAuthentication": true,
                     "ssh": {
@@ -217,14 +264,16 @@
                 }
             },
             "storageProfile": {
+                "imageReference": {
+                    "publisher": "docker",
+                    "offer": "docker4azure-preview",
+                    "sku": "docker4azure",
+                    "version": "latest"
+                },
                 "osDisk": {
-                    "osType": "Linux",
                     "name": "[concat(variables('masterVMNamePrefix'), copyIndex(),'-osdisk')]",
-                    "image": {
-                        "uri": "[variables('linuxImageURL')]"
-                    },
                     "vhd": {
-                        "uri": "[concat(variables('diskStorageURL'), '/vhds/', variables('masterVMNamePrefix'), copyIndex(), uniqueString(resourceGroup().id), '-osdisk.vhd')]"
+                        "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager.vhd')]"
                     },
                     "caching": "ReadWrite",
                     "createOption": "FromImage"
@@ -238,7 +287,7 @@
             "diagnosticsProfile": {
                 "bootDiagnostics": {
                     "enabled": true,
-                    "storageUri": "[variables('diskStorageURL')]"
+                    "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
                 }
             }
         }
@@ -248,12 +297,18 @@
         "name": "[variables('vmssName')]",
         "location": "[variables('storageLocation')]",
         "dependsOn": [
-            "[variables('vnetID')]"
+            "[variables('vnetID')]",
+            "storageLoop"
         ],
         "sku": {
             "name": "[variables('agentVMSize')]",
             "tier": "Standard",
             "capacity": "[variables('agentCount')]"
+        },
+        "plan": {
+            "publisher": "docker",
+            "name": "docker4azure",
+            "product": "docker4azure-preview"
         },
         "properties": {
             "overprovision": true,
@@ -262,12 +317,21 @@
             },
             "virtualMachineProfile": {
                 "storageProfile": {
+                    "imageReference": {
+                        "publisher": "docker",
+                        "offer": "docker4azure-preview",
+                        "sku": "docker4azure",
+                        "version": "latest"
+                    },
                     "osDisk": {
-                        "osType": "Linux",
+                        "vhdContainers": [
+                            "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[1], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[2], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[3], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[4], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
+                        ],
                         "name": "[concat(variables('agentVMNamePrefix'), 'vmssosdisk', 0)]",
-                        "image": {
-                            "uri": "[variables('linuxImageURL')]"
-                        },
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -275,7 +339,7 @@
                 "osProfile": {
                     "computerNamePrefix": "[variables('agentVMNamePrefix')]",
                     "adminUsername": "[variables('adminUsername')]",
-                    "customData": "[base64(concat('export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress))]",
+                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
@@ -293,6 +357,7 @@
                             "primary": "true",
                             "ipConfigurations": [{
                                 "name": "nicipconfig",
+                                "privateIPAllocationMethod": "dynamic",
                                 "properties": {
                                     "subnet": {
                                         "id": "[variables('subnetRef')]"
@@ -305,7 +370,7 @@
                 "diagnosticsProfile": {
                     "bootDiagnostics": {
                         "enabled": true,
-                        "storageUri": "[variables('diskStorageURL')]"
+                        "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
                     }
                 }
             }
