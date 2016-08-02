@@ -9,35 +9,6 @@
                 "description": "Define how the cluster resources should be named."
             }
         },
-        "storageLocation": {
-            "type": "string",
-            "allowedValues": [
-                "northeurope",
-                "westeurope",
-                "centralus",
-                "eastus",
-                "eastus2",
-                "northcentralus",
-                "southcentralus",
-                "westus",
-                "westus2",
-                "westcentralus",
-                "eastasia",
-                "southeastasia",
-                "japaneast",
-                "japanwest",
-                "brazilsouth",
-                "australiaeast",
-                "australiasoutheast",
-                "centralindia",
-                "southindia",
-                "westindia",
-                "chinaeast",
-                "chinanorth",
-                "canadacentral",
-                "canadaeast"
-            ]
-        },
         "masterCount": {
             "type": "int",
             "defaultValue": 1,
@@ -72,7 +43,7 @@
         }
     },
     "variables": {
-        "storageLocation": "[parameters('storageLocation')]",
+        "storageLocation": "[resourceGroup().location]",
         "dockerForIAASVersion": "azure-v1.12.0-beta4",
         "dockerVersion": "1.12.0",
         "apiVersion": "2016-03-30",
