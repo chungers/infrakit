@@ -61,6 +61,13 @@
         "vmssName": "[concat(variables('agentVMNamePrefix'), 'vmss')]",
 
         "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
+
+	"lbName": "externalLoadBalancer",
+	"lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
+	"lbPublicIPAddressID" : "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))]",
+	"lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
+	"lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+
         "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "subnetName": "[concat(variables('basePrefix'), '-subnet')]",
@@ -225,7 +232,12 @@
                         "id": "[variables('subnetRef')]"
                     }
                 }
-            }]
+            }],
+            "loadBalancerBackendAddressPools": [
+                {
+                    "id": "[ variables('lbBackendAddressPoolID')]"
+                }
+            ]
         }
     }, {
         "apiVersion": "[variables('apiVersion')]",
@@ -363,7 +375,12 @@
                                         "id": "[variables('subnetRef')]"
                                     }
                                 }
-                            }]
+                            }],
+                            "loadBalancerBackendAddressPools": [
+                                {
+                                    "id": "[ variables('lbBackendAddressPoolID')]"
+                                }
+                            ]
                         }
                     }]
                 },
@@ -375,11 +392,59 @@
                 }
             }
         }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('lbPublicIPAddressName')]",
+        "location": "[variables('storageLocation')]",
+        "properties": {
+            "publicIPAllocationMethod": "Static"
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "name": "[variables('lbName')]",
+        "type": "Microsoft.Network/loadBalancers",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/publicIPAddresses/', variables('lbPublicIPAddressName'))]"
+        ],
+        "properties": {
+            "frontendIPConfigurations": [
+                {
+                    "name": "default",
+                    "properties": {
+                        "publicIPAddress": {
+                            "id" : "[variables('lbPublicIPAddressID')]"
+                        }
+                    }
+                }
+            ],
+            "backendAddressPools": [
+                {
+                    "name": "default"
+                }
+            ],
+            "probes": [
+                {
+                    "name": "default",
+                    "properties": {
+                        "protocol": "tcp",
+                        "port": 2375,
+                        "intervalInSeconds": "10",
+                        "numberOfProbes": "2"
+                    }
+                }
+            ]
+        }
     }],
     "outputs": {
         "accessCommand": {
             "type": "string",
             "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('masterPublicIPAddressName'), 'ip-0'))).ipAddress)]"
+        },
+        "externalLoadBalancerIPAddress": {
+            "type": "string",
+            "value": "reference(variables('lbPublicIPAddressID')).ipAddress"
         }
     }
 }
