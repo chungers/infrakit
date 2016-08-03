@@ -44,6 +44,8 @@ You can run websites too. Ports exposed with `-p` are automatically exposed thro
 
 Once up, find the `DefaultDNSTarget` output in either the AWS or Azure portals to access the site.
 
+### Distributed Application Bundles
+
 To deploy complex multi-container apps, you can use [distributed application bundles](https://github.com/docker/docker/blob/master/experimental/docker-stacks-and-bundles.md). You can either run `docker deploy` to deploy a bundle on your machine over an SSH tunnel, or copy the bundle (for example using `scp`) to a manager node, SSH into the manager and then run `docker deploy` (if you have multiple managers, you have to ensure that your session is on one that has the bundle file).
 
 A good sample app to test application bundles is the [Docker voting app](https://github.com/docker/example-voting-app).
@@ -51,3 +53,14 @@ A good sample app to test application bundles is the [Docker voting app](https:/
 By default, apps deployed with bundles do not have ports publicly exposed. Update port mappings for services, and Docker will automatically wire up the underlying platform load balancers:
 
     docker service update --publish-add 80:80 <example-service>
+
+### Images in private repos
+
+To create swarm services using images in private repos, first make sure you're authenticated and have access to the private repo, then create the service with the `--with-registry-auth` flag (the example below assumes you're using Docker Hub):
+
+    docker login
+    ...
+    docker service create --with-registry-auth user/private-repo
+    ...
+
+This will cause swarm to cache and use the cached registry credentials when creating containers for the service.
