@@ -114,8 +114,21 @@ which accounts should be allowed to have access to the image.  This will take a
 bit of time as they need to run through checks to ensure the image fulfills
 their Marketplace requirements.
 
-#### Update `editions.json` ARM template
+Once complete, ensure that the Docker for Azure master ARM template is updated
+to use the correct tag for the image uploaded to the portal.
 
-This is not yet implemented today but the final step will be updating the Docker
-for Azure ARM template to indicate that the new Marketplace image should be
-used.
+#### Launch ARM Template from VHD in Storage Account
+
+If you need to rapidly iterate on different versions of the VHD, you may not
+want to wait a day or more for the approval process in the Marketplace portal.
+In this case you can launch Docker for Azure directly from a VHD in a storage
+account, such as the one in the Moby build output line shown above.
+
+To do this, you can generate and invoke a version of the "master" template which
+launches from a storage account instead of from the Azure marketplace using the
+`stg_account_arm_template.py` script.  This is all available using the `make
+dev` command and specifying the `VHD` variable to the Makefile.  For instance:
+
+```console
+$ make dev USER=nathanleclaire VHD=https://dockereditions.blob.core.windows.net/mobylinux/7d2b2b7d3b466b6f54737d6e0076ea6d-mobylinux.vhd
+```
