@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 1 (docker 1.12.0-rc3)",
+    "Description": "Docker for AWS Beta 4 (docker 1.12.0)",
 
     "Parameters": {
         "KeyName": {
@@ -23,14 +23,14 @@
         },
         "ManagerInstanceType" : {
             "Type" : "String",
-            "Description" : "EC2 HVM instance type (t2.micro, m3.medium, etc).",
+            "Description" : "EC2 HVM instance type (m3.medium, etc).",
             "AllowedValues" : [
-                "t2.micro","t2.small","t2.medium","t2.large","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
+                "t2.medium","t2.large","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
                 "m3.large","m3.xlarge","m3.2xlarge","c4.large","c4.xlarge","c4.2xlarge","c4.4xlarge","c4.8xlarge","c3.large","c3.xlarge",
                 "c3.2xlarge","c3.4xlarge","c3.8xlarge","r3.large","r3.xlarge","r3.2xlarge","r3.4xlarge","r3.8xlarge","i2.xlarge",
                 "i2.2xlarge","i2.4xlarge","i2.8xlarge" ],
             "ConstraintDescription" : "Must be a valid EC2 HVM instance type.",
-            "Default" : "t2.micro"
+            "Default" : "m3.medium"
         },
         "ClusterSize" : {
             "Type" : "Number",
@@ -86,8 +86,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.0-rc3",
-                "forAws": "aws-v1.12.0-rc3-beta1-ddc"
+                "docker": "1.12.0",
+                "forAws": "aws-v1.12.0-beta4"
             }
         },
 
@@ -231,44 +231,44 @@
 
         "AWSRegionArch2AMI": {
             "us-west-1": {
-                "HVM64": "ami-4c77302c",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-1b3b7b7b",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-aced2ccc",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-4bab652b",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-63823974",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-39d2452e",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-e46a0f97",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-adb9d5de",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-107a917f",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-34a3545b",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-256dbf46",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-ad36e9ce",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-1": {
-                "HVM64": "ami-9b6c9cfa",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-68f03509",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-8e5279ed",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-4e1f2a2d",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-50804a3e",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-de07cdb0",
+                    "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-151a8f79",
-                "HVMG2": "NOT_SUPPORTED"
+                    "HVM64": "ami-da50c7b6",
+                    "HVMG2": "NOT_SUPPORTED"
             }
         }
     },
@@ -461,7 +461,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta1" },
+                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta4" },
                 "LoadBalancerNames" : [ { "Ref" : "SSHLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
@@ -475,7 +475,14 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key" : "swarm-stack-id",
                       "Value" : { "Ref" : "AWS::StackId"},
-                      "PropagateAtLaunch" : "true" }
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_FOR_AWS_VERSION",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] },
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_VERSION",
+                     "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
+                     "PropagateAtLaunch" : "true"
+                    }
                 ]
             },
             "CreationPolicy": {
@@ -494,7 +501,7 @@
            }
         },
 
-        "ManagerLaunchConfigBeta1": {
+        "ManagerLaunchConfigBeta4": {
             "DependsOn": "ExternalLoadBalancer",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -517,44 +524,45 @@
                         "Fn::Join": [
                             "", [
                                 "#!/bin/sh\n",
-                                "echo `wget -qO- http://169.254.169.254/latest/meta-data/hostname` > /etc/hostname; hostname -F /etc/hostname \n",
-                                "mkdir -p /var/lib/docker/swarm\n",
                                 "echo \"", {"Ref": "ExternalLoadBalancer"}, "\" > /var/lib/docker/swarm/lb_name\n",
                                 "echo \"# hostname : ELB_name\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"127.0.0.1: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
-                                "export PRIVATE_IP=`wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4`\n",
+                                "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
-                                "passwd -u docker\n",
-                                "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
 
                                 "docker run --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
-                                "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
+                                "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
+                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
-                                "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
-                                "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
                                 "-e VPC_ID='",{ "Ref" : "Vpc" }, "' ",
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
+                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
-                                "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
@@ -566,22 +574,22 @@
                                 "-v /etc/passwd:/etc/passwd:ro ",
                                 "-v /etc/shadow:/etc/shadow:ro ",
                                 "-v /etc/group:/etc/group:ro ",
-                                "docker4x/shell-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
-                                "docker4x/controller:$DOCKER_FOR_AWS_VERSION run --log=4 --all=true\n",
+                                "docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
 
                                 "docker run --restart=no -d ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
-                                "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='",{ "Ref" : "InstallDDC" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
-                                "docker4x/ddc-init-aws:$DOCKER_FOR_AWS_VERSION\n"
+                                "docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION\n"
                             ]
                         ]
                     }
@@ -593,7 +601,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta1" },
+                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta4" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "1000",
@@ -607,7 +615,14 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key" : "swarm-stack-id",
                       "Value" : { "Ref" : "AWS::StackId"},
-                      "PropagateAtLaunch" : "true" }
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_FOR_AWS_VERSION",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] },
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "DOCKER_VERSION",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
+                      "PropagateAtLaunch" : "true"
+                    }
                 ]
             },
             "CreationPolicy": {
@@ -625,7 +640,7 @@
               }
            }
         },
-        "NodeLaunchConfigBeta1": {
+        "NodeLaunchConfigBeta4": {
             "DependsOn": "ManagerAsg",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -648,46 +663,49 @@
                         "Fn::Join": [
                             "", [
                                 "#!/bin/sh\n",
+                                "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
-                                "passwd -u docker\n",
-                                "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "sleep 5\n",
-
                                 "docker run --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
-                                "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
+                                "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
+                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
-                                "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
-                                "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
                                 "-e VPC_ID='",{ "Ref" : "Vpc" }, "' ",
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
+                                "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
+                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
-                                "docker4x/watchdog-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=no -d ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
-                                "-e AWS_DEFAULT_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='",{ "Ref" : "InstallDDC" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
-                                "docker4x/ddc-init-aws:$DOCKER_FOR_AWS_VERSION\n"
+                                "docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION\n"
                             ]
                         ]
                     }
