@@ -35,6 +35,18 @@
                 "description": "The size of the created Manager machines"
             }
         },
+        "adServicePrincipalAppID": {
+            "type": "string",
+            "metadata": {
+                "description": "AD ServicePrincipal App ID"
+            }
+        },
+        "adServicePrincipalAppSecret": {
+            "type": "string",
+            "metadata": {
+                "description": "AD ServicePrincipal App Secret"
+            }
+        },
         "sshPublicKey": {
             "type": "string",
             "metadata": {
@@ -62,11 +74,12 @@
 
         "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
 
-	"lbName": "externalLoadBalancer",
-	"lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
-	"lbPublicIPAddressID" : "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))]",
-	"lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
-	"lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+        "lbName": "externalLoadBalancer",
+        "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
+        "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
+        "lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+        "adServicePrincipalAppID" : "[parameters('adServicePrincipalAppID')]",
+        "adServicePrincipalAppSecret" : "[parameters('adServicePrincipalAppSecret')]",
 
         "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
@@ -232,12 +245,7 @@
                         "id": "[variables('subnetRef')]"
                     }
                 }
-            }],
-            "loadBalancerBackendAddressPools": [
-                {
-                    "id": "[ variables('lbBackendAddressPoolID')]"
-                }
-            ]
+            }]
         }
     }, {
         "apiVersion": "[variables('apiVersion')]",
@@ -310,6 +318,7 @@
         "location": "[variables('storageLocation')]",
         "dependsOn": [
             "[variables('vnetID')]",
+            "[variables('lbID')]",
             "storageLoop"
         ],
         "sku": {
@@ -373,14 +382,14 @@
                                 "properties": {
                                     "subnet": {
                                         "id": "[variables('subnetRef')]"
-                                    }
+                                    },
+                                    "loadBalancerBackendAddressPools": [
+                                        {
+                                            "id": "[ variables('lbBackendAddressPoolID')]"
+                                        }
+                                    ]
                                 }
-                            }],
-                            "loadBalancerBackendAddressPools": [
-                                {
-                                    "id": "[ variables('lbBackendAddressPoolID')]"
-                                }
-                            ]
+                            }]
                         }
                     }]
                 },
@@ -414,7 +423,7 @@
                     "name": "default",
                     "properties": {
                         "publicIPAddress": {
-                            "id" : "[variables('lbPublicIPAddressID')]"
+                            "id" : "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))]"
                         }
                     }
                 }
@@ -444,7 +453,7 @@
         },
         "externalLoadBalancerIPAddress": {
             "type": "string",
-            "value": "reference(variables('lbPublicIPAddressID')).ipAddress"
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
         }
     }
 }
