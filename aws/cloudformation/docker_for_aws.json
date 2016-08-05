@@ -646,7 +646,7 @@
                         "Fn::Join": [
                             "", [
                                 "#!/bin/sh\n",
-                                "export DOCKER_FOR_AWS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
                                 "sleep 5\n",
@@ -658,11 +658,11 @@
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
                                 "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
-                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_AWS_VERSION ",
+                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
-                                "docker4x/init-aws:$DOCKER_FOR_AWS_VERSION\n",
+                                "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
                                 "docker run --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
@@ -675,10 +675,10 @@
                                 "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
-                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_AWS_VERSION ",
+                                "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
-                                "docker4x/guide-aws:$DOCKER_FOR_AWS_VERSION\n"
+                                "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n"
                             ]
                         ]
                     }
