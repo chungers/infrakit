@@ -35,6 +35,18 @@
                 "description": "The size of the created Manager machines"
             }
         },
+        "adServicePrincipalAppID": {
+            "type": "string",
+            "metadata": {
+                "description": "AD ServicePrincipal App ID"
+            }
+        },
+        "adServicePrincipalAppSecret": {
+            "type": "string",
+            "metadata": {
+                "description": "AD ServicePrincipal App Secret"
+            }
+        },
         "sshPublicKey": {
             "type": "string",
             "metadata": {
@@ -62,11 +74,12 @@
 
         "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
 
-	"lbName": "externalLoadBalancer",
-	"lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
-	"lbPublicIPAddressID" : "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))]",
-	"lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
-	"lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+        "lbName": "externalLoadBalancer",
+        "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
+        "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
+        "lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+        "adServicePrincipalAppID" : "[parameters('adServicePrincipalAppID')]",
+        "adServicePrincipalAppSecret" : "[parameters('adServicePrincipalAppSecret')]",
 
         "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
@@ -232,12 +245,7 @@
                         "id": "[variables('subnetRef')]"
                     }
                 }
-            }],
-            "loadBalancerBackendAddressPools": [
-                {
-                    "id": "[ variables('lbBackendAddressPoolID')]"
-                }
-            ]
+            }]
         }
     }, {
         "apiVersion": "[variables('apiVersion')]",
@@ -264,7 +272,7 @@
             "osProfile": {
                 "computername": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
                 "adminUsername": "[variables('adminUsername')]",
-                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
+                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION', '; echo default:\"', variables('lbName'), '\">> /var/lib/docker/swarm/elb.config', '; echo \"', variables('lbName'), '\" > /var/lib/docker/swarm/lb_name', '; docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --driver=azure --ad_app_id=', variables('adServicePrincipalAppID'), ' --ad_app_secret=',variables('adServicePrincipalAppSecret'),' --subscription_id=',subscription().subscriptionId,' --resource_group=',resourceGroup().name,' --log=4 --default_lb_name=',variables('lbName'),' --environment=AzurePublicCloud'))]",
                 "linuxConfiguration": {
                     "disablePasswordAuthentication": true,
                     "ssh": {
@@ -310,6 +318,8 @@
         "location": "[variables('storageLocation')]",
         "dependsOn": [
             "[variables('vnetID')]",
+            "[variables('lbID')]",
+            "[resourceId('Microsoft.Compute/VirtualMachines',concat(variables('masterVMNamePrefix'), '0'))]",
             "storageLoop"
         ],
         "sku": {
@@ -373,14 +383,14 @@
                                 "properties": {
                                     "subnet": {
                                         "id": "[variables('subnetRef')]"
-                                    }
+                                    },
+                                    "loadBalancerBackendAddressPools": [
+                                        {
+                                            "id": "[ variables('lbBackendAddressPoolID')]"
+                                        }
+                                    ]
                                 }
-                            }],
-                            "loadBalancerBackendAddressPools": [
-                                {
-                                    "id": "[ variables('lbBackendAddressPoolID')]"
-                                }
-                            ]
+                            }]
                         }
                     }]
                 },
@@ -414,7 +424,7 @@
                     "name": "default",
                     "properties": {
                         "publicIPAddress": {
-                            "id" : "[variables('lbPublicIPAddressID')]"
+                            "id" : "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))]"
                         }
                     }
                 }
@@ -444,7 +454,7 @@
         },
         "externalLoadBalancerIPAddress": {
             "type": "string",
-            "value": "reference(variables('lbPublicIPAddressID')).ipAddress"
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
         }
     }
 }
