@@ -8,13 +8,15 @@ azure login
 if [ -z "$SUBSCRIPTION_ID" ]; then
   echo "The following subscriptions were retrieved from your account"
   PS3='Please select the subscription to use: '
-  options=($(azure account list --json | jq -r 'map(select(.state == "Enabled"))|.[]|.id'))
+  options=($(azure account list --json | jq -r 'map(select(.state == "Enabled"))|.[]|.id + ":" + .name' | sed -e 's/ /_/g'))
   select opt in "${options[@]}"
   do
-          SUBSCRIPTION_ID=$opt
+          SUBSCRIPTION_ID=`echo $opt | awk -F ':' '{print $1}'`
           break
   done
 fi
+
+echo "Using subscription ${SUBSCRIPTION_ID}"
 
 TENANT_ID=$(azure account list --json | jq "map(select(.isDefault == true)) | .[0].tenantId" | sed -e 's/\"//g')
 
