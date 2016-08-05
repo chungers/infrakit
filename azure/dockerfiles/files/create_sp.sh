@@ -5,11 +5,15 @@ APP_NAME=$1
 
 azure login
 
-
-SUBSCRIPTION_ID=$(azure account list --json | jq "map(select(.isDefault == true)) | .[0].id" | sed -e 's/\"//g')
-if [[ "" == ${SUBSCRIPTION_ID} ]]; then
-    echo "Not logged in.  Cannot determine subscription id."
-    exit 1
+if [ -z "$SUBSCRIPTION_ID" ]; then
+  echo "The following subscriptions were retrieved from your account"
+  PS3='Please select the subscription to use: '
+  options=($(azure account list --json | jq -r 'map(select(.state == "Enabled"))|.[]|.id'))
+  select opt in "${options[@]}"
+  do
+          SUBSCRIPTION_ID=$opt
+          break
+  done
 fi
 
 TENANT_ID=$(azure account list --json | jq "map(select(.isDefault == true)) | .[0].tenantId" | sed -e 's/\"//g')

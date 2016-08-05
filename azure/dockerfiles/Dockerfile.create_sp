@@ -2,6 +2,6 @@ FROM microsoft/azure-cli
 
 MAINTAINER David Chung <david.chung@docker.com>
 
-COPY create_sp.sh /usr/bin
+COPY files/create_sp.sh /usr/bin
 
 ENTRYPOINT [ "create_sp.sh" ]
