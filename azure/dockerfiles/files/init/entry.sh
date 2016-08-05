@@ -30,10 +30,28 @@ get_node_id()
 
 get_tokens()
 {
-    export MANAGER_TOKEN=$(docker -H $MANAGER_IP:2375 swarm join-token manager -q)
-    export WORKER_TOKEN=$(docker -H $MANAGER_IP:2375 swarm join-token worker -q)
-    echo "MANAGER_TOKEN=$MANAGER_TOKEN"
-    echo "WORKER_TOKEN=$WORKER_TOKEN"
+    n=0
+    until [ $n -ge 10 ]
+    do
+        echo "Get Swarm Tokens"
+        export MANAGER_TOKEN=$(docker -H $MANAGER_IP:2375 swarm join-token manager -q)
+        export WORKER_TOKEN=$(docker -H $MANAGER_IP:2375 swarm join-token worker -q)
+        echo "MANAGER_TOKEN=$MANAGER_TOKEN"
+        echo "WORKER_TOKEN=$WORKER_TOKEN"
+        if [ -z "$WORKER_TOKEN" ] || [ "$WORKER_TOKEN" == "null" ] || [ -z "$MANAGER_TOKEN" ] || [ "$MANAGER_TOKEN" == "null" ]; then
+            echo "Primary manager Not ready yet, sleep for 60 seconds."
+            sleep 60
+            n=$[$n+1]
+        else
+            echo "Primary manager is ready, we have our tokens"
+            break
+        fi
+    done
+
+    if [ -z "$WORKER_TOKEN" ] || [ "$WORKER_TOKEN" == "null" ] || [ -z "$MANAGER_TOKEN" ] || [ "$MANAGER_TOKEN" == "null" ]; then
+        echo "ERROR: Could not retrieve token(s)"
+    fi
+
 }
 
 setup_manager()
