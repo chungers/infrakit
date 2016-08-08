@@ -18,7 +18,7 @@ if [[ "$INSTALL_DDC" != "yes" ]] ; then
 fi
 
 echo "Load the docker images"
-wget -qO- https://s3.amazonaws.com/packages.docker.com/caas/79Az36QAF4WGuvZdcJ7T/ucp_images_1.2.0-alpha2.tar.gz | docker load
+wget -qO- https://s3.amazonaws.com/packages.docker.com/caas/79Az36QAF4WGuvZdcJ7T/ucp_images_1.2.0-alpha3.tar.gz | docker load
 
 if [ "$NODE_TYPE" == "worker" ] ; then
      # nothing left to do for workers, so exit.
@@ -44,7 +44,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     aws elb create-load-balancer-listeners --region $REGION --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
 
     echo "Run the DDC install script"
-    docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:1.2.0-alpha2 install --san $SSH_ELB_HOSTNAME
+    docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:1.2.0-alpha3 install --san $SSH_ELB_HOSTNAME
     echo "Finished"
 else
     echo "Not the swarm leader, nothing to do, exiting"
