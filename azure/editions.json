@@ -448,11 +448,11 @@
         }
     }],
     "outputs": {
-        "accessCommand": {
+        "SSH": {
             "type": "string",
             "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('masterPublicIPAddressName'), 'ip-0'))).ipAddress)]"
         },
-        "externalLoadBalancerIPAddress": {
+        "DefaultDNSTarget": {
             "type": "string",
             "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
         }
