@@ -26,3 +26,9 @@ clean:
 
 walinuxagent:
 	make -C dockerfiles/walinuxagent push
+
+shell:
+	make -C dockerfiles/xplatcli shell BIND_DIR=$(shell pwd)
+
+login:
+	make -C dockerfiles/xplatcli login
