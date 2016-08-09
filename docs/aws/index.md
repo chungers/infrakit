@@ -15,7 +15,7 @@ weight="100"
 
 ## Getting access to the beta
 
-Docker for AWS is currently in private beta. [Sign up](https://beta.docker.com) to get access. When you get into the beta, you will receive an email with an install link and details.
+Docker for AWS is currently in private beta. [Sign up](https://beta.docker.com) to get access. When you get into the beta, you will receive an email with an install link and setup details.
 
 ## Prerequisites
 
