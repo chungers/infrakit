@@ -1,7 +1,13 @@
-FROM microsoft/azure-cli
+FROM alpine:edge
 
 MAINTAINER David Chung <david.chung@docker.com>
 
+RUN apk add --no-cache --update --virtual builddeps g++ python make && \
+    apk add --no-cache --update nodejs jq bash && \
+    npm install -g azure-cli && \
+    apk del builddeps
+RUN azure telemetry --disable
+RUN azure config mode arm
 COPY files/create_sp.sh /usr/bin
 
 ENTRYPOINT [ "create_sp.sh" ]
