@@ -4,20 +4,64 @@
 
 Current development instructions:
 
-- Must have Azure X-Platform CLI (will containerize this eventually) and be
-  authenticated via ARM model
+- Must have Azure X-Platform CLI (ARM mode) and be authenticated
 - Must be using Editions Azure account (due to `editionsstorage` storage account
   where Moby VHD is maintained)
 - Must have GNU make
 
-If these are true, run:
+(See the following section for instructions on using a container which has the
+Azure CLI and tools installed already).
+
+In order to use the ARM template you must supply Service Principal credentials
+(these are used to interact with the Azure API on the created instances).
+
+To generate these, ensure that the account you wish to use is an administrator
+account, and follow the instructions when running the following container:
+
+```
+$ docker run -ti docker4x/create-sp-azure appname
+```
+
+(`appname` is the created Active Directory application and can be a valid string
+of your choosing).
+
+To clean up an existing build and apply the ARM template, run:
 
 ```
 $ make
 ```
 
 and you will create a resource group (name in `groupname.out`) from the
-`editions.json`.  It should prompt you for your SSH public key.
+`editions.json`.  It should prompt you for your service principal credentials
+and SSH public key.
+
+## Containerized Environment
+
+Note that the requirements in the above section are available in a Docker
+container.
+
+To use it, invoke:
+
+```
+$ make login
+```
+
+and follow the instructions (your credentials will be stored in a `docker
+volume`)
+
+Then:
+
+```
+$ make shell
+```
+
+Will spawn a shell in the `azure` working directory where you can invoke the ARM
+template using simply `make`.  The [Azure
+CLI](https://github.com/Azure/azure-xplat-cli) will also be available in ARM
+mode in this shell for running commands such as `azure group list`, etc.
+
+<!--- TODO: We could potentially create and store the Service Principal this way
+as well. -->
 
 ## Azure VHD Creation and Publishing Process
 
