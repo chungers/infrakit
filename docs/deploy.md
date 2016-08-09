@@ -14,20 +14,20 @@ weight="3"
 
 ## Connecting to your manager nodes
 
-Once you've created the stack, you can go to the "outputs" section in the CloudFormation stack list detail page.
+Once you've deployed Docker on AWS or Azure, go to the "outputs" section.
 The output will show how to SSH to an SSH host. Your SSH session will be on one of the manager nodes.
 
-    $ ssh -i <path-to-ssh-key> docker@<ssh-host-name>
+    $ ssh -i <path-to-ssh-key> docker@<ssh-host>
     Welcome to Docker!
 
-Once you are logged into the container you can run Docker commands on the cluster:
+Once you are logged into the container you can run Docker commands on the swarm:
 
     $ docker info
     $ docker node ls
 
 You can also tunnel the Docker socket over SSH to remotely run commands on the cluster (requires [OpenSSH 6.7](https://lwn.net/Articles/609321/) or later):
 
-    $ ssh -NL localhost:2374:/var/run/docker.sock docker@<ssh-host-name> &
+    $ ssh -NL localhost:2374:/var/run/docker.sock docker@<ssh-host> &
     $ docker -H localhost:2374 info
 
 If you don't want to pass `-H` when using the tunnel, you can set the `DOCKER_HOST` environment variable to point to the localhost tunnel opening.
