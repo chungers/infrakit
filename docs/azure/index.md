@@ -36,6 +36,8 @@ To setup Docker for Azure, a [Service Principal](https://azure.microsoft.com/en-
     AD App ID:       <app-id>
     AD App Secret:   <secret>
 
+If you have multiple Azure subscriptions, make sure you're creating the Service Principal with subscription ID that you shared with Docker when signing up for the beta.
+
 `sp-name` is the name of the authentication app that the script creates with Azure. The name is not important, simply choose something you'll recognize in the Azure portal.
 
 If the script fails, it's typically because your Azure user account doesn't have sufficient privileges. Contact your Azure administrator.
