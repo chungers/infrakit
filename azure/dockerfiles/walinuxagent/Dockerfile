@@ -36,7 +36,8 @@ RUN cp bin/* /usr/sbin/
 # Should be implemented more elegantly.
 RUN mkdir /daemons && \
     mv /entry.sh /daemons/sshd-entrypoint.sh && \
-    mv /etc/ssh/sshd_config /opt/sshd_config
+    mv /etc/ssh/sshd_config /opt/sshd_config && \
+    mv /etc/motd /opt/motd
 
 COPY /walinuxagent-entrypoint.sh /daemons/walinuxagent-entrypoint.sh
 COPY /supervisord.conf /opt/supervisord.conf

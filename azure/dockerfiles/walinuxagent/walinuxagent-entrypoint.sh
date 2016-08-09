@@ -6,6 +6,7 @@
 # don't get over-written.
 cp /opt/waagent.conf /etc/waagent.conf
 cp /opt/sshd_config /etc/ssh/sshd_config
+cp /opt/motd /etc/motd
 
 # Azure wants this setting.
 echo "ClientAliveInterval 180" >>/etc/ssh/sshd_config
