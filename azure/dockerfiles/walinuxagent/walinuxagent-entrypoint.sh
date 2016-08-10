@@ -7,6 +7,10 @@
 cp /opt/waagent.conf /etc/waagent.conf
 cp /opt/sshd_config /etc/ssh/sshd_config
 
+# TODO: Maybe this would be better done somewhere else, but this will get the
+# job done for now.
+chown -R docker:docker /var/log
+
 # Azure wants this setting.
 echo "ClientAliveInterval 180" >>/etc/ssh/sshd_config
 
