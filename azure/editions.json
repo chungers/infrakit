@@ -2,24 +2,24 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "clusterName": {
+        "swarmName": {
             "type": "string",
             "defaultValue": "dockerswarm",
             "metadata": {
-                "description": "Define how the cluster resources should be named."
+                "description": "Define how the swarm resources should be named."
             }
         },
-        "masterCount": {
+        "managerCount": {
             "type": "int",
             "defaultValue": 1,
             "allowedValues": [1]
         },
-        "agentCount": {
+        "workerCount": {
             "type": "int",
             "defaultValue": 1,
             "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
         },
-        "agentVMSize": {
+        "workerVMSize": {
             "type": "string",
             "defaultValue": "Standard_D2",
             "allowedValues": ["Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4"],
@@ -50,7 +50,7 @@
         "sshPublicKey": {
             "type": "string",
             "metadata": {
-                "description": "The SSH public key used to authenticate with the created cluster. Usually available in $HOME/.ssh/id_rsa.pub file"
+                "description": "The SSH public key used to authenticate with the created swarm. Usually available in $HOME/.ssh/id_rsa.pub file"
             }
         }
     },
@@ -60,19 +60,19 @@
         "dockerVersion": "1.12.0",
         "apiVersion": "2016-03-30",
         "accountID": "[subscription().subscriptionId]",
-        "masterCount": "[parameters('masterCount')]",
-        "agentCount": "[parameters('agentCount')]",
+        "managerCount": "[parameters('managerCount')]",
+        "workerCount": "[parameters('workerCount')]",
         "adminUsername": "docker",
         "sshKeyPath": "[concat('/home/', variables('adminUsername'), '/.ssh/authorized_keys')]",
         "sshRSAPublicKey": "[parameters('sshPublicKey')]",
-        "agentVMSize": "[parameters('agentVMSize')]",
-        "basePrefix": "[parameters('clusterName')]",
-        "masterVMSize": "[parameters('managerVMSize')]",
-        "agentVMNamePrefix": "[concat(variables('basePrefix'), '-agent-')]",
-        "masterEndpointDNSNamePrefix": "manager",
-        "vmssName": "[concat(variables('agentVMNamePrefix'), 'vmss')]",
+        "workerVMSize": "[parameters('workerVMSize')]",
+        "basePrefix": "[parameters('swarmName')]",
+        "managerVMSize": "[parameters('managerVMSize')]",
+        "workerVMNamePrefix": "[concat(variables('basePrefix'), '-worker-')]",
+        "managerEndpointDNSNamePrefix": "manager",
+        "vmssName": "[concat(variables('workerVMNamePrefix'), 'vmss')]",
 
-        "masterPublicIPAddressName": "[concat(variables('basePrefix'), '-master-ip-', variables('masterEndpointDNSNamePrefix'))]",
+        "managerPublicIPAddressName": "[concat(variables('basePrefix'), '-manager-ip-', variables('managerEndpointDNSNamePrefix'))]",
 
         "lbName": "externalLoadBalancer",
         "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
@@ -85,12 +85,12 @@
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "subnetName": "[concat(variables('basePrefix'), '-subnet')]",
         "subnetRef": "[concat(variables('vnetID'),'/subnets/', variables('subnetName'))]",
-        "masterAddressPrefix": "172.16.0.0/24",
+        "managerAddressPrefix": "172.16.0.0/24",
         "subnetPrefix": "10.0.0.0/8",
-        "masterNSGName": "[concat(variables('basePrefix'), '-master-nsg')]",
-        "masterNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('masterNSGName'))]",
-        "masterVMNamePrefix": "[concat(variables('basePrefix'), '-master')]",
-        "masterFirstAddr": 5,
+        "managerNSGName": "[concat(variables('basePrefix'), '-manager-nsg')]",
+        "managerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('managerNSGName'))]",
+        "managerVMNamePrefix": "[concat(variables('basePrefix'), '-manager')]",
+        "managerFirstAddr": 5,
         "storageAccountSuffix": "docker",
         "vhdContainerName": "dockervhd",
         "uniqueStringArray": [
@@ -122,7 +122,7 @@
             "addressSpace": {
                 "addressPrefixes": [
                     "[variables('subnetPrefix')]",
-                    "[variables('masterAddressPrefix')]"
+                    "[variables('managerAddressPrefix')]"
                 ]
             },
             "subnets": [{
@@ -135,11 +135,11 @@
     }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Network/publicIPAddresses",
-        "name": "[concat(variables('masterPublicIPAddressName'), 'ip-', copyIndex())]",
+        "name": "[concat(variables('managerPublicIPAddressName'), 'ip-', copyIndex())]",
         "location": "[variables('storageLocation')]",
         "copy": {
             "name": "ipLoopNode",
-            "count": "[variables('masterCount')]"
+            "count": "[variables('managerCount')]"
         },
         "properties": {
             "publicIPAllocationMethod": "Static"
@@ -147,7 +147,7 @@
     }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Network/networkSecurityGroups",
-        "name": "[variables('masterNSGName')]",
+        "name": "[variables('managerNSGName')]",
         "location": "[variables('storageLocation')]",
         "properties": {
             "securityRules": [{
@@ -166,7 +166,7 @@
             }, {
                 "name": "swarm-listen-port",
                 "properties": {
-                    "description": "Allow 'swarm join' ingress to master node",
+                    "description": "Allow 'swarm join' ingress to manager node",
                     "protocol": "Tcp",
                     "sourcePortRange": "*",
                     "destinationPortRange": "2377",
@@ -179,7 +179,7 @@
             }, {
                 "name": "docker-port",
                 "properties": {
-                    "description": "Allow 'docker' ingress to master node",
+                    "description": "Allow 'docker' ingress to manager node",
                     "protocol": "Tcp",
                     "sourcePortRange": "*",
                     "destinationPortRange": "2375",
@@ -220,26 +220,26 @@
     }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Network/networkInterfaces",
-        "name": "[concat(variables('masterVMNamePrefix'), 'nic-', copyIndex())]",
+        "name": "[concat(variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
         "location": "[variables('storageLocation')]",
         "copy": {
             "name": "nicLoopNode",
-            "count": "[variables('masterCount')]"
+            "count": "[variables('managerCount')]"
         },
         "dependsOn": [
             "[variables('vnetID')]",
-            "[variables('masterNSGID')]"
+            "[variables('managerNSGID')]"
         ],
         "properties": {
             "networkSecurityGroup": {
-                "id": "[variables('masterNSGID')]"
+                "id": "[variables('managerNSGID')]"
             },
             "ipConfigurations": [{
                 "name": "ipConfigNode",
                 "properties": {
                     "privateIPAllocationMethod": "dynamic",
                     "publicIPAddress": {
-                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('masterPublicIPAddressName'), 'ip-', copyIndex()))]"
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-', copyIndex()))]"
                     },
                     "subnet": {
                         "id": "[variables('subnetRef')]"
@@ -250,7 +250,7 @@
     }, {
         "apiVersion": "[variables('apiVersion')]",
         "type": "Microsoft.Compute/virtualMachines",
-        "name": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
+        "name": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
         "location": "[variables('storageLocation')]",
         "plan": {
             "publisher": "docker",
@@ -259,20 +259,20 @@
         },
         "copy": {
             "name": "vmLoopNode",
-            "count": "[variables('masterCount')]"
+            "count": "[variables('managerCount')]"
         },
         "dependsOn": [
-            "[concat('Microsoft.Network/networkInterfaces/', variables('masterVMNamePrefix'), 'nic-', copyIndex())]",
+            "[concat('Microsoft.Network/networkInterfaces/', variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
             "storageLoop"
         ],
         "properties": {
             "hardwareProfile": {
-                "vmSize": "[variables('masterVMSize')]"
+                "vmSize": "[variables('managerVMSize')]"
             },
             "osProfile": {
-                "computername": "[concat(variables('masterVMNamePrefix'), copyIndex())]",
+                "computername": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
                 "adminUsername": "[variables('adminUsername')]",
-                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION', '; echo default:\"', variables('lbName'), '\">> /var/lib/docker/swarm/elb.config', '; echo \"', variables('lbName'), '\" > /var/lib/docker/swarm/lb_name', '; docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --driver=azure --ad_app_id=', variables('adServicePrincipalAppID'), ' --ad_app_secret=',variables('adServicePrincipalAppSecret'),' --subscription_id=',subscription().subscriptionId,' --resource_group=',resourceGroup().name,' --log=4 --default_lb_name=',variables('lbName'),' --environment=AzurePublicCloud'))]",
+                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION', '; echo default:\"', variables('lbName'), '\">> /var/lib/docker/swarm/elb.config', '; echo \"', variables('lbName'), '\" > /var/lib/docker/swarm/lb_name', '; docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --driver=azure --ad_app_id=', variables('adServicePrincipalAppID'), ' --ad_app_secret=',variables('adServicePrincipalAppSecret'),' --subscription_id=',subscription().subscriptionId,' --resource_group=',resourceGroup().name,' --log=4 --default_lb_name=',variables('lbName'),' --environment=AzurePublicCloud'))]",
                 "linuxConfiguration": {
                     "disablePasswordAuthentication": true,
                     "ssh": {
@@ -291,7 +291,7 @@
                     "version": "latest"
                 },
                 "osDisk": {
-                    "name": "[concat(variables('masterVMNamePrefix'), copyIndex(),'-osdisk')]",
+                    "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
                     "vhd": {
                         "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager.vhd')]"
                     },
@@ -301,7 +301,7 @@
             },
             "networkProfile": {
                 "networkInterfaces": [{
-                    "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('masterVMNamePrefix'), 'nic-', copyIndex()))]"
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))]"
                 }]
             },
             "diagnosticsProfile": {
@@ -319,13 +319,13 @@
         "dependsOn": [
             "[variables('vnetID')]",
             "[variables('lbID')]",
-            "[resourceId('Microsoft.Compute/VirtualMachines',concat(variables('masterVMNamePrefix'), '0'))]",
+            "[resourceId('Microsoft.Compute/VirtualMachines',concat(variables('managerVMNamePrefix'), '0'))]",
             "storageLoop"
         ],
         "sku": {
-            "name": "[variables('agentVMSize')]",
+            "name": "[variables('workerVMSize')]",
             "tier": "Standard",
-            "capacity": "[variables('agentCount')]"
+            "capacity": "[variables('workerCount')]"
         },
         "plan": {
             "publisher": "docker",
@@ -353,15 +353,15 @@
                             "[concat('https://', variables('uniqueStringArray')[3], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
                             "[concat('https://', variables('uniqueStringArray')[4], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
                         ],
-                        "name": "[concat(variables('agentVMNamePrefix'), 'vmssosdisk', 0)]",
+                        "name": "[concat(variables('workerVMNamePrefix'), 'vmssosdisk', 0)]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
                 },
                 "osProfile": {
-                    "computerNamePrefix": "[variables('agentVMNamePrefix')]",
+                    "computerNamePrefix": "[variables('workerVMNamePrefix')]",
                     "adminUsername": "[variables('adminUsername')]",
-                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('masterVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
+                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
@@ -374,7 +374,7 @@
                 },
                 "networkProfile": {
                     "networkInterfaceConfigurations": [{
-                        "name": "agentNodeNic",
+                        "name": "workerNodeNic",
                         "properties": {
                             "primary": "true",
                             "ipConfigurations": [{
@@ -450,7 +450,7 @@
     "outputs": {
         "SSH": {
             "type": "string",
-            "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('masterPublicIPAddressName'), 'ip-0'))).ipAddress)]"
+            "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-0'))).ipAddress)]"
         },
         "DefaultDNSTarget": {
             "type": "string",
