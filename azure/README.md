@@ -1,5 +1,9 @@
 # Docker for Azure
 
+## Launch Latest Release
+
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.0-beta4.json"><img src="https://s3.amazonaws.com/docker-for-azure/deploy_to_azure.png"></a>
+
 ## Development
 
 Current development instructions:
@@ -175,4 +179,14 @@ dev` command and specifying the `VHD` variable to the Makefile.  For instance:
 
 ```console
 $ make dev USER=nathanleclaire VHD=https://dockereditions.blob.core.windows.net/mobylinux/7d2b2b7d3b466b6f54737d6e0076ea6d-mobylinux.vhd
+```
+
+## Creating ARM Template Launch Button
+
+To create the ARM template launch button contents a helper script is provided.
+Provide `button.py` the URL to use for the ARM template and it will output HTML
+to embed in Markdown or email, e.g.:
+
+```
+$ python button.py https://s3.amazonaws.com/docker-for-azure/v1.12.0-beta4/docker_for_azure.json
 ```
