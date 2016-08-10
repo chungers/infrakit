@@ -13,3 +13,15 @@ weight="400"
 
 # Docker for Azure Release notes
 
+## 1.12.0-beta4
+
+Release date: 8/9/2016
+
+### New
+
+ * First release
+
+### Errata
+
+ * After setup, the swarm will include one `Down` node. This can be safely removed with `docker node rm`.
+ * To assist with debugging, the Docker Engine API is available internally in the Azure VPC on TCP port 2375. These ports cannot be accessed from outside the cluster, but could be used from within the cluster to obtain privileged access on other cluster nodes. In future releases, direct remote access to the Docker API will not be available.
