@@ -6,6 +6,7 @@ keywords = ["iaas, azure"]
 [menu.main]
 identifier="docs-azure-index"
 parent = "docs-azure"
+name = "Setup & Prerequisites"
 weight="2"
 +++
 <![end-metadata]-->
