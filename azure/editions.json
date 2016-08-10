@@ -42,7 +42,7 @@
             }
         },
         "adServicePrincipalAppSecret": {
-            "type": "string",
+            "type": "secureString",
             "metadata": {
                 "description": "AD ServicePrincipal App Secret"
             }
