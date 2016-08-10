@@ -6,6 +6,7 @@
 # don't get over-written.
 cp /opt/waagent.conf /etc/waagent.conf
 cp /opt/sshd_config /etc/ssh/sshd_config
+cp /opt/motd /etc/motd
 
 # TODO: Maybe this would be better done somewhere else, but this will get the
 # job done for now.
