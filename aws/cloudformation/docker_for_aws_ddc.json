@@ -47,10 +47,22 @@
         },
         "InstallDDC" : {
             "Type" : "String",
-            "Description" : "Install Docker Data Center on your swarm?",
+            "Description" : "Install Docker Datacenter on your swarm?",
             "AllowedValues" : ["yes", "no"],
             "ConstraintDescription" : "Please select yes or no.",
             "Default" : "yes"
+        },
+        "DDCUsername" : {
+            "Type" : "String",
+            "Description" : "Docker Datacenter Username?",
+            "ConstraintDescription" : "Please enter the username you want to use for Docker Datacenter",
+            "Default": "admin"
+        },
+        "DDCPassword" : {
+            "Type" : "String",
+            "Description" : "Docker Datacenter Password?",
+            "ConstraintDescription" : "Please enter the password you want to use for Docker Datacenter",
+            "NoEcho": "true"
         }
     },
     "Conditions" : {
@@ -69,7 +81,7 @@
                 },
                 {
                     "Label" : { "default":"Optional Features" },
-                    "Parameters" : [ "InstallDDC"]
+                    "Parameters" : [ "InstallDDC", "DDCUsername", "DDCPassword"]
                 }
             ],
             "ParameterLabels" : {
@@ -78,7 +90,9 @@
                 "InstanceType" : { "default" : "Agent worker instance type?" },
                 "ManagerInstanceType" : { "default" : "Swarm manager instance type?" },
                 "KeyName" : { "default" : "Which SSH key to use?" },
-                "InstallDDC": { "default" : "Install Docker Data Center?" }
+                "InstallDDC" : { "default" : "Install Docker Datacenter?" },
+                "DDCUsername" : { "default" : "Enter the Username you want to use with Docker Datacenter" },
+                "DDCPassword" : { "default" : "Enter your Docker Datacenter password" }
             }
         }
     },
@@ -581,10 +595,12 @@
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
 
-                                "docker run --restart=no -d ",
+                                "docker run --restart=no --rm ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsername" }, "' ",
+                                "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPassword" }, "' ",
                                 "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='",{ "Ref" : "InstallDDC" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
@@ -697,10 +713,12 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=no -d ",
+                                "docker run --restart=no --rm ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsername" }, "' ",
+                                "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPassword" }, "' ",
                                 "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='",{ "Ref" : "InstallDDC" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
@@ -978,11 +996,31 @@
             }
         },
         "DDCLoginURL" : {
-            "Description" : "Docker Data Center Login URL (username=admin ; password=orca)",
+            "Description" : "Docker Datacenter Login URL",
             "Value" : {
                 "Fn::If" : [
                     "doInstallDDC",
                     {"Fn::Join": [ "", ["https://", {"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] } ] ]},
+                    {"Ref" : "AWS::NoValue" }
+                ]
+            }
+        },
+        "TheDDCUsername" : {
+            "Description" : "Docker Datacenter Username",
+            "Value" : {
+                "Fn::If" : [
+                    "doInstallDDC",
+                    {"Ref" : "DDCUsername" },
+                    {"Ref" : "AWS::NoValue" }
+                ]
+            }
+        },
+        "TheDDCPassword" : {
+            "Description" : "Docker Datacenter Password",
+            "Value" : {
+                "Fn::If" : [
+                    "doInstallDDC",
+                    {"Ref" : "DDCPassword" },
                     {"Ref" : "AWS::NoValue" }
                 ]
             }

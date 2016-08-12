@@ -10,6 +10,7 @@ echo "STACK_NAME=$STACK_NAME"
 echo "AWS_REGION=$REGION"
 echo "INSTALL_DDC=$INSTALL_DDC"
 echo "ELB_NAME=$ELB_NAME"
+echo "UCP_ADMIN_USER=$UCP_ADMIN_USER"
 echo "#================"
 
 # we don't want to install, exit now.
@@ -44,7 +45,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     aws elb create-load-balancer-listeners --region $REGION --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
 
     echo "Run the DDC install script"
-    docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:1.2.0-alpha3 install --san $SSH_ELB_HOSTNAME
+    docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:1.2.0-alpha3 install --san $SSH_ELB_HOSTNAME --admin-username $UCP_ADMIN_USER --admin-password $UCP_ADMIN_PASSWORD
     echo "Finished"
 else
     echo "Not the swarm leader, nothing to do, exiting"
