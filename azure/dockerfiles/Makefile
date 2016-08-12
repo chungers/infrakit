@@ -17,6 +17,6 @@ guide-azure:
 create-sp-azure:
 	@echo "Building create-sp-azure"
 	@docker rmi ${NAMESPACE}/create-sp-azure:${VERSION} ${NAMESPACE}/create-sp-azure:latest
-	@docker build -t ${NAMESPACE}/create-sp-azure:${VERSION} -t ${NAMESPACE}/create-sp-azure:latest -f Dockerfile.create_sp .
+	@docker build -t ${NAMESPACE}/create-sp-azure:${VERSION} -t ${NAMESPACE}/create-sp-azure:latest -f Dockerfile.create-sp-azure .
 	@docker push ${NAMESPACE}/create-sp-azure:${VERSION} 
 	@docker push ${NAMESPACE}/create-sp-azure:latest

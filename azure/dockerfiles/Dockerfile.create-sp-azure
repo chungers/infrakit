@@ -8,6 +8,8 @@ RUN apk add --no-cache --update --virtual builddeps g++ python make && \
     apk del builddeps
 RUN azure telemetry --disable
 RUN azure config mode arm
-COPY files/create_sp.sh /usr/bin
+COPY files/create-sp-azure/create_sp.sh /usr/bin
+
+ENV PROG docker run -ti docker4x/create-sp-azure
 
 ENTRYPOINT [ "create_sp.sh" ]

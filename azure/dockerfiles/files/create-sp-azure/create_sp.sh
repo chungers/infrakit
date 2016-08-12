@@ -1,7 +1,12 @@
 #!/bin/bash
 
-
+PROG="${PROG:-$0}"
 APP_NAME=$1
+
+if [[ "" == ${APP_NAME} ]]; then
+  echo "Must pass APP_NAME as parameter, i.e. ${PROG} [APP_NAME]."
+  exit 1
+fi
 
 azure login
 
@@ -66,17 +71,13 @@ echo "Creating role assignment for ${SP_OBJECT_ID} for subscription ${SUBSCRIPTI
 azure role assignment create --objectId ${SP_OBJECT_ID} --roleName Contributor \
       --scope /subscriptions/${SUBSCRIPTION_ID}/ --json > /var/lib/azure/role_assignment.json
 
-cat /var/lib/azure/role_assignment.json
-
 echo "Test login..."
 azure login --service-principal --tenant ${TENANT_ID} --username ${APP_ID} --password ${PASSWORD} --json
-echo "Show current load balancers"
-azure network lb list
 
-echo "Your App Info ======================================="
-echo "Tenant ID:       ${TENANT_ID}"
-echo "Subscription ID: ${SUBSCRIPTION_ID}"
-echo "AD App Name:     ${APP_NAME}"
-echo "Your access credentials ============================="
-echo "AD App ID:       ${APP_ID}"
-echo "AD App Secret:   ${PASSWORD}"
+echo 
+echo 
+echo 
+
+echo "Your access credentials =================================================="
+echo "AD ServicePrincipal App ID:       ${APP_ID}"
+echo "AD ServicePrincipal App Secret:   ${PASSWORD}"
