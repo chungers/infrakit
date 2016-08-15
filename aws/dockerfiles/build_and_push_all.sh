@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-NAMESPACE=docker4x
-VERSION=aws-v1.12.0-beta4
+# if there is an ENV with this name, use it, if not, default to these values.
+NAMESPACE=${NAMESPACE:-docker4x}
+VERSION=${VERSION:-aws-v1.12.0-beta4}
+
+echo $NAMESPACE
+echo $VERSION
 
 docker build -t $NAMESPACE/shell-aws:$VERSION -f Dockerfile.shell .
 docker push $NAMESPACE/shell-aws:$VERSION

@@ -10,6 +10,8 @@ DOCKER_VERSION=
 EDITION_VERSION=
 AMI_ID=
 AMI_SRC_REGION=
+CHANNEL=
+AWS_ACCOUNT_LIST_URL=
 
 usage()
 {
@@ -29,10 +31,12 @@ OPTIONS:
    -e      Edition version (beta4, etc)
    -a      AMI ID (ami-123456, etc)
    -r      AMI source region (us-east-1)
+   -c      Release Channel (beta, nightly, etc)
+   -l      AWS account list URL
 EOF
 }
 
-while getopts "hd:e:a:r:" OPTION
+while getopts "hc:l:d:e:a:r:" OPTION
 do
      case $OPTION in
          h)
@@ -50,6 +54,12 @@ do
              ;;
          r)
              AMI_SRC_REGION=$OPTARG
+             ;;
+         c)
+             CHANNEL=$OPTARG
+             ;;
+         l)
+             AWS_ACCOUNT_LIST_URL=$OPTARG
              ;;
          ?)
              usage
@@ -84,6 +94,8 @@ echo "DOCKER_VERSION=$DOCKER_VERSION"
 echo "EDITION_VERSION=$EDITION_VERSION"
 echo "AMI_ID=$AMI_ID"
 echo "AMI_SRC_REGION=$AMI_SRC_REGION"
+echo "CHANNEL=$CHANNEL"
+echo "AWS_ACCOUNT_LIST_URL=$AWS_ACCOUNT_LIST_URL"
 echo "-------"
 echo "== Prepare files =="
 
@@ -108,6 +120,8 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e EDITION_VERSION=$EDITION_VERSION \
 -e AMI_ID=$AMI_ID \
 -e AMI_SRC_REGION=$AMI_SRC_REGION \
+-e CHANNEL="$CHANNEL" \
+-e AWS_ACCOUNT_LIST_URL="$AWS_ACCOUNT_LIST_URL" \
 docker4x/release-$BUILD_NUMBER
 
 # posthook

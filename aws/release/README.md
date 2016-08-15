@@ -24,9 +24,12 @@ This script will take some parameters and then it will do the following.
 
     $ aws/release/run_release.sh -d "1.12.0" -e "beta4" -a "ami-148c4e74" -r "us-west-2"
 
+    optional fields:
+    -c channel (defaults to beta) [beta, nightly, alpha, etc]
+    -l AWS account list url, url for the list of Answers4AWS accounts we want to give access to the AMI.
+
 3. Look at the logs and find the CloudFormation s3 url, and give that to who needs it.
 4. Tag the code and push tags to github, and create release from tag.
-
 
 
 ### Development Notes

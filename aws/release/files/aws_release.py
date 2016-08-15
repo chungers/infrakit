@@ -4,10 +4,12 @@ import os
 import json
 import argparse
 import time
+from datetime import datetime
 import boto
 from boto import ec2
 
-
+NOW = datetime.now()
+NOW_STRING = NOW.strftime("%m_%d_%Y")
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-central-1', 'ap-southeast-1',
            'ap-northeast-1', 'ap-southeast-2', 'ap-northeast-2',
@@ -64,12 +66,13 @@ def wait_for_ami_to_be_available(conn, ami_id):
     return ami
 
 
-def upload_cfn_template(release_type, cloudformation_template_name, tempfile):
+def upload_cfn_template(release_channel, cloudformation_template_name, tempfile):
 
     # upload to s3, make public, return s3 URL
     s3_bucket_name = "docker-for-aws"
     s3_host_name = u"https://{}.s3.amazonaws.com".format(s3_bucket_name)
-    s3_path = u"aws/{}/{}".format(release_type, cloudformation_template_name)
+    s3_path = u"aws/{}/{}".format(release_channel, cloudformation_template_name)
+    s3_path_latest = u"aws/{}/latest.json".format(release_channel)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
 
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -80,10 +83,20 @@ def upload_cfn_template(release_type, cloudformation_template_name, tempfile):
     key.set_metadata("Content-Type", "application/json")
     key.set_contents_from_filename(tempfile)
     key.set_acl("public-read")
+
+    if release_channel == 'nightly':
+        print("This is a nightly build, update the latest.json file.")
+        print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
+            s3_path_latest, s3_bucket_name))
+        key = bucket.new_key(s3_path_latest)
+        key.set_metadata("Content-Type", "application/json")
+        key.set_contents_from_filename(tempfile)
+        key.set_acl("public-read")
+
     return s3_full_url
 
 
-def create_cfn_template(amis, release_type, docker_version,
+def create_cfn_template(amis, release_channel, docker_version,
                         docker_for_aws_version, edition_version):
     # check if file exists before opening.
 
@@ -123,7 +136,7 @@ def create_cfn_template(amis, release_type, docker_version,
     data['Resources']['NodeAsg']['Properties']['LaunchConfigurationName']['Ref'] = node_launch_config_new_key
 
     cloudformation_template_name = u"{}.json".format(docker_for_aws_version)
-    outdir = u"dist/aws/{}".format(release_type)
+    outdir = u"dist/aws/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -136,10 +149,10 @@ def create_cfn_template(amis, release_type, docker_version,
     # TODO: json validate
 
     print(u"Cloudformation template created in {}".format(outfile))
-    upload_cfn_template(release_type, cloudformation_template_name, outfile)
+    return upload_cfn_template(release_channel, cloudformation_template_name, outfile)
 
 
-def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description):
+def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, release_channel):
     ami_list = {}
     for region in REGIONS:
         print(u"Copying AMI to {}".format(region))
@@ -148,6 +161,8 @@ def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description):
         image = con.copy_image(ami_src_region, ami_id,
                                name=moby_image_name, description=moby_image_description)
         ami_list[region] = {"HVM64": image.image_id, "HVMG2": "NOT_SUPPORTED"}
+
+        con.create_tags(image.image_id, {'channel': release_channel, 'date': NOW_STRING})
 
     return ami_list
 
@@ -217,6 +232,12 @@ def main():
     parser.add_argument('-s', '--ami_src_region',
                         dest='ami_src_region', required=True,
                         help="The reason the source AMI was built in (i.e. us-east-1)")
+    parser.add_argument('-c', '--channel',
+                        dest='channel', required=False, default="beta",
+                        help="release channel (beta, alpha, rc, nightly)")
+    parser.add_argument('-l', '--account_list_url',
+                        dest='account_list_url', required=False, default=ACCOUNT_LIST_FILE_URL,
+                        help="The URL for the aws account list for ami approvals")
 
     args = parser.parse_args()
 
@@ -224,7 +245,7 @@ def main():
     # https://github.com/Answers4AWS/distami/blob/master/distami/utils.py#L87
 
     # TODO: Don't hard code beta
-    release_type = "beta"
+    release_channel = args.channel
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
@@ -234,7 +255,7 @@ def main():
     IMAGE_NAME = u"Moby Linux {}".format(docker_for_aws_version)
     IMAGE_DESCRIPTION = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
-    print(u"release_type={} \n".format(release_type))
+    print(u"release_channel={} \n".format(release_channel))
     print(u"docker_version={}".format(docker_version))
     print(u"edition_version={}".format(edition_version))
     print(u"ami_id={} \n".format(args.ami_id))
@@ -242,16 +263,16 @@ def main():
 
     print("Copy AMI to each region..")
     ami_list = copy_amis(args.ami_id, args.ami_src_region,
-                         IMAGE_NAME, IMAGE_DESCRIPTION)
+                         IMAGE_NAME, IMAGE_DESCRIPTION, release_channel)
     ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)
     print(u"AMI copy complete. AMI List: \n{}".format(ami_list_json))
     print("Get account list..")
-    account_list = get_account_list(ACCOUNT_LIST_FILE_URL)
+    account_list = get_account_list(args.account_list_url)
     print(u"Approving AMIs for {} accounts..".format(len(account_list)))
     approve_accounts(ami_list, account_list)
     print("Accounts have been approved.")
     print("Create CloudFormation template..")
-    s3_url = create_cfn_template(ami_list, release_type, docker_version,
+    s3_url = create_cfn_template(ami_list, release_channel, docker_version,
                                  docker_for_aws_version, edition_version)
 
     # TODO: git commit, tag release. requires github keys, etc.
