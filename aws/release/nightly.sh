@@ -57,7 +57,7 @@ rm -f docker
 NOW=$(date +"%m_%d_%Y")
 export EDITION_VERSION=nightly_$NOW
 
-export VERSION=aws-$DOCKER_VERSION-$EDITION_VERSION
+export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
 
 # build binaries
 cd /home/ubuntu/code/editions/tools/buoy/
@@ -76,6 +76,9 @@ cd /home/ubuntu/code/editions/aws/release
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py 
+
+# run tests
+python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json
 
 # Rebuild the nightly index page.
 python build_index.py

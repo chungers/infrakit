@@ -3,6 +3,7 @@
 import os
 from boto.s3.connection import S3Connection
 from datetime import datetime
+import json
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
@@ -21,7 +22,7 @@ button = "<a href='https://console.aws.amazon.com/cloudformation/home?#/stacks/n
 for key in files:
     # we only care about json files.
     if not key.name.endswith(".json"):
-	continue
+        continue
     row = "<tr><td>{}</td><td>{}</td><td>{}</td></tr>"
     cfn_name = key.name.split("/")[-1]
 
@@ -30,6 +31,23 @@ for key in files:
 
 now = datetime.now()
 
+html += "</table><h2>Latest Test Results</h2><table class='table table-bordered'><tr><th>Region</th><th>Test time in seconds</th><th>Result</th></tr>"
+
+# test results
+file_date = now.strftime("%m_%d_%Y")
+results_file = "/home/ubuntu/out/{}_results.json".format(file_date)
+if os.path.exists(results_file):
+    with open(results_file) as data_file:
+        data = json.load(data_file)
+
+    for key, value in data.iteritems():
+        html += "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
+            key, value.get('total_time_secs'), value.get('result'))
+
+else:
+    html += "<tr><td>Not available</td></tr>"
+
+
 html += "</table><p>last updated: {}</p></div></body></html>".format(now)
 
 s3_path = "aws/nightly/index.html"
@@ -37,4 +55,3 @@ key = bucket.new_key(s3_path)
 key.set_metadata("Content-Type", "text/html")
 key.set_contents_from_string(html)
 key.set_acl("public-read")
-

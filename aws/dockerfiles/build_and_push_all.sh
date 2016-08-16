@@ -3,7 +3,7 @@ set -e
 
 # if there is an ENV with this name, use it, if not, default to these values.
 NAMESPACE=${NAMESPACE:-docker4x}
-VERSION=${VERSION:-aws-v1.12.0-beta4}
+VERSION=${VERSION:-aws-v1.12.1-rc1-beta5}
 
 echo $NAMESPACE
 echo $VERSION

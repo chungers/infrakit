@@ -3,7 +3,7 @@ set -e
 
 # if there is an ENV with this name, use it, if not, default to these values.
 NAMESPACE=${NAMESPACE:-docker4x}
-VERSION=${VERSION:-azure-v1.12.0-beta4}
+VERSION=${VERSION:-azure-v1.12.1-rc1-beta5}
 
 docker build -t $NAMESPACE/init-azure:$VERSION -f Dockerfile.init .
 docker push $NAMESPACE/init-azure:$VERSION
