@@ -30,12 +30,12 @@ for region in REGIONS:
 
     images = con.get_all_images(owners=['self'], filters={'tag:channel': 'nightly'})
     for image in images:
-	print(u"{}: {}".format(image.name, image.tags))
+        print(u"{}: {}".format(image.name, image.tags))
         image_date_tag = image.tags.get('date')
         image_date = datetime.strptime(image_date_tag, "%m_%d_%Y")
-	if image_date < EXPIRE_DATE:
+        if image_date < EXPIRE_DATE:
             print("Too old, cleanup")
-       	    image.deregister(delete_snapshot=True)
+            image.deregister(delete_snapshot=True)
             print("Image is cleaned up")
         else:
             print("Still good, keep it around.")
@@ -55,7 +55,7 @@ for key in files:
     key_date = datetime.strptime(key.last_modified, '%Y-%m-%dT%H:%M:%S.000Z')
     if key_date < EXPIRE_DATE:
         print(u"{} is {}, which is too old (< {}), remove it.".format(key.name, key.last_modified, EXPIRE_DATE))
-	key.delete()
+        key.delete()
 
 print("Clean up any left over CFN stacks")
 for region in REGIONS:
