@@ -23,10 +23,10 @@ for key in files:
     # we only care about json files.
     if not key.name.endswith(".json"):
         continue
-    row = "<tr><td>{}</td><td>{}</td><td>{}</td></tr>"
+    row = "<tr><td><a href='{0}'>{1}</a></td><td>{2}</td><td>{3}</td></tr>"
     cfn_name = key.name.split("/")[-1]
-
-    html += row.format(cfn_name, key.last_modified, button.format(key.generate_url(expires_in=0, query_auth=False)))
+    url = key.generate_url(expires_in=0, query_auth=False)
+    html += row.format(url, cfn_name, key.last_modified, button.format(url))
 
 
 now = datetime.now()
@@ -41,8 +41,13 @@ if os.path.exists(results_file):
         data = json.load(data_file)
 
     for key, value in data.iteritems():
+        status = value.get('status')
+        if status == 'CREATE_COMPLETE':
+		stack_status = "<span class='label label-success'>{}</span>".format(status)
+        else:
+		stack_status = "<span class='label label-danger'>{}</span>".format(status)
         html += "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
-            key, value.get('total_time_secs'), value.get('result'))
+            key, value.get('total_time_secs'), stack_status)
 
 else:
     html += "<tr><td>Not available</td></tr>"
