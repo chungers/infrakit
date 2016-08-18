@@ -12,10 +12,12 @@ To run the automated release process:
 1. Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AZURE_STG_ACCOUNT_KEY`
    environment variables.  The first two are for authenticating your IAM role
    with the AWS API, and `AZURE_STG_ACCOUNT_KEY` is the key for accessing the
-   `dockereditions` (you can access this in the account's settings in the Azure
-   portal). _(Note): At the time of writing the Moby build process also assumes
-   valid credentials stored at `$HOME/.aws/credentials`, but this will be
-   revised soon to require only the environment variables)._
+   `dockereditions` storage account (you can access this in the account's settings
+   in the Azure portal). _(Note): At the time of writing the Moby build process
+   also assumes valid credentials stored at `$HOME/.aws/credentials`, but this will
+   be revised soon to require only the environment variables)._  You will also
+   need to ensure that the machine where you invoke the build has SSH access to
+   the `git@github.com:docker/moby` repo.
 2. Revise the `Makefile` top-level variables to have the proper settings, e.g.
    Docker version and `betaX` tag.
 3. Run `make clean && make release` (`make release REGION=us-east-1` if needed,
@@ -40,8 +42,8 @@ To run the automated release process:
     - Ask French ben for the file if you don't have access to google drive file
     - make sure the file is made public.
 7. Run the release script: (change variables to match the release)
-    - cd aws/release/
-    - example: ./run_release.sh -d 1.12.1-rc1 -e beta5 -a ami-61f6b501 -r us-west-1 -c beta
+    - `cd aws/release/`
+    - example: `./run_release.sh -d 1.12.1-rc1 -e beta5 -a ami-61f6b501 -r us-west-1 -c beta`
 8. Get the URL output from release script, give to person creating release notes and sending emails.
 9. Test out CloudFormation template before sending out emails.
 10. Update beta docs site
