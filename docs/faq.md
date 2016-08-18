@@ -51,7 +51,7 @@ We feel it is fairly stable for development and testing, but since things are co
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws).
 
 ### I have a problem/bug where do I report it?
-Send an email to <docker-for-iaas@docker.com> or use the [Dorker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
+Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
 
 ## Analytics
 
