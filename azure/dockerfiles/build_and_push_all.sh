@@ -2,16 +2,17 @@
 set -e
 
 # if there is an ENV with this name, use it, if not, default to these values.
-NAMESPACE=${NAMESPACE:-docker4x}
-VERSION=${VERSION:-azure-v1.12.1-rc1-beta5}
+NAMESPACE="${NAMESPACE:-docker4x}"
+VERSION="${VERSION:-latest}"
 
-docker build -t $NAMESPACE/init-azure:$VERSION -f Dockerfile.init .
-docker push $NAMESPACE/init-azure:$VERSION
+for IMAGE in init guide create-sp
+do
+	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${VERSION}"
+	docker build -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .
+	docker push "${FINAL_IMAGE}"
+done
 
-docker build -t $NAMESPACE/guide-azure:$VERSION -f Dockerfile.guide .
-docker push $NAMESPACE/guide-azure:$VERSION
-
-# Helper container that creates the Active Directory Service Principal for API access.
-docker build -t $NAMESPACE/create-sp-azure:$VERSION -t $NAMESPACE/create-sp-azure:latest -f Dockerfile.create-sp-azure .
-docker push $NAMESPACE/create-sp-azure:$VERSION
-docker push $NAMESPACE/create-sp-azure:latest
+# Ensure that this image (meant to be interacted with manually) has :latest tag
+# as well as a specific one
+docker tag "${NAMESPACE}/create-sp-azure:${VERSION}" "${NAMESPACE}/create-sp-azure:latest"
+docker push "${NAMESPACE}/create-sp-azure:latest"

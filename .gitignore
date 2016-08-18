@@ -1,4 +1,5 @@
 dist/
+moby/
 aws/dockerfiles/files/bin/buoy
 azure/dockerfiles/files/bin/buoy
 tools/buoy/bin/buoy
@@ -7,4 +8,3 @@ aws/dockerfiles/files/bin/buoy
 azure/dockerfiles/files/bin/buoy
 tools/buoy/bin/buoy
 *~
-
