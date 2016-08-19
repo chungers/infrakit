@@ -16,6 +16,18 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.12.1-beta5
+
+Release date: 8/18/2016
+
+### New
+
+ * Docker Engine upgraded to 1.12.1
+
+### Errata
+
+ * Upgrading from previous Docker for AWS versions to 1.12.0-beta4 is not possible because of RC-incompatibilities between Docker 1.12.0 release candidate 5 and previous release candidates.
+
 ## 1.12.0-beta4
 
 Release date: 7/28/2016
