@@ -1,0 +1,16 @@
+#!/bin/sh
+
+DIAGNOSTICS_MAGIC_PORT=44554
+NODES=$(docker node inspect $(docker node ls -q) | jq -r '.[] | .Description.Hostname' | tr '\n' ' ')
+SESSION=$(date +'%s')
+
+for NODE in ${NODES}
+do
+	curl -X POST \
+		-F "session=${SESSION}" \
+		"http://${NODE}:${DIAGNOSTICS_MAGIC_PORT}/diagnose"
+done
+
+echo "Done requesting diagnostics."
+echo "Your diagnostics session ID is ${SESSION}."
+echo "Please provide this to the maintainer debugging your issue."

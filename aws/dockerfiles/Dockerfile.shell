@@ -1,13 +1,10 @@
 FROM alpine:3.3
 
 MAINTAINER KenCochrane <Ken.Cochrane@Docker.com>
-RUN apk add --update bash openssh ca-certificates sudo && \
+RUN apk add --update bash openssh ca-certificates sudo curl && \
     echo -e "Port 22\nClientAliveInterval 180\n" >> /etc/ssh/sshd_config && \
     cp -a /etc/ssh /etc/ssh.cache && \
     rm -rf /var/cache/apk/*
-
-# needed in order for go binary to work.
-RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 # setup ssh configs
 RUN if [ ! "$(ls -A /etc/ssh)" ]; then cp -a /etc/ssh.cache/* /etc/ssh/; fi
@@ -19,6 +16,7 @@ RUN echo -e "\ndocker ALL=(ALL) NOPASSWD: ALL\n" >> /etc/sudoers
 COPY files/etc/ /etc/
 
 COPY files/shell/entry.sh /entry.sh
+COPY files/docker-diagnose /usr/bin/docker-diagnose
 RUN chmod 755 /entry.sh
 
 EXPOSE 22
