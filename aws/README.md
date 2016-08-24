@@ -12,13 +12,29 @@ Once you have all of the above you are ready to move onto the next step.
 
 ## Configuration
 
-You can use the AWS CLI to invoke the template:
+You can use the AWS CLI to invoke the template.  e.g.:
 
-    $ aws cloudformation create-stack --stack-name friismteststack --template-url https://docker-for-aws.s3.amazonaws.com/v1.12.0-rc3-beta1/docker_for_aws.json --parameters ParameterKey=KeyName,ParameterValue=friism-us-west-1 ParameterKey=InstanceType,ParameterValue=t2.micro ParameterKey=ManagerInstanceType,ParameterValue=t2.micro ParameterKey=ClusterSize,ParameterValue=1 --capabilities CAPABILITY_IAM`
+    $ aws cloudformation create-stack \
+        --stack-name friismteststack \
+        --capabilities CAPABILITY_IAM \
+        --template-url https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.1-beta5.json \
+        --parameters ParameterKey=KeyName,ParameterValue=friism-us-west-1 \
+        ParameterKey=InstanceType,ParameterValue=t2.micro \
+        ParameterKey=ManagerInstanceType,ParameterValue=t2.micro \
+        ParameterKey=ClusterSize,ParameterValue=1
+
+Note: The `Makefile` in this directory in the repository can invoke this for you
+automatically if you set a few variables such as `KEYNAME` for SSH key.  e.g.:
+
+    $ make USER=$(whoami) KEYNAME=uploaded-key
+
+It can also tear down created stack(s) via `make clean`, e.g.:
+
+    $ make USER=$(whoami) clean
 
 ... or click this button:
 
-[![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/v1.12.0-rc3-beta1/docker_for_aws.json)
+[![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.1-beta5.json)
 
 This will take you to the AWS console and preload the CloudFormation template. Hit "Next" on the first prompt.
 
