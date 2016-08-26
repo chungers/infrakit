@@ -69,10 +69,10 @@
                     "Label" : { "default":"Swarm Properties" },
                     "Parameters" : [ "ManagerInstanceType", "InstanceType", "KeyName" ]
                 },
-                {		
+                {
                     "Label" : { "default":"Optional Features" },
                     "Parameters" : [ "DDCUsernameSet", "DDCPasswordSet"]
-                 }
+                }
             ],
             "ParameterLabels" : {
                 "ManagerSize" : { "default" : "Number of Swarm managers?" },
