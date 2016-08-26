@@ -258,7 +258,7 @@ def main():
     edition_version = args.edition_version
     flat_edition_version = edition_version.replace(" ", "")
     docker_for_aws_version = u"aws-v{}-{}".format(docker_version, flat_edition_version)
-    docker_for_aws_ddc_version = u"aws-v{}-{}-ddc-tp1".format(docker_version, flat_edition_version)
+    docker_for_aws_ddc_version = u"aws-v{}-{}-ddc".format(docker_version, flat_edition_version)
     IMAGE_NAME = u"Moby Linux {}".format(docker_for_aws_version)
     IMAGE_DESCRIPTION = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
@@ -285,6 +285,7 @@ def main():
     print(u"Approving AMIs for {} accounts..".format(len(account_list)))
     approve_accounts(ami_list, account_list)
     print("Accounts have been approved.")
+
     print("Create CloudFormation template..")
     s3_url = create_cfn_template(ami_list, release_channel, docker_version,
                                  docker_for_aws_version, edition_version, CFN_TEMPLATE, docker_for_aws_version)
