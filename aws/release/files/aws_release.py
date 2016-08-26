@@ -98,7 +98,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile)
 
 
 def create_cfn_template(amis, release_channel, docker_version,
-                        docker_for_aws_version, edition_version, cfn_template):
+                        docker_for_aws_version, edition_version, cfn_template, cfn_name):
     # check if file exists before opening.
 
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
@@ -136,7 +136,7 @@ def create_cfn_template(amis, release_channel, docker_version,
         node_launch_config_orig_key)
     data['Resources']['NodeAsg']['Properties']['LaunchConfigurationName']['Ref'] = node_launch_config_new_key
 
-    cloudformation_template_name = u"{}.json".format(docker_for_aws_version)
+    cloudformation_template_name = u"{}.json".format(cfn_name)
     outdir = u"dist/aws/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
@@ -287,10 +287,10 @@ def main():
     print("Accounts have been approved.")
     print("Create CloudFormation template..")
     s3_url = create_cfn_template(ami_list, release_channel, docker_version,
-                                 docker_for_aws_version, edition_version, CFN_TEMPLATE)
+                                 docker_for_aws_version, edition_version, CFN_TEMPLATE, docker_for_aws_version)
     print("Create DDC CloudFormation template..")
     s3_ddc_url = create_cfn_template(ami_list, release_ddc_channel, docker_version,
-                                 docker_for_aws_ddc_version, edition_version, CFN_DDC_TEMPLATE)
+                                 docker_for_aws_version, edition_version, CFN_DDC_TEMPLATE, docker_for_aws_ddc_version)
 
     # TODO: git commit, tag release. requires github keys, etc.
 
