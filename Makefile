@@ -3,6 +3,7 @@ EDITIONS_DOCKER_VERSION := 1.12.1
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 REGION := us-west-1
 CHANNEL := beta
+CHANNEL_DDC := alpha
 export
 
 release: moby/alpine/cloud/aws/ami_id.out moby/alpine/cloud/azure/vhd_blob_url.out dockerimages

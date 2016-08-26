@@ -17,6 +17,7 @@ REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 CFN_TEMPLATE = '/home/docker/docker_for_aws.template'
+CFN_DDC_TEMPLATE = '/home/docker/docker_for_aws_ddc.template'
 
 # file with list of aws account_ids
 ACCOUNT_LIST_FILE_URL = u"https://s3.amazonaws.com/docker-for-aws/data/accounts.txt"
@@ -97,13 +98,13 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile)
 
 
 def create_cfn_template(amis, release_channel, docker_version,
-                        docker_for_aws_version, edition_version):
+                        docker_for_aws_version, edition_version, cfn_template):
     # check if file exists before opening.
 
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
 
-    with open(CFN_TEMPLATE) as data_file:
+    with open(cfn_template) as data_file:
         data = json.load(data_file)
 
     data['Description'] = u"Docker for AWS {0} ({1})".format(docker_version, edition_version)
@@ -236,6 +237,9 @@ def main():
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
+    parser.add_argument('-u', '--channel_ddc',
+                        dest='channel_ddc', default="alpha",
+                        help="DDC release channel (beta, alpha, rc, nightly)")                    
     parser.add_argument('-l', '--account_list_url',
                         dest='account_list_url', default=ACCOUNT_LIST_FILE_URL,
                         help="The URL for the aws account list for ami approvals")
@@ -247,12 +251,14 @@ def main():
 
     # TODO: Don't hard code beta
     release_channel = args.channel
+    release_ddc_channel = args.channel_ddc
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
     edition_version = args.edition_version
     flat_edition_version = edition_version.replace(" ", "")
     docker_for_aws_version = u"aws-v{}-{}".format(docker_version, flat_edition_version)
+    docker_for_aws_ddc_version = u"aws-v{}-{}-ddc-tp1".format(docker_version, flat_edition_version)
     IMAGE_NAME = u"Moby Linux {}".format(docker_for_aws_version)
     IMAGE_DESCRIPTION = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
@@ -281,12 +287,15 @@ def main():
     print("Accounts have been approved.")
     print("Create CloudFormation template..")
     s3_url = create_cfn_template(ami_list, release_channel, docker_version,
-                                 docker_for_aws_version, edition_version)
+                                 docker_for_aws_version, edition_version, CFN_TEMPLATE)
+    print("Create DDC CloudFormation template..")
+    s3_ddc_url = create_cfn_template(ami_list, release_ddc_channel, docker_version,
+                                 docker_for_aws_ddc_version, edition_version, CFN_DDC_TEMPLATE)
 
     # TODO: git commit, tag release. requires github keys, etc.
 
     print("------------------")
-    print(u"Finshed.. CloudFormation URL={} \n".format(s3_url))
+    print(u"Finshed.. CloudFormation URL={0} \n \t DDC_URL={1} \n".format(s3_url, s3_ddc_url))
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
         docker_version, flat_edition_version))
     print("------------------")

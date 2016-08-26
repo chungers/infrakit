@@ -32,11 +32,12 @@ OPTIONS:
    -a      AMI ID (ami-123456, etc)
    -r      AMI source region (us-east-1)
    -c      Release Channel (beta, nightly, etc)
+   -u      DDC Release Channel (beta, nightly, etc)
    -l      AWS account list URL
 EOF
 }
 
-while getopts "hc:l:d:e:a:r:" OPTION
+while getopts "hc:u:l:d:e:a:r:" OPTION
 do
      case $OPTION in
          h)
@@ -57,6 +58,9 @@ do
              ;;
          c)
              CHANNEL=$OPTARG
+             ;;
+         u)
+             CHANNEL_DDC=$OPTARG
              ;;
          l)
              AWS_ACCOUNT_LIST_URL=$OPTARG
@@ -95,6 +99,7 @@ echo "EDITION_VERSION=$EDITION_VERSION"
 echo "AMI_ID=$AMI_ID"
 echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
+echo "CHANNEL_DDC=$CHANNEL_DDC"
 echo "AWS_ACCOUNT_LIST_URL=$AWS_ACCOUNT_LIST_URL"
 echo "-------"
 echo "== Prepare files =="
@@ -107,6 +112,7 @@ if [ -f tmp/docker_for_aws.template ]; then
 fi
 echo "Copy over template file."
 cp ../cloudformation/docker_for_aws.json tmp/docker_for_aws.template
+cp ../cloudformation/docker_for_aws_ddc.json tmp/docker_for_aws_ddc.template
 
 echo "== build docker image =="
 # build the docker image
@@ -121,6 +127,7 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e AMI_ID=$AMI_ID \
 -e AMI_SRC_REGION=$AMI_SRC_REGION \
 -e CHANNEL="$CHANNEL" \
+-e CHANNEL_DDC="$CHANNEL_DDC" \
 -e AWS_ACCOUNT_LIST_URL="$AWS_ACCOUNT_LIST_URL" \
 docker4x/release-$BUILD_NUMBER
 

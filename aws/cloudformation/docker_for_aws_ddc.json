@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 4 (docker 1.12.0)",
+    "Description": "Docker for AWS Beta 5 (docker 1.12.1)",
 
     "Parameters": {
         "KeyName": {
@@ -23,7 +23,7 @@
         },
         "ManagerInstanceType" : {
             "Type" : "String",
-            "Description" : "EC2 HVM instance type (m3.medium, etc).",
+            "Description" : "EC2 HVM instance type (t2.medium, m3.medium, etc).",
             "AllowedValues" : [
                 "t2.medium","t2.large","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
                 "m3.large","m3.xlarge","m3.2xlarge","c4.large","c4.xlarge","c4.2xlarge","c4.4xlarge","c4.8xlarge","c3.large","c3.xlarge",
@@ -79,10 +79,10 @@
                     "Label" : { "default":"Swarm Properties" },
                     "Parameters" : [ "ManagerInstanceType", "InstanceType", "KeyName" ]
                 },
-                {
-                    "Label" : { "default":"Optional Features" },
-                    "Parameters" : [ "InstallDDC", "DDCUsername", "DDCPassword"]
-                }
+                {		
+                    "Label" : { "default":"Optional Features" },		
+                    "Parameters" : [ "InstallDDC", "DDCUsername", "DDCPassword"]		
+                 }
             ],
             "ParameterLabels" : {
                 "ManagerSize" : { "default" : "Number of Swarm managers?" },
@@ -101,7 +101,7 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.12.0",
-                "forAws": "aws-v1.12.0-beta4"
+                "forAws": "aws-v1.12.1-beta5"
             }
         },
 
@@ -242,47 +242,46 @@
                 "Arch": "HVM64"
             }
         },
-
         "AWSRegionArch2AMI": {
-            "us-west-1": {
-                    "HVM64": "ami-1b3b7b7b",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
-            "us-west-2": {
-                    "HVM64": "ami-4bab652b",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
-            "us-east-1": {
-                    "HVM64": "ami-39d2452e",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
-            "eu-west-1": {
-                    "HVM64": "ami-adb9d5de",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
-            "eu-central-1": {
-                    "HVM64": "ami-34a3545b",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
-            "ap-southeast-1": {
-                    "HVM64": "ami-ad36e9ce",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
             "ap-northeast-1": {
-                    "HVM64": "ami-68f03509",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
-            "ap-southeast-2": {
-                    "HVM64": "ami-4e1f2a2d",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
+                "HVM64": "ami-0737fa66", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
             "ap-northeast-2": {
-                    "HVM64": "ami-de07cdb0",
-                    "HVMG2": "NOT_SUPPORTED"
-            },
+                "HVM64": "ami-ba9346d4", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "ap-southeast-1": {
+                "HVM64": "ami-f52cf596", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "ap-southeast-2": {
+                "HVM64": "ami-4c25122f", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "eu-central-1": {
+                "HVM64": "ami-1cc43573", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "eu-west-1": {
+                "HVM64": "ami-5f90e42c", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
             "sa-east-1": {
-                    "HVM64": "ami-da50c7b6",
-                    "HVMG2": "NOT_SUPPORTED"
+                "HVM64": "ami-8832a4e4", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "us-east-1": {
+                "HVM64": "ami-af482cb8", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "us-west-1": {
+                "HVM64": "ami-0d5a186d", 
+                "HVMG2": "NOT_SUPPORTED"
+            }, 
+            "us-west-2": {
+                "HVM64": "ami-74ea3f14", 
+                "HVMG2": "NOT_SUPPORTED"
             }
         }
     },
@@ -408,7 +407,7 @@
                 "ReceiveMessageWaitTimeSeconds": 10
             }
         },
-        "SwarmUpgradeHook": {
+        "SwarmManagerUpgradeHook": {
             "Type": "AWS::AutoScaling::LifecycleHook",
             "DependsOn" : "SwarmSQS",
             "Properties": {
@@ -418,7 +417,16 @@
                 "RoleARN": { "Fn::GetAtt": [ "ProxyRole", "Arn" ] }
             }
         },
-
+        "SwarmWorkerUpgradeHook": {
+            "Type": "AWS::AutoScaling::LifecycleHook",
+            "DependsOn" : "SwarmSQS",
+            "Properties": {
+                "AutoScalingGroupName": { "Ref": "NodeAsg" },
+                "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
+                "NotificationTargetARN": { "Fn::GetAtt": [ "SwarmSQS", "Arn" ] },
+                "RoleARN": { "Fn::GetAtt": [ "ProxyRole", "Arn" ] }
+            }
+        },
         "ManagerVpcSG": {
             "DependsOn": "NodeVpcSG",
             "Type": "AWS::EC2::SecurityGroup",
@@ -475,7 +483,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta4" },
+                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "SSHLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
@@ -515,7 +523,7 @@
            }
         },
 
-        "ManagerLaunchConfigBeta4": {
+        "ManagerLaunchConfigBeta3": {
             "DependsOn": "ExternalLoadBalancer",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -606,6 +614,7 @@
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION\n"
+
                             ]
                         ]
                     }
@@ -617,7 +626,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta4" },
+                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "1000",
@@ -656,7 +665,7 @@
               }
            }
         },
-        "NodeLaunchConfigBeta4": {
+        "NodeLaunchConfigBeta3": {
             "DependsOn": "ManagerAsg",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
