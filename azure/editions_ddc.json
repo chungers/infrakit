@@ -1,0 +1,507 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "swarmName": {
+            "type": "string",
+            "defaultValue": "dockerswarm",
+            "metadata": {
+                "description": "Define how the swarm resources should be named."
+            }
+        },
+        "managerCount": {
+            "type": "int",
+            "defaultValue": 1,
+            "allowedValues": [1]
+        },
+        "workerCount": {
+            "type": "int",
+            "defaultValue": 1,
+            "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        },
+        "workerVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2_v2",
+            "allowedValues": [
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A0", "Standard_A1", "Standard_A2", "Standard_A3", "Standard_A4", "Standard_A5",
+                "Standard_A6", "Standard_A7", "Standard_A8", "Standard_A9", "Standard_A10", "Standard_A11",
+                "Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4",
+                "Standard_D11", "Standard_D12", "Standard_D13", "Standard_D14",
+                "Standard_D1_v2", "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2",
+                "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
+                "Standard_DS1", "Standard_DS2", "Standard_DS3", "Standard_DS4",
+                "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14",
+                "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"
+            ],
+            "metadata": {
+                "description": "The size of the created machines"
+            }
+        },
+        "managerVMSize": {
+            "type": "string",
+            "defaultValue": "Standard_D2_v2",
+            "allowedValues": [
+                "Basic_A0", "Basic_A1", "Basic_A2", "Basic_A3", "Basic_A4",
+                "Standard_A0", "Standard_A1", "Standard_A2", "Standard_A3", "Standard_A4", "Standard_A5",
+                "Standard_A6", "Standard_A7", "Standard_A8", "Standard_A9", "Standard_A10", "Standard_A11",
+                "Standard_D1", "Standard_D2", "Standard_D3", "Standard_D4",
+                "Standard_D11", "Standard_D12", "Standard_D13", "Standard_D14",
+                "Standard_D1_v2", "Standard_D2_v2", "Standard_D3_v2", "Standard_D4_v2", "Standard_D5_v2",
+                "Standard_D11_v2", "Standard_D12_v2", "Standard_D13_v2", "Standard_D14_v2",
+                "Standard_G1", "Standard_G2", "Standard_G3", "Standard_G4", "Standard_G5",
+                "Standard_DS1", "Standard_DS2", "Standard_DS3", "Standard_DS4",
+                "Standard_DS11", "Standard_DS12", "Standard_DS13", "Standard_DS14",
+                "Standard_GS1", "Standard_GS2", "Standard_GS3", "Standard_GS4", "Standard_GS5"
+            ],
+            "metadata": {
+                "description": "The size of the created Manager machines"
+            }
+        },
+        "adServicePrincipalAppID": {
+            "type": "string",
+            "metadata": {
+                "description": "AD ServicePrincipal App ID"
+            }
+        },
+        "adServicePrincipalAppSecret": {
+            "type": "secureString",
+            "metadata": {
+                "description": "AD ServicePrincipal App Secret"
+            }
+        },
+        "sshPublicKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The SSH public key used to authenticate with the created swarm. Usually available in $HOME/.ssh/id_rsa.pub file"
+            }
+        },
+        "DDCUsername": {
+            "type": "string",
+            "defaultValue": "admin",
+            "metadata": {
+                "description": "Please enter the username you want to use for Docker Datacenter."
+            }
+        },
+        "DDCPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Please enter the password you want to use for Docker Datacenter."
+            }
+        }
+    },
+    "variables": {
+        "storageLocation": "[resourceGroup().location]",
+        "dockerForIAASVersion": "azure-v1.12.1-beta5",
+        "dockerVersion": "1.12.0",
+        "apiVersion": "2016-03-30",
+        "accountID": "[subscription().subscriptionId]",
+        "managerCount": "[parameters('managerCount')]",
+        "workerCount": "[parameters('workerCount')]",
+        "adminUsername": "docker",
+        "sshKeyPath": "[concat('/home/', variables('adminUsername'), '/.ssh/authorized_keys')]",
+        "sshRSAPublicKey": "[parameters('sshPublicKey')]",
+        "workerVMSize": "[parameters('workerVMSize')]",
+        "basePrefix": "[parameters('swarmName')]",
+        "managerVMSize": "[parameters('managerVMSize')]",
+        "workerVMNamePrefix": "[concat(variables('basePrefix'), '-worker-')]",
+        "managerEndpointDNSNamePrefix": "manager",
+        "vmssName": "[concat(variables('workerVMNamePrefix'), 'vmss')]",
+
+        "managerPublicIPAddressName": "[concat(variables('basePrefix'), '-manager-ip-', variables('managerEndpointDNSNamePrefix'))]",
+
+        "lbName": "externalLoadBalancer",
+        "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
+        "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
+        "lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+        "adServicePrincipalAppID" : "[parameters('adServicePrincipalAppID')]",
+        "adServicePrincipalAppSecret" : "[parameters('adServicePrincipalAppSecret')]",
+
+        "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
+        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
+        "subnetName": "[concat(variables('basePrefix'), '-subnet')]",
+        "subnetRef": "[concat(variables('vnetID'),'/subnets/', variables('subnetName'))]",
+        "managerAddressPrefix": "172.16.0.0/24",
+        "subnetPrefix": "10.0.0.0/8",
+        "managerNSGName": "[concat(variables('basePrefix'), '-manager-nsg')]",
+        "managerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('managerNSGName'))]",
+        "managerVMNamePrefix": "[concat(variables('basePrefix'), '-manager')]",
+        "managerFirstAddr": 5,
+        "storageAccountSuffix": "docker",
+        "vhdContainerName": "dockervhd",
+        "uniqueStringArray": [
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '0')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '1')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '2')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '3')))]",
+            "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
+        ],
+        "ddcUser": "[parameters('DDCUsername')]",
+        "ddcPass": "[parameters('DDCPassword')]"
+    },
+    "resources": [{
+        "apiVersion": "2015-06-15",
+        "type": "Microsoft.Storage/storageAccounts",
+        "name": "[concat(variables('uniqueStringArray')[copyIndex()], variables('storageAccountSuffix'))]",
+        "location": "[variables('storageLocation')]",
+        "copy": {
+            "name": "storageLoop",
+            "count": "[length(variables('uniqueStringArray'))]"
+        },
+        "properties": {
+            "accountType": "Standard_LRS"
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/virtualNetworks",
+        "name": "[variables('virtualNetworkName')]",
+        "location": "[variables('storageLocation')]",
+        "properties": {
+            "addressSpace": {
+                "addressPrefixes": [
+                    "[variables('subnetPrefix')]",
+                    "[variables('managerAddressPrefix')]"
+                ]
+            },
+            "subnets": [{
+                "name": "[variables('subnetName')]",
+                "properties": {
+                    "addressPrefix": "[variables('subnetPrefix')]"
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[concat(variables('managerPublicIPAddressName'), 'ip-', copyIndex())]",
+        "location": "[variables('storageLocation')]",
+        "copy": {
+            "name": "ipLoopNode",
+            "count": "[variables('managerCount')]"
+        },
+        "properties": {
+            "publicIPAllocationMethod": "Static"
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkSecurityGroups",
+        "name": "[variables('managerNSGName')]",
+        "location": "[variables('storageLocation')]",
+        "properties": {
+            "securityRules": [{
+                "name": "ssh",
+                "properties": {
+                    "description": "Allow SSH",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "22",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 201,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "swarm-listen-port",
+                "properties": {
+                    "description": "Allow 'swarm join' ingress to manager node",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "2377",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 202,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "docker-port",
+                "properties": {
+                    "description": "Allow 'docker' ingress to manager node",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "2375",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 205,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "vxlan",
+                "properties": {
+                    "description": "Allow VXLan connection between nodes",
+                    "protocol": "Udp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "4789",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 203,
+                    "direction": "Inbound"
+                }
+            }, {
+                "name": "gossip",
+                "properties": {
+                    "description": "Serf communication to gossip between nodes",
+                    "protocol": "*",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "7946",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 204,
+                    "direction": "Inbound"
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/networkInterfaces",
+        "name": "[concat(variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
+        "location": "[variables('storageLocation')]",
+        "copy": {
+            "name": "nicLoopNode",
+            "count": "[variables('managerCount')]"
+        },
+        "dependsOn": [
+            "[variables('vnetID')]",
+            "[variables('managerNSGID')]"
+        ],
+        "properties": {
+            "networkSecurityGroup": {
+                "id": "[variables('managerNSGID')]"
+            },
+            "ipConfigurations": [{
+                "name": "ipConfigNode",
+                "properties": {
+                    "privateIPAllocationMethod": "dynamic",
+                    "publicIPAddress": {
+                        "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-', copyIndex()))]"
+                    },
+                    "subnet": {
+                        "id": "[variables('subnetRef')]"
+                    }
+                }
+            }]
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Compute/virtualMachines",
+        "name": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
+        "location": "[variables('storageLocation')]",
+        "plan": {
+            "publisher": "docker",
+            "name": "docker4azure",
+            "product": "docker4azure-preview"
+        },
+        "copy": {
+            "name": "vmLoopNode",
+            "count": "[variables('managerCount')]"
+        },
+        "dependsOn": [
+            "[concat('Microsoft.Network/networkInterfaces/', variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
+            "storageLoop"
+        ],
+        "properties": {
+            "hardwareProfile": {
+                "vmSize": "[variables('managerVMSize')]"
+            },
+            "osProfile": {
+                "computername": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
+                "adminUsername": "[variables('adminUsername')]",
+                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; export DDC_USER=', variables('ddcUser'), '; export DDC_PASS=', variables('ddcPass'), '; export LB_NAME=lbPublicIPAddressName; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION', '; echo default: \"', variables('lbName'), '\">> /var/lib/docker/swarm/elb.config', '; echo \"', variables('lbName'), '\" > /var/lib/docker/swarm/lb_name', '; docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --driver=azure --ad_app_id=', variables('adServicePrincipalAppID'), ' --ad_app_secret=',variables('adServicePrincipalAppSecret'),' --subscription_id=',subscription().subscriptionId,' --resource_group=',resourceGroup().name,' --log=4 --default_lb_name=',variables('lbName'),' --environment=AzurePublicCloud', '; docker run --restart=no --rm -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e UCP_ADMIN_USER=$DDC_USER -e UCP_ADMIN_PASSWORD=$DDC_PASS -e ELB_NAME=$LB_NAME -e INSTALL_DDC=yes -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/ddc-init-azure:$DOCKER_FOR_IAAS_VERSION'))]",
+                "linuxConfiguration": {
+                    "disablePasswordAuthentication": true,
+                    "ssh": {
+                        "publicKeys": [{
+                            "path": "[variables('sshKeyPath')]",
+                            "keyData": "[variables('sshRSAPublicKey')]"
+                        }]
+                    }
+                }
+            },
+            "storageProfile": {
+                "imageReference": {
+                    "publisher": "docker",
+                    "offer": "docker4azure-preview",
+                    "sku": "docker4azure",
+                    "version": "1.12.10"
+                },
+                "osDisk": {
+                    "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
+                    "vhd": {
+                        "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager.vhd')]"
+                    },
+                    "caching": "ReadWrite",
+                    "createOption": "FromImage"
+                }
+            },
+            "networkProfile": {
+                "networkInterfaces": [{
+                    "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))]"
+                }]
+            },
+            "diagnosticsProfile": {
+                "bootDiagnostics": {
+                    "enabled": true,
+                    "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
+                }
+            }
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Compute/virtualMachineScaleSets",
+        "name": "[variables('vmssName')]",
+        "location": "[variables('storageLocation')]",
+        "dependsOn": [
+            "[variables('vnetID')]",
+            "[variables('lbID')]",
+            "[resourceId('Microsoft.Compute/VirtualMachines',concat(variables('managerVMNamePrefix'), '0'))]",
+            "storageLoop"
+        ],
+        "sku": {
+            "name": "[variables('workerVMSize')]",
+            "tier": "Standard",
+            "capacity": "[variables('workerCount')]"
+        },
+        "plan": {
+            "publisher": "docker",
+            "name": "docker4azure",
+            "product": "docker4azure-preview"
+        },
+        "properties": {
+            "overprovision": false,
+            "upgradePolicy": {
+                "mode": "Manual"
+            },
+            "virtualMachineProfile": {
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "docker",
+                        "offer": "docker4azure-preview",
+                        "sku": "docker4azure",
+                        "version": "1.12.10"
+                    },
+                    "osDisk": {
+                        "vhdContainers": [
+                            "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[1], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[2], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[3], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
+                            "[concat('https://', variables('uniqueStringArray')[4], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
+                        ],
+                        "name": "[concat(variables('workerVMNamePrefix'), 'vmssosdisk', 0)]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "osProfile": {
+                    "computerNamePrefix": "[variables('workerVMNamePrefix')]",
+                    "adminUsername": "[variables('adminUsername')]",
+                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export DDC_USER=', variables('ddcUser'), '; export DDC_PASS=', variables('ddcPass'), '; export LB_NAME=lbPublicIPAddressName; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=no --rm -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e UCP_ADMIN_USER=$DDC_USER -e UCP_ADMIN_PASSWORD=$DDC_PASS -e ELB_NAME=$LB_NAME -e INSTALL_DDC=yes -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION'))]",
+                    "linuxConfiguration": {
+                        "disablePasswordAuthentication": true,
+                        "ssh": {
+                            "publicKeys": [{
+                                "path": "[variables('sshKeyPath')]",
+                                "keyData": "[variables('sshRSAPublicKey')]"
+                            }]
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaceConfigurations": [{
+                        "name": "workerNodeNic",
+                        "properties": {
+                            "primary": "true",
+                            "ipConfigurations": [{
+                                "name": "nicipconfig",
+                                "privateIPAllocationMethod": "dynamic",
+                                "properties": {
+                                    "subnet": {
+                                        "id": "[variables('subnetRef')]"
+                                    },
+                                    "loadBalancerBackendAddressPools": [
+                                        {
+                                            "id": "[ variables('lbBackendAddressPoolID')]"
+                                        }
+                                    ]
+                                }
+                            }]
+                        }
+                    }]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
+                    }
+                }
+            }
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('lbPublicIPAddressName')]",
+        "location": "[variables('storageLocation')]",
+        "properties": {
+            "publicIPAllocationMethod": "Static"
+        }
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "name": "[variables('lbName')]",
+        "type": "Microsoft.Network/loadBalancers",
+        "location": "[resourceGroup().location]",
+        "dependsOn": [
+            "[concat('Microsoft.Network/publicIPAddresses/', variables('lbPublicIPAddressName'))]"
+        ],
+        "properties": {
+            "frontendIPConfigurations": [
+                {
+                    "name": "default",
+                    "properties": {
+                        "publicIPAddress": {
+                            "id" : "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))]"
+                        }
+                    }
+                }
+            ],
+            "backendAddressPools": [
+                {
+                    "name": "default"
+                }
+            ],
+            "probes": [
+                {
+                    "name": "default",
+                    "properties": {
+                        "protocol": "tcp",
+                        "port": 2375,
+                        "intervalInSeconds": "10",
+                        "numberOfProbes": "2"
+                    }
+                }
+            ]
+        }
+    }],
+    "outputs": {
+        "SSH": {
+            "type": "string",
+            "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-0'))).ipAddress)]"
+        },
+        "DefaultDNSTarget": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
+        },
+        "DDCLoginURL": {
+            "type": "string",
+            "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-0'))).ipAddress)]"
+        },
+        "DDCUsername": {
+            "type": "string",
+            "value": "[variables('ddcUser')]"
+        }
+    }
+}
