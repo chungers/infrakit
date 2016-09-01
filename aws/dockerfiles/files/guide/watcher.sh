@@ -41,6 +41,10 @@ MESSAGES=$(aws sqs receive-message --region $REGION --queue-url $QUEUE --max-num
 # echo "$MESSAGES"
 COUNT=$(echo $MESSAGES | jq -r '.Messages | length')
 # echo "$COUNT messages"
+
+# default to 0, if empty
+COUNT="${COUNT:-0}"
+
 for((i=0;i<$COUNT;i++)); do
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')

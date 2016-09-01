@@ -15,6 +15,10 @@ sleep $[ ( $RANDOM % 10 )  + 1 ]
 MESSAGES=$(aws sqs receive-message --region $REGION --queue-url $CLEANUP_QUEUE  --max-number-of-messages 10 --wait-time-seconds 10 --visibility-timeout 5 )
 
 COUNT=$(echo $MESSAGES | jq -r '.Messages | length')
+
+# default to 0, if empty
+COUNT="${COUNT:-0}"
+
 for((i=0;i<$COUNT;i++)); do
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
