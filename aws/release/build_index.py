@@ -43,9 +43,9 @@ if os.path.exists(results_file):
     for key, value in data.iteritems():
         status = value.get('status')
         if status == 'CREATE_COMPLETE':
-		stack_status = "<span class='label label-success'>{}</span>".format(status)
+            stack_status = "<span class='label label-success'>{}</span>".format(status)
         else:
-		stack_status = "<span class='label label-danger'>{}</span>".format(status)
+            stack_status = "<span class='label label-danger'>{}</span>".format(status)
         html += "<tr><td>{}</td><td>{}</td><td>{}</td></tr>".format(
             key, value.get('total_time_secs'), stack_status)
 
