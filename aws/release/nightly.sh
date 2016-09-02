@@ -72,7 +72,7 @@ cd /home/ubuntu/code/editions/aws/dockerfiles/
 cd /home/ubuntu/code/editions/aws/release
 
 # run release
-./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL
+./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u nightly
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
