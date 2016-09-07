@@ -9,6 +9,8 @@ echo "ACCOUNT_ID=$ACCOUNT_ID"
 echo "REGION=$REGION"
 echo "ELB_NAME=$ELB_NAME"
 echo "UCP_ADMIN_USER=$UCP_ADMIN_USER"
+echo "APP_ID=$APP_ID"
+echo "TENANT_ID=$TENANT_ID"
 echo "#================"
 
 echo "Load the docker images"
@@ -20,7 +22,8 @@ if [ "$NODE_TYPE" == "worker" ] ; then
 fi
 
 echo "Wait until Resource Group is complete"
-#!/bin/bash
+# Login via the service principal
+azure login -u $APP_ID -p $APP_PASS --service-principal --tenant $TENANT_ID
  
 while :
 do
