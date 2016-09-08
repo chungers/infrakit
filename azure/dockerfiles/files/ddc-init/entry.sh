@@ -23,7 +23,7 @@ fi
 
 echo "Wait until Resource Group is complete"
 # Login via the service principal
-azure login -u $APP_ID -p $APP_PASS --service-principal --tenant $TENANT_ID
+azure login -u "${APP_ID}" -p "${APP_PASS}" --service-principal --tenant "${TENANT_ID}"
  
 while :
 do
@@ -40,7 +40,7 @@ do
 done
 time 
 echo "Resource Group is complete, time to proceed."
-
+# 
 IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
@@ -48,18 +48,18 @@ if [[ "$IS_LEADER" == "true" ]]; then
     echo "Setup DDC"
 
     # SSH_ELB_PHYS_ID=$(azure group show ${STACK_NAME} --json | jq -r '.resources | .[] | select(.name=="externalLoadBalancer") | .id')
-    SSH_ELB_NAME=$(azure group show ${STACK_NAME} --json | jq -r '.resources | .[] | select(.name=="externalLoadBalancer") | .name')
+    SSH_ELB_NAME=$(azure group show ${STACK_NAME} --json | jq -r '.resources | .[] | select(.name=="${SSH_ELB_NAME}") | .name')
 
     # echo "SSH_ELB_PHYS_ID=$SSH_ELB_PHYS_ID"
     # SSH_ELB_HOSTNAME=$(aws elb describe-load-balancers --load-balancer-names ${SSH_ELB_PHYS_ID} --region=$REGION | jq -r ".LoadBalancerDescriptions[0].DNSName")
     # echo "SSH_ELB_HOSTNAME=$SSH_ELB_HOSTNAME"
     
     # aws elb create-load-balancer-listeners --region $REGION --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
-
+    SSH_ELB_HOSTNAME=$(azure resource show ${STACK_NAME} ${SSH_ELB_NAME} "Microsoft.Network/loadBalancers" "2016-09-01")
 
     # # Add port 443 since we'll need it later...
     #azure network lb inbound-nat-rule create -g ${STACK_NAME} -l ${SSH_ELB_NAME} -n ddc1 -p tcp -f 443 -b 443
-    azure network lb rule create ${STACK_NAME} ${SSH_ELB_NAME} lbrule -p tcp -f 443 -b 443 -t DDCfrontendpool -o DDCbackendpool
+    # azure network lb rule create ${STACK_NAME} ${SSH_ELB_NAME} lbrule -p tcp -f 443 -b 443 -t DDCfrontendpool -o DDCbackendpool
 
 
     echo "Run the DDC install script"
