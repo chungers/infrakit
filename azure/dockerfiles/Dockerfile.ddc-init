@@ -1,9 +1,8 @@
 FROM alpine:3.3
 
-MAINTAINER Ken Cochrane <Ken.Cochrane@Docker.com>
+MAINTAINER French Ben <frenchben@docker.com>
 
-RUN apk add --update bash ca-certificates jq groff less \
-    apk add --no-cache --update nodejs jq bash && \
+RUN apk add --no-cache --update bash ca-certificates jq groff less nodejs bash python make g++ && \
     npm install -g azure-cli \
     && rm -rf /var/cache/apk/*
 
