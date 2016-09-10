@@ -1,10 +1,18 @@
 dist/
 moby/
+
+# vendored sources -- these are synced by govendor
+vendor/*/
+
 aws/dockerfiles/files/bin/buoy
+aws/dockerfiles/files/elb-controller/container/bin/*
 azure/dockerfiles/files/bin/buoy
+azure/dockerfiles/files/alb-controller/container/bin/*
 tools/buoy/bin/buoy
 aws/release/tmp
 aws/dockerfiles/files/bin/buoy
 azure/dockerfiles/files/bin/buoy
 tools/buoy/bin/buoy
 *~
+*#
+.#*
