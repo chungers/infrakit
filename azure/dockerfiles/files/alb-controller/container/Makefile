@@ -13,7 +13,7 @@ VERSION?=0.0-snapshot
 REVISION=$(shell git rev-list -1 HEAD)
 
 DOCKER_REPO_OWNER?=docker4x
-DOCKER_REPO?=${DOCKER_REPO_OWNER}/l4controller
+DOCKER_REPO?=${DOCKER_REPO_OWNER}/l4controller-azure
 DOCKER_TAG?=dev
 DOCKER_IMAGE=${DOCKER_REPO}:${DOCKER_TAG}
 
@@ -22,6 +22,7 @@ DOCKER_IMAGE=${DOCKER_REPO}:${DOCKER_TAG}
 all: govendor container
 
 govendor:
+	@echo "+ getting govendor"
 	-go get -u github.com/kardianos/govendor
 
 clean:
