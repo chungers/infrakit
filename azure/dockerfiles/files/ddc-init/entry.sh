@@ -36,7 +36,7 @@ COUNTER=0
 while :
 do
 	provisioning_state=$(azure group deployment list ${RGROUP_NAME} --json | jq -r '.[0] | .properties.provisioningState')
-	if [ "$provisioning_state" == "Success" ]
+	if [ "$provisioning_state" == "Succeeded" ]
 	then
 		break
 	elif [ "$provisioning_state" == "Failed" ]
@@ -46,7 +46,7 @@ do
 	fi
 	echo "."
 	COUNTER=$((COUNTER + 1))
-	if [ $COUNTER -gt 10 ]
+	if [ $COUNTER -gt 10000 ]
 	then
 		echo "Resource group setup status unknown"
 		exit 0
@@ -67,7 +67,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
 	SSH_LB_IP=$(azure network public-ip show ${RGROUP_NAME} ${LB_NAME} --json | jq -r '.ipAddress')
 
 	echo "Run the DDC install script"
-	docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:2.0.0-tp1 install --san $SSH_LB_IP --admin-username $UCP_ADMIN_USER --admin-password $UCP_ADMIN_PASSWORD
+	docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock docker/ucp:2.0.0-tp1 install --san $LB_IP --admin-username $UCP_ADMIN_USER --admin-password $UCP_ADMIN_PASSWORD
 	echo "Finished"
 else
 	echo "Not the swarm leader, nothing to do, exiting"
