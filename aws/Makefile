@@ -6,12 +6,19 @@ KEYNAME := defaultkey
 INSTANCE_TYPE := t2.micro
 MANAGER_INSTANCE_TYPE := t2.small
 CLUSTER_SIZE := 1
+DEV := 0
+
+ifeq ($(DEV),0)
+TEMPLATE := --template-url $(TEMPLATE_URL)
+else
+TEMPLATE := --template-body file:///$(shell pwd)/cloudformation/docker_for_aws.json
+endif
 
 default:
 	aws cloudformation create-stack \
 		--capabilities CAPABILITY_IAM \
 		--stack-name "$(STACK_NAME)" \
-		--template-url "$(TEMPLATE_URL)" \
+		$(TEMPLATE) \
 		--parameters \
 		"ParameterKey=KeyName,ParameterValue=$(KEYNAME)" \
 		"ParameterKey=InstanceType,ParameterValue=$(INSTANCE_TYPE)" \

@@ -32,6 +32,13 @@ It can also tear down created stack(s) via `make clean`, e.g.:
 
     $ make USER=$(whoami) clean
 
+A local development version of Docker for AWS can be invoked via `make` using
+the CloudFormation template stored in your local repository instead of a remote
+one (the default used by `make`).  This is useful for developing the
+CloudFormation JSON itself.  Simply set `DEV=1`.
+
+    $ make USER=$(whoami) KEYNAME=mykey DEV=1
+
 ... or click this button:
 
 [![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.1-beta5.json)
