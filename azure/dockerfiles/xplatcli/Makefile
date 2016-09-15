@@ -1,4 +1,4 @@
-WORK_DIR := /root/editions
+WORK_DIR := /root/editions/azure
 BIND_DIR := $(shell pwd)
 
 build:
