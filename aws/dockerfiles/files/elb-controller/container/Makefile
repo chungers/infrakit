@@ -1,21 +1,13 @@
 # Makefile for building the loadbalancer controller
-#
-# We use a container to compile the binary, and in
-# the container we use govendor to fetch all the versioned
-# packages and dependencies.
-# If you need to change the version of a package, update
-# the vendor/vendor.json and the build container will
-# automatically pull in the versioned dependencies without
-# changing your local workspace.
 
 # Build version metadata
-VERSION?=0.0-snapshot
+VERSION?=aws-v$(EDITIONS_VERSION)
 REVISION=$(shell git rev-list -1 HEAD)
 
 DOCKER_REPO_OWNER?=docker4x
 DOCKER_REPO?=${DOCKER_REPO_OWNER}/l4controller-aws
 DOCKER_TAG?=dev
-DOCKER_IMAGE=${DOCKER_REPO}:${DOCKER_TAG}
+DOCKER_IMAGE?=${DOCKER_REPO}:${DOCKER_TAG}
 
 .PHONY: clean all container
 .DEFAULT: all
@@ -24,6 +16,7 @@ all: govendor container
 govendor:
 	@echo "+ getting govendor"
 	-go get -u github.com/kardianos/govendor
+	govendor sync
 
 clean:
 	@echo "+ $@"
@@ -32,14 +25,30 @@ clean:
 	docker rmi -f ${DOCKER_IMAGE} >/dev/null 2>&1 || true
 	docker rmi -f ${DOCKER_REPO}:latest >/dev/null 2>&1 || true
 
-container: clean
+# This target runs inside the container
+build-in-container: govendor
 	@echo "+ $@"
-	mkdir -p bin
-	cd ../../../../.. && LDFLAGS="-X main.Version=$(VERSION) -X main.Revision=$(REVISION)" \
-	  ./hack/build-in-docker 'aws/dockerfiles/files/elb-controller/cmd/*.go' \
-	                          aws/dockerfiles/files/elb-controller/container/bin/loadbalancer
-	docker build -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
+	mkdir -p /go/build
+	cd ../ && \
+	go build -ldflags "-X main.Version=$(VERSION) -X main.Revision=$(REVISION)" \
+		-o /go/build/loadbalancer cmd/*.go
 
+# This one runs outside
+container:
+	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
+	-docker rm elb-controller-build
+	cd ../../../../../ && docker build -t elb-controller:build -f ${CURDIR}/Dockerfile.build .
+	docker run \
+		-e EDITIONS_VERSION=$(EDITIONS_VERSION) \
+		-e VERSION=$(VERSION) \
+		-e DOCKER_REPO_OWNER=$(DOCKER_REPO_OWNER) \
+		-e DOCKER_REPO=$(DOCKER_REPO) \
+		-e DOCKER_TAG=$(DOCKER_TAG) \
+		-e DOCKER_IMAGE=$(DOCKER_IMAGE) \
+		--name elb-controller-build elb-controller:build
+	mkdir -p ${CURDIR}/bin
+	docker cp elb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
+	docker build -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
 ifeq (${DOCKER_PUSH},true)
 	docker push ${DOCKER_IMAGE}
 ifeq (${DOCKER_TAG_LATEST},true)

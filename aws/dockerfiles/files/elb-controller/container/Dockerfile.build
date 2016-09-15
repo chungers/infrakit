@@ -1,0 +1,18 @@
+FROM golang:1.7-alpine
+
+MAINTAINER KenCochrane <Ken.Cochrane@Docker.com>
+
+RUN apk add --update bash ca-certificates jq groff git tree make
+
+# needed in order for go binary to work.
+RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
+
+RUN mkdir -p /go/src/github.com/docker/editions
+
+ADD ./ /go/src/github.com/docker/editions
+
+ENTRYPOINT cd /go/src/github.com/docker/editions/aws/dockerfiles/files/elb-controller/container && make -k build-in-container
+
+
+
+
