@@ -121,6 +121,9 @@
         "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
         "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
         "lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
+        "lbSSHName": "externalSSHLoadBalancer",
+        "lbSSHPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbSSHName'), '-public-ip')]",
+        "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
         "adServicePrincipalAppID" : "[parameters('adServicePrincipalAppID')]",
         "adServicePrincipalAppSecret" : "[parameters('adServicePrincipalAppSecret')]",
         "adServicePrincipalTenantID" : "[parameters('adServicePrincipalTenantID')]",
@@ -264,7 +267,7 @@
             }, {
                 "name": "ddc",
                 "properties": {
-                    "description": "Allow DDC",
+                    "description": "Allow UCP",
                     "protocol": "Tcp",
                     "sourcePortRange": "*",
                     "destinationPortRange": "443",
@@ -302,7 +305,15 @@
                     },
                     "subnet": {
                         "id": "[variables('subnetRef')]"
-                    }
+                    },
+                    "loadBalancerInboundNatRules": [
+                        {
+                        "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ssh')]"
+                        },
+                        {
+                        "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ddc')]"
+                        }
+                    ]
                 }
             }]
         }
@@ -321,6 +332,7 @@
             "count": "[variables('managerCount')]"
         },
         "dependsOn": [
+            "[concat('Microsoft.Network/loadBalancers/', variables('lbSSHName'))]",
             "[concat('Microsoft.Network/networkInterfaces/', variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
             "storageLoop"
         ],
@@ -505,11 +517,70 @@
                 }
             ]
         }
-    }],
+    }, {
+        "apiVersion": "[variables('apiVersion')]",
+        "type": "Microsoft.Network/publicIPAddresses",
+        "name": "[variables('lbSSHPublicIPAddressName')]",
+        "location": "[variables('storageLocation')]",
+        "properties": {
+            "publicIPAllocationMethod": "Static"
+        }
+    }, {
+      "apiVersion": "[variables('apiVersion')]",
+      "name": "[variables('lbSSHName')]",
+      "type": "Microsoft.Network/loadBalancers",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('lbSSHPublicIPAddressName'))]"
+      ],
+      "properties": {
+        "frontendIPConfigurations": [
+          {
+            "name": "default",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))]"
+              }
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "default"
+          }
+        ],
+        "inboundNatRules": [
+          {
+            "name": "ssh",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 22,
+              "backendPort": 22,
+              "enableFloatingIP": false
+            }
+          },
+          {
+            "name": "ddc",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
+              },
+              "protocol": "tcp",
+              "frontendPort": 443,
+              "backendPort": 443,
+              "enableFloatingIP": false
+            }
+          }
+        ]
+      }
+    } ],
     "outputs": {
         "SSH": {
             "type": "string",
-            "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-0'))).ipAddress)]"
+            "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress)]"
         },
         "DefaultDNSTarget": {
             "type": "string",
@@ -517,7 +588,7 @@
         },
         "DDCLoginURL": {
             "type": "string",
-            "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-0'))).ipAddress)]"
+            "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress)]"
         },
         "DDCUsername": {
             "type": "string",
