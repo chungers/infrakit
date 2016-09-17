@@ -71,29 +71,28 @@
                 "description": "AD ServicePrincipal App Secret"
             }
         },
-        "adServicePrincipalTenantID": {
-            "type": "string",
-            "metadata": {
-                "description": "AD ServicePrincipal Tenant ID"
-            }
-        },
         "sshPublicKey": {
             "type": "string",
             "metadata": {
                 "description": "The SSH public key used to authenticate with the created swarm. Usually available in $HOME/.ssh/id_rsa.pub file"
             }
         },
-        "DDCUsername": {
+        "DockerCloudClusterName" : {
             "type": "string",
-            "defaultValue": "admin",
             "metadata": {
-                "description": "Please enter the username you want to use for Docker Datacenter."
+                "description": "Name of the cluster (namespace/cluster_name) to be used when registering this Swarm with Docker Cloud\n\nMust be in the format 'namespace/cluster_name' and must only contain letters, digits and hyphens"
             }
         },
-        "DDCPassword": {
-            "type": "securestring",
+        "DockerCloudUsername" : {
+            "type" : "String",
             "metadata": {
-                "description": "Please enter the password you want to use for Docker Datacenter."
+                "description": "Docker ID username to use during registration\n\nMust only contain letters or digits"
+            }
+        },
+        "DockerCloudAPIKey" : {
+            "type" : "String",
+            "metadata": {
+                "description": "Docker ID API key to use during registration"
             }
         }
     },
@@ -126,7 +125,9 @@
         "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
         "adServicePrincipalAppID" : "[parameters('adServicePrincipalAppID')]",
         "adServicePrincipalAppSecret" : "[parameters('adServicePrincipalAppSecret')]",
-        "adServicePrincipalTenantID" : "[parameters('adServicePrincipalTenantID')]",
+        "dockerCloudClusterName" : "[parameters('DockerCloudClusterName')]",
+        "dockerCloudUsername" : "[parameters('DockerCloudUsername')]",
+        "dockerCloudAPIKey" : "[parameters('DockerCloudAPIKey')]",
 
         "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
         "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
@@ -146,9 +147,7 @@
             "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '2')))]",
             "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '3')))]",
             "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
-        ],
-        "ddcUser": "[parameters('DDCUsername')]",
-        "ddcPass": "[parameters('DDCPassword')]"
+        ]
     },
     "resources": [{
         "apiVersion": "2015-06-15",
@@ -226,6 +225,19 @@
                     "direction": "Inbound"
                 }
             }, {
+                "name": "docker-port",
+                "properties": {
+                    "description": "Allow 'docker' ingress to manager node",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "2375",
+                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
+                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
+                    "access": "Allow",
+                    "priority": 205,
+                    "direction": "Inbound"
+                }
+            }, {
                 "name": "vxlan",
                 "properties": {
                     "description": "Allow VXLan connection between nodes",
@@ -249,32 +261,6 @@
                     "destinationAddressPrefix": "[variables('subnetPrefix')]",
                     "access": "Allow",
                     "priority": 204,
-                    "direction": "Inbound"
-                }
-            }, {
-                "name": "docker-port",
-                "properties": {
-                    "description": "Allow 'docker' ingress to manager node",
-                    "protocol": "Tcp",
-                    "sourcePortRange": "*",
-                    "destinationPortRange": "2375",
-                    "sourceAddressPrefix": "[variables('subnetPrefix')]",
-                    "destinationAddressPrefix": "[variables('subnetPrefix')]",
-                    "access": "Allow",
-                    "priority": 205,
-                    "direction": "Inbound"
-                }
-            }, {
-                "name": "ddc",
-                "properties": {
-                    "description": "Allow UCP",
-                    "protocol": "Tcp",
-                    "sourcePortRange": "*",
-                    "destinationPortRange": "443",
-                    "sourceAddressPrefix": "*",
-                    "destinationAddressPrefix": "*",
-                    "access": "Allow",
-                    "priority": 206,
                     "direction": "Inbound"
                 }
             }]
@@ -344,7 +330,7 @@
             "osProfile": {
                 "computername": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
                 "adminUsername": "[variables('adminUsername')]",
-                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export APP_ID=', variables('adServicePrincipalAppID'), '; export APP_SECRET=', variables('adServicePrincipalAppSecret'), '; export TENANT_ID=', variables('adServicePrincipalTenantID'), ';export SUB_ID=',subscription().subscriptionId,'; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; export DDC_USER=', variables('ddcUser'), '; export DDC_PASS=', variables('ddcPass'), '; export RGROUP_NAME=',resourceGroup().name,'; export LB_NAME=lbPublicIPAddressName; export LB_SSH_IP=', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION', '; echo default: \"', variables('lbName'), '\">> /var/lib/docker/swarm/elb.config', '; echo \"', variables('lbName'), '\" > /var/lib/docker/swarm/lb_name', '; docker run --restart=no --rm -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e APP_ID=$APP_ID -e APP_SECRET=$APP_SECRET -e TENANT_ID=$TENANT_ID -e RGROUP_NAME=$RGROUP_NAME -e UCP_ADMIN_USER=$DDC_USER -e UCP_ADMIN_PASSWORD=$DDC_PASS -e LB_NAME=$LB_NAME -e LB_IP=$LB_SSH_IP -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/ddc-init-azure:$DOCKER_FOR_IAAS_VERSION; docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/controller:$DOCKER_FOR_IAAS_VERSION run --driver=azure --ad_app_id=', variables('adServicePrincipalAppID'), ' --ad_app_secret=',variables('adServicePrincipalAppSecret'),' --subscription_id=',subscription().subscriptionId,' --resource_group=',resourceGroup().name,' --log=4 --default_lb_name=',variables('lbName'),' --environment=AzurePublicCloud'))]",
+                "customData": "[base64(concat('export ROLE=MANAGER; export PRIVATE_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export REGION=', variables('storageLocation'),  '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e PRIVATE_IP=$PRIVATE_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION', '; echo default: \"', variables('lbName'), '\">> /var/lib/docker/swarm/elb.config', '; echo \"', variables('lbName'), '\" > /var/lib/docker/swarm/lb_name', '; docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/l4controller-azure:$DOCKER_FOR_IAAS_VERSION run --ad_app_id=', variables('adServicePrincipalAppID'), ' --ad_app_secret=',variables('adServicePrincipalAppSecret'),' --subscription_id=',subscription().subscriptionId,' --resource_group=',resourceGroup().name,' --log=4 --default_lb_name=',variables('lbName'),' --environment=AzurePublicCloud; export IS_LEADER=$(docker node inspect self -f \"{{ .ManagerStatus.Leader }}\"); if [ \"$IS_LEADER\" == \"true\" ]; then docker run --rm --name=cloud_registration -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_USER=', variables('dockerCloudUsername'), ' -e DOCKER_PASS=', variables('dockerCloudAPIKey'), ' -e SWARM_NAME=', variables('dockerCloudClusterName'), ' -e INTERNAL_ENDPOINT=', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, ':2376 dockercloud/registration:$DOCKER_FOR_IAAS_VERSION\n fi'))]",
                 "linuxConfiguration": {
                     "disablePasswordAuthentication": true,
                     "ssh": {
@@ -433,7 +419,7 @@
                 "osProfile": {
                     "computerNamePrefix": "[variables('workerVMNamePrefix')]",
                     "adminUsername": "[variables('adminUsername')]",
-                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; export APP_ID=', variables('adServicePrincipalAppID'), '; export APP_SECRET=', variables('adServicePrincipalAppSecret'), '; export TENANT_ID=', variables('adServicePrincipalTenantID'), '; export DDC_USER=', variables('ddcUser'), '; export DDC_PASS=', variables('ddcPass'), '; export RGROUP_NAME=',resourceGroup().name,'; export LB_NAME=lbPublicIPAddressName; export LB_SSH_IP=', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=no --rm -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e APP_ID=$APP_ID -e APP_SECRET=$APP_SECRET -e TENANT_ID=$TENANT_ID -e RGROUP_NAME=$RGROUP_NAME -e UCP_ADMIN_USER=$DDC_USER -e UCP_ADMIN_PASSWORD=$DDC_PASS -e LB_NAME=$LB_NAME -e LB_IP=$LB_SSH_IP -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/ddc-init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION'))]",
+                    "customData": "[base64(concat('export ROLE=WORKER; export MANAGER_IP=', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '; export REGION=', variables('storageLocation'), '; export ACCOUNT_ID=', variables('accountID'), '; export DOCKER_FOR_IAAS_VERSION=', variables('dockerForIAASVersion'), '; docker run --restart=no -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log docker4x/init-azure:$DOCKER_FOR_IAAS_VERSION; docker run --restart=always -d -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e MANAGER_IP=$MANAGER_IP -e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION;'))]",
                     "linuxConfiguration": {
                         "disablePasswordAuthentication": true,
                         "ssh": {
@@ -577,7 +563,7 @@
           }
         ]
       }
-    } ],
+    }],
     "outputs": {
         "SSH": {
             "type": "string",
@@ -587,13 +573,9 @@
             "type": "string",
             "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
         },
-        "DDCLoginURL": {
+        "ConnectToThisCluster": {
             "type": "string",
-            "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress)]"
-        },
-        "DDCUsername": {
-            "type": "string",
-            "value": "[variables('ddcUser')]"
+            "value": "[concat('docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST dockercloud/client ', variables('DockerCloudClusterName'))]"
         }
     }
 }
