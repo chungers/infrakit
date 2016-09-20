@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 echo "================================================"
 echo ""
 echo ""
@@ -6,6 +7,7 @@ echo "Start nightly build"
 echo $PATH
 PATH=$PATH:/usr/local/bin
 echo $PATH
+export PYTHONUNBUFFERED=1
 
 cd /home/ubuntu/code/moby/alpine
 make ami
@@ -69,6 +71,10 @@ cd /home/ubuntu/code/editions/aws/dockerfiles/
 
 ./build_and_push_all.sh
 
+cd files/elb-controller/container
+DOCKER_TAG=$VERSION DOCKER_PUSH=true DOCKER_TAG_LATEST=false make -k container
+cd $CURRPATH
+
 cd /home/ubuntu/code/editions/aws/release
 
 # run release
@@ -78,7 +84,7 @@ cd /home/ubuntu/code/editions/aws/release
 python cleanup.py
 
 # run tests
-python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json
+python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json -f results -t oss
 
 # Rebuild the nightly index page.
 python build_index.py

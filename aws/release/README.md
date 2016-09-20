@@ -32,6 +32,17 @@ This script will take some parameters and then it will do the following.
 4. Tag the code and push tags to github, and create release from tag.
 
 
+## CS / DDC builds
+DDC depends on Docker CS. We don't builds a CS binary every night, so there is no need to build AMI's every night as well.
+At least not yet, I'm sure there will be reasons in the near future.
+
+Steps:
+1. build AMI and update latest + Release AMI (share with accounts, and all regions)
+    ./build-cs-ami.sh <URL to docker binary> yes
+2. build ddc (creates the CFN template) using AMI's from 1.
+    ./run_ddc_release.sh -d "1.12.0-cs1" -e "alpha4" -c "alpha"
+
+
 ### Development Notes
 Here are notes that were used during development, some are still relevant so keeping here for now.
 
