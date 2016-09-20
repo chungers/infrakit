@@ -18,7 +18,7 @@ LIMITFILE="/tmp/limit"
 BUCKET="/tmp/bucket"
 
 # Repository to push resulting Docker image "bundle" to
-IMAGE="docker4x/diagnostics"
+IMAGE="editions/diagnostics"
 
 arrowecho()
 {
@@ -106,8 +106,9 @@ do
 
 		REPORT_BASE=$(basename "${REPORT}")
 
-		# Get session ID (files are named session-hostname.tar)
-		SESSION_ID="$(echo "${REPORT_BASE}" | cut -d'-' -f1)"
+		# Get session ID (files are named uniquestring-timestamp-hostname.tar)
+		# "uniquestring-timestamp" is the "session id"
+		SESSION_ID="$(echo "${REPORT_BASE}" | cut -d'-' -f1,2)"
 
 		# Inspired by
 		# http://stackoverflow.com/questions/205666/what-is-the-best-way-to-perform-timestamp-comparison-in-bash
