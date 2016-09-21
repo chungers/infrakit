@@ -67,15 +67,28 @@ if [[ "$IS_LEADER" == "true" ]]; then
     echo "Setup DDC"
 
     SSH_ELB_PHYS_ID=$(aws cloudformation describe-stack-resources --stack-name ${STACK_NAME} --region=$REGION --logical-resource-id $ELB_NAME | jq -r ".StackResources[0].PhysicalResourceId")
-
     echo "SSH_ELB_PHYS_ID=$SSH_ELB_PHYS_ID"
-    SSH_ELB_HOSTNAME=$(aws elb describe-load-balancers --load-balancer-names ${SSH_ELB_PHYS_ID} --region=$REGION | jq -r ".LoadBalancerDescriptions[0].DNSName")
-    echo "SSH_ELB_HOSTNAME=$SSH_ELB_HOSTNAME"
     # Add port 443 since we'll need it later...
     aws elb create-load-balancer-listeners --region $REGION --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
 
+    # Get All Load Balancers
+    # read lb1 lb2 <<< $(aws cloudformation describe-stack-resources --stack-name ${STACK_NAME} --region=$REGION | jq '.StackResources[] | select(.LogicalResourceId | endswith("LoadBalancer")) | .PhysicalResourceId')
+    # Get All Load Balancers DNS Name
+    read lb1 lb2 <<< $(aws elb describe-load-balancers --region=$REGION | jq ".LoadBalancerDescriptions[] | select(.DNSName | startswith(\"${STACK_NAME}-ELB\")) | .DNSName")
+    if [ $lb1 == *"-ELB-SSH" ]
+    then
+        ELB_HOSTNAME=$lb2
+        SSH_ELB_HOSTNAME=$lb1
+    else
+        ELB_HOSTNAME=$lb1
+        SSH_ELB_HOSTNAME=$lb2
+    fi
+
+    echo "ELB_HOSTNAME=$ELB_HOSTNAME"
+    echo "SSH_ELB_HOSTNAME=$SSH_ELB_HOSTNAME"
+
     echo "Run the DDC install script"
-    docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock  ${HUB_NAMESPACE}/ucp:${HUB_TAG} install --san $SSH_ELB_HOSTNAME --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+    docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock ${HUB_NAMESPACE}/ucp:${HUB_TAG} install --san "$SSH_ELB_HOSTNAME" --external-service-lb "$ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
     echo "Finished"
 else
     echo "Not the swarm leader, nothing to do, exiting"
