@@ -12,12 +12,18 @@
         "managerCount": {
             "type": "int",
             "defaultValue": 1,
-            "allowedValues": [1]
+            "allowedValues": [1],
+            "metadata": {
+                "description": "Number of Manager nodes"
+            }
         },
         "workerCount": {
             "type": "int",
             "defaultValue": 1,
-            "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "metadata": {
+                "description": "Number of Worker nodes"
+            }
         },
         "workerVMSize": {
             "type": "string",
@@ -263,6 +269,19 @@
                     "priority": 204,
                     "direction": "Inbound"
                 }
+            }, {
+                "name": "cloud",
+                "properties": {
+                    "description": "Allow Cloud Fleet",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "2376",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 206,
+                    "direction": "Inbound"
+                }
             }]
         }
     }, {
@@ -298,7 +317,7 @@
                         "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ssh')]"
                         },
                         {
-                        "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ddc')]"
+                        "id": "[concat(variables('lbSSHID'),'/inboundNatRules/cloud')]"
                         }
                     ]
                 }
@@ -550,14 +569,14 @@
             }
           },
           {
-            "name": "ddc",
+            "name": "cloud",
             "properties": {
               "frontendIPConfiguration": {
                 "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
               },
               "protocol": "tcp",
-              "frontendPort": 443,
-              "backendPort": 443,
+              "frontendPort": 2376,
+              "backendPort": 2376,
               "enableFloatingIP": false
             }
           }
