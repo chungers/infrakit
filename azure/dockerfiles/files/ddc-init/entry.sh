@@ -67,6 +67,8 @@ IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 if [[ "$IS_LEADER" == "true" ]]; then
 	echo "We are the swarm leader"
 	echo "Setup DDC"
+	
+	docker import http://docker-for-azure.s3.amazonaws.com/ddc/ucp-2.0.tar ${HUB_NAMESPACE}/ucp:${HUB_TAG}
 
 	# SSH_LB_PHYS_IDAME=$(azure group show ${RGROUP_NAME} --json | jq -r '.resources | .[] | select(.name=="${SSH_ELB_NAME}") | .name')
 	# SSH_LB_ID=$(azure resource show ${RGROUP_NAME} ${SSH_ELB_NAME} "Microsoft.Network/loadBalancers" "2016-09-01" --json | jq -r '.properties.frontendIPConfigurations[0].properties.publicIPAddress.id')

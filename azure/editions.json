@@ -12,12 +12,18 @@
         "managerCount": {
             "type": "int",
             "defaultValue": 1,
-            "allowedValues": [1]
+            "allowedValues": [1],
+            "metadata": {
+                "description": "Number of Manager nodes"
+            }
         },
         "workerCount": {
             "type": "int",
             "defaultValue": 1,
-            "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+            "allowedValues": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "metadata": {
+                "description": "Number of Worker nodes"
+            }
         },
         "workerVMSize": {
             "type": "string",
