@@ -81,3 +81,4 @@ echo
 echo "Your access credentials =================================================="
 echo "AD ServicePrincipal App ID:       ${APP_ID}"
 echo "AD ServicePrincipal App Secret:   ${PASSWORD}"
+echo "AD ServicePrincipal Tenant ID:    ${TENANT_ID}"
