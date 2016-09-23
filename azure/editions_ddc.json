@@ -92,6 +92,8 @@
         },
         "DDCPassword": {
             "type": "securestring",
+            "minLength": 8,
+            "maxLength": 40,
             "metadata": {
                 "description": "Please enter the password you want to use for Docker Datacenter."
             }

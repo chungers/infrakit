@@ -39,6 +39,7 @@ At least not yet, I'm sure there will be reasons in the near future.
 Steps:
 1. build AMI and update latest + Release AMI (share with accounts, and all regions)
     ./build-cs-ami.sh <URL to docker binary> yes
+    example: ./build-cs-ami.sh https://s3.amazonaws.com/packages.docker.com/1.12/builds/linux/amd64/docker-1.12.1-cs1.tgz yes
 2. build ddc (creates the CFN template) using AMI's from 1.
     ./run_ddc_release.sh -d "1.12.0-cs1" -e "alpha4" -c "alpha"
 

@@ -55,7 +55,10 @@
             "Type" : "String",
             "Description" : "Docker Datacenter Password?",
             "ConstraintDescription" : "Please enter the password you want to use for Docker Datacenter",
-            "NoEcho": "true"
+            "NoEcho": "true",
+            "MinLength": "8",
+            "MaxLength": "40",
+            "ConstraintDescription": "must be at least 8 characters"
         }
     },
     "Metadata" : {
