@@ -11,8 +11,7 @@ RUN apk add --update bash ca-certificates jq groff python py-pip py-setuptools \
 RUN mkdir -p /home/docker /home/docker/dist
 ADD tmp/docker_for_aws.template /home/docker
 ADD tmp/docker_for_aws_ddc.template /home/docker
-ADD files/aws_release.py /home/docker
-ADD files/release.sh /home/docker
-RUN chmod 755 /home/docker/aws_release.py /home/docker/release.sh
+ADD files/* /home/docker/
+RUN chmod 755 /home/docker/*
 
 CMD ["/home/docker/release.sh"]

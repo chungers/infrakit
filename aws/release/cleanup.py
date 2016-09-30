@@ -13,10 +13,10 @@ s3_bucket_name = "docker-for-aws"
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-central-1', 'ap-southeast-1',
            'ap-northeast-1', 'ap-southeast-2', 'ap-northeast-2',
-           'sa-east-1']
+           'sa-east-1', 'ap-south-1']
 
 EXPIRE_AGE = 30
-CFN_EXPIRE_AGE = 2
+CFN_EXPIRE_AGE = 1
 NOW = datetime.now()
 EXPIRE_DATE = NOW - timedelta(EXPIRE_AGE)
 CFN_EXPIRE_DATE = NOW - timedelta(CFN_EXPIRE_AGE)
@@ -57,6 +57,18 @@ for key in files:
         print(u"{} is {}, which is too old (< {}), remove it.".format(key.name, key.last_modified, EXPIRE_DATE))
         key.delete()
 
+files = list(bucket.list("aws/ddc-nightly/"))
+
+for key in files:
+    # we only care about json files.
+    if not key.name.endswith(".json"):
+        continue
+
+    key_date = datetime.strptime(key.last_modified, '%Y-%m-%dT%H:%M:%S.000Z')
+    if key_date < EXPIRE_DATE:
+        print(u"{} is {}, which is too old (< {}), remove it.".format(key.name, key.last_modified, EXPIRE_DATE))
+        key.delete()
+
 print("Clean up any left over CFN stacks")
 for region in REGIONS:
     print(u"region={}".format(region))
@@ -64,7 +76,7 @@ for region in REGIONS:
     stacks = connection.describe_stacks()
     for stack in stacks:
         print(stack.stack_name)
-        if stack.tags.get('channel') == 'nightly':
+        if stack.tags.get('channel') in ['nightly', 'ddc-nightly'] :
             cfn_date_tag = stack.tags.get('date')
             cfn_date = datetime.strptime(image_date_tag, "%m_%d_%Y")
             if cfn_date < CFN_EXPIRE_DATE:

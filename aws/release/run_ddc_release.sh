@@ -5,13 +5,10 @@ set -e
 export PYTHONUNBUFFERED=1
 # prehook
 
-BUILD_NUMBER=${BUILD_NUMBER:-24}
+BUILD_NUMBER=${BUILD_NUMBER:-25}
 DOCKER_VERSION=
 EDITION_VERSION=
-AMI_ID=
-AMI_SRC_REGION=
 CHANNEL=
-AWS_ACCOUNT_LIST_URL=
 
 usage()
 {
@@ -29,15 +26,11 @@ OPTIONS:
    -h      Show this message
    -d      Docker version (1.12.0, etc)
    -e      Edition version (beta4, etc)
-   -a      AMI ID (ami-123456, etc)
-   -r      AMI source region (us-east-1)
    -c      Release Channel (beta, nightly, etc)
-   -u      DDC Release Channel (beta, nightly, etc)
-   -l      AWS account list URL
 EOF
 }
 
-while getopts "hc:u:l:d:e:a:r:" OPTION
+while getopts "hc:d:e:" OPTION
 do
      case $OPTION in
          h)
@@ -50,20 +43,8 @@ do
          e)
              EDITION_VERSION=$OPTARG
              ;;
-         a)
-             AMI_ID=$OPTARG
-             ;;
-         r)
-             AMI_SRC_REGION=$OPTARG
-             ;;
          c)
              CHANNEL=$OPTARG
-             ;;
-         u)
-             CHANNEL_DDC=$OPTARG
-             ;;
-         l)
-             AWS_ACCOUNT_LIST_URL=$OPTARG
              ;;
          ?)
              usage
@@ -72,7 +53,7 @@ do
      esac
 done
 
-if [[ -z $DOCKER_VERSION ]] || [[ -z $EDITION_VERSION ]] || [[ -z $AMI_ID ]] || [[ -z $AMI_SRC_REGION ]]
+if [[ -z $DOCKER_VERSION ]] || [[ -z $EDITION_VERSION ]]
 then
      usage
      exit 1
@@ -90,29 +71,65 @@ then
      exit 1
 fi
 
+AMI_LIST_URL="https://s3.amazonaws.com/docker-for-aws/data/ami/cs/$DOCKER_VERSION/ami_list.json"
+AMI_LIST=$(curl -sf $AMI_LIST_URL)
+export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION-ddc
+
+if [[ -z $AMI_LIST ]]
+then
+     echo "ERROR: There is no ami list available at $AMI_LIST_URL"
+     echo "   This usually happens because an AMI hasn't been built for docker version: $DOCKER_VERSION yet."
+     echo "   Run the `build-cs-ami.sh` and `release-cs-ami.sh` scripts to create and release the AMI"
+     exit 1
+fi
+
 echo "------"
 echo "Getting started with the release...."
 echo "== Parameters =="
 echo "BUILD_NUMBER=$BUILD_NUMBER"
 echo "DOCKER_VERSION=$DOCKER_VERSION"
 echo "EDITION_VERSION=$EDITION_VERSION"
-echo "AMI_ID=$AMI_ID"
-echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
-echo "CHANNEL_DDC=$CHANNEL_DDC"
-echo "AWS_ACCOUNT_LIST_URL=$AWS_ACCOUNT_LIST_URL"
+echo "VERSION=$VERSION"
 echo "-------"
 echo "== Prepare files =="
 
 # prepare the files.
 mkdir -p tmp
-if [ -f tmp/docker_for_aws.template ]; then
+if [ -f tmp/docker_for_aws_ddc.template ]; then
     echo "Cleanup old template file."
-    rm -f tmp/docker_for_aws.template
+    rm -f tmp/docker_for_aws_ddc.template
 fi
 echo "Copy over template file."
+# need both since we use same image for both DDC and OSS and it looks for both
 cp ../cloudformation/docker_for_aws.json tmp/docker_for_aws.template
 cp ../cloudformation/docker_for_aws_ddc.json tmp/docker_for_aws_ddc.template
+
+
+echo "=== Build editions docker images ==="
+CURRPATH=`pwd`
+# build binaries
+# go to buoy dir
+cd ../../tools/buoy/
+./build_buoy.sh
+
+echo "=== CURRPATH=$CURRPATH ==="
+# back to release dir
+cd $CURRPATH
+# up to dockerfiles dir
+cd ../dockerfiles/
+
+# build images
+
+./build_and_push_all.sh
+
+echo "=== build controller ==="
+cd files/elb-controller/container
+DOCKER_TAG=$VERSION DOCKER_PUSH=true DOCKER_TAG_LATEST=false make -k container
+cd $CURRPATH
+
+# back to release dir
+cd $CURRPATH
 
 echo "== build docker image =="
 # build the docker image
@@ -124,12 +141,8 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
 -e DOCKER_VERSION=$DOCKER_VERSION \
 -e EDITION_VERSION=$EDITION_VERSION \
--e AMI_ID=$AMI_ID \
--e AMI_SRC_REGION=$AMI_SRC_REGION \
 -e CHANNEL="$CHANNEL" \
--e CHANNEL_DDC="$CHANNEL_DDC" \
--e AWS_ACCOUNT_LIST_URL="$AWS_ACCOUNT_LIST_URL" \
-docker4x/release-$BUILD_NUMBER
+docker4x/release-$BUILD_NUMBER /home/docker/ddc_release.sh
 
 # posthook
 
