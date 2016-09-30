@@ -8,17 +8,15 @@ launch a VM from the given storage account instead.
 
 import sys, json
 
-if len(sys.argv) != 4:
-	sys.stderr.write('Usage: python stg_account_arm_template.py [VHD_URL] [OUTPUT_FILE] [DDC_OUTPUT_FILE]\n')
+if len(sys.argv) != 3:
+	sys.stderr.write('Usage: python stg_account_arm_template.py [VHD_URL] [OUTPUT_FILE]\n')
 	sys.stderr.write('Must pass VHD in storage account.\n')
 	exit(1)
 
 storageaccount = 'dockereditions'
 prod_template = 'editions.json'
-prod_ddc_template = 'editions_ddc.json'
 desired_vhd = sys.argv[1]
 dev_template = sys.argv[2]
-dev_ddc_template = sys.argv[3]
 
 def launch_vm_from_stg_account(resource):
 	if resource['type'] == 'Microsoft.Compute/virtualMachines':
@@ -51,5 +49,4 @@ def gen_template(in_template, out_template):
 
 if __name__ == '__main__':
 	gen_template(prod_template, dev_template)
-	gen_template(prod_ddc_template, dev_ddc_template)
 	print('Now you\'re thinking without portals.')
