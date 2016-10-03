@@ -13,20 +13,11 @@ weight="400"
 
 # Docker for Azure Release notes
 
-## 1.12.2-RC1-beta6
-
-Release date: 9/28/2016
-
-[![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.2-beta6.json)
-
-### New
-
- * Docker Engine upgraded to 1.12.2-RC1
-
-
 ## 1.12.1-beta5
 
 Release date: 8/19/2016
+
+[![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.1-beta5.json)
 
 ### New
 
