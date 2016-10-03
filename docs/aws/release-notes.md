@@ -16,7 +16,7 @@ weight="400"
 
 # Docker for AWS Release notes
 
-## 1.12.1-beta6
+## 1.12.2-RC1-beta6
 
 Release date: 9/29/2016
 
