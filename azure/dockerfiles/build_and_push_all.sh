@@ -5,7 +5,7 @@ set -e
 NAMESPACE="${NAMESPACE:-docker4x}"
 VERSION="${VERSION:-latest}"
 
-for IMAGE in init guide create-sp ddc-init
+for IMAGE in init guide create-sp ddc-init cloud
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${VERSION}"
 	docker build -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .

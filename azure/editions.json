@@ -255,6 +255,7 @@
         },
         "dependsOn": [
             "[variables('vnetID')]",
+            "[variables('lbSSHID')]",
             "[variables('managerNSGID')]"
         ],
         "properties": {
@@ -297,7 +298,7 @@
             "count": "[variables('managerCount')]"
         },
         "dependsOn": [
-            "[concat('Microsoft.Network/loadBalancers/', variables('lbSSHName'))]",
+            "[variables('lbSSHID')]",
             "[concat('Microsoft.Network/networkInterfaces/', variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
             "storageLoop"
         ],
