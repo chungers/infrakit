@@ -4,6 +4,7 @@ echo "Start Swarm setup"
 
 # Setup path with the docker binaries
 export MYHOST=`wget -qO- http://169.254.169.254/latest/meta-data/hostname`
+SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
 
 echo "PATH=$PATH"
 echo "NODE_TYPE=$NODE_TYPE"
@@ -13,6 +14,7 @@ echo "STACK_NAME=$STACK_NAME"
 echo "INSTANCE_NAME=$INSTANCE_NAME"
 echo "AWS_REGION=$REGION"
 echo "MANAGER_IP=$MANAGER_IP"
+echo "SWARM_STATE=$SWARM_STATE"
 echo "#================"
 
 get_swarm_id()
@@ -137,6 +139,12 @@ setup_manager()
             echo " Error is normal, it is because we already have a primary node, lets setup a secondary manager instead."
             join_as_secondary_manager
         fi
+    elif [ "$PRIVATE_IP" == "$MANAGER_IP" ]; then
+        echo "   PRIVATE_IP == MANAGER_IP, we are already the leader, maybe it was a reboot?"
+        SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+        # should be active, pending or inactive
+        echo "   Swarm State = $SWARM_STATE"
+        # check if swarm is good?
     else
         echo "   join as Secondary Manager"
         join_as_secondary_manager

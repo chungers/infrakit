@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 5 (docker 1.12.1)",
+    "Description": "Docker for AWS Beta 7 (docker 1.12.2-rc2)",
 
     "Parameters": {
         "KeyName": {
@@ -71,8 +71,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.0",
-                "forAws": "aws-v1.12.1-beta5"
+                "docker": "1.12.2-rc2",
+                "forAws": "aws-v1.12.2-rc2-beta7"
             }
         },
 
@@ -215,43 +215,43 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-0737fa66", 
+                "HVM64": "ami-0737fa66",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "ap-northeast-2": {
-                "HVM64": "ami-ba9346d4", 
+                "HVM64": "ami-ba9346d4",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "ap-southeast-1": {
-                "HVM64": "ami-f52cf596", 
+                "HVM64": "ami-f52cf596",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "ap-southeast-2": {
-                "HVM64": "ami-4c25122f", 
+                "HVM64": "ami-4c25122f",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "eu-central-1": {
-                "HVM64": "ami-1cc43573", 
+                "HVM64": "ami-1cc43573",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "eu-west-1": {
-                "HVM64": "ami-5f90e42c", 
+                "HVM64": "ami-5f90e42c",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "sa-east-1": {
-                "HVM64": "ami-8832a4e4", 
+                "HVM64": "ami-8832a4e4",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "us-east-1": {
-                "HVM64": "ami-af482cb8", 
+                "HVM64": "ami-af482cb8",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "us-west-1": {
-                "HVM64": "ami-0d5a186d", 
+                "HVM64": "ami-0d5a186d",
                 "HVMG2": "NOT_SUPPORTED"
-            }, 
+            },
             "us-west-2": {
-                "HVM64": "ami-74ea3f14", 
+                "HVM64": "ami-74ea3f14",
                 "HVMG2": "NOT_SUPPORTED"
             }
         }
@@ -369,13 +369,15 @@
         "SwarmSQSCleanup" : {
             "Type": "AWS::SQS::Queue",
             "Properties": {
-                "ReceiveMessageWaitTimeSeconds": 10
+                "ReceiveMessageWaitTimeSeconds": 10,
+                "MessageRetentionPeriod": 43200
             }
         },
         "SwarmSQS" : {
             "Type": "AWS::SQS::Queue",
             "Properties": {
-                "ReceiveMessageWaitTimeSeconds": 10
+                "ReceiveMessageWaitTimeSeconds": 10,
+                "MessageRetentionPeriod": 43200
             }
         },
         "SwarmManagerUpgradeHook": {
@@ -541,7 +543,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d ",
+                                "docker run --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -557,7 +559,7 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d -p 22:22 ",
+                                "docker run --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
@@ -569,7 +571,7 @@
                                 "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d --name=editions_controller ",
+                                "docker run --name=l4controller-aws --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n"
@@ -664,7 +666,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d ",
+                                "docker run --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -807,6 +809,7 @@
                 "Effect": "Allow",
                 "Action": [
                     "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:Query"

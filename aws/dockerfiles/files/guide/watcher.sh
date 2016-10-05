@@ -114,8 +114,15 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
         # if we are the leader, we don't want to use that one.
         if [[ "$IS_LEADER" == "true" ]]; then
+            # we are the current leader, sleep for 3 minutes, incase this is a scale down event
+            # this will allow the other none leaders to demote themselves first. removing themselves
+            # from the quorum. If we don't there is a race condition, and all of them will try to
+            # demote at the same time, and cause problems. Leaving us with no leader, but still a record
+            # in dynamodb. the delay will help prevent this.
+            sleep 180
             # find the current reachable manager list, using docker node list
             MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+            NEW_MANAGER_IP=""
             # Find first node that's not myself
             echo "List of available Managers = $MANAGERS"
             for I in $MANAGERS; do
@@ -135,17 +142,30 @@ if [ "$NODE_TYPE" == "manager" ] ; then
             NEW_MANAGER_IP=$CURRENT_LEADER_IP
         fi
 
-        echo "update the dynamodb table with IP = $NEW_MANAGER_IP"
-        # update the primary manager IP item in dynamodb
-        aws dynamodb put-item \
-            --table-name $DYNAMODB_TABLE \
-            --region $REGION \
-            --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$PRIVATE_IP"'"},"manager_token": {"S":"'"$MANAGER_TOKEN"'"},"worker_token": {"S":"'"$WORKER_TOKEN"'"}}' \
-            --return-consumed-capacity TOTAL
+        if [[ "$NEW_MANAGER_IP" == "" ]]; then
+            echo "There is no new manager available. Most likely a scale down event, and this was the last manager"
+            echo "delete record in dynamodb table"
+            # this will allow us to start from scratch on scale up event from scratch.
+            aws dynamodb delete-item --table-name $DYNAMODB_TABLE --region $REGION --key '{"node_type":{"S": "primary_manager"}}'
+            LAST_MANAGER=1
+        else
+            echo "update the dynamodb table with IP = $NEW_MANAGER_IP"
+            # update the primary manager IP item in dynamodb
+            aws dynamodb put-item \
+                --table-name $DYNAMODB_TABLE \
+                --region $REGION \
+                --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$NEW_MANAGER_IP"'"},"manager_token": {"S":"'"$MANAGER_TOKEN"'"},"worker_token": {"S":"'"$WORKER_TOKEN"'"}}' \
+                --return-consumed-capacity TOTAL
+        fi
     fi
 
-    echo "demote the node from manager to worker for NODE: $NODE_ID"
-    docker node demote $NODE_ID
+    # if not the last manager, demote, if it is the last manager, then we can't demote, it won't let us.
+    if [ -z "$LAST_MANAGER" ]; then
+        echo "demote the node from manager to worker for NODE: $NODE_ID"
+        docker node demote $NODE_ID
+    else
+        echo "This is the last manager in the swarm."
+    fi
     echo "Give time for the demotation to take place"
     buoy -event="node:demote" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     sleep 30
