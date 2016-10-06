@@ -88,12 +88,7 @@ So when you put this in a larger JSON, say using this with a Group plugin, the c
         "Flavor" : {
             "Plugin": "flavor-vanilla",
             "Properties": {
-                "Size" : 5,
-                "UserData" : [
-                    "sudo apt-get update -y",
-                    "sudo apt-get install -y nginx",
-                    "sudo service nginx start"
-                ]
+                "Size" : 5
             }
         }
     }
