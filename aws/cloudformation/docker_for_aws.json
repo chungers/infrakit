@@ -450,7 +450,13 @@
                 }
               }
           },
-
+       "DockerLogGroup": {
+          "Type" : "AWS::Logs::LogGroup",
+          "Properties" : {
+            "LogGroupName" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
+            "RetentionInDays" : 7
+          }
+        },
         "ManagerAsg" : {
             "DependsOn" : "SwarmDynDBTable",
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
@@ -525,11 +531,15 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
+                                { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
+                                "\" }}' > /etc/docker/daemon.json \n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
+                                "rc-service docker restart\n",
                                 "sleep 5\n",
 
-                                "docker run --restart=no -d ",
+                                "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -543,7 +553,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --name=guide-aws --restart=always -d ",
+                                "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -559,7 +569,7 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --name=shell-aws --restart=always -d -p 22:22 ",
+                                "docker run --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
@@ -571,7 +581,7 @@
                                 "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --name=l4controller-aws --restart=always -d --name=editions_controller ",
+                                "docker run --log-driver=json-file --name=l4controller-aws --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n"
@@ -649,10 +659,14 @@
                             "", [
                                 "#!/bin/sh\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
+                                { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
+                                "\" }}' > /etc/docker/daemon.json \n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
+                                "rc-service docker restart\n",
                                 "sleep 5\n",
-                                "docker run --restart=no -d ",
+                                "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -666,7 +680,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --name=guide-aws --restart=always -d ",
+                                "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -832,7 +846,9 @@
                 "Effect": "Allow",
                 "Action": [
                     "ec2:DescribeInstances",
-                    "ec2:DescribeVpcAttribute"
+                    "ec2:DescribeVpcAttribute",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                 ],
                 "Resource": "*"
             } ]
