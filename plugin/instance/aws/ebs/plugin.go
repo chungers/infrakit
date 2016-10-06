@@ -89,6 +89,9 @@ func (p Provisioner) Provision(spec instance.Spec) (*instance.ID, error) {
 
 // Destroy terminates an existing instance.
 func (p Provisioner) Destroy(id instance.ID) error {
+
+	// TODO(chungers) -- Need to query about the status of the volume to make
+	// sure it's ok to destroy.
 	volID := string(id)
 	input := ec2.DeleteVolumeInput{
 		VolumeId: &volID,

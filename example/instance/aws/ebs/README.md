@@ -15,6 +15,8 @@ these volumes available to the EC2 instances you provision in another group.
   + At the moment, this simply provisions the EBS volume without actually formatting the media.
 So we'd like to include in this plugin the ability to maintain a pool of small instances that
 can be used to format the volumes and possibly prepare any data necessary on the volume.
+  + Need to work out a simple convention that instances that have attachments will not destroy
+  the attachments but rather we let the group driver determine which unused volumes to destroy.
   + We are implementing a way for another flavor plugin to select a specific or any instance from
   a group of resources. This then allows the group that is provisioning the nodes (hosts) to be
   able to specify a flavor plugin that can actually pull a volume (a properly formatted one) from
@@ -94,8 +96,7 @@ So when you put this in a larger JSON, say using this with a Group plugin, the c
     }
 }
 ```
-In the example above, the vanila flavor plugin is used.  So we are just managing cattle where all instances
-look alike.
+In the example above, we have a group of 5 volumes that need to be provisioned, each with 100G of capacity.
 
 To have the Group plugin watch this group, first make sure the plugins are all running (see tutorial and examples elsewhere).
 Then, do this:
@@ -104,7 +105,7 @@ Then, do this:
 $ infrakit/cli group watch group.json
 ```
 
-With this minimal setup, you can set up a group in the same subnet, using the same AMI, with the same security groups.
+InfraKit will create the new volumes if they aren't around already.
 
 ## Environment Discovery
 
