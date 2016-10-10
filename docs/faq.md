@@ -38,11 +38,9 @@ Docker for AWS should work with all regions except for AWS China, which is a lit
 All of Amazons regions have at least 2 AZ's, and some have more. To make sure we work in all regions, we currently only support 2 AZ's even if there are more available.
 
 ### How long will it take before I get accepted into the private beta?
-Docker for AWS is built on top of Docker 1.12 which hasn't officially been released yet, and because of this, things are still changing, which means things can break between release candidates.
+Docker for AWS is built on top of Docker 1.12, but as with all Beta, things are still changing, which means things can break between release candidates.
 
 We are currently rolling it out slowly to make sure everything is working as it should. This is to ensure that if there are any issues we limit the number of people that are affected.
-
-Once Docker 1.12 goes GA, and we feel there are no major issues that could cause problems, we will start opening it up to more and more people. But please be aware, due to the large number of people on the backlog, it might take a little while to get to you.
 
 ### How stable is Docker for AWS
 We feel it is fairly stable for development and testing, but since things are consistently changing, we currently don't recommend using it for production workloads at this time.
