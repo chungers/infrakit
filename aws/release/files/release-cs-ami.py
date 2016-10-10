@@ -24,7 +24,7 @@ def main():
                         dest='ami_src_region', required=True,
                         help="The reason the source AMI was built in (i.e. us-east-1)")
     parser.add_argument('-l', '--account_list_url',
-                        dest='account_list_url', default=ACCOUNT_LIST_FILE_URL,
+                        dest='account_list_url', default=DOCKER_AWS_ACCOUNT_URL,
                         help="The URL for the aws account list for ami approvals")
 
     args = parser.parse_args()

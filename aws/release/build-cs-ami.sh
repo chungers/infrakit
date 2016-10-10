@@ -41,13 +41,14 @@ echo "Docker version = $DOCKER_VERSION"
 export DOCKER_EXPERIMENTAL=0
 export TAG_KEY=$DOCKER_VERSION
 export DOCKER_BIN_URL=$BIN_URL
-export MOBY_SRC_ROOT="/home/ubuntu/code/moby-master/alpine"
+MOBY_ROOT="/home/ubuntu/code/moby-master/alpine"
 
-cd $MOBY_SRC_ROOT
+cd $MOBY_ROOT
 git pull
 
 # clean mount before we start to make sure.
 make ami-clean-mount
+make clean
 make ami
 make ami-clean-mount
 # clean up after ourselves
@@ -56,7 +57,7 @@ echo "Finished AMI build, lets move onto next part."
 
 # get ami-id
 # look for anyfiles that look like ami_*.out those are ami's ready to be processed.
-for f in ${MOBY_SRC_ROOT}/cloud/aws/ami_*.out; do
+for f in ${MOBY_ROOT}/cloud/aws/ami_*.out; do
 
     ## Check if the glob gets expanded to existing files.
     ## If not, f here will be exactly the pattern above
@@ -111,7 +112,7 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e DOCKER_VERSION=$DOCKER_VERSION \
 -e AMI_ID=$AMI_ID \
 -e AMI_SRC_REGION=$AMI_SRC_REGION \
--e AWS_ACCOUNT_LIST_URL="$AWS_ACCOUNT_LIST_URL" \
+-e AWS_ACCOUNT_LIST_URL="$DOCKER_AWS_ACCOUNT_URL" \
 $SH_IMAGE_NAME /home/docker/release-cs-ami.sh
 
 echo "== cleanup the docker image =="
