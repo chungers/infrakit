@@ -52,5 +52,11 @@ Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
 
 ## Analytics
-
 The beta versions of Docker for AWS and Azure send anonymized analytics to Docker. These analytics are used to monitor beta adoption and are critical to improve Docker for AWS and Azure.
+
+### How to run administrative commands?
+By default when you SSH into the manager, you will be logged in as the regular username: `docker` - It is possible however to run commands with elevated privileges by using `sudo`.
+For example to ping one of the nodes, after finding its IP via the Azure/AWS portal (e.g. 10.0.0.4), you could run:
+```
+$ sudo ping 10.0.0.4
+```  
