@@ -166,7 +166,7 @@
       }
     },
     "adServicePrincipalAppSecret": {
-      "type": "secureString",
+      "type": "securestring",
       "metadata": {
         "description": "AD ServicePrincipal App Secret"
       }
@@ -181,7 +181,6 @@
   "variables": {
     "storageLocation": "[resourceGroup().location]",
     "dockerForIAASVersion": "azure-v1.12.1-beta5",
-    "dockerVersion": "1.12.0",
     "dockerImageSku": "docker4azure",
     "dockerImageVersion": "1.12.11",
     "apiVersion": "2016-03-30",
@@ -198,7 +197,6 @@
     "workerVMNamePrefix": "[concat(variables('basePrefix'), '-worker-')]",
     "managerEndpointDNSNamePrefix": "manager",
     "vmssName": "[concat(variables('workerVMNamePrefix'), 'vmss')]",
-    "managerPublicIPAddressName": "[concat(variables('basePrefix'), '-manager-ip-', variables('managerEndpointDNSNamePrefix'))]",
     "lbName": "externalLoadBalancer",
     "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
     "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
@@ -264,19 +262,6 @@
             }
           }
         ]
-      }
-    },
-    {
-      "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[concat(variables('managerPublicIPAddressName'), 'ip-', copyIndex())]",
-      "location": "[variables('storageLocation')]",
-      "copy": {
-        "name": "ipLoopNode",
-        "count": "[variables('managerCount')]"
-      },
-      "properties": {
-        "publicIPAllocationMethod": "Static"
       }
     },
     {
@@ -381,10 +366,7 @@
           {
             "name": "ipConfigNode",
             "properties": {
-              "privateIPAllocationMethod": "dynamic",
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerPublicIPAddressName'), 'ip-', copyIndex()))]"
-              },
+              "privateIPAllocationMethod": "Dynamic",
               "subnet": {
                 "id": "[variables('subnetRef')]"
               },
@@ -425,7 +407,7 @@
           "vmSize": "[variables('managerVMSize')]"
         },
         "osProfile": {
-          "computername": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
+          "computerName": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
           "adminUsername": "[variables('adminUsername')]",
           "customData": "[base64(concat('#!/bin/bash\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', variables('customDataManager')))]",
           "linuxConfiguration": {
@@ -539,7 +521,7 @@
               {
                 "name": "workerNodeNic",
                 "properties": {
-                  "primary": "true",
+                  "primary": true,
                   "ipConfigurations": [
                     {
                       "name": "nicipconfig",
@@ -606,10 +588,10 @@
           {
             "name": "default",
             "properties": {
-              "protocol": "tcp",
+              "protocol": "Tcp",
               "port": 2375,
-              "intervalInSeconds": "10",
-              "numberOfProbes": "2"
+              "intervalInSeconds": 10,
+              "numberOfProbes": 2
             }
           }
         ]
