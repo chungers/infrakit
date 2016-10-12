@@ -51,6 +51,21 @@ Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](
 ### I have a problem/bug where do I report it?
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
 
+If your stack/resource group is misbehaving, please run the following diagnostic tool from one of the managers; this will collect your docker logs and send them to us:
+
+```
+$ docker-diagnose
+OK hostname=manager1
+OK hostname=worker1
+OK hostname=worker2
+Done requesting diagnostics.
+Your diagnostics session ID is 1234567890-xxxxxxxxxxxxxx
+Please provide this session ID to the maintainer debugging your issue.
+```
+
+_Please note that your output will be slightly different from the above and will reflect your nodes_
+
+
 ## Analytics
 The beta versions of Docker for AWS and Azure send anonymized analytics to Docker. These analytics are used to monitor beta adoption and are critical to improve Docker for AWS and Azure.
 

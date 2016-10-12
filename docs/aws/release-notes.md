@@ -17,10 +17,10 @@ weight="400"
 # Docker for AWS Release notes
 
 ## 1.12.2-beta9
+
 Release date: 10/12/2016
 
 [![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.2-beta9.json)
-
 
 ### New
 
