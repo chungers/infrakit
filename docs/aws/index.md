@@ -27,6 +27,7 @@ Docker for AWS is currently in private beta. [Sign up](https://beta.docker.com) 
     - SQS Queue
     - VPC + subnets
     - ELB
+    - CloudWatch Log Group
 - SSH key in AWS in the region where you want to deploy (required to access the completed Docker install)
 
 ## Configuration
