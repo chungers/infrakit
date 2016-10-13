@@ -8,6 +8,7 @@ from utils import (
 
 
 CFN_TEMPLATE = '/home/docker/docker_for_aws.template'
+CFN_CLOUD_TEMPLATE = '/home/docker/docker_for_aws_cloud.template'
 
 def main():
     parser = argparse.ArgumentParser(description='Release Docker for AWS')
@@ -26,8 +27,8 @@ def main():
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
-    parser.add_argument('-u', '--channel_ddc',
-                        dest='channel_ddc', default="alpha",
+    parser.add_argument('-u', '--channel_cloud',
+                        dest='channel_cloud', default="alpha",
                         help="DDC release channel (beta, alpha, rc, nightly)")
     parser.add_argument('-l', '--account_list_url',
                         dest='account_list_url', default=ACCOUNT_LIST_FILE_URL,
@@ -36,14 +37,13 @@ def main():
     args = parser.parse_args()
 
     release_channel = args.channel
-    release_ddc_channel = args.channel_ddc
+    release_cloud_channel = args.channel_cloud
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
     edition_version = args.edition_version
     flat_edition_version = edition_version.replace(" ", "")
     docker_for_aws_version = u"aws-v{}-{}".format(docker_version, flat_edition_version)
-    docker_for_aws_ddc_version = u"aws-v{}-{}-ddc".format(docker_version, flat_edition_version)
     image_name = u"Moby Linux {}".format(docker_for_aws_version)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
@@ -75,11 +75,14 @@ def main():
     s3_url = create_cfn_template(ami_list, release_channel, docker_version,
                                  docker_for_aws_version, edition_version, CFN_TEMPLATE,
                                  docker_for_aws_version)
+    s3_cloud_url = create_cfn_template(ami_list, release_cloud_channel, docker_version,
+                                 docker_for_aws_version, edition_version, CFN_CLOUD_TEMPLATE,
+                                 docker_for_aws_version)
 
     # TODO: git commit, tag release. requires github keys, etc.
 
     print("------------------")
-    print(u"Finshed.. CloudFormation URL={0} \n".format(s3_url))
+    print(u"Finshed.. CloudFormation URL={0} \n\t cloud-URL={1} \n".format(s3_url, s3_cloud_url))
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
         docker_version, flat_edition_version))
     print("------------------")
