@@ -30,6 +30,9 @@ Docker for AWS is currently in private beta. [Sign up](https://beta.docker.com) 
     - CloudWatch Log Group
 - SSH key in AWS in the region where you want to deploy (required to access the completed Docker install)
 
+For more information about adding an SSH key pair to your account, please refer to the [Amazon EC2 Key Pairs docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html)
+
+
 ## Configuration
 
 Once you're in the beta, Docker will share with you a set of AMIs. You will also get a link to a CloudFormation template that orchestrates deploying a swarm using the AMIs.
