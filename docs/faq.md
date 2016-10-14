@@ -75,3 +75,7 @@ For example to ping one of the nodes, after finding its IP via the Azure/AWS por
 ```
 $ sudo ping 10.0.0.4
 ```  
+
+### What do I do if I get "KeyPair error" on AWS?
+As part of the prerequisites, you need to have an SSH key uploaded to the AWS region you are trying to deploy to. 
+For more information about adding an SSH key pair to your account, please refer to the [Amazon EC2 Key Pairs docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) 
