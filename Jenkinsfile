@@ -1,10 +1,9 @@
-def cloudFormation = ["aws/cloudformation/docker_for_aws.json", "aws/cloudformation/docker_for_aws_ddc.json", "aws/cloudformation/docker_for_aws_cloud.json", "azure/editions.json", "azure/editions_ddc.json", "azure/editions_cloud.json"]
-
 wrappedNode(label: "docker") {
   deleteDir()
   stage "validate"
   checkout scm
   withTool("jq@1.5") {
+    def cloudFormation = (ArrayList)(sh(script: 'find . -iname "*.json"', returnStdout: true).split("\r?\n"))
     for (i in cloudFormation) {
       try {
         sh "jq . '${i}' >/dev/null 2>&1"
