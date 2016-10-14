@@ -1,5 +1,7 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "title": "Docker-for-Azure",
+  "description": "Docker for Azure 1.12.2 (v1.12.2-beta9)",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "swarmName": {
@@ -181,9 +183,16 @@
   "variables": {
     "storageLocation": "[resourceGroup().location]",
     "dockerForIAASVersion": "azure-v1.12.1-beta5",
-    "dockerImageSku": "docker4azure",
-    "dockerImageVersion": "1.12.11",
-    "dockerProduct": "docker4azure-preview",
+    "imagePublisher": "docker",
+    "imageOffer": "docker4azure-preview",
+    "imageSku": "docker4azure",
+    "imageVersion": "1.12.11",
+    "imageReference": {
+      "publisher": "[variables('imagePublisher')]",
+      "offer": "[variables('imageOffer')]",
+      "sku": "[variables('imageSku')]",
+      "version": "[variables('imageVersion')]"
+    },
     "apiVersion": "2016-03-30",
     "accountID": "[subscription().subscriptionId]",
     "groupName": "[resourceGroup().name]",
@@ -387,9 +396,9 @@
       "name": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
       "location": "[variables('storageLocation')]",
       "plan": {
-        "publisher": "docker",
-        "name": "[variables('dockerImageSku')]",
-        "product": "[variables('dockerProduct')]"
+        "publisher": "[variables('imagePublisher')]",
+        "name": "[variables('imageSku')]",
+        "product": "[variables('imageOffer')]"
       },
       "copy": {
         "name": "vmLoopNode",
@@ -421,12 +430,7 @@
           }
         },
         "storageProfile": {
-          "imageReference": {
-            "publisher": "docker",
-            "offer": "[variables('dockerProduct')]",
-            "sku": "[variables('dockerImageSku')]",
-            "version": "[variables('dockerImageVersion')]"
-          },
+          "imageReference": "[variables('imageReference')]",
           "osDisk": {
             "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
             "vhd": {
@@ -479,12 +483,7 @@
         },
         "virtualMachineProfile": {
           "storageProfile": {
-            "imageReference": {
-              "publisher": "docker",
-              "offer": "[variables('dockerProduct')]",
-              "sku": "[variables('dockerImageSku')]",
-              "version": "[variables('dockerImageVersion')]"
-            },
+            "imageReference": "[variables('imageReference')]",
             "osDisk": {
               "vhdContainers": [
                 "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",

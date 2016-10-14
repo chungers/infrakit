@@ -50,3 +50,6 @@ shell:
 
 login:
 	make -C dockerfiles/xplatcli login
+
+release: clean
+	python release/release.py --docker_version="$DOCKER_VERSION" --edition_version="$EDITION_VERSION" --vhd_sku="$VHD_SKU" --vhd_version="$VHD_VERSION" --channel="$CHANNEL"
