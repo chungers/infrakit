@@ -1,6 +1,6 @@
 def cloudFormation = ["aws/cloudformation/docker_for_aws.json", "aws/cloudformation/docker_for_aws_ddc.json", "aws/cloudformation/docker_for_aws_cloud.json", "azure/editions.json", "azure/editions_ddc.json", "azure/editions_cloud.json"]
 
-wrappedNode(label: "master") {
+wrappedNode(label: "docker") {
   try {
     deleteDir()
     stage "validate"
