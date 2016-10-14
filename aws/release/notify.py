@@ -53,7 +53,8 @@ def results(title, results_file, s3_path):
 
 attachment_oss = results("Docker AWS", "results", "aws/nightly")
 attachment_ddc = results("Docker AWS + DDC", "ddc_results", "aws/ddc-nightly")
-payload['attachments'] = [attachment_oss, attachment_ddc]
+attachment_cloud = results("Docker AWS + Cloud Federation", "cloud_results", "aws/cloud-nightly")
+payload['attachments'] = [attachment_oss, attachment_ddc, attachment_cloud]
 
 # send message
 requests.post(SLACK_INCOMING_WEB_HOOK,
