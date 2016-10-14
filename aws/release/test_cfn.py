@@ -19,9 +19,18 @@ PARAMETERS = [('ClusterSize', 2),
 DDC_PARAMETERS = [('ClusterSize', 2),
               ('InstanceType', 't2.micro'),
               ('KeyName', 'ken_cochrane'),
-              ('ManagerInstanceType', 'm3.medium'),
+              ('ManagerInstanceType', 't2.medium'),
               ('ManagerSize', 3),
               ('DDCPasswordSet', 'password')]
+
+CLOUD_PARAMETERS = [('ClusterSize', 2),
+              ('InstanceType', 't2.micro'),
+              ('KeyName', 'ken_cochrane'),
+              ('ManagerInstanceType', 't2.medium'),
+              ('ManagerSize', 3),
+              ('DockerCloudClusterName', 'daodoo/swarm-{}'.format(NOW)),
+              ('DockerCloudUsername', 'appaws'),
+              ('DockerCloudAPIKey', '01b6eb3a-f5aa-414a-bfb0-4273819299f4')]
 
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-central-1', 'ap-southeast-1',
@@ -123,13 +132,17 @@ def main():
     parser.add_argument('-t', '--stack_type',
                         dest='stack_type', required=True,
                         default="oss",
-                        help="The type of stack (oss, ddc)")
+                        help="The type of stack (oss, ddc, cloud)")
     args = parser.parse_args()
 
     if not args.stack_type or args.stack_type.lower() == 'oss':
         stack_params = PARAMETERS
         channel = "nightly"
         name = u"Nite-{}".format(NOW.strftime("%m%d%Y%f")[:12])
+    else if args.stack_type.lower() == 'cloud':
+        stack_params = CLOUD_PARAMETERS
+        channel = "cloud-nightly"
+        name = u"Cloud-Nite-{}".format(NOW.strftime("%m%d%Y%f")[:12])
     else:
         stack_params = DDC_PARAMETERS
         channel = "ddc-nightly"

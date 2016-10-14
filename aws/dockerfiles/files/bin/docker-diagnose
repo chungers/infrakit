@@ -1,0 +1,20 @@
+#!/bin/sh
+
+DIAGNOSTICS_MAGIC_PORT=44554
+NODES=$(docker node inspect $(docker node ls -q) | jq -r '.[] | .Description.Hostname' | tr '\n' ' ')
+
+# Session is set to a pseudo-random string combined with the current timestamp.
+# This should minimize the probability of collision while also providing
+# information about when the report was collected.
+SESSION="$(date +'%s')-$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64 | tr -d "=+/" | dd bs=32 count=1 2>/dev/null)"
+
+for NODE in ${NODES}
+do
+	curl -X POST \
+		-F "session=${SESSION}" \
+		"http://${NODE}:${DIAGNOSTICS_MAGIC_PORT}/diagnose"
+done
+
+echo "Done requesting diagnostics."
+echo "Your diagnostics session ID is ${SESSION}"
+echo "Please provide this session ID to the maintainer debugging your issue."

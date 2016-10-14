@@ -38,11 +38,9 @@ Docker for AWS should work with all regions except for AWS China, which is a lit
 All of Amazons regions have at least 2 AZ's, and some have more. To make sure we work in all regions, we currently only support 2 AZ's even if there are more available.
 
 ### How long will it take before I get accepted into the private beta?
-Docker for AWS is built on top of Docker 1.12 which hasn't officially been released yet, and because of this, things are still changing, which means things can break between release candidates.
+Docker for AWS is built on top of Docker 1.12, but as with all Beta, things are still changing, which means things can break between release candidates.
 
 We are currently rolling it out slowly to make sure everything is working as it should. This is to ensure that if there are any issues we limit the number of people that are affected.
-
-Once Docker 1.12 goes GA, and we feel there are no major issues that could cause problems, we will start opening it up to more and more people. But please be aware, due to the large number of people on the backlog, it might take a little while to get to you.
 
 ### How stable is Docker for AWS
 We feel it is fairly stable for development and testing, but since things are consistently changing, we currently don't recommend using it for production workloads at this time.
@@ -53,6 +51,31 @@ Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](
 ### I have a problem/bug where do I report it?
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
 
-## Analytics
+If your stack/resource group is misbehaving, please run the following diagnostic tool from one of the managers; this will collect your docker logs and send them to us:
 
+```
+$ docker-diagnose
+OK hostname=manager1
+OK hostname=worker1
+OK hostname=worker2
+Done requesting diagnostics.
+Your diagnostics session ID is 1234567890-xxxxxxxxxxxxxx
+Please provide this session ID to the maintainer debugging your issue.
+```
+
+_Please note that your output will be slightly different from the above and will reflect your nodes_
+
+
+## Analytics
 The beta versions of Docker for AWS and Azure send anonymized analytics to Docker. These analytics are used to monitor beta adoption and are critical to improve Docker for AWS and Azure.
+
+### How to run administrative commands?
+By default when you SSH into the manager, you will be logged in as the regular username: `docker` - It is possible however to run commands with elevated privileges by using `sudo`.
+For example to ping one of the nodes, after finding its IP via the Azure/AWS portal (e.g. 10.0.0.4), you could run:
+```
+$ sudo ping 10.0.0.4
+```  
+
+### What do I do if I get "KeyPair error" on AWS?
+As part of the prerequisites, you need to have an SSH key uploaded to the AWS region you are trying to deploy to. 
+For more information about adding an SSH key pair to your account, please refer to the [Amazon EC2 Key Pairs docs](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) 

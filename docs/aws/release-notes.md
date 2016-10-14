@@ -16,11 +16,40 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.12.2-beta9
+
+Release date: 10/12/2016
+
+[![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.2-beta9.json)
+
+### New
+
+- Docker Engine upgraded to Docker 1.12.2
+- Can better handle scaling swarm nodes down and back up again
+- Container logs are now sent to CloudWatch
+- Added a diagnostic command (docker-diagnose), to more easily send us diagnostic information incase of errors for troubleshooting
+- Added sudo support to the shell container on manager nodes
+- Change SQS default message timeout to 12 hours from 4 days
+- Added support for region 'ap-south-1': Asia Pacific (Mumbai)
+
+### Deprecated:
+- Port 2375 will be closed in next release. If you relay on this being open, please plan accordingly.
+
+## 1.12.2-RC3-beta8
+
+Release date: 10/06/2016
+
+ * Docker Engine upgraded to 1.12.2-RC3
+
+## 1.12.2-RC2-beta7
+
+Release date: 10/04/2016
+
+ * Docker Engine upgraded to 1.12.2-RC2
+
 ## 1.12.2-RC1-beta6
 
 Release date: 9/29/2016
-
-[![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)](https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.2-rc1-beta6.json)
 
 ### New
 

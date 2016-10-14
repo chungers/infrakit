@@ -183,6 +183,7 @@
     "dockerForIAASVersion": "azure-v1.12.1-beta5",
     "dockerImageSku": "docker4azure",
     "dockerImageVersion": "1.12.11",
+    "dockerProduct": "docker4azure-preview",
     "apiVersion": "2016-03-30",
     "accountID": "[subscription().subscriptionId]",
     "groupName": "[resourceGroup().name]",
@@ -300,20 +301,6 @@
             }
           },
           {
-            "name": "docker-port",
-            "properties": {
-              "description": "Allow 'docker' ingress to manager node",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "2375",
-              "sourceAddressPrefix": "[variables('subnetPrefix')]",
-              "destinationAddressPrefix": "[variables('subnetPrefix')]",
-              "access": "Allow",
-              "priority": 205,
-              "direction": "Inbound"
-            }
-          },
-          {
             "name": "vxlan",
             "properties": {
               "description": "Allow VXLan connection between nodes",
@@ -338,6 +325,20 @@
               "destinationAddressPrefix": "[variables('subnetPrefix')]",
               "access": "Allow",
               "priority": 204,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "docker-port",
+            "properties": {
+              "description": "Allow 'docker' ingress to manager node",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "2375",
+              "sourceAddressPrefix": "[variables('subnetPrefix')]",
+              "destinationAddressPrefix": "[variables('subnetPrefix')]",
+              "access": "Allow",
+              "priority": 205,
               "direction": "Inbound"
             }
           }
@@ -373,9 +374,6 @@
               "loadBalancerInboundNatRules": [
                 {
                   "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ssh')]"
-                },
-                {
-                  "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ddc')]"
                 }
               ]
             }
@@ -390,8 +388,8 @@
       "location": "[variables('storageLocation')]",
       "plan": {
         "publisher": "docker",
-        "name": "docker4azure",
-        "product": "docker4azure-preview"
+        "name": "[variables('dockerImageSku')]",
+        "product": "[variables('dockerProduct')]"
       },
       "copy": {
         "name": "vmLoopNode",
@@ -425,7 +423,7 @@
         "storageProfile": {
           "imageReference": {
             "publisher": "docker",
-            "offer": "docker4azure-preview",
+            "offer": "[variables('dockerProduct')]",
             "sku": "[variables('dockerImageSku')]",
             "version": "[variables('dockerImageVersion')]"
           },
@@ -483,7 +481,7 @@
           "storageProfile": {
             "imageReference": {
               "publisher": "docker",
-              "offer": "docker4azure-preview",
+              "offer": "[variables('dockerProduct')]",
               "sku": "[variables('dockerImageSku')]",
               "version": "[variables('dockerImageVersion')]"
             },
@@ -640,18 +638,6 @@
               "protocol": "tcp",
               "frontendPort": 22,
               "backendPort": 22,
-              "enableFloatingIP": false
-            }
-          },
-          {
-            "name": "ddc",
-            "properties": {
-              "frontendIPConfiguration": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
-              },
-              "protocol": "tcp",
-              "frontendPort": 443,
-              "backendPort": 443,
               "enableFloatingIP": false
             }
           }
