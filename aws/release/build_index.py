@@ -67,3 +67,4 @@ def build_index(bucket_path, results_file, title):
 # build for OSS and DDC
 build_index("aws/nightly/", "results", "Docker for AWS")
 build_index("aws/ddc-nightly/", "ddc_results", "Docker for AWS + DDC")
+build_index("aws/cloud-nightly/", "cloud_results", "Docker for AWS + Cloud Federation")

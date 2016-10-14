@@ -91,13 +91,14 @@ cd $CURRPATH
 cd $BUILD_HOME/code/editions/aws/release
 
 # run release
-./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u ddc-nightly
+./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
 
 # run tests
 python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json -f results -t oss
+python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/cloud-nightly/latest.json -f cloud_results -t cloud
 
 # Rebuild the nightly index page.
 python build_index.py

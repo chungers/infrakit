@@ -166,7 +166,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile,
     key.set_contents_from_filename(tempfile)
     key.set_acl("public-read")
 
-    if release_channel == 'nightly' or release_channel == 'ddc-nightly':
+    if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
         print("This is a nightly build, update the latest.json file.")
         print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
             s3_path_latest, S3_BUCKET_NAME))
@@ -282,7 +282,7 @@ def create_ddc_dev_cfn_template(amis, release_channel, docker_version,
                 "Type": "String",
                 "Description": "Hub tag to pull Datacenter?",
                 "ConstraintDescription": "Please enter the image tag you want to use for pulling Docker Datacenter",
-                "Default": "2.0.0-tp1"
+                "Default": "2.0.0-beta1"
             },
             "DockerIdSet": {
                 "Type": "String",

@@ -11,6 +11,7 @@ EDITION_VERSION=
 AMI_ID=
 AMI_SRC_REGION=
 CHANNEL=
+CHANNEL_CLOUD=
 AWS_ACCOUNT_LIST_URL=
 
 usage()
@@ -32,7 +33,7 @@ OPTIONS:
    -a      AMI ID (ami-123456, etc)
    -r      AMI source region (us-east-1)
    -c      Release Channel (beta, nightly, etc)
-   -u      DDC Release Channel (beta, nightly, etc)
+   -u      Cloud Release Channel (beta, nightly, etc)
    -l      AWS account list URL
 EOF
 }
@@ -60,7 +61,7 @@ do
              CHANNEL=$OPTARG
              ;;
          u)
-             CHANNEL_DDC=$OPTARG
+             CHANNEL_CLOUD=$OPTARG
              ;;
          l)
              AWS_ACCOUNT_LIST_URL=$OPTARG
@@ -99,7 +100,7 @@ echo "EDITION_VERSION=$EDITION_VERSION"
 echo "AMI_ID=$AMI_ID"
 echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
-echo "CHANNEL_DDC=$CHANNEL_DDC"
+echo "CHANNEL_CLOUD=$CHANNEL_CLOUD"
 echo "AWS_ACCOUNT_LIST_URL=$AWS_ACCOUNT_LIST_URL"
 echo "-------"
 echo "== Prepare files =="
@@ -110,9 +111,13 @@ if [ -f tmp/docker_for_aws.template ]; then
     echo "Cleanup old template file."
     rm -f tmp/docker_for_aws.template
 fi
+if [ -f tmp/docker_for_aws_cloud.template ]; then
+    echo "Cleanup old cloud template file."
+    rm -f tmp/docker_for_aws_cloud.template
+fi
 echo "Copy over template file."
 cp ../cloudformation/docker_for_aws.json tmp/docker_for_aws.template
-cp ../cloudformation/docker_for_aws_ddc.json tmp/docker_for_aws_ddc.template
+cp ../cloudformation/docker_for_aws_cloud.json tmp/docker_for_aws_cloud.template
 
 echo "== build docker image =="
 # build the docker image
@@ -127,7 +132,7 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e AMI_ID=$AMI_ID \
 -e AMI_SRC_REGION=$AMI_SRC_REGION \
 -e CHANNEL="$CHANNEL" \
--e CHANNEL_DDC="$CHANNEL_DDC" \
+-e CHANNEL_CLOUD="$CHANNEL_CLOUD" \
 -e AWS_ACCOUNT_LIST_URL="$AWS_ACCOUNT_LIST_URL" \
 docker4x/release-$BUILD_NUMBER
 
