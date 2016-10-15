@@ -41,7 +41,7 @@ def buildCustomData(data_file):
         customData += ['\'' + line + '\'']
   return customData
 
-def upload_cfn_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
+def upload_rg_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
@@ -73,7 +73,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile,
 
     return s3_full_url
 
-def create_cfn_template(vhd_sku, vhd_version, release_channel, docker_version,
+def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
                         docker_for_azure_version, edition_version, cfn_template, cfn_name):
     # check if file exists before opening.
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
@@ -82,7 +82,7 @@ def create_cfn_template(vhd_sku, vhd_version, release_channel, docker_version,
     with open(cfn_template) as data_file:
         data = json.load(data_file)
     
-    data['description'] = u"Docker for Azure {0} ({1})".format(docker_version, edition_version)
+    data['variables']['Description'] = u"Docker for Azure {0} ({1})".format(docker_version, edition_version)
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['dockerForIAASVersion'] = docker_for_azure_version
@@ -111,9 +111,94 @@ def create_cfn_template(vhd_sku, vhd_version, release_channel, docker_version,
       print(u"Cloudformation template created in {}".format(outfile))
     else:
       print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+    
+    rg_template = namedtuple('Templates', ['local_url', 's3_url'])
+    rg_template(outfile, upload_rg_template(release_channel, cloudformation_template_name, outfile))
 
-    return upload_cfn_template(release_channel, cloudformation_template_name, outfile)
+    return rg_template
 
+def create_rg_cloud_template(release_channel, docker_version,
+                        docker_for_azure_version, edition_version, cfn_template, cfn_name):
+    with open(cfn_template) as data_file:
+        data = json.load(data_file)
+
+    # Updated Manager custom data
+    manager_data = buildCustomData('custom-data_cloud_manager.sh')
+    data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
+
+    parameters = data.get('parameters')
+    if parameters:
+        new_parameters = {
+            "DockerCloudClusterName" : {
+                "type": "string",
+                "metadata": {
+                    "description": "Name of the cluster (namespace/cluster_name) to be used when registering this Swarm with Docker Cloud\n\nMust be in the format 'namespace/cluster_name' and must only contain letters, digits and hyphens"
+                }
+            },
+            "DockerCloudUsername" : {
+                "type" : "String",
+                "metadata": {
+                    "description": "Docker ID username to use during registration\n\nMust only contain letters or digits"
+                }
+            },
+            "DockerCloudAPIKey" : {
+                "type" : "String",
+                "metadata": {
+                    "description": "Docker ID API key to use during registration"
+                }
+            }
+        }
+        parameters.update(new_parameters)
+
+    outputs = data.get('outputs')
+    if outputs:
+        new_outputs = {
+            "ConnectToThisCluster": {
+                "type": "string",
+                "value": "[concat('docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_HOST dockercloud/client ', variables('DockerCloudClusterName'))]"
+            }
+        }
+        outputs.update(new_outputs)
+    
+    inbound = data.get('inbound')
+    
+    if inbound:
+        for key, val in enumerate(data.get('resources')):
+            if val['name'] == "[variables('lbSSHName')]":
+                inbound = val['properties']['inboundNatRules']
+                new_inbound = {
+                    "name": "cloud",
+                    "properties": {
+                        "frontendIPConfiguration": {
+                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
+                        },
+                        "protocol": "tcp",
+                        "frontendPort": 2376,
+                        "backendPort": 2376,
+                        "enableFloatingIP": False
+                    }
+                }
+                inbound.append(new_inbound)
+                break
+    
+    cloudformation_template_name = u"{}.json".format(cfn_name)
+    outdir = u"dist/azure/{}".format(release_channel)
+    # if the directory doesn't exist, create it.
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
+
+    with open(outfile, 'w') as outf:
+        json.dump(data, outf, indent=4, sort_keys=True)
+
+    # TODO: json validate
+    if is_json(outfile):
+      print(u"Cloudformation template created in {}".format(outfile))
+    else:
+      print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+
+    return upload_rg_template(release_channel, cloudformation_template_name, outfile)
 
 
 def create_ddc_dev_cfn_template(amis, release_channel, docker_version,

@@ -1,7 +1,5 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-  "title": "Docker-for-Azure",
-  "description": "Docker for Azure 1.12.2 (v1.12.2-beta9)",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "swarmName": {
@@ -181,6 +179,7 @@
     }
   },
   "variables": {
+    "Description": "Docker for Azure 1.12.2 (v1.12.2-beta9)",
     "storageLocation": "[resourceGroup().location]",
     "dockerForIAASVersion": "azure-v1.12.1-beta5",
     "imagePublisher": "docker",
@@ -416,7 +415,7 @@
         "osProfile": {
           "computerName": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
           "adminUsername": "[variables('adminUsername')]",
-          "customData": "[base64(concat('#!/bin/bash\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', variables('customDataManager')))]",
+          "customData": "[base64(concat('#!/bin/bash\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', 'export LB_SSH_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
           "linuxConfiguration": {
             "disablePasswordAuthentication": true,
             "ssh": {
@@ -500,7 +499,7 @@
           "osProfile": {
             "computerNamePrefix": "[variables('workerVMNamePrefix')]",
             "adminUsername": "[variables('adminUsername')]",
-            "customData": "[base64(concat('#!/bin/bash\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', variables('customDataWorker')))]",
+            "customData": "[base64(concat('#!/bin/bash\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', 'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataWorker')))]",
             "linuxConfiguration": {
               "disablePasswordAuthentication": true,
               "ssh": {

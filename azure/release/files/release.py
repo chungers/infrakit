@@ -24,10 +24,14 @@ def main():
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
+   parser.add_argument('-u', '--channel_cloud',
+                        dest='channel_cloud', default="alpha",
+                        help="Cloud release channel (beta, alpha, rc, nightly)")
 
     args = parser.parse_args()
 
     release_channel = args.channel
+    release_cloud_channel = args.channel_cloud
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
@@ -40,14 +44,18 @@ def main():
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))
+    print(u"release_cloud_channel={}".format(release_cloud_channel))
     print(u"docker_version={}".format(docker_version))
     print(u"edition_version={}".format(edition_version))
     print(u"vhd_sku={}".format(vhd_sku))
     print(u"vhd_version={}".format(vhd_version))
 
     print("Create CloudFormation template..")
-    s3_url = create_cfn_template(vhd_sku, vhd_version, release_channel, docker_version,
+    local_url, s3_url = create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
                                  docker_for_azure_version, edition_version, CFN_TEMPLATE,
+                                 docker_for_azure_version)
+     s3_cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
+                                 docker_for_azure_version, edition_version, local_url,
                                  docker_for_azure_version)
 
     # TODO: git commit, tag release. requires github keys, etc.
