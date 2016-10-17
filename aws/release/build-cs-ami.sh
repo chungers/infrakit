@@ -3,6 +3,8 @@ set -e
 # first parameter is url for docker binaries
 # second parameter is if you want to make this ami the latest one.
 # latest ones are used in nightly builds.
+# example CS binary URL:
+# https://packages.docker.com/1.12/builds/linux/amd64/docker-1.12.2-cs2.tgz
 echo "================================================"
 echo ""
 echo ""
