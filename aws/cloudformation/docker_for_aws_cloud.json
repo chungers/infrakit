@@ -102,13 +102,19 @@
 
         "VpcCidrs" : {
             "vpc" : {
-                "cidr": "192.168.0.0/16"
+                "cidr": "10.0.0.0/16"
             },
             "pubsubnet1" : {
-                "cidr": "192.168.33.0/24"
+                "cidr": "10.0.0.0/20"
             },
             "pubsubnet2" : {
-                "cidr": "192.168.34.0/24"
+                "cidr": "10.0.16.0/20"
+            },
+            "pubsubnet3" : {
+                "cidr": "10.0.32.0/20"
+            },
+            "pubsubnet4" : {
+                "cidr": "10.0.48.0/20"
             }
         },
 
@@ -661,7 +667,7 @@
             "CreationPolicy": {
                 "ResourceSignal": {
                   "Count": { "Ref" : "ClusterSize"},
-                  "Timeout": "PT20M"
+                  "Timeout": "PT2H"
                 }
             },
             "UpdatePolicy" : {
@@ -669,7 +675,7 @@
                  "MinInstancesInService" : "1",
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
-                 "PauseTime" : "PT20M"
+                 "PauseTime" : "PT4H"
               }
            }
         },
