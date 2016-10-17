@@ -2,7 +2,7 @@
 import json
 import argparse
 
-from utils import (create_cfn_template)
+from utils import (create_rg_template, create_rg_cloud_template)
 
 
 CFN_TEMPLATE = '/home/docker/editions.template'
@@ -24,7 +24,7 @@ def main():
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
-   parser.add_argument('-u', '--channel_cloud',
+    parser.add_argument('-u', '--channel_cloud',
                         dest='channel_cloud', default="alpha",
                         help="Cloud release channel (beta, alpha, rc, nightly)")
 
@@ -39,7 +39,7 @@ def main():
     flat_edition_version = edition_version.replace(" ", "")
     vhd_sku = args.vhd_sku
     vhd_version = args.vhd_version
-    docker_for_azure_version = u"azure-v{}-{}".format(docker_version, flat_edition_version)
+    docker_for_azure_version = u"azure-v{}".format(flat_edition_version)
     image_name = u"Moby Linux {}".format(docker_for_azure_version)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
@@ -52,16 +52,14 @@ def main():
 
     print("Create CloudFormation template..")
     local_url, s3_url = create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
-                                 docker_for_azure_version, edition_version, CFN_TEMPLATE,
-                                 docker_for_azure_version)
-     s3_cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
-                                 docker_for_azure_version, edition_version, local_url,
-                                 docker_for_azure_version)
+                                 docker_for_azure_version, edition_version, CFN_TEMPLATE, docker_for_azure_version)
+    s3_cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
+                                 docker_for_azure_version, edition_version, local_url, docker_for_azure_version)
 
     # TODO: git commit, tag release. requires github keys, etc.
 
     print("------------------")
-    print(u"Finshed.. CloudFormation URL={0} \n".format(s3_url))
+    print(u"Finshed.. CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n".format(s3_url, s3_cloud_url))
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
         docker_version, flat_edition_version))
     print("------------------")

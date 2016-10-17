@@ -7,7 +7,7 @@ import boto
 import urllib2
 from boto import ec2
 import re
-from collections import OrderedDict
+from collections import (OrderedDict, namedtuple)
 
 NOW = datetime.now()
 NOW_STRING = NOW.strftime("%m_%d_%Y")
@@ -111,19 +111,18 @@ def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
       print(u"Cloudformation template created in {}".format(outfile))
     else:
       print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
-    
-    rg_template = namedtuple('Templates', ['local_url', 's3_url'])
-    rg_template(outfile, upload_rg_template(release_channel, cloudformation_template_name, outfile))
 
-    return rg_template
+    return (outfile, upload_rg_template(release_channel, cloudformation_template_name, outfile))
 
+# @TODO VERIFY CLOUD TEMPLATE
+# @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
                         docker_for_azure_version, edition_version, cfn_template, cfn_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
     # Updated Manager custom data
-    manager_data = buildCustomData('custom-data_cloud_manager.sh')
+    manager_data = buildCustomData('custom-data_manager_cloud.sh')
     data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
 
     parameters = data.get('parameters')
@@ -181,7 +180,7 @@ def create_rg_cloud_template(release_channel, docker_version,
                 inbound.append(new_inbound)
                 break
     
-    cloudformation_template_name = u"{}.json".format(cfn_name)
+    cloudformation_template_name = u"{}-cloud.json".format(cfn_name)
     outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
@@ -329,7 +328,7 @@ def create_ddc_dev_cfn_template(amis, release_channel, docker_version,
     data['Resources'][node_launch_config_new_key]['Properties']['UserData']['Fn::Base64']['Fn::Join'][1] = cmd_array_node
 
     cloudformation_template_name = u"{}.json".format(cfn_name)
-    outdir = u"dist/aws/{}".format(release_channel)
+    outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)

@@ -1,14 +1,17 @@
-DOCKER_VERSION := $(DOCKER_VERSION)
-EDITION_VERSION := $(EDITION_VERSION)
-VHD_SKU := $(VHD_SKU)
-VHD_VERSION := $(VHD_VERSION)
-CHANNEL := $(CHANNEL)
+.PHONY: release clean build
+
+default: release
 
 build:
+	mkdir -p ../../tmp/ || true 
+	mkdir -p ../../dist/ || true
+	cp ../templates/editions.template.json tmp/editions.template
 	docker build -t azure-release .
 
 release: clean build
-	docker run -ti --rm -v $(PWD)/release/dist:/home/docker/dist/ azure-release --docker_version="$(DOCKER_VERSION)" --edition_version="$(EDITION_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)"
+	docker run -ti --rm -e AWS_ACCESS_KEY_ID="AKIAJA5ETQ6INL6FNP5Q" -e AWS_SECRET_ACCESS_KEY="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" -v $(PWD)/dist:/home/docker/dist/ azure-release --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)"
 
 clean:
-	docker rmi azure-release && ([ $$? -eq 0 ] && echo "success!") || echo "failure!"
+	# rm -f tmp/*
+	# rm -Rf dist/*
+	docker rmi azure-release || true
