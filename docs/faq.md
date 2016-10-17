@@ -51,7 +51,7 @@ Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](
 ### I have a problem/bug where do I report it?
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
 
-If your stack/resource group is misbehaving, please run the following diagnostic tool from one of the managers; this will collect your docker logs and send them to us:
+In AWS (coming to Azure soon), if your stack/resource group is misbehaving, please run the following diagnostic tool from one of the managers; this will collect your docker logs and send them to us:
 
 ```
 $ docker-diagnose
