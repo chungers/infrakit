@@ -35,7 +35,7 @@ CLOUD_PARAMETERS = [('ClusterSize', 2),
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-central-1', 'ap-southeast-1',
            'ap-northeast-1', 'ap-southeast-2', 'ap-northeast-2',
-           'sa-east-1', 'ap-south-1']
+           'sa-east-1', 'ap-south-1', 'us-east-2']
 
 VALID_STACK_STATUSES = ['CREATE_IN_PROGRESS', 'CREATE_FAILED', 'CREATE_COMPLETE', 'ROLLBACK_IN_PROGRESS',
                         'ROLLBACK_FAILED', 'ROLLBACK_COMPLETE', 'DELETE_IN_PROGRESS', 'DELETE_FAILED',
