@@ -277,6 +277,10 @@
                 "HVM64": "ami-095b0e1e",
                 "HVMG2": "NOT_SUPPORTED"
             },
+            "us-east-2": {
+                "HVM64": "ami-5c3a6039",
+                "HVMG2": "NOT_SUPPORTED"
+            },
             "us-west-1": {
                 "HVM64": "ami-4c50182c",
                 "HVMG2": "NOT_SUPPORTED"
