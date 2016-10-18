@@ -87,7 +87,6 @@ fi
 
 while true
 do
-	debugecho "Pulling from S3 bucket..."
 	S3_PULL=$(aws s3 sync --delete s3://editionsdiagnostics "${BUCKET}")
 	if [ $? -ne 0 ]
 	then
@@ -99,7 +98,6 @@ do
 	do
 		if [ "${REPORT}" = "${BUCKET}/*.tar" ]
 		then
-			debugecho "No files found in ${BUCKET}. Nothing to do."
 			sleep 5
 			continue
 		fi
