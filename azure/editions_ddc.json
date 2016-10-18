@@ -368,7 +368,7 @@
                     "publisher": "docker",
                     "offer": "docker4azure-preview",
                     "sku": "docker4azure",
-                    "version": "1.12.10"
+                    "version": "1.12.15"
                 },
                 "osDisk": {
                     "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
@@ -423,7 +423,7 @@
                         "publisher": "docker",
                         "offer": "docker4azure-preview",
                         "sku": "docker4azure",
-                        "version": "1.12.10"
+                        "version": "1.12.15"
                     },
                     "osDisk": {
                         "vhdContainers": [
