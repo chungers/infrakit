@@ -256,6 +256,10 @@
                 "HVM64": "ami-de460cc9",
                 "HVMG2": "NOT_SUPPORTED"
             },
+            "us-east-2": {
+                "HVM64": "ami-5f3e643a",
+                "HVMG2": "NOT_SUPPORTED"
+            },
             "us-west-1": {
                 "HVM64": "ami-473a7227",
                 "HVMG2": "NOT_SUPPORTED"

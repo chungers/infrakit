@@ -23,8 +23,10 @@ ACCOUNT_LIST_FILE_URL = u"https://s3.amazonaws.com/docker-for-aws/data/accounts.
 DOCKER_AWS_ACCOUNT_URL = "https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt"
 CS_AMI_LIST_PATH = u"data/ami/cs/{}/ami_list.json"
 
+
 def str2bool(v):
-  return v.lower() in ("yes", "true", "t", "1")
+    return v.lower() in ("yes", "true", "t", "1")
+
 
 def get_ami(conn, ami_id):
     ''' Gets a single AMI as a boto.ec2.image.Image object '''
@@ -177,6 +179,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile,
 
     return s3_full_url
 
+
 def upload_ami_list(ami_list_json, docker_version):
 
     # upload to s3, make public, return s3 URL
@@ -201,6 +204,7 @@ def upload_ami_list(ami_list_json, docker_version):
     key.set_acl("public-read")
 
     return s3_full_url
+
 
 def create_cfn_template(amis, release_channel, docker_version,
                         docker_for_aws_version, edition_version, cfn_template, cfn_name):
