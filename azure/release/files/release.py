@@ -53,20 +53,20 @@ def main():
     print(u"vhd_version={}".format(vhd_version))
 
     print("Create CloudFormation template..")
+    template_name = u"{}.json".format(docker_for_azure_version)
     base_url = create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
-                                 docker_for_azure_version, edition_version, CFN_TEMPLATE, docker_for_azure_version)
+                                 docker_for_azure_version, edition_version, CFN_TEMPLATE, template_name)
+    cloud_template_name = u"{}-cloud.json".format(docker_for_azure_version)
     cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
-                                 docker_for_azure_version, edition_version, base_url, docker_for_azure_version)
+                                 docker_for_azure_version, edition_version, base_url, cloud_template_name)
 
     print("------------------")
     print(u"Finshed.. \n")
     
     if args.upload:
         print(u"Uploading templates.. \n")
-        cloudformation_template_name = u"{}.json".format(docker_for_azure_version)
-        s3_url = upload_rg_template(release_channel, cloudformation_template_name, base_url)
-        cloudformation_template_name = u"{}-cloud.json".format(docker_for_azure_version)
-        s3_cloud_url = upload_rg_template(release_channel, cloudformation_template_name, cloud_url)
+        s3_url = upload_rg_template(release_channel, template_name, base_url)
+        s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
         print(u"Uploaded CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n".format(s3_url, s3_cloud_url))
 
     # TODO: git commit, tag release. requires github keys, etc.
