@@ -12,7 +12,7 @@ NOW_STRING = NOW.strftime("%m_%d_%Y")
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-central-1', 'ap-southeast-1',
            'ap-northeast-1', 'ap-southeast-2', 'ap-northeast-2',
-           'sa-east-1', 'ap-south-1']
+           'sa-east-1', 'ap-south-1', 'us-east-2']
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
 S3_BUCKET_NAME = "docker-for-aws"
@@ -23,8 +23,10 @@ ACCOUNT_LIST_FILE_URL = u"https://s3.amazonaws.com/docker-for-aws/data/accounts.
 DOCKER_AWS_ACCOUNT_URL = "https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt"
 CS_AMI_LIST_PATH = u"data/ami/cs/{}/ami_list.json"
 
+
 def str2bool(v):
-  return v.lower() in ("yes", "true", "t", "1")
+    return v.lower() in ("yes", "true", "t", "1")
+
 
 def get_ami(conn, ami_id):
     ''' Gets a single AMI as a boto.ec2.image.Image object '''
@@ -177,6 +179,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile,
 
     return s3_full_url
 
+
 def upload_ami_list(ami_list_json, docker_version):
 
     # upload to s3, make public, return s3 URL
@@ -201,6 +204,7 @@ def upload_ami_list(ami_list_json, docker_version):
     key.set_acl("public-read")
 
     return s3_full_url
+
 
 def create_cfn_template(amis, release_channel, docker_version,
                         docker_for_aws_version, edition_version, cfn_template, cfn_name):

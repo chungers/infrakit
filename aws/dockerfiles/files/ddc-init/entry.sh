@@ -6,7 +6,7 @@ echo "Start DDC setup"
 INSTALL_DDC=${INSTALL_DDC:-"yes"}
 
 PRODUCTION_HUB_NAMESPACE='docker'
-HUB_NAMESPACE=${HUB_NAMESPACE:-"dockerorcadev"}
+HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
 HUB_TAG=${HUB_TAG-"2.0.0-beta1"}
 IMAGE_LIST_ARGS=''
 

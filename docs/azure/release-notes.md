@@ -13,11 +13,21 @@ weight="400"
 
 # Docker for Azure Release notes
 
+## 1.12.2-beta9
+
+Release date: 10/17/2016
+
+[![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.2-beta9.json)
+
+### New
+
+- Docker Engine upgraded to Docker 1.12.2
+- Manager behind its own LB
+- Added sudo support to the shell container on manager nodes
+
 ## 1.12.1-beta5
 
 Release date: 8/19/2016
-
-[![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.1-beta5.json)
 
 ### New
 

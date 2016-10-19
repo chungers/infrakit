@@ -1,13 +1,13 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 5 (docker 1.12.1)",
+    "Description": "Docker for AWS Beta 9 (docker 1.12.2) DDC",
 
     "Parameters": {
         "KeyName": {
             "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
             "Type": "AWS::EC2::KeyPair::KeyName",
-            "Default": "id_rsa_aws",
+            "MinLength": "1",
             "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
         },
         "InstanceType" : {
@@ -92,20 +92,26 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.0",
-                "forAws": "aws-v1.12.1-beta5"
+                "docker": "1.12.2",
+                "forAws": "aws-v1.12.2-beta9"
             }
         },
 
         "VpcCidrs" : {
             "vpc" : {
-                "cidr": "192.168.0.0/16"
+                "cidr": "10.0.0.0/16"
             },
             "pubsubnet1" : {
-                "cidr": "192.168.33.0/24"
+                "cidr": "10.0.0.0/20"
             },
             "pubsubnet2" : {
-                "cidr": "192.168.34.0/24"
+                "cidr": "10.0.16.0/20"
+            },
+            "pubsubnet3" : {
+                "cidr": "10.0.32.0/20"
+            },
+            "pubsubnet4" : {
+                "cidr": "10.0.48.0/20"
             }
         },
 
@@ -236,48 +242,55 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-0737fa66",
+                "HVM64": "ami-36af0a57",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-ba9346d4",
+                "HVM64": "ami-f1db0f9f",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-south-1": {
+                "HVM64": "ami-727a0e1d",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-f52cf596",
+                "HVM64": "ami-381eb95b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-4c25122f",
+                "HVM64": "ami-6be3d108",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-1cc43573",
+                "HVM64": "ami-2c08f643",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-5f90e42c",
+                "HVM64": "ami-5d703d2e",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-8832a4e4",
+                "HVM64": "ami-31970a5d",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-af482cb8",
+                "HVM64": "ami-095b0e1e",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-east-2": {
+                "HVM64": "ami-5c3a6039",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
-                "HVM64": "ami-0d5a186d",
+                "HVM64": "ami-4c50182c",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-74ea3f14",
+                "HVM64": "ami-36a77d56",
                 "HVMG2": "NOT_SUPPORTED"
             }
         }
     },
-
     "Resources": {
 
         "Vpc" : {
@@ -390,13 +403,15 @@
         "SwarmSQSCleanup" : {
             "Type": "AWS::SQS::Queue",
             "Properties": {
-                "ReceiveMessageWaitTimeSeconds": 10
+                "ReceiveMessageWaitTimeSeconds": 10,
+                "MessageRetentionPeriod": 43200
             }
         },
         "SwarmSQS" : {
             "Type": "AWS::SQS::Queue",
             "Properties": {
-                "ReceiveMessageWaitTimeSeconds": 10
+                "ReceiveMessageWaitTimeSeconds": 10,
+                "MessageRetentionPeriod": 43200
             }
         },
         "SwarmManagerUpgradeHook": {
@@ -443,11 +458,7 @@
                 "VpcId": {
                     "Ref": "Vpc"
                 },
-                "GroupDescription": "Node SecurityGroup",
-                "SecurityGroupIngress": [
-                    {"IpProtocol": "tcp","FromPort": "22","ToPort": "22","CidrIp": "0.0.0.0/0"},
-                    {"IpProtocol": "tcp","FromPort": "80","ToPort": "80","CidrIp": "0.0.0.0/0"}
-                ]
+                "GroupDescription": "Node SecurityGroup"
             }
         },
 
@@ -469,7 +480,13 @@
                 }
               }
           },
-
+       "DockerLogGroup": {
+          "Type" : "AWS::Logs::LogGroup",
+          "Properties" : {
+            "LogGroupName" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
+            "RetentionInDays" : 7
+          }
+        },
         "ManagerAsg" : {
             "DependsOn" : "SwarmDynDBTable",
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
@@ -544,11 +561,15 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
+                                { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
+                                "\" }}' > /etc/docker/daemon.json \n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
+                                "rc-service docker restart\n",
                                 "sleep 5\n",
 
-                                "docker run --restart=no -d ",
+                                "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -562,7 +583,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d ",
+                                "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -578,7 +599,7 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d -p 22:22 ",
+                                "docker run --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
@@ -590,12 +611,12 @@
                                 "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d --name=editions_controller ",
+                                "docker run --log-driver=json-file --name=l4controller-aws --restart=always -d --name=editions_controller ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
 
-                                "docker run --restart=no --rm ",
+                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=no --rm ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -645,7 +666,7 @@
             "CreationPolicy": {
                 "ResourceSignal": {
                   "Count": { "Ref" : "ClusterSize"},
-                  "Timeout": "PT20M"
+                  "Timeout": "PT2H"
                 }
             },
             "UpdatePolicy" : {
@@ -653,7 +674,7 @@
                  "MinInstancesInService" : "1",
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
-                 "PauseTime" : "PT20M"
+                 "PauseTime" : "PT4H"
               }
            }
         },
@@ -681,10 +702,14 @@
                             "", [
                                 "#!/bin/sh\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
+                                { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
+                                "\" }}' > /etc/docker/daemon.json \n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
+                                "rc-service docker restart\n",
                                 "sleep 5\n",
-                                "docker run --restart=no -d ",
+                                "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -698,7 +723,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=always -d ",
+                                "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -714,7 +739,7 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --restart=no --rm ",
+                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=no --rm ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -873,6 +898,7 @@
                 "Effect": "Allow",
                 "Action": [
                     "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
                     "dynamodb:GetItem",
                     "dynamodb:UpdateItem",
                     "dynamodb:Query"
@@ -895,7 +921,9 @@
                 "Effect": "Allow",
                 "Action": [
                     "ec2:DescribeInstances",
-                    "ec2:DescribeVpcAttribute"
+                    "ec2:DescribeVpcAttribute",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
                 ],
                 "Resource": "*"
             } ]

@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 # build a CS AMI.
-import json
 import argparse
 import sys
 import boto
 from os import path
-sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
-
-
 from utils import (S3_BUCKET_NAME, str2bool, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+
+
+sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 
 
 def main():
@@ -16,7 +15,7 @@ def main():
     print(u"update s3 with cs AMI")
     print("------------------")
     parser = argparse.ArgumentParser(description='CS AMI Copy and approve')
-    parser.register('type','bool', str2bool)
+    parser.register('type', 'bool', str2bool)
     parser.add_argument('-d', '--docker_version',
                         dest='docker_version', required=True,
                         help="Docker version (i.e. 1.12.0-rc4)")
@@ -32,7 +31,6 @@ def main():
 
     docker_version = args.docker_version
 
-    docker_for_aws_version = u"aws-v{}".format(docker_version)
     print("\n Variables")
     print(u"docker_version={}".format(docker_version))
     print(u"ami_id={}".format(args.ami_id))
@@ -50,7 +48,8 @@ def main():
 
     ami_text = u"{},{}".format(args.ami_id, args.ami_src_region)
 
-    print(u"Upload ami list json template to {} in {} s3 bucket".format(ami_s3_path, S3_BUCKET_NAME))
+    print(u"Upload ami list json template to {} in {} s3 bucket".format(
+        ami_s3_path, S3_BUCKET_NAME))
     key = bucket.new_key(ami_s3_path)
     key.set_metadata("Content-Type", "text/plain")
     key.set_contents_from_string(ami_text)

@@ -11,6 +11,7 @@ RUN apk add --update bash ca-certificates jq groff python py-pip py-setuptools \
 RUN mkdir -p /home/docker /home/docker/dist
 ADD tmp/docker_for_aws.template /home/docker
 ADD tmp/docker_for_aws_ddc.template /home/docker
+ADD tmp/docker_for_aws_cloud.template /home/docker
 ADD files/* /home/docker/
 RUN chmod 755 /home/docker/*
 

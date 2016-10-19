@@ -28,14 +28,14 @@ CLOUD_PARAMETERS = [('ClusterSize', 2),
               ('KeyName', 'ken_cochrane'),
               ('ManagerInstanceType', 't2.medium'),
               ('ManagerSize', 3),
-              ('DockerCloudClusterName', 'daodoo/swarm-{}'.format(NOW)),
+              ('DockerCloudClusterName', 'daodoo/swarm-{}'.format(NOW.strftime("%m-%d-%Y"))),
               ('DockerCloudUsername', 'appaws'),
               ('DockerCloudAPIKey', '01b6eb3a-f5aa-414a-bfb0-4273819299f4')]
 
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-central-1', 'ap-southeast-1',
            'ap-northeast-1', 'ap-southeast-2', 'ap-northeast-2',
-           'sa-east-1', 'ap-south-1']
+           'sa-east-1', 'ap-south-1', 'us-east-2']
 
 VALID_STACK_STATUSES = ['CREATE_IN_PROGRESS', 'CREATE_FAILED', 'CREATE_COMPLETE', 'ROLLBACK_IN_PROGRESS',
                         'ROLLBACK_FAILED', 'ROLLBACK_COMPLETE', 'DELETE_IN_PROGRESS', 'DELETE_FAILED',
@@ -139,7 +139,7 @@ def main():
         stack_params = PARAMETERS
         channel = "nightly"
         name = u"Nite-{}".format(NOW.strftime("%m%d%Y%f")[:12])
-    else if args.stack_type.lower() == 'cloud':
+    elif args.stack_type.lower() == 'cloud':
         stack_params = CLOUD_PARAMETERS
         channel = "cloud-nightly"
         name = u"Cloud-Nite-{}".format(NOW.strftime("%m%d%Y%f")[:12])

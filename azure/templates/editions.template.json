@@ -14,7 +14,10 @@
       "defaultValue": 1,
       "allowedValues": [
         1
-      ]
+      ],
+      "metadata": {
+        "description": "Number of Manager nodes"
+      }
     },
     "workerCount": {
       "type": "int",
@@ -35,7 +38,10 @@
         13,
         14,
         15
-      ]
+      ],
+      "metadata": {
+        "description": "Number of Worker nodes"
+      }
     },
     "workerVMSize": {
       "type": "string",
@@ -461,9 +467,9 @@
         "capacity": "[variables('workerCount')]"
       },
       "plan": {
-        "publisher": "docker",
-        "name": "docker4azure",
-        "product": "docker4azure-preview"
+        "publisher": "[variables('imagePublisher')]",
+        "name": "[variables('imageSku')]",
+        "product": "[variables('imageOffer')]"
       },
       "properties": {
         "overprovision": false,
