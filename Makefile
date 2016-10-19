@@ -1,10 +1,13 @@
-EDITIONS_TAG := beta5
-EDITIONS_DOCKER_VERSION := 1.12.1
+EDITIONS_TAG := beta9
+EDITIONS_DOCKER_VERSION := 1.12.2
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 REGION := us-west-1
 CHANNEL := beta
 CHANNEL_DDC := alpha
+CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
+VHD_SKU := docker4azure
+VHD_VERSION := 1.12.15
 export
 
 release: moby/alpine/cloud/aws/ami_id.out moby/alpine/cloud/azure/vhd_blob_url.out dockerimages
@@ -33,3 +36,10 @@ moby:
 
 clean:
 	rm -rf moby
+
+
+azure-release:
+	$(MAKE) -C azure/release
+
+azure-template:
+	$(MAKE) -C azure/release template

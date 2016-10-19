@@ -1,0 +1,30 @@
+{
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "swarmName": {
+        "value": "dockerswarm"
+    },
+    "managerCount": {
+        "value": 1
+    },
+    "workerCount": { 
+        "value": 1
+    },
+    "workerVMSize": {
+        "value": "Standard_D2_v2"
+    },
+    "managerVMSize": {
+        "value": "Standard_D2_v2"
+    },
+    "adServicePrincipalAppID": {
+        "value": "GEN-APP-ID"
+    },
+    "adServicePrincipalAppSecret": {
+        "value": "GEN-APP-SECRET"
+    },
+    "sshPublicKey": {
+        "value": "GEN-SSH-PUB-KEY"
+    }
+  }
+}

@@ -12,6 +12,7 @@ tools/buoy/bin/buoy
 aws/release/tmp
 aws/dockerfiles/files/bin/buoy
 azure/dockerfiles/files/bin/buoy
+azure/release/tmp
 tools/buoy/bin/buoy
 *~
 *#

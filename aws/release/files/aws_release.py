@@ -82,7 +82,7 @@ def main():
     # TODO: git commit, tag release. requires github keys, etc.
 
     print("------------------")
-    print(u"Finshed.. CloudFormation URL={0} \n\t cloud-URL={1} \n".format(s3_url, s3_cloud_url))
+    print(u"Finshed.. CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n".format(s3_url, s3_cloud_url))
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
         docker_version, flat_edition_version))
     print("------------------")
