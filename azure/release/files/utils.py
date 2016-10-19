@@ -73,8 +73,9 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
 
     return s3_full_url
 
+# @TODO: split upload and template creation
 def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, cfn_name):
+                        docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
     # check if file exists before opening.
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
@@ -95,7 +96,6 @@ def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
     data['variables']['customDataWorker'] = '[concat(' + ', '.join(worker_data) + ')]'
 
 
-    cloudformation_template_name = u"{}.json".format(cfn_name)
     outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
@@ -112,12 +112,12 @@ def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
     else:
       print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
 
-    return (outfile, upload_rg_template(release_channel, cloudformation_template_name, outfile))
+    return outfile
 
 # @TODO VERIFY CLOUD TEMPLATE
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, cfn_name):
+                        docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
@@ -189,7 +189,6 @@ def create_rg_cloud_template(release_channel, docker_version,
                 inbound.append(new_inbound)
                 break
     
-    cloudformation_template_name = u"{}-cloud.json".format(cfn_name)
     outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
@@ -206,4 +205,4 @@ def create_rg_cloud_template(release_channel, docker_version,
     else:
       print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
 
-    return upload_rg_template(release_channel, cloudformation_template_name, outfile)
+    return outfile

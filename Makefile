@@ -40,3 +40,6 @@ clean:
 
 azure-release:
 	$(MAKE) -C azure/release
+
+azure-template:
+	$(MAKE) -C azure/release template
