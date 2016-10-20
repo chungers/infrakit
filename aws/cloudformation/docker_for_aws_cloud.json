@@ -309,6 +309,7 @@
         },
 
         "PubSubnetAz1" : {
+            "DependsOn": "Vpc",
             "Type" : "AWS::EC2::Subnet",
             "Properties" : {
                 "VpcId" : { "Ref" : "Vpc" },
@@ -321,6 +322,7 @@
         },
 
         "PubSubnetAz2" : {
+            "DependsOn": "Vpc",
             "Type" : "AWS::EC2::Subnet",
             "Properties" : {
                 "VpcId" : { "Ref" : "Vpc" },
@@ -333,6 +335,7 @@
         },
 
         "InternetGateway" : {
+            "DependsOn": "Vpc",
             "Type" : "AWS::EC2::InternetGateway",
             "Properties" : {
                 "Tags": [
@@ -342,7 +345,7 @@
         },
 
         "AttachGateway" : {
-            "DependsOn" : "Vpc",
+            "DependsOn" : ["Vpc", "InternetGateway"],
             "Type" : "AWS::EC2::VPCGatewayAttachment",
             "Properties" : {
                 "VpcId" : { "Ref" : "Vpc" },
@@ -351,6 +354,7 @@
         },
 
         "RouteViaIgw" : {
+            "DependsOn": "Vpc",
             "Type" : "AWS::EC2::RouteTable",
             "Properties" : {
                 "VpcId" : { "Ref" : "Vpc"},
@@ -361,6 +365,7 @@
         },
 
         "PublicRouteViaIgw" : {
+            "DependsOn": ["InternetGateway", "RouteViaIgw"],
             "Type" : "AWS::EC2::Route",
             "Properties" : {
                 "RouteTableId" : { "Ref" : "RouteViaIgw" },
@@ -370,6 +375,7 @@
         },
 
         "PubSubnet1RouteTableAssociation" : {
+            "DependsOn": ["PubSubnetAz1", "RouteViaIgw"],
             "Type" : "AWS::EC2::SubnetRouteTableAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PubSubnetAz1" },
@@ -378,6 +384,7 @@
         },
 
         "PubSubnet2RouteTableAssociation" : {
+            "DependsOn": ["PubSubnetAz2", "RouteViaIgw"],
             "Type" : "AWS::EC2::SubnetRouteTableAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PubSubnetAz2" },
@@ -457,6 +464,7 @@
             }
         },
         "NodeVpcSG": {
+            "DependsOn": "Vpc",
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
@@ -492,7 +500,7 @@
           }
         },
         "ManagerAsg" : {
-            "DependsOn" : "SwarmDynDBTable",
+            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "SSHLoadBalancer", "ExternalLoadBalancer"],
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
@@ -747,6 +755,7 @@
             }
         },
         "ExternalLoadBalancerSG": {
+            "DependsOn": "Vpc",
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
@@ -759,7 +768,7 @@
             }
         },
         "ExternalLoadBalancer" : {
-            "DependsOn" : "AttachGateway",
+            "DependsOn" : ["AttachGateway", "ExternalLoadBalancerSG", "PubSubnetAz1", "PubSubnetAz2"],
             "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties" : {
                 "ConnectionSettings" : {
@@ -795,6 +804,7 @@
             }
         },
         "SSHLoadBalancerSG": {
+            "DependsOn": "Vpc",
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
@@ -808,7 +818,7 @@
             }
         },
         "SSHLoadBalancer" : {
-            "DependsOn" : "AttachGateway",
+            "DependsOn" : ["AttachGateway", "PubSubnetAz1", "PubSubnetAz2"],
             "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties" : {
                 "ConnectionSettings" : {
@@ -849,8 +859,8 @@
             }
         },
     "ProxyRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
         "AssumeRolePolicyDocument": {
             "Version" : "2012-10-17",
             "Statement": [ {
@@ -865,8 +875,9 @@
             }
     },
     "DynDBPolicies": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
+        "DependsOn": ["ProxyRole", "SwarmDynDBTable"],
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
         "PolicyName": "dyndb-getput",
         "PolicyDocument": {
             "Version" : "2012-10-17",
@@ -888,8 +899,9 @@
             }
     },
     "SwarmAPIPolicy": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
+        "DependsOn": "ProxyRole",
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
         "PolicyName": "swarm-policy",
         "PolicyDocument": {
             "Version" : "2012-10-17",
@@ -910,8 +922,9 @@
             }
     },
     "SwarmSQSPolicy": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
+        "DependsOn": ["ProxyRole", "SwarmSQS"],
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
         "PolicyName": "swarm-sqs-policy",
         "PolicyDocument": {
             "Version" : "2012-10-17",
@@ -927,8 +940,9 @@
             }
     },
     "SwarmSQSCleanupPolicy": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
+        "DependsOn": ["ProxyRole", "SwarmSQSCleanup"],
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
         "PolicyName": "swarm-sqs-cleanup-policy",
         "PolicyDocument": {
             "Version" : "2012-10-17",
@@ -944,8 +958,9 @@
             }
     },
     "SwarmAutoscalePolicy": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
+        "DependsOn": "ProxyRole",
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
         "PolicyName": "swarm-autoscale-policy",
         "PolicyDocument": {
             "Version" : "2012-10-17",
@@ -961,8 +976,9 @@
             }
     },
     "ProxyPolicies": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
+        "DependsOn": "ProxyRole",
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
         "PolicyName": "elb-update",
         "PolicyDocument": {
             "Version" : "2012-10-17",
@@ -978,8 +994,9 @@
             }
     },
     "ProxyInstanceProfile": {
-            "Type": "AWS::IAM::InstanceProfile",
-            "Properties": {
+        "DependsOn": "ProxyRole",
+        "Type": "AWS::IAM::InstanceProfile",
+        "Properties": {
         "Path": "/",
         "Roles": [ {
             "Ref": "ProxyRole"
