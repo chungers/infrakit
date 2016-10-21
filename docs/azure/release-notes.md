@@ -1,5 +1,8 @@
 <!--[metadata]>
 +++
+aliases = [
+"/azure-release-notes/"
+]
 title = "Docker for Azure Release notes"
 description = "Docker for Azure Release notes"
 keywords = ["iaas, Azure"]
