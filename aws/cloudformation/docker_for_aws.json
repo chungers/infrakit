@@ -341,7 +341,7 @@
         },
 
         "PublicRouteViaIgw" : {
-            "DependsOn": ["InternetGateway", "RouteViaIgw"],
+            "DependsOn": ["AttachGateway", "RouteViaIgw"],
             "Type" : "AWS::EC2::Route",
             "Properties" : {
                 "RouteTableId" : { "Ref" : "RouteViaIgw" },
