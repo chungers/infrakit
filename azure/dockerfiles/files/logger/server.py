@@ -118,7 +118,6 @@ class SyslogUDPHandler(SocketServer.BaseRequestHandler):
 		socket = self.request[1]
 		parser = Parser()
 		fields = parser.parse(str(data))
-		print "parsed:", fields
 		print( "%s : " % self.client_address[0], str(data))
 		container_log = "{0}-{1}".format(fields["containername"], fields["containerid"])
 		azure_log.write(container_log, fields["message"])
