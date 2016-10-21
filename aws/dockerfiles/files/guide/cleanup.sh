@@ -9,6 +9,14 @@ fi
 # delay so they don't step on each other when pulling items from the queue.
 sleep $[ ( $RANDOM % 10 )  + 1 ]
 
+# make sure we are not in process of shutting down.
+if [ -e /tmp/.shutdown-init ]
+then
+    echo "We are shutting down, no need to continue."
+    # shutdown has initialized, don't start because we might not be able to finish.
+    exit 0
+fi
+
 # find any nodes that are marked as down, and remove from the
 # DOWN_LIST=$(docker node inspect $(docker node ls -q) | jq -r '.[] | select(.Status.State == "down") | .ID')
 
