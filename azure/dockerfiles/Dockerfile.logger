@@ -1,0 +1,15 @@
+FROM alpine:3.3
+
+RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev python python-dev musl-dev linux-headers py-pip gcc py-setuptools \
+		&& pip install --upgrade pip \
+		&& pip install msrest \
+		&& pip install msrestazure \
+		&& pip install --pre azure \
+		&& pip install pyparsing
+
+ADD files/logger/server.py /server.py
+
+RUN mkdir -p /log
+VOLUME ["/log"]
+
+CMD ["python", "/server.py"]

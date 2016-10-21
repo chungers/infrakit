@@ -167,6 +167,12 @@
         "description": "AD ServicePrincipal App Secret"
       }
     },
+    "adServicePrincipalTenantID": {
+      "type": "string",
+      "metadata": {
+          "description": "AD ServicePrincipal Tenant ID"
+      }
+    },
     "sshPublicKey": {
       "type": "string",
       "metadata": {
@@ -211,6 +217,7 @@
     "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
     "adServicePrincipalAppID": "[parameters('adServicePrincipalAppID')]",
     "adServicePrincipalAppSecret": "[parameters('adServicePrincipalAppSecret')]",
+    "adServicePrincipalTenantID" : "[parameters('adServicePrincipalTenantID')]",
     "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
     "subnetName": "[concat(variables('basePrefix'), '-subnet')]",
@@ -230,6 +237,9 @@
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '3')))]",
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
     ],
+    "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]", 
+    "swarmInfoTable": "[concat(resourceGroup().name,'-', 'aztable')]",
+    "swarmLogsStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'logs')]",
     "customDataManager": "",
     "customDataWorker": ""
   },
@@ -243,6 +253,15 @@
         "name": "storageLoop",
         "count": "[length(variables('uniqueStringArray'))]"
       },
+      "properties": {
+        "accountType": "Standard_LRS"
+      }
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('swarmLogsStorageAccount')]",
+      "location": "[variables('storageLocation')]",
       "properties": {
         "accountType": "Standard_LRS"
       }
