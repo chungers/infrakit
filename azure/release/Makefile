@@ -3,7 +3,7 @@
 default: release
 
 build:
-	mkdir -p ../../tmp/ || true 
+	mkdir -p tmp/ || true 
 	mkdir -p ../../dist/ || true
 	cp ../templates/editions.template.json tmp/editions.template
 	docker build -t azure-release .

@@ -1,0 +1,22 @@
+FROM alpine:3.3
+
+RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev python python-dev musl-dev linux-headers py-pip gcc py-setuptools \
+		&& pip install --upgrade pip \
+		&& pip install msrest \
+		&& pip install msrestazure \
+		&& pip install --pre azure \
+		&& pip install pyparsing
+
+ADD files/logger/server.py /server.py
+
+RUN mkdir -p /log
+VOLUME ["/log"]
+
+CMD ["python", "/server.py"]
+# docker run -it -e APP_ID="9091a46b-5e69-4596-9828-7dc3a2346c2e" -e APP_SECRET="fsP2AuWOvKN8LnDcs5oOmHhZSyJcv0Sf" -e TENANT_ID="5f917082-3e93-478a-a4a5-09a28cf05474" -e ACCOUNT_ID="252a4be8-863c-469d-95d4-587d88952573" -e GROUP_NAME="DockerCS9" -e SWARM_INFO_STORAGE_ACCOUNT="froca7xw2ztnsdocker" -e SWARM_FILE_SHARE=`hostname` -p 514:514/udp logger
+
+# {{.Name}}/{{.ID}}
+
+
+# docker run -it --rm -p 514:514/udp -e THIS_HOST=`hostname` logger
+# docker run --rm -it --log-driver=syslog --log-opt syslog-address=udp://localhost:514 --log-opt tag="{{.Name}}/{{.ID}}" flyinprogrammer/logtester
