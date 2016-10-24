@@ -56,8 +56,8 @@ def insert_tokens(sa_key, manager_ip, manager_token, worker_token):
     try:
         # this will succeed the first time but will subsequently throw an exception
         # for the same row_id, partition key as the first invocation
-        tbl_svc.insert_entity(TBL_NAME, token)
-        print "successfully inserted tokens"
+        tbl_svc.insert_or_replace_entity(TBL_NAME, token)
+        print "successfully inserted/replaced tokens"
         return True
     except:
         print "exception while inserting tokens"
