@@ -86,11 +86,36 @@ join_as_secondary_manager()
     # sleep for 30 seconds to make sure the primary manager has enough time to setup before
     # we try and join.
     sleep 30
-    # we are not, join as secondary manager.
-    docker swarm join --token $MANAGER_TOKEN --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
+    # we are not primary, so join as secondary manager.
+    n=0
+    until [ $n -ge 5 ]
+    do
+        docker swarm join --token $MANAGER_TOKEN --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
 
-    get_swarm_id
-    get_node_id
+        get_swarm_id
+        get_node_id
+
+        # check if we have a NODE_ID, if so, we were able to join, if not, it failed.
+        if [ -z "$NODE_ID" ]; then
+            echo "Can't connect to primary manager, sleep and try again"
+            sleep 60
+            n=$[$n+1]
+
+            # query dynamodb again, incase the manager changed
+            get_primary_manager_ip
+        else
+            echo "Connected to primary manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
+            break
+        fi
+
+        SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+        echo "SWARM_STATE=$SWARM_STATE"
+        if [ "$SWARM_STATE" == "pending" ] ; then
+            echo "Swarm state is pending, it will keep trying in background."
+            break
+        fi
+
+    done
     buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     echo "   Secondary Manager complete"
 }
@@ -159,9 +184,35 @@ setup_node()
         confirm_primary_ready
     fi
     echo "   MANAGER_IP=$MANAGER_IP"
-    docker swarm join --token $WORKER_TOKEN $MANAGER_IP:2377
-    get_swarm_id
-    get_node_id
+    # try an connect to the swarm manager.
+    n=0
+    until [ $n -ge 5 ]
+    do
+        docker swarm join --token $WORKER_TOKEN $MANAGER_IP:2377
+        get_swarm_id
+        get_node_id
+
+        # check if we have a NODE_ID, if so, we were able to join, if not, it failed.
+        if [ -z "$NODE_ID" ]; then
+            echo "Can't connect to primary manager, sleep and try again"
+            sleep 60
+            n=$[$n+1]
+
+            # query dynamodb again, incase the manager changed
+            get_primary_manager_ip
+        else
+            echo "Connected to manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
+            break
+        fi
+
+        SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+        echo "SWARM_STATE=$SWARM_STATE"
+        if [ "$SWARM_STATE" == "pending" ] ; then
+            echo "Swarm state is pending, it will keep trying in background."
+            break
+        fi
+
+    done
     buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
 }
 

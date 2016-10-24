@@ -5,6 +5,14 @@ if [ "$NODE_TYPE" == "worker" ] ; then
     exit 0
 fi
 
+# make sure we are not in process of shutting down.
+if [ -e /tmp/.shutdown-init ]
+then
+    echo "We are shutting down, no need to continue."
+    # shutdown has initialized, don't start because we might not be able to finish.
+    exit 0
+fi
+
 IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
@@ -19,10 +27,12 @@ if [[ "$IS_LEADER" == "true" ]]; then
 
     if [[ "$STORED_MANAGER_TOKEN" != "$MANAGER_TOKEN" ]] || [[ "$STORED_WORKER_TOKEN" != "$WORKER_TOKEN" ]]; then
         echo "Swarm tokens changed, updating dynamodb with new tokens"
-        aws dynamodb put-item \
+        aws dynamodb update-item \
             --table-name $DYNAMODB_TABLE \
             --region $REGION \
-            --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$MANAGER_IP"'"},"manager_token": {"S":"'"$MANAGER_TOKEN"'"},"worker_token": {"S":"'"$WORKER_TOKEN"'"}}' \
+            --key '{"node_type":{"S": "primary_manager"}}' \
+            --update-expression 'SET manager_token=:m, worker_token=:w' \
+            --expression-attribute-values '{":m": {"S":"'"$MANAGER_TOKEN"'"}, ":w": {"S":"'"$WORKER_TOKEN"'"}}' \
             --return-consumed-capacity TOTAL
     fi
 

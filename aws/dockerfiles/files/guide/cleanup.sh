@@ -9,6 +9,14 @@ fi
 # delay so they don't step on each other when pulling items from the queue.
 sleep $[ ( $RANDOM % 10 )  + 1 ]
 
+# make sure we are not in process of shutting down.
+if [ -e /tmp/.shutdown-init ]
+then
+    echo "We are shutting down, no need to continue."
+    # shutdown has initialized, don't start because we might not be able to finish.
+    exit 0
+fi
+
 # find any nodes that are marked as down, and remove from the
 # DOWN_LIST=$(docker node inspect $(docker node ls -q) | jq -r '.[] | select(.Status.State == "down") | .ID')
 
@@ -22,8 +30,8 @@ COUNT="${COUNT:-0}"
 for((i=0;i<$COUNT;i++)); do
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
-    docker node rm $BODY
     echo "Remove NodeID=$BODY"
+    docker node rm --force $BODY
     RESULT=$?
     if [ $RESULT -eq 0 ]; then
         echo "We were able to remove node from swarm, delete message from queue"
