@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import argparse
 import sys
@@ -10,62 +11,65 @@ from azure.storage.table import TableService, Entity
 PARTITION_NAME = 'tokens'
 ROW_ID = '1'
 
+SUB_ID = os.environ['ACCOUNT_ID']
+TENANT_ID = os.environ['TENANT_ID']
+APP_ID = os.environ['APP_ID']
+APP_SECRET = os.environ['APP_SECRET']
+RG_NAME = os.environ['GROUP_NAME']
+SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
+TBL_NAME = os.environ['SWARM_INFO_TABLE']
+
 def get_storage_key():
-    sub_id = os.environ['ACCOUNT_ID']
+    global SUB_ID, TENANT_ID, APP_ID, APP_SECRET, RG_NAME, SA_NAME
     cred = ServicePrincipalCredentials(
-        client_id=os.environ['APP_ID'],
-        secret=os.environ['APP_SECRET'],
-        tenant=os.environ['TENANT_ID']
+        client_id=APP_ID,
+        secret=APP_SECRET,
+        tenant=TENANT_ID
     )
 
-    resource_client = ResourceManagementClient(cred, sub_id)
-    storage_client = StorageManagementClient(cred, sub_id)
+    resource_client = ResourceManagementClient(cred, SUB_ID)
+    storage_client = StorageManagementClient(cred, SUB_ID)
 
-    rg_name = os.environ['GROUP_NAME']
-    sa_name = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
-
-    storage_keys = storage_client.storage_accounts.list_keys(rg_name, sa_name)
+    storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, SA_NAME)
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}
 
     return storage_keys['key1']
 
-def get_tokens(sa_key):
-    global PARTITION_NAME
-    global ROW_ID
-    tbl_name = os.environ['SWARM_INFO_TABLE']
-    sa_name = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
-    tbl_svc = TableService(account_name=sa_name, account_key=sa_key)
-    if not tbl_svc.exists(tbl_name):
+
+def print_tokens(sa_key):
+    global PARTITION_NAME, ROW_ID, SA_NAME, TBL_NAME
+    tbl_svc = TableService(account_name=SA_NAME, account_key=sa_key)
+    if not tbl_svc.exists(TBL_NAME):
         return False
     try:
-        token = tbl_svc.get_entity(tbl_name, PARTITION_NAME, ROW_ID)
+        token = tbl_svc.get_entity(TBL_NAME, PARTITION_NAME, ROW_ID)
         print '{}|{}|{}'.format(token.manager_ip, token.manager_token, token.worker_token)
         return True
     except:
         return False
 
+
 def insert_tokens(sa_key, manager_ip, manager_token, worker_token):
-    global PARTITION_NAME
-    global ROW_ID
-    tbl_name = os.environ['SWARM_INFO_TABLE']
-    sa_name = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
-    tbl_svc = TableService(account_name=sa_name, account_key=sa_key)
+    global PARTITION_NAME, ROW_ID, TBL_NAME, SA_NAME
+    tbl_svc = TableService(account_name=SA_NAME, account_key=sa_key)
     token = {'PartitionKey': PARTITION_NAME, 'RowKey': ROW_ID, 'manager_ip': manager_ip, 'manager_token': manager_token, 'worker_token': worker_token}
     try:
-        tbl_svc.insert_entity(tbl_name, token)
+        # this will succeed the first time but will subsequently throw an exception
+        # for the same row_id, partition key as the first invocation
+        tbl_svc.insert_entity(TBL_NAME, token)
         print "successfully inserted tokens"
         return True
     except:
         print "exception while inserting tokens"
         return False
 
+
 def create_table(sa_key):
-    tbl_name = os.environ['SWARM_INFO_TABLE']
-    sa_name = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
-    print "sa_name: ", sa_name, "tbl_name ", tbl_name
-    tbl_svc = TableService(account_name=sa_name, account_key=sa_key)
+    global TBL_NAME, SA_NAME
+    tbl_svc = TableService(account_name=SA_NAME, account_key=sa_key)
     try:
-        tbl_svc.create_table(tbl_name, fail_on_exist=True)
+        # this will succeed only once for a given table name on a storage account
+        tbl_svc.create_table(TBL_NAME, fail_on_exist=True)
         print "successfully created table"
         return True
     except:
@@ -91,7 +95,7 @@ def main():
         if not create_table(key):
             sys.exit(1)
     elif args.action == 'get-tokens':
-        get_tokens(key)
+        print_tokens(key)
     elif args.action == 'insert-tokens':
         insert_tokens(key, args.ip, args.manager_token, args.worker_token)
     else:
