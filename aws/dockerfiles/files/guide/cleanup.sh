@@ -30,8 +30,8 @@ COUNT="${COUNT:-0}"
 for((i=0;i<$COUNT;i++)); do
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
-    docker node rm $BODY
     echo "Remove NodeID=$BODY"
+    docker node rm --force $BODY
     RESULT=$?
     if [ $RESULT -eq 0 ]; then
         echo "We were able to remove node from swarm, delete message from queue"

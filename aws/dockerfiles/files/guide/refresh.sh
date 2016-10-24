@@ -5,6 +5,14 @@ if [ "$NODE_TYPE" == "worker" ] ; then
     exit 0
 fi
 
+# make sure we are not in process of shutting down.
+if [ -e /tmp/.shutdown-init ]
+then
+    echo "We are shutting down, no need to continue."
+    # shutdown has initialized, don't start because we might not be able to finish.
+    exit 0
+fi
+
 IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
