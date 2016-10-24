@@ -2,7 +2,11 @@ FROM alpine:3.3
 
 MAINTAINER Ken Cochrane <Ken.Cochrane@Docker.com>
 
-RUN apk add --update bash ca-certificates jq groff less \
+RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev python python-dev musl-dev linux-headers py-pip gcc py-setuptools \
+    && pip install msrest \
+    && pip install msrestazure \
+    && pip install --pre azure \
+    && apk --purge -v del py-pip \
     && rm -rf /var/cache/apk/*
 
 # needed in order for go binary to work.
@@ -11,7 +15,8 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 # setup init
 RUN mkdir -p /usr/bin/ /var/log/docker/
 COPY files/init/entry.sh /entry.sh
+COPY files/init/azuretokens.py /azuretokens.py
 ADD files/bin/buoy /usr/bin
-RUN chmod 755 /entry.sh /usr/bin/buoy
+RUN chmod 755 /entry.sh /azuretokens.py /usr/bin/buoy
 
 CMD ["/entry.sh"]
