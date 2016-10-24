@@ -20,7 +20,7 @@ weight="400"
 
 Release date: 10/17/2016
 
-[![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.2-beta9.json)
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.2-beta9.json" data-rel="Beta-9" target="_blank" id="azure-deploy">![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)</a>
 
 ### New
 
