@@ -27,10 +27,12 @@ if [[ "$IS_LEADER" == "true" ]]; then
 
     if [[ "$STORED_MANAGER_TOKEN" != "$MANAGER_TOKEN" ]] || [[ "$STORED_WORKER_TOKEN" != "$WORKER_TOKEN" ]]; then
         echo "Swarm tokens changed, updating dynamodb with new tokens"
-        aws dynamodb put-item \
+        aws dynamodb update-item \
             --table-name $DYNAMODB_TABLE \
             --region $REGION \
-            --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$MANAGER_IP"'"},"manager_token": {"S":"'"$MANAGER_TOKEN"'"},"worker_token": {"S":"'"$WORKER_TOKEN"'"}}' \
+            --key '{"node_type":{"S": "primary_manager"}}' \
+            --update-expression 'SET manager_token=:m, worker_token=:w' \
+            --expression-attribute-values '{":m": {"S":"'"$MANAGER_TOKEN"'"}, ":w": {"S":"'"$WORKER_TOKEN"'"}}' \
             --return-consumed-capacity TOTAL
     fi
 

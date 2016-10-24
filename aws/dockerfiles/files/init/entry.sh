@@ -107,6 +107,14 @@ join_as_secondary_manager()
             echo "Connected to primary manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
             break
         fi
+
+        SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+        echo "SWARM_STATE=$SWARM_STATE"
+        if [ "$SWARM_STATE" == "pending" ] ; then
+            echo "Swarm state is pending, it will keep trying in background."
+            break
+        fi
+
     done
     buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     echo "   Secondary Manager complete"
@@ -196,6 +204,14 @@ setup_node()
             echo "Connected to manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
             break
         fi
+
+        SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+        echo "SWARM_STATE=$SWARM_STATE"
+        if [ "$SWARM_STATE" == "pending" ] ; then
+            echo "Swarm state is pending, it will keep trying in background."
+            break
+        fi
+
     done
     buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
 }
