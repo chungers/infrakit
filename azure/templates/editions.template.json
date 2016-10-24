@@ -240,7 +240,7 @@
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
     ],
     "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]",
-    "swarmInfoTable": "[concat(resourceGroup().name,'-', 'aztable')]",
+    "swarmInfoTable": "[concat(resourceGroup().name, aztable')]",
     "swarmLogsStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'logs')]",
     "customDataManager": "",
     "customDataWorker": ""
@@ -442,7 +442,7 @@
         "osProfile": {
           "computerName": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
           "adminUsername": "[variables('adminUsername')]",
-          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', 'export LB_SSH_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
+          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', 'export LB_SSH_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
           "linuxConfiguration": {
             "disablePasswordAuthentication": true,
             "ssh": {
@@ -460,11 +460,10 @@
           "osDisk": {
             "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
             "vhd": {
-              "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager.vhd')]"
+              "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager', copyIndex(), '.vhd')]"
             },
             "caching": "ReadWrite",
             "createOption": "FromImage"
-          }
         },
         "networkProfile": {
           "networkInterfaces": [
