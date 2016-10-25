@@ -475,12 +475,12 @@
           }
         },
         "ManagerAsg" : {
-            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "SSHLoadBalancer", "ExternalLoadBalancer"],
+            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "ExternalLoadBalancer"],
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
                 "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta3" },
-                "LoadBalancerNames" : [ { "Ref" : "SSHLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" } ],
+                "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
                 "DesiredCapacity" : { "Ref" : "ManagerSize" },
@@ -586,6 +586,15 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
+                                "docker volume create --name sshkey\n",
+
+                                "docker run --log-driver=json-file -ti --rm ",
+                                "--user root ",
+                                "-v sshkey:/etc/ssh ",
+                                "--entrypoint ssh-keygen ",
+                                "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION ",
+                                "-A\n",
+
                                 "docker run --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
@@ -593,6 +602,7 @@
                                 "-v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
+                                "-v sshkey:/etc/ssh ",
                                 "-v /etc/passwd:/etc/passwd:ro ",
                                 "-v /etc/shadow:/etc/shadow:ro ",
                                 "-v /etc/group:/etc/group:ro ",
@@ -767,55 +777,6 @@
                 ]
             }
         },
-        "SSHLoadBalancerSG": {
-            "DependsOn": "Vpc",
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "Vpc"
-                },
-                "GroupDescription": "SSH Load Balancer SecurityGroup",
-                "SecurityGroupIngress": [
-                    {"IpProtocol": "-1","FromPort": "22","ToPort": "22","CidrIp": "0.0.0.0/0"}
-                ]
-            }
-        },
-        "SSHLoadBalancer" : {
-            "DependsOn" : ["AttachGateway", "PubSubnetAz1", "PubSubnetAz2"],
-            "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
-            "Properties" : {
-                "ConnectionSettings" : {
-                    "IdleTimeout" : "1800"
-                },
-                "Subnets" : [
-                    {"Ref" : "PubSubnetAz1" },
-                    {"Ref" : "PubSubnetAz2" }
-                ],
-                "LoadBalancerName" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-SSH" ] ] },
-                "CrossZone" : "true",
-                "HealthCheck" : {
-                    "HealthyThreshold" : "2",
-                    "Interval" : "10",
-                    "Target" : "TCP:22",
-                    "Timeout" : "2",
-                    "UnhealthyThreshold" : "4"
-                },
-                "Listeners" : [
-                    {
-                        "LoadBalancerPort" : "22",
-                        "InstancePort" : "22",
-                        "Protocol" : "TCP"
-                    }
-                ],
-        "SecurityGroups" : [ { "Ref" : "SSHLoadBalancerSG" } ],
-                "Tags": [
-                    {
-                        "Key" : "Name",
-                        "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-SSH" ] ] }
-                    }
-                ]
-            }
-        },
     "ProxyRole": {
         "Type": "AWS::IAM::Role",
         "Properties": {
@@ -964,12 +925,6 @@
             "Description" : "Use this name to update your DNS records",
             "Value" : {
             "Fn::GetAtt" : [ "ExternalLoadBalancer", "DNSName" ]
-            }
-        },
-        "SSH" : {
-            "Description" : "Use this command to login to your Docker console.",
-            "Value" : {
-                "Fn::Join": [ "", ["ssh docker@", {"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] } ] ]
             }
         }
     }

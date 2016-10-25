@@ -3,12 +3,7 @@ FROM alpine:3.3
 MAINTAINER KenCochrane <Ken.Cochrane@Docker.com>
 RUN apk add --update bash openssh ca-certificates sudo curl jq && \
     echo -e "Port 22\nClientAliveInterval 180\n" >> /etc/ssh/sshd_config && \
-    cp -a /etc/ssh /etc/ssh.cache && \
     rm -rf /var/cache/apk/*
-
-# setup ssh configs
-RUN if [ ! "$(ls -A /etc/ssh)" ]; then cp -a /etc/ssh.cache/* /etc/ssh/; fi
-RUN if ! ls /etc/ssh/ssh_host_* 1> /dev/null 2>&1; then ssh-keygen -A; fi
 
 # add docker to sudoers file
 RUN echo -e "\ndocker ALL=(ALL) NOPASSWD: ALL\n" >> /etc/sudoers
