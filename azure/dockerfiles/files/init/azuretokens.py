@@ -54,8 +54,7 @@ def insert_tokens(sa_key, manager_ip, manager_token, worker_token):
     tbl_svc = TableService(account_name=SA_NAME, account_key=sa_key)
     token = {'PartitionKey': PARTITION_NAME, 'RowKey': ROW_ID, 'manager_ip': manager_ip, 'manager_token': manager_token, 'worker_token': worker_token}
     try:
-        # this will succeed the first time but will subsequently throw an exception
-        # for the same row_id, partition key as the first invocation
+        # this upsert operation should always succeed
         tbl_svc.insert_or_replace_entity(TBL_NAME, token)
         print "successfully inserted/replaced tokens"
         return True
