@@ -9,7 +9,7 @@ IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
     # we are the leader, We only need to call once, so we only call from the current leader.
-    DATA=$(python azuretokens.py get-tokens)
+    DATA=$(python /usr/bin/azuretokens.py get-tokens)
     MANAGER_IP=$(echo $DATA | cut -d'|' -f 1)
     STORED_MANAGER_TOKEN=$(echo $DATA | cut -d'|' -f 2)
     STORED_WORKER_TOKEN=$(echo $DATA | cut -d'|' -f 3)
@@ -19,7 +19,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
 
     if [[ "$STORED_MANAGER_TOKEN" != "$MANAGER_TOKEN" ]] || [[ "$STORED_WORKER_TOKEN" != "$WORKER_TOKEN" ]]; then
         echo "Swarm tokens changed, updating azure table with new tokens"
-        python azuretokens.py insert-tokens $MANAGER_IP $MANAGER_TOKEN $WORKER_TOKEN
+        python /usr/bin/azuretokens.py insert-tokens $MANAGER_IP $MANAGER_TOKEN $WORKER_TOKEN
     fi
 
 fi
