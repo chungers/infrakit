@@ -2,7 +2,11 @@ FROM alpine:3.3
 
 MAINTAINER KenCochrane <Ken.Cochrane@Docker.com>
 
-RUN apk add --update bash ca-certificates jq groff \
+RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev python python-dev musl-dev linux-headers py-pip gcc py-setuptools \
+    && pip install msrest \
+    && pip install msrestazure \
+    && pip install --pre azure \
+    && apk --purge -v del py-pip \
     && rm -rf /var/cache/apk/*
 
 # needed in order for go binary to work.
@@ -11,11 +15,13 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 # setup cron
 RUN mkdir -p /usr/docker /var/log/docker/
 ADD files/guide/crontab.txt /usr/docker/crontab.txt
+ADD files/init/azuretokens.py /usr/bin/azuretokens.py
 ADD files/guide/buoy.sh /usr/bin
+ADD files/guide/refresh.sh /usr/bin
 ADD files/bin/buoy /usr/bin
 COPY files/guide/entry.sh /entry.sh
-RUN chmod 755 /entry.sh  \
-    /usr/bin/buoy /usr/bin/buoy.sh
+RUN chmod 755 /entry.sh  /usr/bin/azuretokens.py \
+    /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/refresh.sh
 RUN /usr/bin/crontab /usr/docker/crontab.txt
 
 CMD ["/entry.sh"]

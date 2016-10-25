@@ -1,2 +1,3 @@
 # crontab
 36 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log
+42 * * * * /usr/bin/refresh.sh >> /var/log/docker/refresh.log

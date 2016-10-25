@@ -10,14 +10,13 @@
       }
     },
     "managerCount": {
-      "type": "int",
-      "defaultValue": 1,
-      "allowedValues": [
-        1
-      ],
-      "metadata": {
-        "description": "Number of Manager nodes"
-      }
+        "allowedValues": [
+            1,
+            3,
+            5
+        ],
+        "defaultValue": 1,
+        "type": "int"
     },
     "workerCount": {
       "type": "int",
@@ -224,6 +223,7 @@
     "subnetRef": "[concat(variables('vnetID'),'/subnets/', variables('subnetName'))]",
     "managerAddressPrefix": "172.16.0.0/24",
     "subnetPrefix": "10.0.0.0/8",
+    "managerAvSet": "managerAvS",
     "managerNSGName": "[concat(variables('basePrefix'), '-manager-nsg')]",
     "managerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('managerNSGName'))]",
     "managerVMNamePrefix": "[concat(variables('basePrefix'), '-manager')]",
@@ -237,8 +237,8 @@
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '3')))]",
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
     ],
-    "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]", 
-    "swarmInfoTable": "[concat(resourceGroup().name,'-', 'aztable')]",
+    "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]",
+    "swarmInfoTable": "[concat(resourceGroup().name, 'aztable')]",
     "swarmLogsStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'logs')]",
     "customDataManager": "",
     "customDataWorker": ""
@@ -394,15 +394,22 @@
               "subnet": {
                 "id": "[variables('subnetRef')]"
               },
-              "loadBalancerInboundNatRules": [
+              "loadBalancerBackendAddressPools": [
                 {
-                  "id": "[concat(variables('lbSSHID'),'/inboundNatRules/ssh')]"
+                  "id": "[concat(variables('lbSSHID'),'/backendAddressPools/default')]"
                 }
               ]
             }
           }
         ]
       }
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "name": "[variables('managerAvSet')]",
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[variables('storageLocation')]",
+      "properties": {}
     },
     {
       "apiVersion": "[variables('apiVersion')]",
@@ -427,10 +434,13 @@
         "hardwareProfile": {
           "vmSize": "[variables('managerVMSize')]"
         },
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets',variables('managerAvSet'))]"
+        },
         "osProfile": {
           "computerName": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
           "adminUsername": "[variables('adminUsername')]",
-          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', 'export LB_SSH_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
+          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', 'export LB_SSH_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
           "linuxConfiguration": {
             "disablePasswordAuthentication": true,
             "ssh": {
@@ -448,7 +458,7 @@
           "osDisk": {
             "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
             "vhd": {
-              "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager.vhd')]"
+              "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager', copyIndex(), '.vhd')]"
             },
             "caching": "ReadWrite",
             "createOption": "FromImage"
@@ -641,17 +651,32 @@
             "name": "default"
           }
         ],
-        "inboundNatRules": [
+        "loadBalancingRules": [
           {
-            "name": "ssh",
+            "name": "lbSSHRule",
             "properties": {
               "frontendIPConfiguration": {
-                "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
+                "id": "[concat(variables('lbSSHID'), '/frontendIPConfigurations/default')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
               },
               "protocol": "tcp",
               "frontendPort": 22,
               "backendPort": 22,
-              "enableFloatingIP": false
+              "enableFloatingIP": false,
+              "idleTimeoutInMinutes": 5,
+              "probes": [
+                {
+                  "name": "default",
+                  "properties": {
+                    "intervalInSeconds": 10,
+                    "numberOfProbes": 2,
+                    "port": 22,
+                    "protocol": "Tcp"
+                  }
+                }
+              ]
             }
           }
         ]
