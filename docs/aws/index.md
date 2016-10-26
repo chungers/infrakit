@@ -40,9 +40,11 @@ Once you're in the beta, Docker will share with you a set of AMIs. You will also
 The simplest way to use the template is with the AWS web console. The welcome email will include a link.
 
 You can also invoke the template from the AWS CLI:
+
 ```
     $ aws cloudformation create-stack --stack-name teststack --template-url <templateurl> --parameters ParameterKey=KeyName,ParameterValue=<keyname> ParameterKey=InstanceType,ParameterValue=t2.micro ParameterKey=ManagerInstanceType,ParameterValue=t2.micro ParameterKey=ClusterSize,ParameterValue=1 --capabilities CAPABILITY_IAM
 ```
+
 To fully automate installs, you can use the [AWS Cloudformation API](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/Welcome.html).
 
 ## How it works

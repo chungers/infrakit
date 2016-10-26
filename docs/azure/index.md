@@ -36,6 +36,7 @@ To setup Docker for Azure, a [Service Principal](https://azure.microsoft.com/en-
     Your access credentials =============================
     AD App ID:       <app-id>
     AD App Secret:   <secret>
+    AD Tenant ID:   <tenant-id>
 
 If you have multiple Azure subscriptions, make sure you're creating the Service Principal with subscription ID that you shared with Docker when signing up for the beta.
 
