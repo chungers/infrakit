@@ -7,7 +7,7 @@ INSTALL_DDC=${INSTALL_DDC:-"yes"}
 
 PRODUCTION_HUB_NAMESPACE='docker'
 HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-HUB_TAG=${HUB_TAG-"2.0.0-beta3"}
+HUB_TAG=${HUB_TAG-"2.0.0-beta1"}
 IMAGE_LIST_ARGS=''
 
 echo "PATH=$PATH"
@@ -65,6 +65,11 @@ IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 if [[ "$IS_LEADER" == "true" ]]; then
     echo "We are the swarm leader"
     echo "Setup DDC"
+
+    SSH_ELB_PHYS_ID=$(aws cloudformation describe-stack-resources --stack-name ${STACK_NAME} --region=$REGION --logical-resource-id $ELB_NAME | jq -r ".StackResources[0].PhysicalResourceId")
+    echo "SSH_ELB_PHYS_ID=$SSH_ELB_PHYS_ID"
+    # Add port 443 since we'll need it later...
+    aws elb create-load-balancer-listeners --region $REGION --load-balancer-name ${SSH_ELB_PHYS_ID} --listeners "Protocol=TCP,LoadBalancerPort=443,InstanceProtocol=TCP,InstancePort=443"
 
     # Get All Load Balancers
     # read lb1 lb2 <<< $(aws cloudformation describe-stack-resources --stack-name ${STACK_NAME} --region=$REGION | jq '.StackResources[] | select(.LogicalResourceId | endswith("LoadBalancer")) | .PhysicalResourceId')
