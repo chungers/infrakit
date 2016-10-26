@@ -166,12 +166,6 @@
         "description": "AD ServicePrincipal App Secret"
       }
     },
-    "adServicePrincipalTenantID": {
-      "type": "string",
-      "metadata": {
-          "description": "AD ServicePrincipal Tenant ID"
-      }
-    },
     "sshPublicKey": {
       "type": "string",
       "metadata": {
@@ -216,7 +210,7 @@
     "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
     "adServicePrincipalAppID": "[parameters('adServicePrincipalAppID')]",
     "adServicePrincipalAppSecret": "[parameters('adServicePrincipalAppSecret')]",
-    "adServicePrincipalTenantID" : "[parameters('adServicePrincipalTenantID')]",
+    "adServicePrincipalTenantID" : "[subscription().tenantId]",
     "virtualNetworkName": "[concat(variables('basePrefix'), '-vnet')]",
     "vnetID": "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
     "subnetName": "[concat(variables('basePrefix'), '-subnet')]",
