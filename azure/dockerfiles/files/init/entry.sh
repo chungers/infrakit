@@ -96,8 +96,8 @@ join_as_secondary_manager()
             sleep 60
             n=$[$n+1]
 
-            # query dynamodb again, incase the manager changed
-            get_primary_manager_ip
+            # query azure table again, incase the manager changed
+            get_tokens_db
         else
             echo "Connected to primary manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
             break
@@ -176,8 +176,8 @@ setup_worker()
             sleep 60
             n=$[$n+1]
 
-            # query dynamodb again, incase the manager changed
-            get_primary_manager_ip
+            # query azure table again, incase the manager changed
+            get_tokens_db
         else
             echo "Connected to manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
             break
