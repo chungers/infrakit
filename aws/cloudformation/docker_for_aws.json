@@ -921,6 +921,20 @@
     }
     },
     "Outputs": {
+	"Managers": {
+	    "Description": "You can see the manager nodes associated with this cluster here.  Follow the instructions here: https://beta.docker.com/docs/deploy/",
+	    "Value": {
+		"Fn::Join": [ "", [
+		    "https://",
+		    { "Ref": "AWS::Region" },
+		    ".console.aws.amazon.com/ec2/v2/home?region=",
+		    { "Ref": "AWS::Region" },
+		    "#Instances:tag:aws:autoscaling:groupName=",
+		    { "Ref": "ManagerAsg" },
+		    ";sort=desc:dnsName"
+		]]
+	    }
+	},
         "DefaultDNSTarget" : {
             "Description" : "Use this name to update your DNS records",
             "Value" : {
