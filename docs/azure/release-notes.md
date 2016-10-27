@@ -18,9 +18,21 @@ weight="400"
 
 ## 1.12.2-beta9
 
-Release date: 10/17/2016
+Release date: 10/27/2016
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.2-beta9.json" data-rel="Beta-9" target="_blank" id="azure-deploy">![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)</a>
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.3-beta10.json" data-rel="Beta-10" target="_blank" id="azure-deploy">![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)</a>
+
+### New
+
+- Docker Engine upgraded to Docker 1.12.3
+- Manager facing ELB removed
+- Multiple managers can be deployed
+- All container logs can be found in the `xxxxlog` storage account
+- Each Manager can be SSH'd into by following our deploy [guide](../deploy)
+
+## 1.12.2-beta9
+
+Release date: 10/17/2016
 
 ### New
 
