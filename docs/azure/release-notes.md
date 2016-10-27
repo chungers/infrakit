@@ -16,7 +16,7 @@ weight="400"
 
 # Docker for Azure Release notes
 
-## 1.12.2-beta9
+## 1.12.3-beta10
 
 Release date: 10/27/2016
 
@@ -25,7 +25,7 @@ Release date: 10/27/2016
 ### New
 
 - Docker Engine upgraded to Docker 1.12.3
-- Manager facing ELB removed
+- Manager facing LB removed to prevent MITM attack
 - Multiple managers can be deployed
 - All container logs can be found in the `xxxxlog` storage account
 - Each Manager can be SSH'd into by following our deploy [guide](../deploy)

@@ -25,9 +25,12 @@ Release date: 10/27/2016
 ### New
 
 - Docker Engine upgraded to Docker 1.12.3
-- Manager facing ELB removed
+- Manager facing ELB removed to prevent MITM attack
 - Each Manager can be SSH'd into by following our deploy [guide](../deploy)
-
+- Added new region us-east-2 (Ohio)
+- Fixed some bugs related to upgrading the swarm
+- SSH keypair is now a required field in CloudFormation
+- Fixed networking dependency issues in CloudFormation template that could result in a stack failure.
 
 ## 1.12.2-beta9
 
