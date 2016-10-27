@@ -14,8 +14,30 @@ weight="3"
 
 ## Connecting to your manager nodes
 
-Once you've deployed Docker on AWS or Azure, go to the "outputs" section.
-The output will show how to SSH to an SSH host. Your SSH session will be on one of the manager nodes.
+First, obtain the public IP address for a manager node (any manager node is
+acceptable).
+
+### Manager Public IP on AWS
+
+Once you've deployed Docker on AWS, go to the "Outputs" tab for the stack in
+CloudFormation.
+
+The "Managers" output is a URL you can use to see the available manager nodes of
+the cluster in your AWS console.  Once present on this page, you can see the
+"Public IP" of each manager node in the table and/or "Description" tab if you
+click on the instance.
+
+![](/img/aws/managers.png)
+
+### Manager Public IP on Azure
+
+Navigate to the resource group in the Azure web portal.  You will see the
+manager VMs and can obtain their public IPs by opening a blade panel for them.
+
+### Connecting via SSH
+
+Obtain the public IP for the manager node and SSH in using your provided key to
+begin administrating your cluster:
 
     $ ssh -i <path-to-ssh-key> docker@<ssh-host>
     Welcome to Docker!
