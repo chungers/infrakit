@@ -205,9 +205,6 @@
     "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
     "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
     "lbBackendAddressPoolID": "[concat(variables('lbID'),'/backendAddressPools/default')]",
-    "lbSSHName": "externalSSHLoadBalancer",
-    "lbSSHPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbSSHName'), '-public-ip')]",
-    "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
     "adServicePrincipalAppID": "[parameters('adServicePrincipalAppID')]",
     "adServicePrincipalAppSecret": "[parameters('adServicePrincipalAppSecret')]",
     "adServicePrincipalTenantID" : "[subscription().tenantId]",
@@ -364,6 +361,19 @@
     },
     {
       "apiVersion": "[variables('apiVersion')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[concat(variables('managerVMNamePrefix'), 'pip-', copyIndex())]",
+      "location": "[variables('storageLocation')]",
+      "copy": {
+        "name": "pipLoopNode",
+        "count": "[variables('managerCount')]"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "apiVersion": "[variables('apiVersion')]",
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[concat(variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
       "location": "[variables('storageLocation')]",
@@ -373,8 +383,8 @@
       },
       "dependsOn": [
         "[variables('vnetID')]",
-        "[variables('lbSSHID')]",
-        "[variables('managerNSGID')]"
+        "[variables('managerNSGID')]",
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('managerVMNamePrefix'), 'pip-', copyIndex())]"
       ],
       "properties": {
         "networkSecurityGroup": {
@@ -388,11 +398,9 @@
               "subnet": {
                 "id": "[variables('subnetRef')]"
               },
-              "loadBalancerBackendAddressPools": [
-                {
-                  "id": "[concat(variables('lbSSHID'),'/backendAddressPools/default')]"
-                }
-              ]
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerVMNamePrefix'), 'pip-', copyIndex()))]"
+              }
             }
           }
         ]
@@ -420,7 +428,6 @@
         "count": "[variables('managerCount')]"
       },
       "dependsOn": [
-        "[variables('lbSSHID')]",
         "[concat('Microsoft.Network/networkInterfaces/', variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
         "storageLoop"
       ],
@@ -434,7 +441,7 @@
         "osProfile": {
           "computerName": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
           "adminUsername": "[variables('adminUsername')]",
-          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', 'export LB_SSH_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
+          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', variables('customDataManager')))]",
           "linuxConfiguration": {
             "disablePasswordAuthentication": true,
             "ssh": {
@@ -611,77 +618,9 @@
           }
         ]
       }
-    },
-    {
-      "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[variables('lbSSHPublicIPAddressName')]",
-      "location": "[variables('storageLocation')]",
-      "properties": {
-        "publicIPAllocationMethod": "Static"
-      }
-    },
-    {
-      "apiVersion": "[variables('apiVersion')]",
-      "name": "[variables('lbSSHName')]",
-      "type": "Microsoft.Network/loadBalancers",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/publicIPAddresses/', variables('lbSSHPublicIPAddressName'))]"
-      ],
-      "properties": {
-        "frontendIPConfigurations": [
-          {
-            "name": "default",
-            "properties": {
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))]"
-              }
-            }
-          }
-        ],
-        "backendAddressPools": [
-          {
-            "name": "default"
-          }
-        ],
-        "loadBalancingRules": [
-          {
-            "name": "lbSSHRule",
-            "properties": {
-              "frontendIPConfiguration": {
-                "id": "[concat(variables('lbSSHID'), '/frontendIPConfigurations/default')]"
-              },
-              "backendAddressPool": {
-                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
-              },
-              "protocol": "tcp",
-              "frontendPort": 22,
-              "backendPort": 22,
-              "enableFloatingIP": false,
-              "idleTimeoutInMinutes": 5,
-              "probes": [
-                {
-                  "name": "default",
-                  "properties": {
-                    "intervalInSeconds": 10,
-                    "numberOfProbes": 2,
-                    "port": 22,
-                    "protocol": "Tcp"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
     }
   ],
   "outputs": {
-    "SSH": {
-      "type": "string",
-      "value": "[concat('ssh docker@', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress)]"
-    },
     "DefaultDNSTarget": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
