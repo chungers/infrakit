@@ -48,6 +48,8 @@ We feel it is fairly stable for development and testing, but since things are co
 ### I have a suggestion where do I send it?
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws).
 
+Additionally, please take a moment to fill-out the following Google Survey and help us shape the product: [Docker for AWS and Azure survey](https://goo.gl/forms/odVRD5wOARG8PrFI2)
+
 ### I have a problem/bug where do I report it?
 Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws)
 
