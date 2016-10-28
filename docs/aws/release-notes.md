@@ -25,7 +25,9 @@ Release date: 10/27/2016
 ### New
 
 - Docker Engine upgraded to Docker 1.12.3
-- Manager facing ELB removed to prevent MITM attack
+- Fixed the shell container that runs on the managers, to remove a ssh host key that was accidentally added to the image. 
+This could have led to a potential man in the middle (MITM) attack. The ssh host key is now generated on host startup, so that each host has it's own key.
+- The SSH ELB for SSH'ing into the managers has been removed because it is no longer possible to SSH into the managers without getting a security warning
 - Each Manager can be SSH'd into by following our deploy [guide](../deploy)
 - Added new region us-east-2 (Ohio)
 - Fixed some bugs related to upgrading the swarm
