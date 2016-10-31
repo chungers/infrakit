@@ -639,7 +639,7 @@
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
 
-                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=no --rm",
+                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=no --rm ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
