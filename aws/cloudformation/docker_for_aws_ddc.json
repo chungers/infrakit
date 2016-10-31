@@ -612,6 +612,15 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
+                                "docker volume create --name sshkey\n",
+
+                                "docker run --log-driver=json-file -ti --rm ",
+                                "--user root ",
+                                "-v sshkey:/etc/ssh ",
+                                "--entrypoint ssh-keygen ",
+                                "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION ",
+                                "-A\n",
+
                                 "docker run --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
@@ -619,6 +628,7 @@
                                 "-v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
+                                "-v sshkey:/etc/ssh ",
                                 "-v /etc/passwd:/etc/passwd:ro ",
                                 "-v /etc/shadow:/etc/shadow:ro ",
                                 "-v /etc/group:/etc/group:ro ",
