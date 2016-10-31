@@ -4,4 +4,5 @@ MAINTAINER French Ben <frenchben@docker.com> (@frenchben)
 ENV PROJECT=editions
 
 COPY . /src
-COPY . /docs/content/
+COPY ./layouts/ /docs/layouts/
+COPY ./content/ /docs/content/
