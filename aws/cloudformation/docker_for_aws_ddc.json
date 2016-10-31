@@ -12,7 +12,7 @@
         },
         "InstanceType" : {
             "Type" : "String",
-            "Description" : "EC2 HVM instance type (t2.micro, m3.medium, etc).",
+            "Description" : "EC2 HVM instance type (t2.medium, m3.medium, etc).",
             "AllowedValues" : [
                 "t2.micro","t2.small","t2.medium","t2.large","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
                 "m3.large","m3.xlarge","m3.2xlarge","c4.large","c4.xlarge","c4.2xlarge","c4.4xlarge","c4.8xlarge","c3.large","c3.xlarge",
@@ -23,9 +23,9 @@
         },
         "ManagerInstanceType" : {
             "Type" : "String",
-            "Description" : "EC2 HVM instance type (t2.medium, m3.medium, etc).",
+            "Description" : "EC2 HVM instance type (m3.medium, m4.large etc).",
             "AllowedValues" : [
-                "t2.medium","t2.large","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
+                "m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
                 "m3.large","m3.xlarge","m3.2xlarge","c4.large","c4.xlarge","c4.2xlarge","c4.4xlarge","c4.8xlarge","c3.large","c3.xlarge",
                 "c3.2xlarge","c3.4xlarge","c3.8xlarge","r3.large","r3.xlarge","r3.2xlarge","r3.4xlarge","r3.8xlarge","i2.xlarge",
                 "i2.2xlarge","i2.4xlarge","i2.8xlarge" ],
@@ -59,6 +59,10 @@
             "MinLength": "8",
             "MaxLength": "40",
             "ConstraintDescription": "must be at least 8 characters"
+        },
+        "License": {
+        "Type": "String",
+        "Description": "Docker Datacenter License in JSON format or URL to download it. Get Trial License here https://store.docker.com/bundles/docker-datacenter "
         }
     },
     "Metadata" : {
@@ -73,8 +77,8 @@
                     "Parameters" : [ "ManagerInstanceType", "InstanceType", "KeyName" ]
                 },
                 {
-                    "Label" : { "default":"Optional Features" },
-                    "Parameters" : [ "DDCUsernameSet", "DDCPasswordSet"]
+                    "Label" : { "default":"DDC Properties" },
+                    "Parameters" : [ "DDCUsernameSet", "DDCPasswordSet","License"]
                 }
             ],
             "ParameterLabels" : {
@@ -84,7 +88,8 @@
                 "ManagerInstanceType" : { "default" : "Swarm manager instance type?" },
                 "KeyName" : { "default" : "Which SSH key to use?" },
                 "DDCUsernameSet" : { "default" : "Enter the Username you want to use with Docker Datacenter" },
-                "DDCPasswordSet" : { "default" : "Enter your Docker Datacenter password" }
+                "DDCPasswordSet" : { "default" : "Enter your Docker Datacenter password" },
+                "License" : { "default" : "Enter your Docker Datacenter License" }
             }
         }
     },
@@ -496,12 +501,12 @@
           }
         },
         "ManagerAsg" : {
-            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "SSHLoadBalancer", "ExternalLoadBalancer"],
+            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "UCPLoadBalancer","DTRLoadBalancer" ,"ExternalLoadBalancer"],
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta3" },
-                "LoadBalancerNames" : [ { "Ref" : "SSHLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" } ],
+                "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfig" },
+                "LoadBalancerNames" : [ { "Ref" : "DTRLoadBalancer" }, { "Ref" : "ExternalLoadBalancer" },{ "Ref" : "UCPLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
                 "DesiredCapacity" : { "Ref" : "ManagerSize" },
@@ -540,7 +545,7 @@
            }
         },
 
-        "ManagerLaunchConfigBeta3": {
+        "ManagerLaunchConfig": {
             "DependsOn": "ExternalLoadBalancer",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -624,16 +629,21 @@
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
 
-                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=no --rm ",
+                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=no --rm",
                                 "-e NODE_TYPE='manager' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
                                 "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPasswordSet" }, "' ",
-                                "-e ELB_NAME='SSHLoadBalancer' ",
+                                "-e NODE_NAME=$HOSTNAME ",
+                                "-e S3_BUCKET_NAME='",{ "Ref": "DDCBucket" }, "' ",
+                                "-e LICENSE='",{ "Ref": "License" }, "' ",
+                                "-e UCP_ELB_HOSTNAME='",{"Fn::GetAtt": ["UCPLoadBalancer","DNSName"]}, "' ",
+                                "-e DTR_ELB_HOSTNAME='",{"Fn::GetAtt": ["DTRLoadBalancer","DNSName"]}, "' ",
                                 "-e INSTALL_DDC='yes' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
+                                "-v /tmp/docker:/tmp/docker ",
                                 "docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION\n"
 
                             ]
@@ -647,7 +657,7 @@
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
                 "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
-                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta3" },
+                "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfig" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "1000",
@@ -686,7 +696,7 @@
               }
            }
         },
-        "NodeLaunchConfigBeta3": {
+        "NodeLaunchConfig": {
             "DependsOn": "ManagerAsg",
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
@@ -753,11 +763,11 @@
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
                                 "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPasswordSet" }, "' ",
-                                "-e ELB_NAME='SSHLoadBalancer' ",
                                 "-e INSTALL_DDC='yes' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION\n"
+
                             ]
                         ]
                     }
@@ -813,20 +823,20 @@
                 ]
             }
         },
-        "SSHLoadBalancerSG": {
+        "UCPLoadBalancerSG": {
             "DependsOn": "Vpc",
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
                     "Ref": "Vpc"
                 },
-                "GroupDescription": "SSH Load Balancer SecurityGroup",
+                "GroupDescription": "UCP Load Balancer SecurityGroup",
                 "SecurityGroupIngress": [
-                    {"IpProtocol": "-1","FromPort": "22","ToPort": "22","CidrIp": "0.0.0.0/0"}
+                    {"IpProtocol": "tcp","FromPort": "443","ToPort": "443","CidrIp": "0.0.0.0/0"}
                 ]
             }
         },
-        "SSHLoadBalancer" : {
+        "UCPLoadBalancer" : {
             "DependsOn" : ["AttachGateway", "PubSubnetAz1", "PubSubnetAz2"],
             "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties" : {
@@ -837,30 +847,83 @@
                     {"Ref" : "PubSubnetAz1" },
                     {"Ref" : "PubSubnetAz2" }
                 ],
-                "LoadBalancerName" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-SSH" ] ] },
+                "LoadBalancerName" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-UCP" ] ] },
                 "CrossZone" : "true",
                 "HealthCheck" : {
                     "HealthyThreshold" : "2",
                     "Interval" : "10",
-                    "Target" : "TCP:22",
+                    "Target" : "TCP:443",
                     "Timeout" : "2",
                     "UnhealthyThreshold" : "4"
                 },
                 "Listeners" : [
                     {
-                        "LoadBalancerPort" : "22",
-                        "InstancePort" : "22",
+                        "LoadBalancerPort" : "443",
+                        "InstancePort" : "443",
                         "Protocol" : "TCP"
                     }
                 ],
-        "SecurityGroups" : [ { "Ref" : "SSHLoadBalancerSG" } ],
+                "SecurityGroups" : [ { "Ref" : "UCPLoadBalancerSG" } ],
                 "Tags": [
                     {
                         "Key" : "Name",
-                        "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-SSH" ] ] }
+                        "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-UCP" ] ] }
                     }
                 ]
             }
+        },
+        "DTRLoadBalancerSG": {
+            "DependsOn": "Vpc",
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Vpc"
+                },
+                "GroupDescription": "DTR Load Balancer SecurityGroup",
+                "SecurityGroupIngress": [
+                    {"IpProtocol": "tcp","FromPort": "443","ToPort": "443","CidrIp": "0.0.0.0/0"}
+                ]
+            }
+        },
+        "DTRLoadBalancer" : {
+            "DependsOn" : ["AttachGateway", "PubSubnetAz1", "PubSubnetAz2"],
+            "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties" : {
+                "ConnectionSettings" : {
+                    "IdleTimeout" : "1800"
+                },
+                "Subnets" : [
+                    {"Ref" : "PubSubnetAz1" },
+                    {"Ref" : "PubSubnetAz2" }
+                ],
+                "LoadBalancerName" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-DTR" ] ] },
+                "CrossZone" : "true",
+                "HealthCheck" : {
+                    "HealthyThreshold" : "2",
+                    "Interval" : "10",
+                    "Target": "HTTPS:8443/health",
+                    "Timeout" : "2",
+                    "UnhealthyThreshold" : "4"
+                },
+                "Listeners" : [
+                    {
+                        "LoadBalancerPort" : "443",
+                        "InstancePort" : "8443",
+                        "Protocol" : "TCP"
+                    }
+                ],
+                "SecurityGroups" : [ { "Ref" : "DTRLoadBalancerSG" } ],
+                "Tags": [
+                    {
+                        "Key" : "Name",
+                        "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "ELB-DTR" ] ] }
+                    }
+                ]
+            }
+        },
+        "DDCBucket": {
+         "Type": "AWS::S3::Bucket",
+         "DeletionPolicy": "Retain"
         },
     "ProxyRole": {
         "Type": "AWS::IAM::Role",
@@ -892,12 +955,46 @@
                     "cloudformation:DescribeStackResources"
                 ],
                 "Resource": "*"
-            }]
+            }
+        ]
         },
         "Roles": [ {
             "Ref": "ProxyRole"
         } ]
             }
+    },
+    "S3Policies": {
+        "DependsOn": "ProxyRole",
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
+        "PolicyName": "S3-DDC-Policy",
+        "PolicyDocument": {
+            "Version" : "2012-10-17",
+            "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+              "s3:ListBucket",
+              "s3:GetBucketLocation",
+              "s3:ListBucketMultipartUploads"
+            ],
+            "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "DDCBucket" }] ] }
+            },
+            {
+            "Effect": "Allow",
+            "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject",
+              "s3:ListMultipartUploadParts",
+              "s3:AbortMultipartUpload"
+            ],
+            "Resource": { "Fn::Join": ["", ["arn:aws:s3:::", { "Ref": "DDCBucket" }, "/*"] ] }
+            } ]
+        },
+        "Roles": [ {
+            "Ref": "ProxyRole"
+        } ]
+        }
     },
     "DynDBPolicies": {
         "DependsOn": ["SwarmDynDBTable", "ProxyRole"],
@@ -1029,22 +1126,22 @@
     }
     },
     "Outputs": {
-        "DefaultDNSTarget" : {
-            "Description" : "Use this name to update your DNS records",
-            "Value" : {
-            "Fn::GetAtt" : [ "ExternalLoadBalancer", "DNSName" ]
-            }
-        },
-        "SSH" : {
-            "Description" : "Use this command to login to your Docker console.",
-            "Value" : {
-                "Fn::Join": [ "", ["ssh docker@", {"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] } ] ]
-            }
-        },
-        "DDCLoginURL" : {
+        "UCPLoginURL" : {
             "Description" : "Docker Datacenter Login URL",
             "Value" : {
-                "Fn::Join": [ "", ["https://", {"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] } ] ]
+                "Fn::Join": [ "", ["https://", {"Fn::GetAtt" : [ "UCPLoadBalancer", "DNSName"] } ] ]
+            }
+        },
+        "DTRLoginURL" : {
+            "Description" : "Docker Datacenter Login URL",
+            "Value" : {
+                "Fn::Join": [ "", ["https://", {"Fn::GetAtt" : [ "DTRLoadBalancer", "DNSName"] } ] ]
+            }
+        },
+        "DefaultDNSTarget" : {
+            "Description" : "Default DNS name for applications deployed on the cluster",
+            "Value" : {
+            "Fn::GetAtt" : [ "ExternalLoadBalancer", "DNSName" ]
             }
         },
         "DDCUsername" : {
