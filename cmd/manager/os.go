@@ -15,6 +15,7 @@ func osEnvironment(backend *backend) *cobra.Command {
 	pollInterval := 5 * time.Second
 	filename := file_leader.DefaultLeaderFile()
 	storeDir := file_store.DefaultStoreDir()
+	logDir := os_launcher.DefaultLogDir()
 
 	cmd := &cobra.Command{
 		Use:   "os",
@@ -31,7 +32,7 @@ func osEnvironment(backend *backend) *cobra.Command {
 				return err
 			}
 
-			launcher, err := os_launcher.NewLauncher()
+			launcher, err := os_launcher.NewLauncher(logDir)
 			if err != nil {
 				return err
 			}
@@ -50,6 +51,7 @@ func osEnvironment(backend *backend) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&filename, "leader-file", filename, "File used for leader election/detection")
 	cmd.Flags().StringVar(&storeDir, "store-dir", storeDir, "Dir to store the config")
+	cmd.Flags().StringVar(&logDir, "log-dir", logDir, "Dir to store the logs")
 	cmd.Flags().DurationVar(&pollInterval, "poll-interval", pollInterval, "Leader polling interval")
 	return cmd
 }

@@ -52,7 +52,7 @@ func NewDetector(pollInterval time.Duration, filename, id string) (leader.Detect
 
 			match := strings.Trim(string(content), " \t\n")
 
-			log.Debugf("ID (%s) - checked %s for leadership: %s, err=%v", id, filename, match, err)
+			log.Debugf("ID (%s) - checked %s for leadership: %s, err=%v, leader=%v", id, filename, match, err, match == id)
 
 			return match == id, err
 		}), nil

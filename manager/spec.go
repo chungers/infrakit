@@ -17,11 +17,11 @@ type globalSpec struct {
 
 func (config globalSpec) findPlugins() []string {
 	// determine list of all plugins by config
-	names := []string{}
+	names := map[string]bool{}
 
 	for _, plugin := range config.Groups {
 
-		names = append(names, plugin.Plugin)
+		names[plugin.Plugin] = true
 
 		// Try to parse the properties and if the plugin is a default group plugin then we can
 		// determine the flavor and instance plugin names.
@@ -30,13 +30,19 @@ func (config globalSpec) findPlugins() []string {
 			if err := json.Unmarshal([]byte(*plugin.Properties), spec); err == nil {
 
 				if spec.Instance.Plugin != "" {
-					names = append(names, spec.Instance.Plugin)
+					names[spec.Instance.Plugin] = true
 				}
 				if spec.Flavor.Plugin != "" {
-					names = append(names, spec.Flavor.Plugin)
+					names[spec.Flavor.Plugin] = true
 				}
 			}
 		}
 	}
-	return names
+
+	keys := []string{}
+	for k := range names {
+		keys = append(keys, k)
+	}
+
+	return keys
 }

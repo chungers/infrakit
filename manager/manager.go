@@ -3,6 +3,7 @@ package manager
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/infrakit/discovery"
@@ -268,9 +269,10 @@ func (m *manager) doUpdateGroups(config globalSpec) error {
 func (m *manager) doWatchGroups(config globalSpec) error {
 	err := m.launchPlugins(config)
 	if err != nil {
+		log.Warningln("Error starting up plugins", err)
 		return err
 	}
-
+	log.Infoln("Start watching groups")
 	return m.execPlugins(config,
 		func(plugin group.Plugin, spec group.Spec) error {
 
@@ -289,7 +291,7 @@ func (m *manager) doUnwatchGroups(config globalSpec) error {
 	if err != nil {
 		return err
 	}
-
+	log.Infoln("Unwatching groups")
 	return m.execPlugins(config,
 		func(plugin group.Plugin, spec group.Spec) error {
 
@@ -333,20 +335,40 @@ func (m *manager) launchPlugins(config globalSpec) error {
 	return nil
 }
 
+func (m *manager) ensurePluginsRunning(config globalSpec) error {
+	tick := time.Tick(1 * time.Second)
+	timeout := time.After(10 * time.Second)
+	for {
+		select {
+		case <-timeout:
+			return fmt.Errorf("timeout waiting for plugins to run")
+
+		case <-tick:
+			running, err := m.plugins.List()
+			if err != nil {
+				return err
+			}
+
+			needed := config.findPlugins()
+			// TODO(chungers) -- do set intersection
+			if len(running) >= len(needed) {
+				return nil
+			}
+		}
+	}
+}
+
 func (m *manager) execPlugins(config globalSpec, work func(group.Plugin, group.Spec) error) error {
 
 	// Do not execute unless all plugins are running.  The entire config should have everything
 	// ready as a whole.
+	if err := m.ensurePluginsRunning(config); err != nil {
+		return err
+	}
 
 	running, err := m.plugins.List()
 	if err != nil {
 		return err
-	}
-
-	for _, name := range config.findPlugins() {
-		if _, has := running[name]; !has {
-			return fmt.Errorf("Plugin %s is not running. Cannot exec config", name)
-		}
 	}
 
 	for id, pluginSpec := range config.Groups {
@@ -355,9 +377,11 @@ func (m *manager) execPlugins(config globalSpec, work func(group.Plugin, group.S
 		name := pluginSpec.Plugin
 		gp, err := rpc.NewClient(running[name].Protocol, running[name].Address)
 		if err != nil {
+			log.Warningln("Cannot contact group", id, " at plugin", name, "endpoint=", running[name].Address)
 			return err
 		}
 
+		log.Debugln("exec on group", id, "plugin=", name)
 		err = work(gp, group.Spec{
 			ID:         group.ID(id),
 			Properties: pluginSpec.Properties,

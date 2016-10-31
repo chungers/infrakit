@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	"github.com/docker/infrakit/discovery"
 	"github.com/docker/infrakit/manager"
 	manager_rpc "github.com/docker/infrakit/rpc/manager"
@@ -39,11 +37,6 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 		Short: "commit global configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			assertNotNil("no manager", managerClient)
-
-			if len(args) != 1 {
-				cmd.Usage()
-				os.Exit(1)
-			}
 			return managerClient.Commit()
 		},
 	}
