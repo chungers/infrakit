@@ -1,19 +1,22 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
 imports:
+- path: templates/swarm.py
+- path: templates/manager.py
+- path: templates/worker.py
 - path: templates/network.py
-- path: templates/vm.py
+- path: templates/firewall.py
 
 resources:
-- name: fist-vm
-  type: templates/vm.py
+- name: swarm
+  type: templates/swarm.py
+- name: swarm-config
+  type: runtimeconfig.v1beta1.config
   properties:
-    name: fist-vm
-
-- name: second-vm
-  type: templates/vm.py
+    config: swarm-config
+- name: swarm-token
+  type: runtimeconfig.v1beta1.variable
   properties:
-    name: second-vm
-
-- name: docker-network
-  type: templates/network.py
+    parent: $(ref.swarm-config.name)
+    variable: token
+    value: ""

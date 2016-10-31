@@ -2,11 +2,11 @@
 
 """Creates the network."""
 
-def GenerateConfig(unused_context):
+def GenerateConfig(context):
   """Creates the network."""
 
   resources = [{
-      'name': 'docker-network',
+      'name': context.env['name'],
       'type': 'compute.v1.network',
       'properties': {
           'IPv4Range': '10.0.0.1/16'

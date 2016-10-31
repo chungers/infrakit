@@ -3,5 +3,8 @@
 create:
 	gcloud deployment-manager deployments create docker --config configuration/docker.yaml
 
+describe:
+	gcloud deployment-manager deployments describe docker
+
 delete:
-	gcloud deployment-manager deployments delete docker
+	gcloud deployment-manager deployments delete docker -q
