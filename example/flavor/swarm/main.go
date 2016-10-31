@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/go-connections/tlsconfig"
@@ -20,7 +21,7 @@ func main() {
 	host := "unix:///var/run/docker.sock"
 
 	cmd := &cobra.Command{
-		Use:   os.Args[0],
+		Use:   filepath.Base(os.Args[0]),
 		Short: "Docker Swarm flavor plugin",
 		Run: func(c *cobra.Command, args []string) {
 
@@ -39,7 +40,7 @@ func main() {
 
 	cmd.AddCommand(cli.VersionCommand())
 
-	cmd.Flags().StringVar(&name, "name", "flavor-swarm", "Plugin name to advertise for discovery")
+	cmd.Flags().StringVar(&name, "name", filepath.Base(os.Args[0]), "Plugin name to advertise for discovery")
 	cmd.PersistentFlags().IntVar(&logLevel, "log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
 
 	cmd.PersistentFlags().StringVar(&host, "host", host, "Docker host")

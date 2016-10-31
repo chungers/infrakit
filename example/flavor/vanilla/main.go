@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/infrakit/cli"
@@ -16,7 +17,7 @@ func main() {
 	var name string
 
 	cmd := &cobra.Command{
-		Use:   os.Args[0],
+		Use:   filepath.Base(os.Args[0]),
 		Short: "Vanilla flavor plugin",
 		Run: func(c *cobra.Command, args []string) {
 			cli.SetLogLevel(logLevel)
@@ -27,7 +28,7 @@ func main() {
 	cmd.AddCommand(cli.VersionCommand())
 
 	cmd.Flags().IntVar(&logLevel, "log", logLevel, "Logging level. 0 is least verbose. Max is 5")
-	cmd.Flags().StringVar(&name, "name", "flavor-vanilla", "Plugin name to advertise for discovery")
+	cmd.Flags().StringVar(&name, "name", filepath.Base(os.Args[0]), "Plugin name to advertise for discovery")
 
 	err := cmd.Execute()
 	if err != nil {

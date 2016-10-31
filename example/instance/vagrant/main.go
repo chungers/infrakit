@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"text/template"
 
 	log "github.com/Sirupsen/logrus"
@@ -19,7 +20,7 @@ func main() {
 	var templFile string
 
 	cmd := &cobra.Command{
-		Use:   os.Args[0],
+		Use:   filepath.Base(os.Args[0]),
 		Short: "Vagrant instance plugin",
 		Run: func(c *cobra.Command, args []string) {
 			templ := template.Must(template.New("").Parse(vagrant.VagrantFile))
@@ -34,7 +35,7 @@ func main() {
 
 	cmd.AddCommand(cli.VersionCommand())
 
-	cmd.Flags().StringVar(&name, "name", "instance-vagrant", "Plugin name to advertise for discovery")
+	cmd.Flags().StringVar(&name, "name", filepath.Base(os.Args[0]), "Plugin name to advertise for discovery")
 	cmd.PersistentFlags().IntVar(&logLevel, "log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
 	defaultDir, err := os.Getwd()
 	if err != nil {

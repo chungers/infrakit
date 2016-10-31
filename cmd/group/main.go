@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -24,7 +25,7 @@ func main() {
 	pollInterval := 10 * time.Second
 
 	cmd := &cobra.Command{
-		Use:   os.Args[0],
+		Use:   filepath.Base(os.Args[0]),
 		Short: "Group server",
 		RunE: func(c *cobra.Command, args []string) error {
 
@@ -60,7 +61,7 @@ func main() {
 
 	cmd.AddCommand(cli.VersionCommand())
 
-	cmd.Flags().StringVar(&name, "name", "group", "Plugin name to advertise for discovery")
+	cmd.Flags().StringVar(&name, "name", filepath.Base(os.Args[0]), "Plugin name to advertise for discovery")
 	cmd.Flags().IntVar(&logLevel, "log", logLevel, "Logging level. 0 is least verbose. Max is 5")
 	cmd.Flags().DurationVar(&pollInterval, "poll-interval", pollInterval, "Group polling interval")
 

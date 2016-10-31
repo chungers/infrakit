@@ -2,12 +2,33 @@ package main
 
 import (
 	"os"
+	"os/user"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/infrakit/cli"
 	instance_plugin "github.com/docker/infrakit/rpc/instance"
 	"github.com/spf13/cobra"
 )
+
+const (
+	// InstanceDirEnvVar is the environment variable that may be used to customize the plugin directory
+	InstanceDirEnvVar = "INFRAKIT_INSTANCE_FILE_DIR"
+)
+
+// DefaultLaderFile is the file that this detector uses to decide who the leader is.
+// In a mult-host set up, it's assumed that the file system would be share (e.g. NFS mount or S3 FUSE etc.)
+func DefaultInstanceDir() string {
+	if storeDir := os.Getenv(InstanceDirEnvVar); storeDir != "" {
+		return storeDir
+	}
+
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Join(usr.HomeDir, ".infrakit/instance-file")
+}
 
 func main() {
 
@@ -16,7 +37,7 @@ func main() {
 	var dir string
 
 	cmd := &cobra.Command{
-		Use:   os.Args[0],
+		Use:   filepath.Base(os.Args[0]),
 		Short: "File instance plugin",
 		Run: func(c *cobra.Command, args []string) {
 
@@ -27,10 +48,10 @@ func main() {
 
 	cmd.AddCommand(cli.VersionCommand())
 
-	cmd.Flags().StringVar(&name, "name", "instance-file", "Plugin name to advertise for discovery")
+	cmd.Flags().StringVar(&name, "name", filepath.Base(os.Args[0]), "Plugin name to advertise for discovery")
 	cmd.PersistentFlags().IntVar(&logLevel, "log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
 
-	cmd.Flags().StringVar(&dir, "dir", os.TempDir(), "Dir for storing the files")
+	cmd.Flags().StringVar(&dir, "dir", DefaultInstanceDir(), "Dir for storing the files")
 
 	err := cmd.Execute()
 	if err != nil {

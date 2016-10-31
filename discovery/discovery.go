@@ -13,6 +13,9 @@ import (
 type Plugins interface {
 	Find(name string) (*plugin.Endpoint, error)
 	List() (map[string]*plugin.Endpoint, error)
+
+	// String returns a representation of where discovery data resides
+	String() string
 }
 
 const (

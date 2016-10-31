@@ -16,6 +16,11 @@ type dirPluginDiscovery struct {
 	lock sync.Mutex
 }
 
+// String returns the directory of the sockets
+func (r *dirPluginDiscovery) String() string {
+	return r.dir
+}
+
 // Find returns a plugin by name
 func (r *dirPluginDiscovery) Find(name string) (*plugin.Endpoint, error) {
 
