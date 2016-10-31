@@ -34,7 +34,13 @@ func main() {
 		}
 		return d
 	}
-	cmd.AddCommand(pluginCommand(f), instancePluginCommand(f), groupPluginCommand(f), flavorPluginCommand(f))
+	cmd.AddCommand(
+		pluginCommand(f),
+		instancePluginCommand(f),
+		groupPluginCommand(f),
+		flavorPluginCommand(f),
+		managerCommand(f),
+	)
 
 	cmd.PersistentFlags().IntVar(&logLevel, "log", logLevel, "Logging level. 0 is least verbose. Max is 5")
 

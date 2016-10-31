@@ -17,7 +17,7 @@ import (
 
 const (
 	// DefaultGroupPluginName specifies the default name of the group plugin if name flag isn't specified.
-	DefaultGroupPluginName = "group"
+	DefaultGroupPluginName = "infrakit-group-default"
 )
 
 func groupPluginCommand(plugins func() discovery.Plugins) *cobra.Command {
