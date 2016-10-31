@@ -1,0 +1,19 @@
+# Copyright 2016 Docker Inc. All rights reserved.
+
+imports:
+- path: templates/network.py
+- path: templates/vm.py
+
+resources:
+- name: fist-vm
+  type: templates/vm.py
+  properties:
+    name: fist-vm
+
+- name: second-vm
+  type: templates/vm.py
+  properties:
+    name: second-vm
+
+- name: docker-network
+  type: templates/network.py
