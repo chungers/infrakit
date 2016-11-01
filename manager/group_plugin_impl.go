@@ -39,13 +39,13 @@ func (m *manager) updateConfig(spec group.Spec) error {
 
 	// Always read and then update with the current value.  Assumes the user's input
 	// is always authoritative.
-	stored := globalSpec{}
+	stored := GlobalSpec{}
 	if err := m.snapshot.Load(&stored); err != nil {
 		return err
 	}
 
 	if stored.Groups == nil {
-		stored.Groups = map[group.ID]pluginSpec{}
+		stored.Groups = map[group.ID]PluginSpec{}
 	}
 
 	buff, err := json.MarshalIndent(spec, "  ", "  ")
@@ -53,7 +53,7 @@ func (m *manager) updateConfig(spec group.Spec) error {
 		return err
 	}
 	raw := json.RawMessage(buff)
-	stored.Groups[spec.ID] = pluginSpec{
+	stored.Groups[spec.ID] = PluginSpec{
 		Plugin:     m.backendName,
 		Properties: &raw,
 	}

@@ -101,7 +101,7 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 
 			assertNotNil("no remote", remote)
 
-			config := map[string]interface{}{}
+			config := manager.GlobalSpec{}
 			err = remote.Load(&config)
 			if err != nil {
 				return err
@@ -126,7 +126,7 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 
 			assertNotNil("no remote", remote)
 
-			config := map[string]interface{}{}
+			config := manager.GlobalSpec{}
 			err = local.Load(&config)
 			if err != nil {
 				return err

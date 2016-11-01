@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
@@ -46,7 +47,7 @@ type manager struct {
 	stop          chan struct{}
 	running       chan struct{}
 	commit        chan struct{}
-	currentConfig globalSpec
+	currentConfig GlobalSpec
 
 	backendName string
 	backend     group.Plugin
@@ -201,7 +202,7 @@ func (m *manager) onAssumeLeadership() error {
 	log.Infoln("Assuming leadership")
 
 	// load the config
-	config := globalSpec{}
+	config := GlobalSpec{}
 
 	// load the latest version -- assumption here is that it's been persisted already.
 	err := m.snapshot.Load(&config)
@@ -238,7 +239,7 @@ func (m *manager) onLostLeadership() error {
 func (m *manager) doCommit() error {
 
 	// load the config
-	config := globalSpec{}
+	config := GlobalSpec{}
 
 	// load the latest version -- assumption here is that it's been persisted already.
 	err := m.snapshot.Load(&config)
@@ -258,7 +259,7 @@ func (m *manager) doCommit() error {
 	return m.doUpdateGroups(config)
 }
 
-func (m *manager) doUpdateGroups(config globalSpec) error {
+func (m *manager) doUpdateGroups(config GlobalSpec) error {
 	err := m.launchPlugins(config)
 	if err != nil {
 		return err
@@ -285,7 +286,7 @@ func (m *manager) doUpdateGroups(config globalSpec) error {
 		})
 }
 
-func (m *manager) doWatchGroups(config globalSpec) error {
+func (m *manager) doWatchGroups(config GlobalSpec) error {
 	err := m.launchPlugins(config)
 	if err != nil {
 		log.Warningln("Error starting up plugins", err)
@@ -312,7 +313,7 @@ func (m *manager) doWatchGroups(config globalSpec) error {
 		})
 }
 
-func (m *manager) doUnwatchGroups(config globalSpec) error {
+func (m *manager) doUnwatchGroups(config GlobalSpec) error {
 	err := m.launchPlugins(config)
 	if err != nil {
 		return err
@@ -330,7 +331,7 @@ func (m *manager) doUnwatchGroups(config globalSpec) error {
 		})
 }
 
-func (m *manager) launchPlugins(config globalSpec) error {
+func (m *manager) launchPlugins(config GlobalSpec) error {
 	// Now install / start plugins if not running
 	for _, name := range config.findPlugins() {
 
@@ -361,7 +362,7 @@ func (m *manager) launchPlugins(config globalSpec) error {
 	return nil
 }
 
-func (m *manager) ensurePluginsRunning(config globalSpec) error {
+func (m *manager) ensurePluginsRunning(config GlobalSpec) error {
 	tick := time.Tick(1 * time.Second)
 	timeout := time.After(10 * time.Second)
 	for {
@@ -384,7 +385,7 @@ func (m *manager) ensurePluginsRunning(config globalSpec) error {
 	}
 }
 
-func (m *manager) execPlugins(config globalSpec, work func(group.Plugin, group.Spec) error) error {
+func (m *manager) execPlugins(config GlobalSpec, work func(group.Plugin, group.Spec) error) error {
 
 	// Do not execute unless all plugins are running.  The entire config should have everything
 	// ready as a whole.
@@ -415,11 +416,19 @@ func (m *manager) execPlugins(config globalSpec, work func(group.Plugin, group.S
 		}
 
 		log.Debugln("exec on group", id, "plugin=", name)
-		err = work(gp, group.Spec{
-			ID:         group.ID(id),
-			Properties: pluginSpec.Properties,
-		})
 
+		// spec is store in the properties
+		if pluginSpec.Properties == nil {
+			return fmt.Errorf("no spec for group", id, "plugin=", name)
+		}
+
+		spec := group.Spec{}
+		err = json.Unmarshal([]byte(*pluginSpec.Properties), &spec)
+		if err != nil {
+			return err
+		}
+
+		err = work(gp, spec)
 		if err != nil {
 			log.Warningln("Error from exec on plugin", err)
 			return err

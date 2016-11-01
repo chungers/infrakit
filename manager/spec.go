@@ -7,16 +7,16 @@ import (
 	"github.com/docker/infrakit/spi/group"
 )
 
-type pluginSpec struct {
+type PluginSpec struct {
 	Plugin     string
 	Properties *json.RawMessage
 }
 
-type globalSpec struct {
-	Groups map[group.ID]pluginSpec
+type GlobalSpec struct {
+	Groups map[group.ID]PluginSpec
 }
 
-func (config globalSpec) findPlugins() []string {
+func (config GlobalSpec) findPlugins() []string {
 	// determine list of all plugins by config
 	names := map[string]bool{}
 

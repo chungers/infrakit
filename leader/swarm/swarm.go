@@ -26,8 +26,6 @@ func amISwarmLeader(client client.APIClient, ctx context.Context) (bool, error) 
 
 	// inspect itself to see if i am the leader
 	node, _, err := client.NodeInspectWithRaw(ctx, info.Swarm.NodeID)
-
-	log.Debugln("nodeId=", info.Swarm.NodeID, "node=", node, "err=", err)
 	if err != nil {
 		return false, err
 	}
@@ -35,6 +33,6 @@ func amISwarmLeader(client client.APIClient, ctx context.Context) (bool, error) 
 	if node.ManagerStatus == nil {
 		return false, nil
 	}
-	log.Debugln("leader=", node.ManagerStatus.Leader)
+	log.Debugln("leader=", node.ManagerStatus.Leader, "node=", node)
 	return node.ManagerStatus.Leader, nil
 }

@@ -81,7 +81,7 @@ func groupPluginCommand(plugins func() discovery.Plugins) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			assertNotNil("no plugin", groupPlugin)
 
-			if len(args) != 0 {
+			if len(args) != 1 {
 				cmd.Usage()
 				os.Exit(1)
 			}
