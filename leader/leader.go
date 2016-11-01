@@ -16,7 +16,7 @@ const (
 	// StatusLeader means the current node / instance is a leader
 	StatusLeader
 
-	// StatusUnkown indicates some exception happened while determining leadership.  Consumer will interpret accordingly.
+	// StatusUnknown indicates some exception happened while determining leadership.  Consumer will interpret accordingly.
 	StatusUnknown
 )
 

@@ -16,8 +16,7 @@ const (
 	StoreDirEnvVar = "INFRAKIT_STORE_DIR"
 )
 
-// DefaultLaderFile is the file that this detector uses to decide who the leader is.
-// In a mult-host set up, it's assumed that the file system would be share (e.g. NFS mount or S3 FUSE etc.)
+// DefaultStoreDir is the directory where the config is stored.
 func DefaultStoreDir() string {
 	if storeDir := os.Getenv(StoreDirEnvVar); storeDir != "" {
 		return storeDir

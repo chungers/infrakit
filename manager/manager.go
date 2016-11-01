@@ -19,8 +19,8 @@ type Manager interface {
 	Commit() error
 }
 
-// ManagerService is the service interface for the manager
-type ManagerService interface {
+// Service is the service interface for the manager
+type Service interface {
 	Manager
 
 	Start() (<-chan struct{}, error)
@@ -46,7 +46,7 @@ type manager struct {
 // NewManager returns the manager which depends on other services to coordinate and manage
 // the plugins in order to ensure the infrastructure state matches the user's spec.
 func NewManager(launcher launch.Launcher, plugins discovery.Plugins,
-	leader leader.Detector, snapshot store.Snapshot) ManagerService {
+	leader leader.Detector, snapshot store.Snapshot) Service {
 
 	return &manager{
 		launcher: launcher,
@@ -282,7 +282,7 @@ func (m *manager) doWatchGroups(config globalSpec) error {
 			if err != nil {
 				log.Warningln("Error watching group:", spec.ID, "Err=", err)
 			}
-			return err
+			return nil
 		})
 }
 
@@ -300,7 +300,7 @@ func (m *manager) doUnwatchGroups(config globalSpec) error {
 			if err != nil {
 				log.Warningln("Error unwatching group:", spec.ID, "Err=", err)
 			}
-			return err
+			return nil
 		})
 }
 

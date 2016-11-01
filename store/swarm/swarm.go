@@ -2,9 +2,13 @@ package swarm
 
 import (
 	"bytes"
+	"compress/zlib"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/docker/infrakit/store"
@@ -12,6 +16,7 @@ import (
 )
 
 const (
+	// SwarmLabel is the label for the swarm annotation that stores a compressed version of the config.
 	SwarmLabel = "infrakit"
 )
 
@@ -44,11 +49,18 @@ func (s *snapshot) Load(output interface{}) error {
 }
 
 func readSwarm(client client.APIClient) (string, error) {
-	swarm, err := client.SwarmInspect(context.Background())
+	info, err := client.SwarmInspect(context.Background())
 	if err != nil {
 		return "", err
 	}
-	return swarm.ClusterInfo.Spec.Annotations.Labels[SwarmLabel], nil
+
+	if info.ClusterInfo.Spec.Annotations.Labels != nil {
+		if l, has := info.ClusterInfo.Spec.Annotations.Labels[SwarmLabel]; has {
+			log.Debugln("config=", l)
+			return l, nil
+		}
+	}
+	return "", fmt.Errorf("not-found")
 }
 
 func writeSwarm(client client.APIClient, value string) error {
@@ -56,28 +68,37 @@ func writeSwarm(client client.APIClient, value string) error {
 	if err != nil {
 		return err
 	}
+	if info.ClusterInfo.Spec.Annotations.Labels == nil {
+		info.ClusterInfo.Spec.Annotations.Labels = map[string]string{}
+	}
 	info.ClusterInfo.Spec.Annotations.Labels[SwarmLabel] = value
 	return client.SwarmUpdate(context.Background(), info.ClusterInfo.Meta.Version, info.ClusterInfo.Spec,
 		swarm.UpdateFlags{})
 }
 
 func encode(obj interface{}) (string, error) {
-	var label bytes.Buffer
-	// encoding chain
-	b64 := base64.NewEncoder(base64.StdEncoding, &label)
-	jsonw := json.NewEncoder(b64)
-	jsonw.SetIndent("", "  ")
-	err := jsonw.Encode(obj)
+	buff, err := json.MarshalIndent(obj, "  ", "  ")
 	if err != nil {
 		return "", err
 	}
-	return label.String(), nil
+	var b bytes.Buffer
+	w := zlib.NewWriter(&b)
+	w.Write(buff)
+	w.Close()
+	return base64.StdEncoding.EncodeToString(b.Bytes()), nil
 }
 
 func decode(label string, output interface{}) error {
-	// decoding chain
-	input := bytes.NewBufferString(label)
-	b64 := base64.NewDecoder(base64.StdEncoding, input)
-	jsonr := json.NewDecoder(b64)
-	return jsonr.Decode(output)
+	data, err := base64.StdEncoding.DecodeString(label)
+	if err != nil {
+		return err
+	}
+	b := bytes.NewBuffer(data)
+	r, err := zlib.NewReader(b)
+
+	var inflate bytes.Buffer
+	io.Copy(&inflate, r)
+	r.Close()
+
+	return json.Unmarshal(inflate.Bytes(), output)
 }

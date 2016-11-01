@@ -16,8 +16,7 @@ const (
 	InstanceDirEnvVar = "INFRAKIT_INSTANCE_FILE_DIR"
 )
 
-// DefaultLaderFile is the file that this detector uses to decide who the leader is.
-// In a mult-host set up, it's assumed that the file system would be share (e.g. NFS mount or S3 FUSE etc.)
+// DefaultInstanceDir is the directory where this instance plugin will store its state.
 func DefaultInstanceDir() string {
 	if storeDir := os.Getenv(InstanceDirEnvVar); storeDir != "" {
 		return storeDir

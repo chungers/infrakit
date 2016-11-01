@@ -19,7 +19,7 @@ func NewDetector(pollInterval time.Duration, client client.APIClient) leader.Det
 // amISwarmLeader determines if the current node is the swarm manager leader
 func amISwarmLeader(client client.APIClient, ctx context.Context) (bool, error) {
 	info, err := client.Info(ctx)
-	log.Debugln("info=", info, "err=", err)
+
 	if err != nil {
 		return false, err
 	}

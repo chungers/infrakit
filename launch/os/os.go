@@ -20,8 +20,7 @@ const (
 	LogDirEnvVar = "INFRAKIT_LOG_DIR"
 )
 
-// DefaultLaderFile is the file that this detector uses to decide who the leader is.
-// In a mult-host set up, it's assumed that the file system would be share (e.g. NFS mount or S3 FUSE etc.)
+// DefaultLogDir is the directory for storing the log files from the plugins
 func DefaultLogDir() string {
 	if logDir := os.Getenv(LogDirEnvVar); logDir != "" {
 		return logDir

@@ -18,7 +18,7 @@ const (
 	LeaderFileEnvVar = "INFRAKIT_LEADER_FILE"
 )
 
-// DefaultLaderFile is the file that this detector uses to decide who the leader is.
+// DefaultLeaderFile is the file that this detector uses to decide who the leader is.
 // In a mult-host set up, it's assumed that the file system would be share (e.g. NFS mount or S3 FUSE etc.)
 func DefaultLeaderFile() string {
 	if leaderFile := os.Getenv(LeaderFileEnvVar); leaderFile != "" {
