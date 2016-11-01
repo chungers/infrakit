@@ -1,6 +1,7 @@
 package os
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -8,7 +9,7 @@ import (
 
 func TestLaunchOSCommand(t *testing.T) {
 
-	launcher, err := NewLauncher()
+	launcher, err := NewLauncher(os.TempDir())
 	require.NoError(t, err)
 
 	starting, err := launcher.Launch("no-such-command")

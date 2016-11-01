@@ -50,7 +50,7 @@ type launcher struct {
 }
 
 func (l *launcher) buildCmd(name string, args ...string) string {
-	logging := "--log 5"
+	logging := "" //"--log 5"
 	logfile := filepath.Join(l.logDir, fmt.Sprintf("%s-%d", name, time.Now().Unix()))
 	return fmt.Sprintf("/bin/sh -c %s %s %s &>%s &", name, logging, strings.Join(args, " "), logfile)
 }

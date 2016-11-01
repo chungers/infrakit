@@ -19,8 +19,10 @@ func TestFileDetector(t *testing.T) {
 	err := ioutil.WriteFile(file, []byte("instance1"), 0644)
 	require.NoError(t, err)
 
-	detector1 := NewDetector(10*time.Millisecond, file, "instance1")
-	detector2 := NewDetector(10*time.Millisecond, file, "instance2")
+	detector1, err := NewDetector(10*time.Millisecond, file, "instance1")
+	require.NoError(t, err)
+	detector2, err := NewDetector(10*time.Millisecond, file, "instance2")
+	require.NoError(t, err)
 
 	events1, err1 := detector1.Start()
 	require.NoError(t, err1)

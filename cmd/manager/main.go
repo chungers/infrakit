@@ -71,7 +71,7 @@ func main() {
 	cmd.PersistentFlags().IntVar(&logLevel, "log", logLevel, "Logging level. 0 is least verbose. Max is 5")
 	cmd.PersistentFlags().StringVar(&backend.id, "id", backend.id, "ID of the manager")
 
-	cmd.AddCommand(cli.VersionCommand(), osEnvironment(backend))
+	cmd.AddCommand(cli.VersionCommand(), osEnvironment(backend), swarmEnvironment(backend))
 
 	err := cmd.Execute()
 	if err != nil {
