@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/docker/infrakit/plugin/group/types"
+	"github.com/docker/infrakit/spi/group"
 )
 
 type pluginSpec struct {
@@ -12,7 +13,7 @@ type pluginSpec struct {
 }
 
 type globalSpec struct {
-	Groups map[string]pluginSpec
+	Groups map[group.ID]pluginSpec
 }
 
 func (config globalSpec) findPlugins() []string {

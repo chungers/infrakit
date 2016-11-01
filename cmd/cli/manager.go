@@ -17,8 +17,8 @@ import (
 
 func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 
-	name := "manager"
-	var managerClient manager.Manager
+	name := "group"
+	var managerClient manager.Group
 
 	cmd := &cobra.Command{
 		Use:   "manager",

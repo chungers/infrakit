@@ -2,6 +2,7 @@ package manager
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,14 +15,19 @@ import (
 	"github.com/docker/infrakit/store"
 )
 
-// Manager is the interface that has end-user facing operations. This is exported via RPC
-type Manager interface {
+// Group is the interface that has end-user facing operations. This is exported via RPC
+type Group interface {
+
+	// Also implements the single group plugin interface
+	group.Plugin
+
+	// Commit is the operation for multiple groups
 	Commit() error
 }
 
 // Service is the service interface for the manager
 type Service interface {
-	Manager
+	Group
 
 	Start() (<-chan struct{}, error)
 	Stop()
@@ -41,19 +47,28 @@ type manager struct {
 	running       chan struct{}
 	commit        chan struct{}
 	currentConfig globalSpec
+
+	backendName string
+	backend     group.Plugin
 }
 
 // NewManager returns the manager which depends on other services to coordinate and manage
 // the plugins in order to ensure the infrastructure state matches the user's spec.
-func NewManager(launcher launch.Launcher, plugins discovery.Plugins,
-	leader leader.Detector, snapshot store.Snapshot) Service {
+func NewManager(launcher launch.Launcher, plugins discovery.Plugins, leader leader.Detector, snapshot store.Snapshot,
+	backendName string) (Service, error) {
 
-	return &manager{
+	m := &manager{
 		launcher: launcher,
 		plugins:  plugins,
 		leader:   leader,
 		snapshot: snapshot,
 	}
+
+	if err := m.proxyForGroupPlugin(backendName); err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 // Start starts the manager.  It does not block. Instead read from the returned channel to block.
@@ -252,15 +267,19 @@ func (m *manager) doUpdateGroups(config globalSpec) error {
 	return m.execPlugins(config,
 		func(plugin group.Plugin, spec group.Spec) error {
 
-			// TODO(chungers) -- this may not be sufficient.  The group plugin
-			// will fail to update if it has never watched before.  So we need
-			// to check the error and watch if the group isn't already watching.
-
 			log.Infoln("UPDATE group", spec.ID, "with spec:", spec)
 			err := plugin.UpdateGroup(spec)
 
+			// TODO(chungers) -- yes this is clunky
+			if err != nil && strings.Contains(err.Error(), "not being watched") {
+
+				log.Infoln("UPDATE group", spec.ID, "changed to WATCH")
+				err = plugin.WatchGroup(spec)
+
+			}
+
 			if err != nil {
-				log.Warningln("Error updating group:", spec.ID, "Err=", err)
+				log.Warningln("Error updating/watch group:", spec.ID, "Err=", err)
 			}
 			return err
 		})
@@ -278,6 +297,13 @@ func (m *manager) doWatchGroups(config globalSpec) error {
 
 			log.Infoln("WATCH group", spec.ID, "with spec:", spec)
 			err := plugin.WatchGroup(spec)
+
+			// TODO(chungers) -- yes this is clunky
+			if err != nil && strings.Contains(err.Error(), "Already watching") {
+
+				log.Infoln("Already WATCHING", spec.ID, "no action")
+				return nil
+			}
 
 			if err != nil {
 				log.Warningln("Error watching group:", spec.ID, "Err=", err)
@@ -375,9 +401,16 @@ func (m *manager) execPlugins(config globalSpec, work func(group.Plugin, group.S
 
 		log.Infoln("Processing group", id, "with plugin", pluginSpec.Plugin)
 		name := pluginSpec.Plugin
-		gp, err := rpc.NewClient(running[name].Protocol, running[name].Address)
+
+		ep, has := running[name]
+		if !has {
+			log.Warningln("Plugin", name, "isn't running")
+			return err
+		}
+
+		gp, err := rpc.NewClient(ep.Protocol, ep.Address)
 		if err != nil {
-			log.Warningln("Cannot contact group", id, " at plugin", name, "endpoint=", running[name].Address)
+			log.Warningln("Cannot contact group", id, " at plugin", name, "endpoint=", ep.Address)
 			return err
 		}
 

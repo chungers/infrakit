@@ -29,8 +29,11 @@ func main() {
 	logLevel := cli.DefaultLogLevel
 
 	backend := &backend{
-		id: "manager",
+		id: "group",
 	}
+
+	// This is the name of the stateless group plugin that the manager will proxy for.
+	backendName := "group-stateless"
 
 	cmd := &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
@@ -42,10 +45,13 @@ func main() {
 
 			log.Infoln("Starting up manager:", backend)
 
-			manager := manager.NewManager(backend.launcher, backend.plugins,
-				backend.leader, backend.snapshot)
+			manager, err := manager.NewManager(backend.launcher, backend.plugins,
+				backend.leader, backend.snapshot, backendName)
+			if err != nil {
+				return err
+			}
 
-			_, err := manager.Start()
+			_, err = manager.Start()
 			if err != nil {
 				return err
 			}
@@ -69,7 +75,8 @@ func main() {
 		},
 	}
 	cmd.PersistentFlags().IntVar(&logLevel, "log", logLevel, "Logging level. 0 is least verbose. Max is 5")
-	cmd.PersistentFlags().StringVar(&backend.id, "id", backend.id, "ID of the manager")
+	cmd.PersistentFlags().StringVar(&backend.id, "name", backend.id, "Name of the manager")
+	cmd.PersistentFlags().StringVar(&backendName, "proxy-for-group", backendName, "Name of the group plugin to proxy for.")
 
 	cmd.AddCommand(cli.VersionCommand(), osEnvironment(backend), swarmEnvironment(backend))
 
