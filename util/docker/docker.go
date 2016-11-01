@@ -1,4 +1,4 @@
-package swarm
+package docker
 
 import (
 	"crypto/tls"
@@ -19,21 +19,21 @@ const (
 // NewDockerClient creates a new API client.
 func NewDockerClient(host string, tls *tlsconfig.Options) (client.APIClient, error) {
 	tlsOptions := tls
-
+	if tls.KeyFile == "" || tls.CAFile == "" || tls.CertFile == "" {
+		// The api doesn't like it when you pass in not nil but with zero field values...
+		tlsOptions = nil
+	}
 	customHeaders := map[string]string{
 		"User-Agent": clientUserAgent(),
 	}
-
 	verStr := clientVersion
 	if tmpStr := os.Getenv("DOCKER_API_VERSION"); tmpStr != "" {
 		verStr = tmpStr
 	}
-
 	httpClient, err := newHTTPClient(host, tlsOptions)
 	if err != nil {
 		return &client.Client{}, err
 	}
-
 	return client.NewClient(host, verStr, httpClient, customHeaders)
 }
 
