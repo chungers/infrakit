@@ -73,7 +73,6 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
 
     return s3_full_url
 
-# @TODO: split upload and template creation
 def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
                         docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
     # check if file exists before opening.
@@ -91,7 +90,7 @@ def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
     # Updated Manager custom data
     manager_data = buildCustomData('custom-data_manager.sh')
     data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
-    # Updated Manager custom data
+    # Updated Worker custom data
     worker_data = buildCustomData('custom-data_worker.sh')
     data['variables']['customDataWorker'] = '[concat(' + ', '.join(worker_data) + ')]'
 
@@ -168,27 +167,121 @@ def create_rg_cloud_template(release_channel, docker_version,
         }
         outputs.update(new_outputs)
     
-    inbound = data.get('inbound')
+    # inbound = data.get('inbound')
+    # if inbound:
+    #     for key, val in enumerate(data.get('resources')):
+    #         if val['name'] == "[variables('lbSSHName')]":
+    #             inbound = val['properties']['inboundNatRules']
+    #             new_inbound = {
+    #                 "name": "cloud",
+    #                 "properties": {
+    #                     "frontendIPConfiguration": {
+    #                         "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
+    #                     },
+    #                     "protocol": "tcp",
+    #                     "frontendPort": 2376,
+    #                     "backendPort": 2376,
+    #                     "enableFloatingIP": False
+    #                 }
+    #             }
+    #             inbound.append(new_inbound)
+    #             break
     
-    if inbound:
-        for key, val in enumerate(data.get('resources')):
-            if val['name'] == "[variables('lbSSHName')]":
-                inbound = val['properties']['inboundNatRules']
-                new_inbound = {
-                    "name": "cloud",
-                    "properties": {
-                        "frontendIPConfiguration": {
-                            "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
-                        },
-                        "protocol": "tcp",
-                        "frontendPort": 2376,
-                        "backendPort": 2376,
-                        "enableFloatingIP": False
-                    }
+    outdir = u"dist/azure/{}".format(release_channel)
+    # if the directory doesn't exist, create it.
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
+
+    with open(outfile, 'w') as outf:
+        json.dump(data, outf, indent=4, sort_keys=True)
+
+    # TODO: json validate
+    if is_json(outfile):
+      print(u"Cloudformation template created in {}".format(outfile))
+    else:
+      print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+
+    return outfile
+
+def create_rg_ddc_template(vhd_sku, vhd_version, release_channel, docker_version,
+                        docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
+    with open(cfn_template) as data_file:
+        data = json.load(data_file)
+
+    # Updated Manager custom data
+    manager_data = buildCustomData('custom-data_manager_ddc.sh')
+    data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
+    # Updated Worker custom data
+    worker_data = buildCustomData('custom-data_worker_ddc.sh')
+    data['variables']['customDataWorker'] = '[concat(' + ', '.join(worker_data) + ')]'
+
+    data['variables']['imageSku'] = vhd_sku
+    data['variables']['imageVersion'] = vhd_version
+
+    parameters = data.get('parameters')
+    if parameters:
+        new_parameters = {
+            "DDCUsername": {
+                "defaultValue": "admin",
+                "type": "String",
+                "metadata": {
+                    "description": "Please enter the username you want to use for Docker Datacenter."
                 }
-                inbound.append(new_inbound)
-                break
+            },
+            "DDCPassword": {
+                "minLength": 8,
+                "maxLength": 40,
+                "type": "SecureString",
+                "metadata": {
+                    "description": "Please enter the password you want to use for Docker Datacenter."
+                }
+            }
+        }
+        parameters.update(new_parameters)
     
+    variables = data.get('variables')
+    if variables:
+        new_variables = {
+            "ddcUser": "[parameters('DDCUsername')]",
+            "ddcPass": "[parameters('DDCPassword')]"
+        }
+        variables.update(new_variables)
+    
+    for key, val in enumerate(data.get('resources')):
+        if val['name'] == "[variables('managerNSGName')]":
+            security_rules = val['properties']['securityRules']
+            new_security_rule = {
+                "name": "ddc",
+                "properties": {
+                    "description": "Allow UCP",
+                    "protocol": "Tcp",
+                    "sourcePortRange": "*",
+                    "destinationPortRange": "443",
+                    "sourceAddressPrefix": "*",
+                    "destinationAddressPrefix": "*",
+                    "access": "Allow",
+                    "priority": 206,
+                    "direction": "Inbound"
+                }
+            }
+            security_rules.append(new_security_rule)
+            break
+    outputs = data.get('outputs')
+    if outputs:
+        new_outputs = {
+            "DDCLoginURL": {
+                "type": "String",
+                "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress)]"
+            },
+            "DDCUsername": {
+                "type": "String",
+                "value": "[variables('ddcUser')]"
+            }
+        }
+        outputs.update(new_outputs)
+
     outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
