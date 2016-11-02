@@ -50,7 +50,7 @@ func NewSnapshot(dir, name string) (store.Snapshot, error) {
 	return &snapshot{dir: dir, name: name}, nil
 }
 
-// Save saves a snapshot of the given object and revision.
+// Save saves a snapshot of the given object and revision
 func (s *snapshot) Save(obj interface{}) error {
 	buff, err := json.MarshalIndent(obj, "  ", "  ")
 	if err != nil {

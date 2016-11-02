@@ -12,6 +12,7 @@ import (
 	file_store "github.com/docker/infrakit/store/file"
 	swarm_store "github.com/docker/infrakit/store/swarm"
 	"github.com/docker/infrakit/util/docker"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -87,6 +88,9 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 	swarm.PersistentFlags().StringVar(&tlsOptions.KeyFile, "tlskey", "", "TLS key file path")
 	swarm.PersistentFlags().BoolVar(&tlsOptions.InsecureSkipVerify, "tlsverify", true, "True to skip TLS")
 
+	// flag for splitting a single document into multiple, following a file system hiearchy
+	splitFiles := false
+
 	pull := &cobra.Command{
 		Use:   "pull",
 		Short: "pull config from source",
@@ -107,10 +111,15 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 				return err
 			}
 
+			fs := afero.NewBasePathFs(afero.NewOsFs(), storeDir)
+			if splitFiles {
+				return config.WriteFileTree(fs)
+			}
 			return local.Save(config)
 		},
 	}
 	pull.Flags().StringVar(&storeDir, "store-dir", storeDir, "Dir to store the config")
+	pull.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True to split single doc into a file tree")
 
 	push := &cobra.Command{
 		Use:   "push",
@@ -118,33 +127,47 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Println("pushing")
 
-			// local
-			local, err := file_store.NewSnapshot(storeDir, "global.config")
-			if err != nil {
-				return err
-			}
+			config := &manager.GlobalSpec{}
+			if splitFiles {
 
-			assertNotNil("no remote", remote)
+				fs := afero.NewBasePathFs(afero.NewOsFs(), storeDir)
+				err := config.ReadFileTree(fs)
+				if err != nil {
+					return err
+				}
 
-			config := manager.GlobalSpec{}
-			err = local.Load(&config)
-			if err != nil {
-				return err
+			} else {
+				// local
+				local, err := file_store.NewSnapshot(storeDir, "global.config")
+				if err != nil {
+					return err
+				}
+				assertNotNil("no remote", remote)
+
+				err = local.Load(&config)
+				if err != nil {
+					return err
+				}
 			}
 
 			return remote.Save(config)
 		},
 	}
 	push.Flags().StringVar(&storeDir, "store-dir", storeDir, "Dir to store the config")
+	pull.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True if files are in a directory tree")
 
 	config := &cobra.Command{
 		Use:   "config-path",
 		Short: "echoes the config file path",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println(filepath.Join(storeDir, "global.config"))
-			return nil
+		Run: func(cmd *cobra.Command, args []string) {
+			if splitFiles {
+				fmt.Println(filepath.Join(storeDir, "global.config"))
+				return
+			}
+			fmt.Println(storeDir)
 		},
 	}
+	pull.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True if files are in a directory tree")
 
 	swarm.AddCommand(pull, push, config)
 
