@@ -98,7 +98,7 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.12.3-cs4",
-                "forAws": "aws-v1.12.3-beta10"
+                "forAws": "ken"
             }
         },
 
@@ -537,7 +537,7 @@
             },
             "UpdatePolicy" : {
               "AutoScalingRollingUpdate" : {
-                 "MinInstancesInService" : "1",
+                 "MinInstancesInService" : { "Ref" : "ManagerSize"},
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
                  "PauseTime" : "PT20M"
@@ -593,6 +593,7 @@
                                 "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
+                                "-e HAS_DDC='yes' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
@@ -607,6 +608,7 @@
                                 "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
+                                "-e HAS_DDC='yes' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
@@ -659,6 +661,8 @@
                                 "-e UCP_ELB_HOSTNAME='",{"Fn::GetAtt": ["UCPLoadBalancer","DNSName"]}, "' ",
                                 "-e DTR_ELB_HOSTNAME='",{"Fn::GetAtt": ["DTRLoadBalancer","DNSName"]}, "' ",
                                 "-e INSTALL_DDC='yes' ",
+                                "-e INSTANCE_NAME='ManagerAsg' ",
+                                "-e MANAGER_COUNT='",{ "Ref" : "ManagerSize" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /tmp/docker:/tmp/docker ",
@@ -707,10 +711,10 @@
             },
             "UpdatePolicy" : {
               "AutoScalingRollingUpdate" : {
-                 "MinInstancesInService" : "1",
+                 "MinInstancesInService" : { "Ref" : "ClusterSize"},
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
-                 "PauseTime" : "PT4H"
+                 "PauseTime" : "PT1H"
               }
            }
         },
@@ -748,6 +752,7 @@
                                 "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
+                                "-e HAS_DDC='yes' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e STACK_ID='",{ "Ref" : "AWS::StackId" }, "' ",
@@ -762,6 +767,7 @@
                                 "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
+                                "-e HAS_DDC='yes' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
@@ -781,7 +787,9 @@
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
                                 "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPasswordSet" }, "' ",
+                                "-e INSTANCE_NAME='NodeAsg' ",
                                 "-e INSTALL_DDC='yes' ",
+                                "-e MANAGER_COUNT='",{ "Ref" : "ManagerSize" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/ddc-init-aws:$DOCKER_FOR_IAAS_VERSION\n"
@@ -1145,13 +1153,13 @@
     },
     "Outputs": {
         "UCPLoginURL" : {
-            "Description" : "Docker Datacenter Login URL",
+            "Description" : "Docker Datacenter UCP Login URL",
             "Value" : {
                 "Fn::Join": [ "", ["https://", {"Fn::GetAtt" : [ "UCPLoadBalancer", "DNSName"] } ] ]
             }
         },
         "DTRLoginURL" : {
-            "Description" : "Docker Datacenter Login URL",
+            "Description" : "Docker Datacenter DTR Login URL",
             "Value" : {
                 "Fn::Join": [ "", ["https://", {"Fn::GetAtt" : [ "DTRLoadBalancer", "DNSName"] } ] ]
             }

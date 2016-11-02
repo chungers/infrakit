@@ -28,6 +28,7 @@ echo "UCP_ADMIN_USER=$UCP_ADMIN_USER"
 echo "UCP_IMAGE=$UCP_IMAGE"
 echo "DTR_IMAGE=$DTR_IMAGE"
 echo "DTR_PORT=$DTR_PORT"
+echo "MANAGER_COUNT=$MANAGER_COUNT"
 echo "#================"
 
 # we don't want to install, exit now.
@@ -46,13 +47,27 @@ curl -o docker-datacenter.tar.gz https://packages.docker.com/caas/ucp-2.0.0-beta
 #done
 
 if [ "$NODE_TYPE" == "worker" ] ; then
-     # nothing left to do for workers, so exit.
+     echo "Let AWS know this worker node is ready."
+     cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $REGION
+     # nothing else left to do for workers, so exit.
      exit 0
 fi
 
-echo "Wait until CloudFormation is complete"
-time aws cloudformation wait stack-create-complete --stack-name ${STACK_NAME} --region=$REGION
-echo "CloudFormation is complete, time to proceed."
+echo "Wait until we have enough managers up and running."
+NUM_MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]' | wc -w)
+echo "Current number of Managers = $NUM_MANAGERS"
+
+while [ $NUM_MANAGERS -lt $MANAGER_COUNT ];
+do
+    echo "Not enough managers yet. We only have $NUM_MANAGERS and we need $MANAGER_COUNT to continue."
+    echo "sleep for a bit, and try again when we wake up."
+    sleep 30
+    NUM_MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]' | wc -w)
+    # if we never get to the number of managers, the stack will timeout, so we don't have to worry
+    # about being stuck in the loop forever.
+done
+
+echo "We have enough managers we can continue now."
 
 IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
@@ -63,18 +78,18 @@ if [[ "$IS_LEADER" == "true" ]]; then
     # Loading the License
     echo "Loading DDC License"
     if [[ ${LICENSE:0:1} == "{"  ]];
-        then echo "Using JSON Direct Input" 
+        then echo "Using JSON Direct Input"
         echo $LICENSE >> /tmp/docker/docker_subscription.lic
         IS_VALID_LICENSE=1
     elif [[  ${LICENSE:0:4} == "http" ]];
-        then echo "Using URL to download license file" 
+        then echo "Using URL to download license file"
         curl -s $LICENSE >> /tmp/docker/docker_subscription.lic
         IS_VALID_LICENSE=1
-    else echo "License input must be a valid URL or JSON license key. Please upload license in UI after installation." 
+    else echo "License input must be a valid URL or JSON license key. Please upload license in UI after installation."
         IS_VALID_LICENSE=0
-    fi 
+    fi
 
-    # Check if UCP is already installed, if it is exit. If not, install it. 
+    # Check if UCP is already installed, if it is exit. If not, install it.
     if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$UCP_ELB_HOSTNAME/_ping) -ne 200 ]];
         # Installing UCP
         then echo "Run the UCP install script"
@@ -102,16 +117,16 @@ if [[ "$IS_LEADER" == "true" ]]; then
                 if [[n==20]];
                     then echo "UCP failed status check after $n tries. Aborting Installation..."
                     exit 0
-                fi 
+                fi
                 echo "Try #$n: checking UCP status..."
-                sleep 5 
+                sleep 5
                 let n+=1
             fi
         done
     }
-    checkUCP 
+    checkUCP
 
-    # Checking if DTR is already running. If it is , exit, if it's not install it. 
+    # Checking if DTR is already running. If it is , exit, if it's not install it.
     if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$DTR_ELB_HOSTNAME/health) -ne 200 ]];
         # Installing first DTR replica
         # TODO: For upgrades, ensure that DTR isn't already installed
@@ -129,22 +144,22 @@ if [[ "$IS_LEADER" == "true" ]]; then
         until [ $n -ge 20 ];
         do
             if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$DTR_ELB_HOSTNAME/health) -eq 200 ]];
-                then echo "Main DTR Replica is up! Starting DTR replica join process" 
+                then echo "Main DTR Replica is up! Starting DTR replica join process"
                 break
-            else 
+            else
                 if [[n==20]];
                     then echo "DTR failed status check after $n tries. Aborting Installation..."
                     exit 0
-                fi 
+                fi
                 echo "Try #$n: checking DTR status..."
                 sleep 5
                 let n+=1
             fi
-        done 
+        done
     }
     checkDTR
 
-    # Configuring DTR with S3 
+    # Configuring DTR with S3
     echo "Configuring DTR with S3 Storage Backend..."
     if [[ $(curl --silent --output /dev/null --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "{\"storage\":{\"delete\":{\"enabled\":true},\"maintenance\":{\"readonly\":{\"enabled\":false}},\"s3\":{\"rootdirectory\":\"\",\"region\":\"$REGION\",\"regionendpoint\":\"\",\"bucket\":\"$S3_BUCKET_NAME\",\"secure\": true}}}") -lt 300 ]];
         then echo "Successfully Configured DTR storage backend with S3"
@@ -157,7 +172,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     # Installing  DTR replicas
     # Check `docker node ls` for reachable non-leader managers and use them as ucp-node when joining DTR replicas one at a time.
     # TODO: Better error handling to ensure we only install it on nodes that don't have DTR already.
-    for replica in $(docker node ls | grep Reachable | awk '{print $2}'); 
+    for replica in $(docker node ls | grep Reachable | awk '{print $2}');
         do echo "Joining DTR replicas..." && sleep 30 && docker run --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$replica" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id 000000000000
     done
     echo "Successfully joined DTR replicas!"
@@ -165,3 +180,6 @@ if [[ "$IS_LEADER" == "true" ]]; then
 else
     echo "Not the Swarm leader. Exiting... "
 fi
+
+echo "Notify AWS that this manager node is ready"
+cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $REGION

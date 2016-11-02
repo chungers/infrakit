@@ -7,6 +7,7 @@ MYNODE=$(wget -qO- http://169.254.169.254/latest/meta-data/instance-id)
 QUEUE=$SWARM_QUEUE
 VPC_ID=$VPC_ID # TODO pass in.
 STACK_ID=$STACK_ID # TODO pass in.
+HAS_DDC=${HAS_DDC:-"no"}
 # also pass in DYNAMODB_TABLE
 
 if [ -e /tmp/.shutdown-init ]
@@ -155,6 +156,48 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         fi
     fi
 
+    # check if DDC is installed, if so, make sure it is in a stable state before we continue.
+    if [[ "$HAS_DDC" == "yes" ]] ; then
+        echo "DDC is installed, make sure it is ready, before we continue."
+        MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+        # Find first node that's not myself
+        echo "List of available Managers = $MANAGERS"
+        n=0
+        until [ $n -ge 20 ];
+        do
+            echo "Checking managers. Try # $n .."
+            ALLGOOD='yes'
+            for I in $MANAGERS; do
+                echo "Checking $I to see if UCP is up"
+                # Checking if UCP is up and running
+                if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
+                    echo "UCP on $I is NOT healty"
+                    ALLGOOD='no'
+                else
+                    echo "UCP on $I is healthy!"
+                fi
+            done
+
+            if [[ "$ALLGOOD" == "yes" ]] ; then
+                echo "DDC is all healty, good to move on!"
+                break
+            else
+                echo "Not all healthy, rest and try again.."
+                if [[n==20]] ; then
+                    # this will cause the Autoscale group to timeout, and leave this node in the swarm
+                    # it will eventually be killed once the timeout it his. TODO: Do something about this.
+                    echo "UCP failed status check after $n tries. Aborting..."
+                    exit 0
+                fi
+                sleep 30
+                let n+=1
+            fi
+
+        done
+    else
+        echo "No DDC, skip this step."
+    fi
+
     # if not the last manager, demote, if it is the last manager, then we can't demote, it won't let us.
     if [ -z "$LAST_MANAGER" ]; then
         echo "demote the node from manager to worker for NODE: $NODE_ID"
@@ -165,7 +208,9 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     echo "Give time for the demotation to take place"
     buoy -event="node:demote" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     sleep 30
+
 fi
+
 
 # remove the node from swarm for both the manager and the worker.
 echo "Remove the node"

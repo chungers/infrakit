@@ -536,7 +536,7 @@
             },
             "UpdatePolicy" : {
               "AutoScalingRollingUpdate" : {
-                 "MinInstancesInService" : "1",
+                 "MinInstancesInService" : { "Ref" : "ManagerSize"},
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
                  "PauseTime" : "PT20M"
@@ -699,7 +699,7 @@
             },
             "UpdatePolicy" : {
               "AutoScalingRollingUpdate" : {
-                 "MinInstancesInService" : "1",
+                 "MinInstancesInService" : { "Ref" : "ClusterSize"},
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
                  "PauseTime" : "PT4H"
