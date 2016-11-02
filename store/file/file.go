@@ -22,11 +22,11 @@ func DefaultStoreDir() string {
 		return storeDir
 	}
 
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
+	home := os.Getenv("HOME")
+	if usr, err := user.Current(); err == nil {
+		home = usr.HomeDir
 	}
-	return filepath.Join(usr.HomeDir, ".infrakit/config")
+	return filepath.Join(home, ".infrakit/configs")
 }
 
 type snapshot struct {

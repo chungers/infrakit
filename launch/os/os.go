@@ -26,11 +26,11 @@ func DefaultLogDir() string {
 		return logDir
 	}
 
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
+	home := os.Getenv("HOME")
+	if usr, err := user.Current(); err == nil {
+		home = usr.HomeDir
 	}
-	return filepath.Join(usr.HomeDir, ".infrakit/logs")
+	return filepath.Join(home, ".infrakit/logs")
 }
 
 // NewLauncher returns a Launcher that can install and start plugins.  The OS version is simple - it translates

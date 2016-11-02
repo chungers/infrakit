@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 
 	"github.com/docker/infrakit/plugin"
 )
@@ -29,11 +29,11 @@ func Dir() string {
 		return pluginDir
 	}
 
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
+	home := os.Getenv("HOME")
+	if usr, err := user.Current(); err == nil {
+		home = usr.HomeDir
 	}
-	return path.Join(usr.HomeDir, ".infrakit/plugins")
+	return filepath.Join(home, ".infrakit/plugins")
 }
 
 // NewPluginDiscovery creates a plugin discovery based on the environment configuration.

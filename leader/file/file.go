@@ -25,11 +25,11 @@ func DefaultLeaderFile() string {
 		return leaderFile
 	}
 
-	usr, err := user.Current()
-	if err != nil {
-		panic(err)
+	home := os.Getenv("HOME")
+	if usr, err := user.Current(); err == nil {
+		home = usr.HomeDir
 	}
-	return filepath.Join(usr.HomeDir, ".infrakit/leader")
+	return filepath.Join(home, ".infrakit/leader")
 }
 
 // NewDetector return an implementation of leader detector
