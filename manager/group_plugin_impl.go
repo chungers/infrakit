@@ -40,9 +40,12 @@ func (m *manager) updateConfig(spec group.Spec) error {
 	// Always read and then update with the current value.  Assumes the user's input
 	// is always authoritative.
 	stored := GlobalSpec{}
-	if err := m.snapshot.Load(&stored); err != nil {
+
+	err := m.snapshot.Load(&stored)
+	if err != nil && err.Error() != "not-found" {
 		return err
 	}
+	// if not-found ok to continue...
 
 	if stored.Groups == nil {
 		stored.Groups = map[group.ID]PluginSpec{}

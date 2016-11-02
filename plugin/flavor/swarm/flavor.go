@@ -89,6 +89,30 @@ EOF
 {{.RESTART_DOCKER}}
 
 docker swarm join {{.MY_IP}} --token {{.JOIN_TOKEN}}
+
+# From bootstrap
+
+plugins=/infrakit/plugins
+configs=/infrakit/configs
+discovery="-e INFRAKIT_PLUGINS_DIR=$plugins -v $plugins:$plugins"
+run_plugin="docker run -d --restart always $discovery"
+image=wfarner/infrakit-demo-plugins
+image2=chungers/infrakit-bundle
+
+mkdir -p $configs
+mkdir -p $plugins
+
+docker pull $image
+docker pull $image2
+$run_plugin --name flavor-combo $image infrakit-flavor-combo --log 5
+$run_plugin --name flavor-swarm -v /var/run/docker.sock:/var/run/docker.sock $image2 infrakit-flavor-swarm --log 5 --name flavor-swarm
+$run_plugin --name flavor-vanilla $image infrakit-flavor-vanilla --log 5
+$run_plugin --name group-stateless $image infrakit-group-default --name group-stateless --log 5
+$run_plugin --name instance-aws $image infrakit-instance-aws --log 5
+$run_plugin --name manager -v /var/run/docker.sock:/var/run/docker.sock $image2 infrakit-manager swarm --proxy-for-group group-stateless --name group --log 5
+
+echo "alias infrakit='docker run --rm $discovery $image2 infrakit'" >> /home/ubuntu/.bashrc
+echo "alias infrakit='docker run --rm $discovery $image2 infrakit'" >> /root/.bashrc
 `
 )
 
