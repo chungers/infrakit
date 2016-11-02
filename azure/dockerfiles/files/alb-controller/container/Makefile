@@ -39,6 +39,7 @@ container:
 	-docker rm alb-controller-build
 	cd ../../../../../ && docker build -t alb-controller:build -f ${CURDIR}/Dockerfile.build .
 	docker run \
+		-ti \
 		-e EDITIONS_VERSION=$(EDITIONS_VERSION) \
 		-e VERSION=$(VERSION) \
 		-e DOCKER_REPO_OWNER=$(DOCKER_REPO_OWNER) \
