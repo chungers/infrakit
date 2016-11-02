@@ -2,42 +2,44 @@
 
 """Creates the Swarm."""
 
-NETWORK_NAME = 'swarm-network'
-
 def GenerateConfig(context):
+  zone = context.properties['zone']
+  machineType = context.properties['machineType']
+  size = context.properties['size']
+
   resources = [{
       'name': 'manager',
       'type': 'templates/manager.py',
       'properties': {
-          'machineType': context.properties['machineType'],
-          'zone': context.properties['zone'],
-          'network': NETWORK_NAME
+          'zone': zone,
+          'machineType': machineType,
+          'network': 'swarm-network'
       }
   }, {
       'name': 'worker',
       'type': 'templates/worker.py',
       'properties': {
-          'machineType': context.properties['machineType'],
-          'zone': context.properties['zone'],
-          'network': NETWORK_NAME,
+          'zone': zone,
+          'machineType': machineType,
+          'network': 'swarm-network',
           'managerIP': '$(ref.manager.internalIP)'
       }
   }, {
       'name': 'workers',
       'type': 'templates/workers.py',
       'properties': {
-          'zone': context.properties['zone'],
+          'zone': zone,
           'template': '$(ref.worker.name)',
-          'size': context.properties['size']
+          'size': size
       }
   }, {
-      'name': NETWORK_NAME,
+      'name': 'swarm-network',
       'type': 'templates/network.py'
   }, {
       'name': 'firewall-rules',
       'type': 'templates/firewall.py',
       'properties': {
-          'network': NETWORK_NAME
+          'network': 'swarm-network'
       }
   }]
   return {'resources': resources}
