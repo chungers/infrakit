@@ -1,10 +1,8 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-"""Creates the firewall."""
+"""Firewall rules."""
 
 def GenerateConfig(context):
-  """Creates the firewall."""
-
   resources = [{
       'name': 'ssh',
       'type': 'compute.v1.firewall',

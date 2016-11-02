@@ -4,6 +4,7 @@ imports:
 - path: templates/swarm.py
 - path: templates/manager.py
 - path: templates/worker.py
+- path: templates/workers.py
 - path: templates/network.py
 - path: templates/firewall.py
 

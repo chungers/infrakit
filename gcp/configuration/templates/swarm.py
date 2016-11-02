@@ -7,8 +7,6 @@ MACHINE_TYPE = 'g1-small'
 NETWORK_NAME = 'swarm-network'
 
 def GenerateConfig(context):
-  """Creates the Swarm."""
-
   resources = [{
       'name': 'manager',
       'type': 'templates/manager.py',
@@ -18,13 +16,20 @@ def GenerateConfig(context):
           'network': NETWORK_NAME
       }
   }, {
-      'name': 'worker01',
+      'name': 'worker',
       'type': 'templates/worker.py',
       'properties': {
           'machineType': MACHINE_TYPE,
           'zone': ZONE,
           'network': NETWORK_NAME,
           'managerIP': '$(ref.manager.internalIP)'
+      }
+  }, {
+      'name': 'workers',
+      'type': 'templates/workers.py',
+      'properties': {
+          'zone': ZONE,
+          'template': '$(ref.worker.name)'
       }
   }, {
       'name': NETWORK_NAME,

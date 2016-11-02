@@ -1,12 +1,10 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-"""Creates the virtual machine."""
+"""Swarm manager."""
 
 COMPUTE_URL_BASE = 'https://www.googleapis.com/compute/v1'
 
 def GenerateConfig(context):
-  """Creates a virtual machine."""
-
   outputs = [{
       'name': 'internalIP',
       'value': '$(ref.' + context.env['name'] + '.networkInterfaces[0].networkIP)'
@@ -44,7 +42,8 @@ def GenerateConfig(context):
           'metadata': {
               'items': [{
                   'key': 'startup-script',
-                  'value': r"""
+                  'value':
+r"""
 #!/bin/bash
 
 set -x

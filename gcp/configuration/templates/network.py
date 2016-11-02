@@ -1,10 +1,8 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-"""Creates the network."""
+"""Swarm's network."""
 
 def GenerateConfig(context):
-  """Creates the network."""
-
   resources = [{
       'name': context.env['name'],
       'type': 'compute.v1.network',
