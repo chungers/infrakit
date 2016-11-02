@@ -12,7 +12,7 @@ def GenerateConfig(context):
                                        'global', 'instanceTemplates',
                                        context.properties['template']]),
           'baseInstanceName': context.env['name'],
-          'targetSize': 2,
+          'targetSize': context.properties['size'],
           'autoHealingPolicies': [{
               'initialDelaySec': 300
           }]

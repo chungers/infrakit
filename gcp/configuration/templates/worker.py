@@ -62,6 +62,11 @@ def GenerateConfig(context):
     """
                   }]
               },
+              'scheduling': {
+                  'preemptible': False,
+                  'onHostMaintenance': 'TERMINATE',
+                  'automaticRestart': False
+              },
               'serviceAccounts': [{
                   'scopes': [
                       'https://www.googleapis.com/auth/cloudruntimeconfig'
