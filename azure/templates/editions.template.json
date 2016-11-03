@@ -237,7 +237,7 @@
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '4')))]"
     ],
     "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]",
-    "swarmInfoTable": "[concat(resourceGroup().name, 'aztable')]",
+    "swarmInfoTable": "swarminfo",
     "swarmLogsStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'logs')]",
     "customDataManager": "",
     "customDataWorker": ""
