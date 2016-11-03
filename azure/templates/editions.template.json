@@ -201,6 +201,14 @@
     "workerVMNamePrefix": "[concat(variables('basePrefix'), '-worker-')]",
     "managerEndpointDNSNamePrefix": "manager",
     "vmssName": "[concat(variables('workerVMNamePrefix'), 'vmss')]",
+    "lbSSHName": "externalSSHLoadBalancer",
+    "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
+    "lbSSHBackendAddressPoolID": "[concat(variables('lbSSHID'),'/backendAddressPools/default')]",
+    "lbSSHFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/default')]",
+    "lbSSHNATPoolID": "[concat(variables('lbSSHID'),'/inboundNatPools/default')]",
+    "lbSSHPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbSSHName'), '-public-ip')]",
+    "natSSHStartPort": 50000,
+    "natSSHEndPort": 50100,
     "lbName": "externalLoadBalancer",
     "lbPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbName'), '-public-ip')]",
     "lbID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbName'))]",
@@ -214,10 +222,10 @@
     "subnetRef": "[concat(variables('vnetID'),'/subnets/', variables('subnetName'))]",
     "managerAddressPrefix": "172.16.0.0/24",
     "subnetPrefix": "10.0.0.0/8",
-    "managerAvSet": "managerAvS",
     "managerNSGName": "[concat(variables('basePrefix'), '-manager-nsg')]",
     "managerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('managerNSGName'))]",
     "managerVMNamePrefix": "[concat(variables('basePrefix'), '-manager')]",
+    "vmssManagersName": "[concat(variables('managerVMNamePrefix'), 'vmss')]",
     "managerFirstAddr": 5,
     "storageAccountSuffix": "docker",
     "vhdContainerName": "dockervhd",
@@ -361,124 +369,99 @@
     },
     {
       "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[concat(variables('managerVMNamePrefix'), 'pip-', copyIndex())]",
-      "location": "[variables('storageLocation')]",
-      "copy": {
-        "name": "pipLoopNode",
-        "count": "[variables('managerCount')]"
-      },
-      "properties": {
-        "publicIPAllocationMethod": "Static"
-      }
-    },
-    {
-      "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.Network/networkInterfaces",
-      "name": "[concat(variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
-      "location": "[variables('storageLocation')]",
-      "copy": {
-        "name": "nicLoopNode",
-        "count": "[variables('managerCount')]"
-      },
       "dependsOn": [
         "[variables('vnetID')]",
         "[variables('managerNSGID')]",
-        "[concat('Microsoft.Network/publicIPAddresses/', variables('managerVMNamePrefix'), 'pip-', copyIndex())]"
+        "[variables('lbSSHID')]"
       ],
+      "location": "[variables('storageLocation')]",
+      "name": "[variables('vmssManagersName')]",
+      "plan": {
+        "name": "[variables('imageSku')]",
+        "product": "[variables('imageOffer')]",
+        "publisher": "[variables('imagePublisher')]"
+      },
       "properties": {
-        "networkSecurityGroup": {
-          "id": "[variables('managerNSGID')]"
+        "overprovision": false,
+        "upgradePolicy": {
+          "mode": "Manual"
         },
-        "ipConfigurations": [
-          {
-            "name": "ipConfigNode",
-            "properties": {
-              "privateIPAllocationMethod": "Dynamic",
-              "subnet": {
-                "id": "[variables('subnetRef')]"
-              },
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', concat(variables('managerVMNamePrefix'), 'pip-', copyIndex()))]"
+        "virtualMachineProfile": {
+          "diagnosticsProfile": {
+            "bootDiagnostics": {
+              "enabled": true,
+              "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
+            }
+          },
+          "networkProfile": {
+            "networkInterfaceConfigurations": [
+              {
+                "name": "managerNodeNic",
+                "properties": {
+                  "ipConfigurations": [
+                    {
+                      "name": "mgripconfig",
+                      "privateIPAllocationMethod": "dynamic",
+                      "properties": {
+                        "loadBalancerBackendAddressPools": [
+                          {
+                            "id": "[variables('lbSSHBackendAddressPoolID')]"
+                          }
+                        ],
+                        "loadBalancerInboundNatPools": [
+                          {
+                            "id": "[variables('lbSSHNATPoolID')]"
+                          }
+                        ],
+                        "subnet": {
+                          "id": "[variables('subnetRef')]"
+                        }
+                      }
+                    }
+                  ],
+                  "networkSecurityGroup": {
+                    "id": "[variables('managerNSGID')]"
+                  },
+                  "primary": true
+                }
+              }
+            ]
+          },
+          "osProfile": {
+            "adminUsername": "[variables('adminUsername')]",
+            "computerNamePrefix": "[variables('managerVMNamePrefix')]",
+            "customData": "[base64(concat('#!/bin/bash', '\n',  'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
+            "linuxConfiguration": {
+              "disablePasswordAuthentication": true,
+              "ssh": {
+                "publicKeys": [
+                  {
+                    "keyData": "[variables('sshRSAPublicKey')]",
+                    "path": "[variables('sshKeyPath')]"
+                  }
+                ]
               }
             }
-          }
-        ]
-      }
-    },
-    {
-      "type": "Microsoft.Compute/availabilitySets",
-      "name": "[variables('managerAvSet')]",
-      "apiVersion": "[variables('apiVersion')]",
-      "location": "[variables('storageLocation')]",
-      "properties": {}
-    },
-    {
-      "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.Compute/virtualMachines",
-      "name": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
-      "location": "[variables('storageLocation')]",
-      "plan": {
-        "publisher": "[variables('imagePublisher')]",
-        "name": "[variables('imageSku')]",
-        "product": "[variables('imageOffer')]"
-      },
-      "copy": {
-        "name": "vmLoopNode",
-        "count": "[variables('managerCount')]"
-      },
-      "dependsOn": [
-        "[concat('Microsoft.Network/networkInterfaces/', variables('managerVMNamePrefix'), 'nic-', copyIndex())]",
-        "storageLoop"
-      ],
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "[variables('managerVMSize')]"
-        },
-        "availabilitySet": {
-          "id": "[resourceId('Microsoft.Compute/availabilitySets',variables('managerAvSet'))]"
-        },
-        "osProfile": {
-          "computerName": "[concat(variables('managerVMNamePrefix'), copyIndex())]",
-          "adminUsername": "[variables('adminUsername')]",
-          "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', variables('customDataManager')))]",
-          "linuxConfiguration": {
-            "disablePasswordAuthentication": true,
-            "ssh": {
-              "publicKeys": [
-                {
-                  "path": "[variables('sshKeyPath')]",
-                  "keyData": "[variables('sshRSAPublicKey')]"
-                }
+          },
+          "storageProfile": {
+            "imageReference": "[variables('imageReference')]",
+            "osDisk": {
+              "caching": "ReadWrite",
+              "createOption": "FromImage",
+              "name": "[concat(variables('managerVMNamePrefix'), 'vmssosdisk')]",
+              "vhdContainers": [
+                "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
               ]
             }
           }
-        },
-        "storageProfile": {
-          "imageReference": "[variables('imageReference')]",
-          "osDisk": {
-            "name": "[concat(variables('managerVMNamePrefix'), copyIndex(),'-osdisk')]",
-            "vhd": {
-              "uri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'), '/manager', copyIndex(), '.vhd')]"
-            },
-            "caching": "ReadWrite",
-            "createOption": "FromImage"
-          }
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('managerVMNamePrefix'), 'nic-', copyIndex()))]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": true,
-            "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
-          }
         }
-      }
+      },
+      "sku": {
+        "capacity": "[variables('managerCount')]",
+        "name": "[variables('managerVMSize')]",
+        "tier": "Standard"
+      },
+      "type": "Microsoft.Compute/virtualMachineScaleSets"
     },
     {
       "apiVersion": "[variables('apiVersion')]",
@@ -488,7 +471,6 @@
       "dependsOn": [
         "[variables('vnetID')]",
         "[variables('lbID')]",
-        "[resourceId('Microsoft.Compute/VirtualMachines',concat(variables('managerVMNamePrefix'), '0'))]",
         "storageLoop"
       ],
       "sku": {
@@ -525,7 +507,7 @@
           "osProfile": {
             "computerNamePrefix": "[variables('workerVMNamePrefix')]",
             "adminUsername": "[variables('adminUsername')]",
-            "customData": "[base64(concat('#!/bin/bash', '\n', 'export MANAGER_IP=\"', reference(resourceId('Microsoft.Network/networkInterfaces', concat(variables('managerVMNamePrefix'), 'nic-0'))).ipConfigurations[0].properties.privateIPAddress, '\"', '\n', 'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataWorker')))]",
+            "customData": "[base64(concat('#!/bin/bash', '\n', 'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataWorker')))]",
             "linuxConfiguration": {
               "disablePasswordAuthentication": true,
               "ssh": {
@@ -618,6 +600,66 @@
           }
         ]
       }
+    },
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "location": "[variables('storageLocation')]",
+      "name": "[variables('lbSSHPublicIPAddressName')]",
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      },
+      "type": "Microsoft.Network/publicIPAddresses"
+    },
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('lbSSHPublicIPAddressName'))]"
+      ],
+      "location": "[resourceGroup().location]",
+      "name": "[variables('lbSSHName')]",
+      "properties": {
+        "backendAddressPools": [
+          {
+            "name": "default"
+          }
+        ],
+        "frontendIPConfigurations": [
+          {
+            "name": "default",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "default",
+            "properties": {
+              "intervalInSeconds": 10,
+              "numberOfProbes": 2,
+              "port": 22,
+              "protocol": "Tcp"
+            }
+          }
+        ],
+        "inboundNatPools": [
+          {
+            "name": "default",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[variables('lbSSHFrontEndIPConfigID')]"
+              },
+              "protocol": "tcp",
+              "frontendPortRangeStart": "[variables('natSSHStartPort')]",
+              "frontendPortRangeEnd": "[variables('natSSHEndPort')]",
+              "backendPort": 22
+            }
+          }
+        ]
+      },
+      "type": "Microsoft.Network/loadBalancers"
     }
   ],
   "outputs": {

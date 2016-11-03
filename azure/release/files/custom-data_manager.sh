@@ -11,8 +11,7 @@ export TENANT_ID="variables('adServicePrincipalTenantID')"
 export SWARM_INFO_TABLE="variables('swarmInfoTable')"
 export SWARM_INFO_STORAGE_ACCOUNT="variables('swarmInfoStorageAccount')"
 export SWARM_LOGS_STORAGE_ACCOUNT="variables('swarmLogsStorageAccount')"
-
-
+export MANAGER_IP=$(ifconfig eth0 | grep "inet addr:" | cut -d: -f2 | cut -d" " -f1)
 # create daemon config with custom tag
 echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}/{{.ID}}\" }}" > /etc/docker/daemon.json
 service docker restart
