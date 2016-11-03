@@ -1,5 +1,5 @@
-EDITIONS_TAG := beta9
-EDITIONS_DOCKER_VERSION := 1.12.2
+EDITIONS_TAG := beta10
+EDITIONS_DOCKER_VERSION := 1.12.3
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 REGION := us-west-1
 CHANNEL := beta
@@ -36,7 +36,6 @@ moby:
 
 clean:
 	rm -rf moby
-
 
 azure-release:
 	$(MAKE) -C azure/release
