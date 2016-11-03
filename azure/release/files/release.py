@@ -88,7 +88,7 @@ def main():
         s3_url = upload_rg_template(release_channel, template_name, base_url)
         s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
         s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
-        print(u"Uploaded CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={1} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
+        print(u"Uploaded CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
 
     # TODO: git commit, tag release. requires github keys, etc.
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
