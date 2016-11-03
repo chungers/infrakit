@@ -1,10 +1,16 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
+auth:
+	docker run -it --name gcloud-config google/cloud-sdk gcloud init
+
+revoke:
+	docker rm -f gcloud-config
+
 create:
-	gcloud deployment-manager deployments create docker --config configuration/docker.yaml
+	docker run --rm -ti -v $(CURDIR)/configuration:/configuration --volumes-from gcloud-config google/cloud-sdk gcloud deployment-manager deployments create docker --config configuration/docker.yaml
 
 describe:
-	gcloud deployment-manager deployments describe docker
+	docker run --rm -ti -v $(CURDIR)/configuration:/configuration --volumes-from gcloud-config google/cloud-sdk gcloud deployment-manager deployments describe docker
 
 delete:
-	gcloud deployment-manager deployments delete docker -q
+	docker run --rm -ti -v $(CURDIR)/configuration:/configuration --volumes-from gcloud-config google/cloud-sdk gcloud deployment-manager deployments delete docker -q
