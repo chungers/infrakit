@@ -94,7 +94,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
         # Installing UCP
         then echo "Run the UCP install script"
         if [[ ${IS_VALID_LICENSE}==1 ]];
-            then docker run --rm --name ucp -v /tmp/docker/docker_subscription.lic:/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$UCP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+            then docker run --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$UCP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
             echo "Finished installing UCP with license"
         else
             docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$UCP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
@@ -114,7 +114,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
                 then echo "UCP is up!"
                 break
             else
-                if [[n==20]];
+                if [[ $n==20 ]];
                     then echo "UCP failed status check after $n tries. Aborting Installation..."
                     exit 0
                 fi
@@ -147,7 +147,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
                 then echo "Main DTR Replica is up! Starting DTR replica join process"
                 break
             else
-                if [[n==20]];
+                if [[ $n==20 ]];
                     then echo "DTR failed status check after $n tries. Aborting Installation..."
                     exit 0
                 fi
