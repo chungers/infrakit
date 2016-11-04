@@ -72,7 +72,7 @@ func (g *GlobalSpec) ReadFileTree(fs afero.Fs) error {
 		dir := filepath.Join("Groups", f.Name())
 		plugin, err := af.ReadFile(filepath.Join(dir, "Plugin"))
 		if err != nil {
-			return err
+			plugin = []byte("") // not set -- this will be modified later on when user watches or updates
 		}
 		properties, err := af.ReadFile(filepath.Join(dir, "Properties.json"))
 		if err != nil {

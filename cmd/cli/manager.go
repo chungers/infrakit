@@ -154,7 +154,7 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 		},
 	}
 	push.Flags().StringVar(&storeDir, "store-dir", storeDir, "Dir to store the config")
-	pull.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True if files are in a directory tree")
+	push.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True if files are in a directory tree")
 
 	config := &cobra.Command{
 		Use:   "config-path",
@@ -167,7 +167,7 @@ func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 			fmt.Println(storeDir)
 		},
 	}
-	pull.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True if files are in a directory tree")
+	config.Flags().BoolVar(&splitFiles, "tree", splitFiles, "True if files are in a directory tree")
 
 	swarm.AddCommand(pull, push, config)
 
