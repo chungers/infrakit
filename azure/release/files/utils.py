@@ -167,26 +167,6 @@ def create_rg_cloud_template(release_channel, docker_version,
         }
         outputs.update(new_outputs)
     
-    # inbound = data.get('inbound')
-    # if inbound:
-    #     for key, val in enumerate(data.get('resources')):
-    #         if val['name'] == "[variables('lbSSHName')]":
-    #             inbound = val['properties']['inboundNatRules']
-    #             new_inbound = {
-    #                 "name": "cloud",
-    #                 "properties": {
-    #                     "frontendIPConfiguration": {
-    #                         "id": "[concat(resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName')),'/frontendIPConfigurations/default')]"
-    #                     },
-    #                     "protocol": "tcp",
-    #                     "frontendPort": 2376,
-    #                     "backendPort": 2376,
-    #                     "enableFloatingIP": False
-    #                 }
-    #             }
-    #             inbound.append(new_inbound)
-    #             break
-    
     outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):

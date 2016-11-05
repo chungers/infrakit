@@ -51,8 +51,8 @@ def main():
     flat_edition_version = edition_version.replace(" ", "")
     vhd_sku = args.vhd_sku
     vhd_version = args.vhd_version
-    cs_vhd_sku = args.vhd_sku
-    cs_vhd_version = args.vhd_version
+    cs_vhd_sku = args.cs_vhd_sku
+    cs_vhd_version = args.cs_vhd_version
 
     docker_for_azure_version = u"azure-v{}".format(flat_edition_version)
     image_name = u"Moby Linux {}".format(docker_for_azure_version)
