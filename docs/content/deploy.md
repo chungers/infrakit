@@ -29,10 +29,14 @@ click on the instance.
 
 ![](/img/aws/managers.png)
 
-### Manager Public IP on Azure
+### Manager Public IP and SSH ports on Azure
 
-Navigate to the resource group in the Azure web portal.  You will see the
-manager VMs and can obtain their public IPs by opening a blade panel for them.
+Once you've deployed Docker on Azure, go to the "Outputs" section of the resource
+group deployment. The "SSH Targets" output is a URL to a blade that describes
+the IP address (common across all the manager nodes) and the SSH port (unique for
+each manager node) that you can use to log in to each manager node.
+
+![](/img/azure/managers.png)
 
 ### Connecting via SSH
 
@@ -40,6 +44,11 @@ Obtain the public IP for the manager node and SSH in using your provided key to
 begin administrating your cluster:
 
     $ ssh -i <path-to-ssh-key> docker@<ssh-host>
+    Welcome to Docker!
+
+In case of Azure, you also need to specify the unique port associated with a manager
+
+    $ ssh -i <path-to-ssh-key> -p <ssh-port> docker@<ip>
     Welcome to Docker!
 
 Once you are logged into the container you can run Docker commands on the swarm:
