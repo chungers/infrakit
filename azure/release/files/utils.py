@@ -203,19 +203,19 @@ def create_rg_ddc_template(vhd_sku, vhd_version, release_channel, docker_version
     parameters = data.get('parameters')
     if parameters:
         new_parameters = {
-            "DDCUsername": {
-                "defaultValue": "admin",
-                "type": "String",
-                "metadata": {
-                    "description": "Please enter the username you want to use for Docker Datacenter."
-                }
-            },
             "DDCPassword": {
                 "minLength": 8,
                 "maxLength": 40,
                 "type": "SecureString",
                 "metadata": {
                     "description": "Please enter the password you want to use for Docker Datacenter."
+                }
+            },
+            "DDCUsername": {
+                "defaultValue": "admin",
+                "type": "String",
+                "metadata": {
+                    "description": "Please enter the username you want to use for Docker Datacenter."
                 }
             }
         }

@@ -30,12 +30,18 @@ def main():
     parser.add_argument('--channel_ddc',
                         dest='channel_ddc', default="alpha",
                         help="DDC release channel (beta, alpha, rc, nightly)")
+    parser.add_argument('--offer_id',
+                        dest='offer_id', default="docker4azure",
+                        help="The Azure VHD Offer ID")
     parser.add_argument('--cs_vhd_sku',
                         dest='cs_vhd_sku',
                         help="The Azure CS VHD SKU (i.e. docker4azure)")
     parser.add_argument('--cs_vhd_version',
                         dest='cs_vhd_version',
                         help="The Azure CS VHD version (i.e. 1.0.0)")
+    parser.add_argument('--cs_offer_id',
+                        dest='cs_offer_id',
+                        help="The Azure CS VHD Offer ID")
     parser.add_argument("--upload", action="store_true",
                         help="Upload the Azure template once generated")
 
