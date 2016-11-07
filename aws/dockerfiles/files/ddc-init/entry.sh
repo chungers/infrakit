@@ -135,7 +135,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
                     echo "UCP failed status check after $n tries. Aborting..."
                     exit 0
                 fi
-                sleep 30
+                sleep 60
                 let n+=1
             fi
 

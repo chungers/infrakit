@@ -532,7 +532,7 @@
             "CreationPolicy": {
                 "ResourceSignal": {
                   "Count": { "Ref" : "ManagerSize"},
-                  "Timeout": "PT20M"
+                  "Timeout": "PT1H"
                 }
             },
             "UpdatePolicy" : {
@@ -540,7 +540,7 @@
                  "MinInstancesInService" : { "Ref" : "ManagerSize"},
                  "MaxBatchSize" : "1",
                  "WaitOnResourceSignals" : "true",
-                 "PauseTime" : "PT20M"
+                 "PauseTime" : "PT1H"
               }
            }
         },
