@@ -96,6 +96,9 @@ cd $BUILD_HOME/code/editions/aws/release
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
 
+# run s3_cleanup, remove buckets left over from DDC testing.
+python s3_cleanup.py
+
 # run tests
 python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json -f results -t oss
 python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/cloud-nightly/latest.json -f cloud_results -t cloud
