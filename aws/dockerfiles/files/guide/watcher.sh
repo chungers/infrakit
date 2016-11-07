@@ -183,7 +183,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
                 break
             else
                 echo "Not all healthy, rest and try again.."
-                if [[n==20]] ; then
+                if [[ $n -eq 20 ]] ; then
                     # this will cause the Autoscale group to timeout, and leave this node in the swarm
                     # it will eventually be killed once the timeout it his. TODO: Do something about this.
                     echo "UCP failed status check after $n tries. Aborting..."
