@@ -105,23 +105,40 @@ if [[ "$IS_LEADER" == "true" ]]; then
     fi
 
     # Checking if UCP is up and running
-    echo "Checking to see if UCP is up"
-    n=0
+    echo "Checking to see if UCP is up and healthy"
     checkUCP(){
+        MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+        # Find first node that's not myself
+        echo "List of available Managers = $MANAGERS"
+        n=0
         until [ $n -ge 20 ];
         do
-            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$UCP_ELB_HOSTNAME/_ping) -eq 200 ]];
-                then echo "UCP is up!"
+            echo "Checking managers. Try # $n .."
+            ALLGOOD='yes'
+            for I in $MANAGERS; do
+                echo "Checking $I to see if UCP is up"
+                # Checking if UCP is up and running
+                if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
+                    echo "UCP on $I is NOT healty"
+                    ALLGOOD='no'
+                else
+                    echo "UCP on $I is healthy!"
+                fi
+            done
+
+            if [[ "$ALLGOOD" == "yes" ]] ; then
+                echo "UCP is all healty, good to move on!"
                 break
             else
-                if [[ $n -eq 20 ]];
-                    then echo "UCP failed status check after $n tries. Aborting Installation..."
+                echo "Not all healthy, rest and try again.."
+                if [[ $n -eq 20 ]] ; then
+                    echo "UCP failed status check after $n tries. Aborting..."
                     exit 0
                 fi
-                echo "Try #$n: checking UCP status..."
-                sleep 5
+                sleep 30
                 let n+=1
             fi
+
         done
     }
     checkUCP
@@ -139,8 +156,8 @@ if [[ "$IS_LEADER" == "true" ]]; then
     fi
 
     # Checking if DTR is up
-    n=0
     checkDTR(){
+        n=0
         until [ $n -ge 20 ];
         do
             if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$DTR_ELB_HOSTNAME/health) -eq 200 ]];
