@@ -14,6 +14,11 @@ func NewClient(protocol, addr string) (group.Plugin, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewClientFromConn(conn)
+}
+
+// NewClientFromConn returns plugin interface given net connection
+func NewClientFromConn(conn net.Conn) (group.Plugin, error) {
 	return &client{rpc: jsonrpc.NewClient(conn)}, nil
 }
 

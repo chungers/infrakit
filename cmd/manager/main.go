@@ -11,6 +11,7 @@ import (
 	"github.com/docker/infrakit/leader"
 	"github.com/docker/infrakit/manager"
 	"github.com/docker/infrakit/rpc"
+	group_rpc "github.com/docker/infrakit/rpc/group"
 	manager_rpc "github.com/docker/infrakit/rpc/manager"
 	"github.com/docker/infrakit/store"
 	"github.com/spf13/cobra"
@@ -56,9 +57,12 @@ func main() {
 				return err
 			}
 
-			_, stopped, err := rpc.StartPluginAtPath(
+			_, stopped, err := rpc.StartPluginAtPathWithRPCServices(
 				filepath.Join(backend.plugins.String(), backend.id),
-				manager_rpc.RPCServer(manager),
+				[]interface{}{
+					manager_rpc.RPCServer(manager),
+					group_rpc.PluginServer(manager),
+				},
 				func() error {
 					log.Infoln("Stopping manager")
 					manager.Stop()

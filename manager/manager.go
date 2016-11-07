@@ -16,8 +16,8 @@ import (
 	"github.com/docker/infrakit/store"
 )
 
-// Group is the interface that has end-user facing operations. This is exported via RPC
-type Group interface {
+// Service is the service interface for the manager
+type Service interface {
 
 	// Also implements the single group plugin interface
 	group.Plugin
@@ -26,18 +26,20 @@ type Group interface {
 	Commit() error
 }
 
-// Service is the service interface for the manager
-type Service interface {
-	Group
+// Backend is the
+type Backend interface {
+	Service
 
 	Start() (<-chan struct{}, error)
 	Stop()
 }
 
-// Manager is the controller of all the plugins.  It is able to process multiple inputs
+// manager is the controller of all the plugins.  It is able to process multiple inputs
 // such as leadership changes and configuration changes and perform the necessary actions
 // to activate / deactivate plugins
 type manager struct {
+	group.Plugin
+
 	launcher      launch.Launcher
 	plugins       discovery.Plugins
 	leader        leader.Detector
@@ -50,13 +52,12 @@ type manager struct {
 	currentConfig GlobalSpec
 
 	backendName string
-	backend     group.Plugin
 }
 
 // NewManager returns the manager which depends on other services to coordinate and manage
 // the plugins in order to ensure the infrastructure state matches the user's spec.
 func NewManager(launcher launch.Launcher, plugins discovery.Plugins, leader leader.Detector, snapshot store.Snapshot,
-	backendName string) (Service, error) {
+	backendName string) (Backend, error) {
 
 	m := &manager{
 		launcher: launcher,
@@ -65,10 +66,12 @@ func NewManager(launcher launch.Launcher, plugins discovery.Plugins, leader lead
 		snapshot: snapshot,
 	}
 
-	if err := m.proxyForGroupPlugin(backendName); err != nil {
+	gp, err := m.proxyForGroupPlugin(backendName)
+	if err != nil {
 		return nil, err
 	}
 
+	m.Plugin = gp
 	return m, nil
 }
 

@@ -19,7 +19,7 @@ import (
 func managerCommand(plugins func() discovery.Plugins) *cobra.Command {
 
 	name := "group"
-	var managerClient manager.Group
+	var managerClient manager.Service
 
 	cmd := &cobra.Command{
 		Use:   "manager",

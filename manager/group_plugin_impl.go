@@ -9,23 +9,22 @@ import (
 )
 
 // proxyForGroupPlugin registers a group plugin that this manager will proxy for.
-func (m *manager) proxyForGroupPlugin(name string) error {
+func (m *manager) proxyForGroupPlugin(name string) (group.Plugin, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	endpoint, err := m.plugins.Find(name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	client, err := rpc.NewClient(endpoint.Protocol, endpoint.Address)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	m.backendName = name
-	m.backend = client
-	return nil
+	return client, nil
 }
 
 // This implements the Group Plugin interface to support single group-only operations
@@ -70,22 +69,7 @@ func (m *manager) WatchGroup(grp group.Spec) error {
 	if err := m.updateConfig(grp); err != nil {
 		return err
 	}
-	return m.backend.WatchGroup(grp)
-}
-
-func (m *manager) UnwatchGroup(id group.ID) error {
-	log.Debugln("Proxy UnwatchGroup:", id)
-	return m.backend.UnwatchGroup(id)
-}
-
-func (m *manager) InspectGroup(id group.ID) (group.Description, error) {
-	log.Debugln("Proxy InspectGroup:", id)
-	return m.backend.InspectGroup(id)
-}
-
-func (m *manager) DescribeUpdate(updated group.Spec) (string, error) {
-	log.Debugln("Proxy DescribeUpdate:", updated)
-	return m.backend.DescribeUpdate(updated)
+	return m.Plugin.WatchGroup(grp)
 }
 
 func (m *manager) UpdateGroup(updated group.Spec) error {
@@ -93,20 +77,5 @@ func (m *manager) UpdateGroup(updated group.Spec) error {
 	if err := m.updateConfig(updated); err != nil {
 		return err
 	}
-	return m.backend.UpdateGroup(updated)
-}
-
-func (m *manager) StopUpdate(id group.ID) error {
-	log.Debugln("Proxy StopUpdate:", id)
-	return m.backend.StopUpdate(id)
-}
-
-func (m *manager) DestroyGroup(id group.ID) error {
-	log.Debugln("Proxy DestroyGroup:", id)
-	return m.backend.DestroyGroup(id)
-}
-
-func (m *manager) DescribeGroups() ([]group.Spec, error) {
-	log.Debugln("Proxy DescribeGroups")
-	return m.backend.DescribeGroups()
+	return m.Plugin.UpdateGroup(updated)
 }
