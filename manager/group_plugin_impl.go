@@ -65,17 +65,33 @@ func (m *manager) updateConfig(spec group.Spec) error {
 }
 
 func (m *manager) WatchGroup(grp group.Spec) error {
-	log.Debugln("Proxy WatchGroup:", grp)
-	if err := m.updateConfig(grp); err != nil {
-		return err
+	err := make(chan error)
+	m.backendOps <- backendOp{
+		n: "watch",
+		f: func() error {
+			log.Debugln("Proxy WatchGroup:", grp)
+			if err := m.updateConfig(grp); err != nil {
+				return err
+			}
+			return m.Plugin.WatchGroup(grp)
+		},
+		err: err,
 	}
-	return m.Plugin.WatchGroup(grp)
+	return <-err
 }
 
 func (m *manager) UpdateGroup(updated group.Spec) error {
-	log.Debugln("Proxy UpdateGroup:", updated)
-	if err := m.updateConfig(updated); err != nil {
-		return err
+	err := make(chan error)
+	m.backendOps <- backendOp{
+		n: "update",
+		f: func() error {
+			log.Debugln("Proxy UpdateGroup:", updated)
+			if err := m.updateConfig(updated); err != nil {
+				return err
+			}
+			return m.Plugin.UpdateGroup(updated)
+		},
+		err: err,
 	}
-	return m.Plugin.UpdateGroup(updated)
+	return <-err
 }

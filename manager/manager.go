@@ -52,6 +52,13 @@ type manager struct {
 	currentConfig GlobalSpec
 
 	backendName string
+	backendOps  chan<- backendOp
+}
+
+type backendOp struct {
+	n   string
+	f   func() error
+	err chan<- error
 }
 
 // NewManager returns the manager which depends on other services to coordinate and manage
@@ -99,10 +106,23 @@ func (m *manager) Start() (<-chan struct{}, error) {
 	notify := make(chan bool)
 	stopWorkQueue := make(chan struct{})
 
+	// proxied backend needs to have its operations serialized with respect to leadership calls, etc.
+	backendOps := make(chan backendOp)
+	m.backendOps = backendOps
+
+	// This goroutine here serializes work so that we don't have concurrent commits or unwatches / updates / etc.
 	go func() {
-		// This goroutine here serializes work so that we don't have concurrent commits or unwatches
+
 		for {
 			select {
+
+			case op := <-backendOps:
+				log.Debugln("Backend operation:", op)
+				if m.isLeader {
+					op.err <- op.f()
+				} else {
+					op.err <- fmt.Errorf("not-a-leader")
+				}
 
 			case <-stopWorkQueue:
 
@@ -112,6 +132,8 @@ func (m *manager) Start() (<-chan struct{}, error) {
 				return
 
 			case leader := <-notify:
+
+				// This channel has data only when there's been a leadership change.
 
 				log.Debugln("leader:", leader)
 				if leader {
@@ -135,6 +157,7 @@ func (m *manager) Start() (<-chan struct{}, error) {
 		}
 	}()
 
+	// Goroutine for handling all inbound leadership and control events.
 	go func() {
 
 		for {
@@ -143,11 +166,13 @@ func (m *manager) Start() (<-chan struct{}, error) {
 			case <-m.stop:
 
 				log.Infoln("Stopping..")
-				close(notify)
 				close(stopWorkQueue)
+				close(notify)
 				return
 
 			case evt := <-leaderChan:
+				// This here handles possible duplicated events about leadership and fires only when there
+				// is a change.
 
 				m.lock.Lock()
 
@@ -175,6 +200,7 @@ func (m *manager) Start() (<-chan struct{}, error) {
 				if current != next {
 					notify <- next
 				}
+
 			}
 		}
 
