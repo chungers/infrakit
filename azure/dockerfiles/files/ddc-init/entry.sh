@@ -5,31 +5,37 @@ echo "Start DDC setup"
 
 PRODUCTION_HUB_NAMESPACE='docker'
 HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-HUB_TAG=${HUB_TAG-"2.0.0-beta1"}
+HUB_TAG=${HUB_TAG-"2.0.0-beta3"}
 IMAGE_LIST_ARGS=''
 
 echo "PATH=$PATH"
 echo "ROLE=$ROLE"
 echo "REGION=$REGION"
 echo "RGROUP_NAME=$RGROUP_NAME"
+echo "APP_ID=$APP_ID"
+echo "TENANT_ID=$TENANT_ID"
 echo "LB_NAME=$LB_NAME"
 echo "LB_IP=$LB_IP"
 echo "UCP_ADMIN_USER=$UCP_ADMIN_USER"
-echo "APP_ID=$APP_ID"
-echo "TENANT_ID=$TENANT_ID"
+echo "UCP_IMAGE=${HUB_NAMESPACE}/ucp:${HUB_TAG}"
 echo "#================"
 
+
+if [[ "$HUB_NAMESPACE" != "$PRODUCTION_HUB_NAMESPACE" ]]; then
+    IMAGE_LIST_ARGS=" --image-version dev: "
+fi
+
 echo "Load the docker images"
-wget -qO- https://s3.amazonaws.com/packages.docker.com/caas/79Az36QAF4WGuvZdcJ7T/ucp_images_2.0.0-tp1 | docker load
+images=$(docker run --rm "${HUB_NAMESPACE}/ucp:${HUB_TAG}" images --list $IMAGE_LIST_ARGS )
+for im in $images; do
+    docker pull $im
+done
 
 if [ "$NODE_TYPE" == "worker" ] ; then
 	 # nothing left to do for workers, so exit.
 	 exit 0
 fi
 
-if [[ "$HUB_NAMESPACE" != "$PRODUCTION_HUB_NAMESPACE" ]]; then
-    IMAGE_LIST_ARGS=" --image-version dev: "
-fi
 
 echo "Wait until Resource Group is complete"
 # Login via the service principal
@@ -61,19 +67,13 @@ do
 done
 time 
 echo "Resource Group is complete, time to proceed."
-# 
+
+ 
 IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
 	echo "We are the swarm leader"
 	echo "Setup DDC"
-	
-	docker import http://docker-for-azure.s3.amazonaws.com/ddc/ucp-2.0.tar ${HUB_NAMESPACE}/ucp:${HUB_TAG}
-
-	# SSH_LB_PHYS_IDAME=$(azure group show ${RGROUP_NAME} --json | jq -r '.resources | .[] | select(.name=="${SSH_ELB_NAME}") | .name')
-	# SSH_LB_ID=$(azure resource show ${RGROUP_NAME} ${SSH_ELB_NAME} "Microsoft.Network/loadBalancers" "2016-09-01" --json | jq -r '.properties.frontendIPConfigurations[0].properties.publicIPAddress.id')
-	# SSH_LB_NAME=${SSH_LB_ID##*/}
-	# SSH_LB_IP=$(azure network public-ip show ${RGROUP_NAME} ${LB_NAME} --json | jq -r '.ipAddress')
 
 	read lb1 lb2 <<< $(azure group show ${RGROUP_NAME} --json | jq -r '.resources | .[] | select(.id | endswith("LoadBalancer-public-ip")) | .id')
 	if [ $lb1 == *"SSHLoadBalancer-public-ip" ]

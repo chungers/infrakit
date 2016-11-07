@@ -1,0 +1,22 @@
+info:
+  title: Swarm
+  version: 1.0
+
+imports:
+- path: swarm.py
+
+properties:
+  size:
+    type: integer
+    default: 2
+    description: Number of Workers
+
+  zone:
+    type: string
+    default: europe-west1-d
+    description: Zone
+
+  machineType:
+    type: string
+    default: g1-small
+    description: Worker machine type

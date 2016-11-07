@@ -16,18 +16,34 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.12.3-beta10
+
+Release date: 10/27/2016
+
+<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.3-beta10.json" data-rel="Beta-10" target="_blank" id="aws-deploy">![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)</a>
+
+### New
+
+- Docker Engine upgraded to Docker 1.12.3
+- Fixed the shell container that runs on the managers, to remove a ssh host key that was accidentally added to the image. 
+This could have led to a potential man in the middle (MITM) attack. The ssh host key is now generated on host startup, so that each host has it's own key.
+- The SSH ELB for SSH'ing into the managers has been removed because it is no longer possible to SSH into the managers without getting a security warning
+- Each Manager can be SSH'd into by following our deploy [guide](../deploy)
+- Added new region us-east-2 (Ohio)
+- Fixed some bugs related to upgrading the swarm
+- SSH keypair is now a required field in CloudFormation
+- Fixed networking dependency issues in CloudFormation template that could result in a stack failure.
+
 ## 1.12.2-beta9
 
 Release date: 10/12/2016
-
-<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.2-beta9.json" data-rel="Beta-9" target="_blank" id="aws-deploy">![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)</a>
 
 ### New
 
 - Docker Engine upgraded to Docker 1.12.2
 - Can better handle scaling swarm nodes down and back up again
 - Container logs are now sent to CloudWatch
-- Added a diagnostic command (docker-diagnose), to more easily send us diagnostic information incase of errors for troubleshooting
+- Added a diagnostic command (docker-diagnose), to more easily send us diagnostic information in case of errors for troubleshooting
 - Added sudo support to the shell container on manager nodes
 - Change SQS default message timeout to 12 hours from 4 days
 - Added support for region 'ap-south-1': Asia Pacific (Mumbai)
