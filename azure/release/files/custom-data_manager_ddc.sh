@@ -31,5 +31,5 @@ echo "$LB_NAME" > /var/lib/docker/swarm/lb_name
 
 docker run --log-driver=json-file --restart=no --rm -e ROLE=$ROLE -e REGION=$REGION -e ACCOUNT_ID=$ACCOUNT_ID -e APP_ID=$APP_ID -e APP_SECRET=$APP_SECRET -e TENANT_ID=$TENANT_ID -e RGROUP_NAME=$RGROUP_NAME -e UCP_ADMIN_USER=$DDC_USER -e UCP_ADMIN_PASSWORD=$DDC_PASS -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/ddc-init-azure:$DOCKER_FOR_IAAS_VERSION
 
-docker run --log-driver=json-file  -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" run --ad_app_id="$APP_ID" --ad_app_secret="$APP_SECRET" --subscription_id="$SUB_ID" --resource_group="$GROUP_NAME" --log=4 --default_lb_name="$LB_NAME" --environment=AzurePublicCloud
+docker run -d --log-driver=json-file -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" run --ad_app_id="$APP_ID" --ad_app_secret="$APP_SECRET" --subscription_id="$SUB_ID" --resource_group="$GROUP_NAME" --log=4 --default_lb_name="$LB_NAME" --environment=AzurePublicCloud
 
