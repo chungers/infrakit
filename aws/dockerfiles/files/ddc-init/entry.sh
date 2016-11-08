@@ -7,8 +7,8 @@ INSTALL_DDC=${INSTALL_DDC:-"yes"}
 
 PRODUCTION_HUB_NAMESPACE='docker'
 HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0-beta3"}
-DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0-beta3"}
+UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0-beta4"}
+DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0-beta4"}
 UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
 DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
 DTR_PORT=8443
@@ -38,7 +38,7 @@ fi
 
 # Loading Beta Images without login
 # TODO : Remove this step when DTR+UCP go GA
-curl -o docker-datacenter.tar.gz https://packages.docker.com/caas/ucp-2.0.0-beta3_dtr-2.1.0-beta3.tar.gz  && docker load -i docker-datacenter.tar.gz && rm docker-datacenter.tar.gz
+curl -o docker-datacenter.tar.gz https://packages.docker.com/caas/ucp-2.0.0-beta4_dtr-2.1.0-beta4.tar.gz  && docker load -i docker-datacenter.tar.gz && rm docker-datacenter.tar.gz
 
 # TODO: Add this section back when UCP goes GA
 #images=$(docker run --rm "${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}" images --list $IMAGE_LIST_ARGS )
@@ -111,7 +111,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
         # Find first node that's not myself
         echo "List of available Managers = $MANAGERS"
         n=0
-        until [ $n -ge 20 ];
+        until [ $n -gt 20 ];
         do
             echo "Checking managers. Try # $n .."
             ALLGOOD='yes'
@@ -148,8 +148,13 @@ if [[ "$IS_LEADER" == "true" ]]; then
         # Installing first DTR replica
         # TODO: For upgrades, ensure that DTR isn't already installed
         then echo "Installing First DTR Replica..."
-        #sleep 30
+        sleep 30
+        echo "Install DTR"
+        date
         docker run --rm "$DTR_IMAGE" install --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$NODE_NAME" --dtr-external-url $DTR_ELB_HOSTNAME:443 --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --replica-id 000000000000
+        echo "After running install via Docker"
+        date
+        sleep 30
         echo "Finished installing DTR"
     else
         exit 0
@@ -158,7 +163,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     # Checking if DTR is up
     checkDTR(){
         n=0
-        until [ $n -ge 20 ];
+        until [ $n -gt 20 ];
         do
             if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$DTR_ELB_HOSTNAME/health) -eq 200 ]];
                 then echo "Main DTR Replica is up! Starting DTR replica join process"
@@ -169,7 +174,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
                     exit 0
                 fi
                 echo "Try #$n: checking DTR status..."
-                sleep 5
+                sleep 30
                 let n+=1
             fi
         done

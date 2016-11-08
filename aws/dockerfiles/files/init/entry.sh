@@ -122,7 +122,7 @@ join_as_secondary_manager()
     sleep 30
     # we are not primary, so join as secondary manager.
     n=0
-    until [ $n -ge 5 ]
+    until [ $n -gt 5 ]
     do
         docker swarm join --token $MANAGER_TOKEN --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
 
@@ -215,7 +215,7 @@ setup_node()
     echo "   MANAGER_IP=$MANAGER_IP"
     # try an connect to the swarm manager.
     n=0
-    until [ $n -ge 5 ]
+    until [ $n -gt 5 ]
     do
         docker swarm join --token $WORKER_TOKEN $MANAGER_IP:2377
         get_swarm_id

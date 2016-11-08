@@ -163,7 +163,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         # Find first node that's not myself
         echo "List of available Managers = $MANAGERS"
         n=0
-        until [ $n -ge 20 ];
+        until [ $n -gt 20 ];
         do
             echo "Checking managers. Try # $n .."
             ALLGOOD='yes'
