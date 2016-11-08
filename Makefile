@@ -7,7 +7,7 @@ CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
 VHD_SKU := docker4azure
-VHD_VERSION := 1.12.15
+VHD_VERSION := 1.12.18
 export
 
 release: moby/alpine/cloud/aws/ami_id.out moby/alpine/cloud/azure/vhd_blob_url.out dockerimages

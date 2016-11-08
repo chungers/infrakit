@@ -178,7 +178,7 @@
     "storageLocation": "[resourceGroup().location]",
     "dockerForIAASVersion": "azure-v1.12.1-beta5",
     "imagePublisher": "docker",
-    "imageOffer": "docker4azure-preview",
+    "imageOffer": "docker4azure",
     "imageSku": "docker4azure",
     "imageVersion": "1.12.11",
     "imageReference": {
