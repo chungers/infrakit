@@ -1,7 +1,9 @@
+TAG := latest
+
 default: build
 
 build:
-	docker build -t docker4x/agent-azure .
+	docker build -t docker4x/agent-azure:$(TAG) .
 
 push: build
-	docker push docker4x/agent-azure
+	docker push docker4x/agent-azure:$(TAG)

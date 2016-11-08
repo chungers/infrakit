@@ -20,7 +20,7 @@ RUN apk add --no-cache --update \
 
 # Windows Azure Linux agent section
 RUN pip install pyasn1
-ENV AGENT_REVISION ef3d68857cf08b65bbe7dfeb7a811cc9f1aa5bc1
+ENV AGENT_REVISION 5d66b1c923fcccf1f00b6004627f7f3d46172142
 
 # TODO: Move back to upstream (a PR is out for this on the Azure agent --
 # https://github.com/Azure/WALinuxAgent/pull/341), for now we have to use this
@@ -35,7 +35,7 @@ RUN cp bin/* /usr/sbin/
 # TODO: If upstream shell Dockerfile changes this will also need to be changed.
 # Should be implemented more elegantly.
 RUN mkdir /daemons && \
-    mv /entry.sh /daemons/sshd-entrypoint.sh && \
+    rm /entry.sh && \
     mv /etc/ssh/sshd_config /opt/sshd_config && \
     mv /etc/motd /opt/motd
 
