@@ -159,13 +159,13 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     # check if DDC is installed, if so, make sure it is in a stable state before we continue.
     if [[ "$HAS_DDC" == "yes" ]] ; then
         echo "DDC is installed, make sure it is ready, before we continue."
-        MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
-        # Find first node that's not myself
-        echo "List of available Managers = $MANAGERS"
         n=0
         until [ $n -gt 20 ];
         do
             echo "Checking managers. Try # $n .."
+            MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+            # Find first node that's not myself
+            echo "List of available Managers = $MANAGERS"
             ALLGOOD='yes'
             for I in $MANAGERS; do
                 echo "Checking $I to see if UCP is up"

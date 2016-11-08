@@ -107,13 +107,13 @@ if [[ "$IS_LEADER" == "true" ]]; then
     # Checking if UCP is up and running
     echo "Checking to see if UCP is up and healthy"
     checkUCP(){
-        MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
-        # Find first node that's not myself
-        echo "List of available Managers = $MANAGERS"
         n=0
         until [ $n -gt 20 ];
         do
             echo "Checking managers. Try # $n .."
+            MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+            # Find first node that's not myself
+            echo "List of available Managers = $MANAGERS"
             ALLGOOD='yes'
             for I in $MANAGERS; do
                 echo "Checking $I to see if UCP is up"
