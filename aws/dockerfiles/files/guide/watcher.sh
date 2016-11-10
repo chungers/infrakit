@@ -8,6 +8,14 @@ QUEUE=$SWARM_QUEUE
 VPC_ID=$VPC_ID # TODO pass in.
 STACK_ID=$STACK_ID # TODO pass in.
 HAS_DDC=${HAS_DDC:-"no"}
+DTR_DYNAMO_FIELD='dtr_replicas'
+PRODUCTION_HUB_NAMESPACE='docker'
+HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
+UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0-beta4"}
+DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0-beta4"}
+UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
+DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
+DTR_PORT=8443
 # also pass in DYNAMODB_TABLE
 
 if [ -e /tmp/.shutdown-init ]
@@ -158,7 +166,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
 
     # check if DDC is installed, if so, make sure it is in a stable state before we continue.
     if [[ "$HAS_DDC" == "yes" ]] ; then
-        echo "DDC is installed, make sure it is ready, before we continue."
+        echo "UCP is installed, make sure it is ready, before we continue."
         n=0
         until [ $n -gt 20 ];
         do
@@ -179,7 +187,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
             done
 
             if [[ "$ALLGOOD" == "yes" ]] ; then
-                echo "DDC is all healty, good to move on!"
+                echo "UCP is all healty, good to move on!"
                 break
             else
                 echo "Not all healthy, rest and try again.."
@@ -194,6 +202,41 @@ if [ "$NODE_TYPE" == "manager" ] ; then
             fi
 
         done
+
+        echo "Remove DTR"
+        LOCAL_DTR_ID=$(docker ps --format '{{.Names}}' -f name=dtr-registry | tail -c 13)
+        echo " LOCAL_DTR_ID=$LOCAL_DTR_ID"
+        echo "remove from dynamodb"
+        aws dynamodb update-item \
+            --table-name $DYNAMODB_TABLE \
+            --region $REGION \
+            --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}' \
+            --update-expression 'DELETE nodes :n' \
+            --expression-attribute-values '{":n": {"SS":["'"$LOCAL_DTR_ID"'"]}}' \
+            --return-consumed-capacity TOTAL
+
+        REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
+        EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
+        echo "EXISTING_REPLICA_ID=$EXISTING_REPLICA_ID"
+        echo "Remove DTR node."
+        docker run --rm "$DTR_IMAGE" remove --ucp-url https://$UCP_ELB_HOSTNAME --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID --replica-id $LOCAL_DTR_ID
+        LEAVE_RESULT=$?
+        echo "   LEAVE_RESULT=$LEAVE_RESULT"
+
+        echo "Final cleanup check.."
+        REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
+        NUM_REPLICAS=$(echo $REPLICAS | jq -r '.Item.nodes.SS | length')
+        echo "REPLICAS=$REPLICAS"
+        echo "NUM_REPLICAS=$NUM_REPLICAS"
+        if [ -z "$REPLICAS" ] || [ -z "$NUM_REPLICAS" ] || [ $NUM_REPLICAS -eq 0 ]; then
+            echo "We need to delete dyno record, we are last one."
+            aws dynamodb delete-item --table-name $DYNAMODB_TABLE --region $REGION --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}'
+        else
+            echo "We are not last, we are good to leave things as is."
+        fi
+
+        echo "DTR remove is complete."
+
     else
         echo "No DDC, skip this step."
     fi
