@@ -73,7 +73,7 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
 
     return s3_full_url
 
-def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
+def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
     # check if file exists before opening.
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
@@ -85,6 +85,7 @@ def create_rg_template(vhd_sku, vhd_version, release_channel, docker_version,
     data['variables']['Description'] = u"Docker for Azure {0} ({1})".format(docker_version, edition_version)
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
+    data['variables']['imageOffer'] = offer_id
     data['variables']['dockerForIAASVersion'] = docker_for_azure_version
 
     # Updated Manager custom data
@@ -185,7 +186,7 @@ def create_rg_cloud_template(release_channel, docker_version,
 
     return outfile
 
-def create_rg_ddc_template(vhd_sku, vhd_version, release_channel, docker_version,
+def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
@@ -199,9 +200,21 @@ def create_rg_ddc_template(vhd_sku, vhd_version, release_channel, docker_version
 
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
+    data['variables']['imageOffer'] = offer_id
 
+    # Use multiple steps to keep order
     parameters = data.get('parameters')
     if parameters:
+        new_parameters = {
+            "DDCUsername": {
+                "defaultValue": "admin",
+                "type": "String",
+                "metadata": {
+                    "description": "Please enter the username you want to use for Docker Datacenter."
+                }
+            }
+        }
+        parameters.update(new_parameters)
         new_parameters = {
             "DDCPassword": {
                 "minLength": 8,
@@ -209,13 +222,6 @@ def create_rg_ddc_template(vhd_sku, vhd_version, release_channel, docker_version
                 "type": "SecureString",
                 "metadata": {
                     "description": "Please enter the password you want to use for Docker Datacenter."
-                }
-            },
-            "DDCUsername": {
-                "defaultValue": "admin",
-                "type": "String",
-                "metadata": {
-                    "description": "Please enter the username you want to use for Docker Datacenter."
                 }
             }
         }
@@ -232,22 +238,105 @@ def create_rg_ddc_template(vhd_sku, vhd_version, release_channel, docker_version
     for key, val in enumerate(data.get('resources')):
         if val['name'] == "[variables('managerNSGName')]":
             security_rules = val['properties']['securityRules']
-            new_security_rule = {
-                "name": "ddc",
-                "properties": {
-                    "description": "Allow UCP",
-                    "protocol": "Tcp",
-                    "sourcePortRange": "*",
-                    "destinationPortRange": "443",
-                    "sourceAddressPrefix": "*",
-                    "destinationAddressPrefix": "*",
-                    "access": "Allow",
-                    "priority": 206,
-                    "direction": "Inbound"
+            new_security_rule = [
+                {
+                    "name": "ucp",
+                    "properties": {
+                        "description": "Allow UCP",
+                        "protocol": "Tcp",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "443",
+                        "sourceAddressPrefix": "*",
+                        "destinationAddressPrefix": "*",
+                        "access": "Allow",
+                        "priority": 206,
+                        "direction": "Inbound"
+                    }
+                },
+                {
+                    "name": "dtr",
+                    "properties": {
+                        "description": "Allow DTR",
+                        "protocol": "Tcp",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "8443",
+                        "sourceAddressPrefix": "*",
+                        "destinationAddressPrefix": "*",
+                        "access": "Allow",
+                        "priority": 207,
+                        "direction": "Inbound"
+                    }
                 }
+            ]
+            security_rules.extend(new_security_rule)
+        if val['name'] == "[variables('lbSSHName')]":
+            properties = val['properties']
+
+            loadbalancing_rules = {
+                "loadBalancingRules": [
+                    {
+                        "name": "ucpLbRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                    "id": "[variables('lbSSHFrontEndIPConfigID')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
+                            },
+                            "protocol": "tcp",
+                            "frontendPort": 443,
+                            "backendPort": 443,
+                            "enableFloatingIP": False,
+                            "idleTimeoutInMinutes": 5,
+                            "probe": {
+                                "id": "[concat(variables('lbSSHID'),'/probes/ucp')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "dtrLbRule",
+                        "properties": {
+                            "frontendIPConfiguration": {
+                                    "id": "[variables('lbSSHFrontEndIPConfigID')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
+                            },
+                            "protocol": "tcp",
+                            "frontendPort": 8443,
+                            "backendPort": 8443,
+                            "enableFloatingIP": False,
+                            "idleTimeoutInMinutes": 5,
+                            "probe": {
+                                "id": "[concat(variables('lbSSHID'),'/probes/dtr')]"
+                            }
+                        }
+                    },
+                ]
             }
-            security_rules.append(new_security_rule)
-            break
+            properties.update(loadbalancing_rules)
+            probes = val['properties']['probes']
+            new_probe = [
+                {
+                    "name": "ucp", 
+                    "properties": {
+                        "intervalInSeconds": 10, 
+                        "numberOfProbes": 2, 
+                        "port": 443, 
+                        "protocol": "Tcp"
+                    }
+                },
+                {
+                    "name": "dtr", 
+                    "properties": {
+                        "intervalInSeconds": 10, 
+                        "numberOfProbes": 2, 
+                        "port": 8443, 
+                        "protocol": "Tcp"
+                    }
+                }
+            ]
+            probes.extend(new_probe)
     outputs = data.get('outputs')
     if outputs:
         new_outputs = {
