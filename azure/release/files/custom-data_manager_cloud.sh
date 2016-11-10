@@ -19,7 +19,7 @@ docker run --restart=no -d -e ROLE="$ROLE" -e REGION="$REGION" -e TENANT_ID="$TE
 docker run --restart=always -d -e ROLE="$ROLE -e REGION="$REGION -e ACCOUNT_ID="$ACCOUNT_ID" -e PRIVATE_IP="$MANAGER_IP" -e DOCKER_FOR_IAAS_VERSION="$DOCKER_FOR_IAAS_VERSION" -v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker docker4x/guide-azure:"$DOCKER_FOR_IAAS_VERSION"
 echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config
 echo "$LB_NAME" > /var/lib/docker/swarm/lb_name
-docker run -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" run --ad_app_id="$APP_ID" --ad_app_secret="$APP_SECRET" --subscription_id="$SUB_ID" --resource_group="$GROUP_NAME" --log=4 --default_lb_name="$LB_NAME" --environment=AzurePublicCloud
+docker run -d -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" run --ad_app_id="$APP_ID" --ad_app_secret="$APP_SECRET" --subscription_id="$SUB_ID" --resource_group="$GROUP_NAME" --log=4 --default_lb_name="$LB_NAME" --environment=AzurePublicCloud
 
 
 
