@@ -652,7 +652,7 @@
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
 
-                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=on-failure:5 --rm ",
+                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=on-failure:5 ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
@@ -788,7 +788,7 @@
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=on-failure:5 --rm ",
+                                "docker run --log-driver=json-file --name=ddc-init-aws --restart=on-failure:5  ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
