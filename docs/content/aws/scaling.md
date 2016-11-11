@@ -15,16 +15,16 @@ weight="200"
 
 ## Scaling workers
 
-You can scale the worker count using the AWS Node Autoscaling group. Docker will automatically join or remove new instances to the Swarm.
+You can scale the worker count using the AWS Auto Scaling group. Docker will automatically join or remove new instances to the Swarm.
 
-There are currently two ways to scale your worker group. You can "update" your stack, and change the number of workers in the CloudFormation template parameters, or you can manually update the Autoscaling group in the AWS console for EC2 auto scaling groups.
+There are currently two ways to scale your worker group. You can "update" your stack, and change the number of workers in the CloudFormation template parameters, or you can manually update the Auto Scaling group in the AWS console for EC2 auto scaling groups.
 
 Changing manager count live is _not_ currently supported.
 
 ### AWS Console
 Login to the AWS console, and go to the EC2 dashboard. On the lower left hand side select the "Auto Scaling Groups" link.
 
-Look for the Autoscaling group with the name that looks like $STACK_NAME-NodeASG-* Where `$STACK_NAME` is the name of the stack you created when filling out the CloudFormation template for Docker for AWS. Once you find it, click the checkbox, next to the name. Then Click on the "Edit" button on the lower detail pane.
+Look for the Auto Scaling group with the name that looks like $STACK_NAME-NodeASG-* Where `$STACK_NAME` is the name of the stack you created when filling out the CloudFormation template for Docker for AWS. Once you find it, click the checkbox, next to the name. Then Click on the "Edit" button on the lower detail pane.
 
 <img src="/img/aws/autoscale_update.png">
 
