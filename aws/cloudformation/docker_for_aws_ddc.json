@@ -654,6 +654,7 @@
 
                                 "docker run --log-driver=json-file --name=ddc-init-aws --restart=on-failure:5 --rm ",
                                 "-e NODE_TYPE='manager' ",
+                                "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e STACK_NAME='",{ "Ref" : "AWS::StackName" }, "' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
