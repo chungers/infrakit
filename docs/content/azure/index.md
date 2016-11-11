@@ -29,7 +29,7 @@ Once you're accepted into the beta, Docker will share with your Azure subscripti
 
 ### Service Principal
 
-To setup Docker for Azure, a [Service Principal](https://azure.microsoft.com/en-us/documentation/articles/active-directory-application-objects/) is required. Docker for Azure uses the principal to operate Azure APIs as you scale up and down or deploy apps on your swarm. Docker provides a containerized helper-script to help create the Service Principal:
+To set up Docker for Azure, a [Service Principal](https://azure.microsoft.com/en-us/documentation/articles/active-directory-application-objects/) is required. Docker for Azure uses the principal to operate Azure APIs as you scale up and down or deploy apps on your swarm. Docker provides a containerized helper-script to help create the Service Principal:
 
     docker run -ti docker4x/create-sp-azure sp-name
     ...
@@ -48,6 +48,6 @@ When setting up the ARM template, you will be prompted for the App ID (a UUID) a
 
 ### SSH Key
 
-Docker for Azure uses SSH for accessing the Docker swarm once it's deployed. During setup, you will be prompted for a SSH public key. If you don't have a SSH key, you can generate one with `puttygen` or `ssh-keygen`. You only need the public key component to setup Docker for Azure. Here's how to get the public key from a .pem file:
+Docker for Azure uses SSH for accessing the Docker swarm once it's deployed. During setup, you will be prompted for a SSH public key. If you don't have a SSH key, you can generate one with `puttygen` or `ssh-keygen`. You only need the public key component to set up Docker for Azure. Here's how to get the public key from a .pem file:
 
     ssh-keygen -y -f my-key.pem
