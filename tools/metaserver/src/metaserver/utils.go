@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/http/httputil"
 	"os"
 	"runtime"
 	"strings"
@@ -14,15 +13,16 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/tlsconfig"
 	"github.com/docker/go-connections/sockets"
+	"github.com/docker/go-connections/tlsconfig"
 )
 
 const (
-	clientVersion = "1.24"
+	clientVersion = "1.24" // docker client version
 )
 
 func GetDockerClient() (client.APIClient, context.Context) {
+	// get the docker client
 	tlsOptions := tlsconfig.Options{}
 	host := "unix:///var/run/docker.sock"
 	ctx := context.Background()
@@ -34,6 +34,7 @@ func GetDockerClient() (client.APIClient, context.Context) {
 }
 
 func GetRequestIP(r *http.Request) string {
+	//given the request return the IP address of the requestor
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	return ip
 }
@@ -69,7 +70,6 @@ func newHTTPClient(host string, tlsOptions *tlsconfig.Options) (*http.Client, er
 		if err != nil {
 			return nil, err
 		}
-		//log.Infoln("TLS config=", config)
 	}
 	tr := &http.Transport{
 		TLSClientConfig: config,
@@ -85,43 +85,33 @@ func newHTTPClient(host string, tlsOptions *tlsconfig.Options) (*http.Client, er
 }
 
 func clientUserAgent() string {
+	// This is the client UserAgent, we use when connecting to docker.
 	return fmt.Sprintf("Docker-Client/%s (%s)", clientVersion, runtime.GOOS)
 }
 
 func GetRequestInfo(r *http.Request) {
-	fmt.Printf("Referer: %s\n", r.Referer())
-	fmt.Printf("UserAgent: %s\n", r.UserAgent())
-	fmt.Printf("RemoteAddr: %s\n", r.RemoteAddr)
-	fmt.Printf("Method: %s\n", r.Method)
-	fmt.Printf("Host: %s\n", r.Host)
+	// Mostly used for debugging, we can cut this down,
+	// since it isn't really used much anymore.
+	fmt.Printf("Path:[%s] %s \n", r.Method, r.URL.Path)
+	fmt.Printf("User: %s [%s]\n", r.UserAgent(), r.RemoteAddr)
 	ip, port, _ := net.SplitHostPort(r.RemoteAddr)
-	fmt.Printf("IP: %s\n", ip)
-	fmt.Printf("port: %s\n", port)
 	userIP := net.ParseIP(ip)
-	fmt.Printf("userIP: %s\n", userIP)
+	fmt.Printf("userIP: %s on port %s\n", userIP, port)
 	forward := r.Header.Get("X-Forwarded-For")
-	fmt.Printf("forward: %s\n", forward)
-	ips := strings.Split(forward, ", ")
-	for _, ip := range ips {
-		fmt.Println(ip)
+	if len(forward) > 0 {
+		fmt.Printf("forward: %s\n", forward)
+		ips := strings.Split(forward, ", ")
+		for _, ip := range ips {
+			fmt.Println(ip)
+		}
 	}
-	for k, v := range r.Header {
-		fmt.Println("key:", k, "value:", v)
-	}
-
-	dump, err := httputil.DumpRequest(r, true)
-	if err != nil {
-		fmt.Printf("dump error")
-	}
-
-	fmt.Printf("%q", dump)
-
+	fmt.Printf("\n")
 }
 
 func GetSwarmNodes() []swarm.Node {
 	cli, ctx := GetDockerClient()
 
-	// this is just for testing, remove.
+	// get the list of swarm nodes
 	nodes, err := cli.NodeList(ctx, types.NodeListOptions{})
 	if err != nil {
 		panic(err)

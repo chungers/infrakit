@@ -5,7 +5,12 @@ import (
 	"net/http"
 )
 
-func AzureTokenManager(w http.ResponseWriter, r *http.Request) {
+type AzureWeb struct {
+}
+
+//TODO: implement these using Azure specific API's
+
+func (a AzureWeb) TokenManager(w http.ResponseWriter, r *http.Request) {
 	GetRequestInfo(r)
 
 	w.WriteHeader(http.StatusNotImplemented)
@@ -14,7 +19,7 @@ func AzureTokenManager(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: tokenManager")
 }
 
-func AzureTokenWorker(w http.ResponseWriter, r *http.Request) {
+func (a AzureWeb) TokenWorker(w http.ResponseWriter, r *http.Request) {
 	GetRequestInfo(r)
 
 	w.WriteHeader(http.StatusNotImplemented)
@@ -23,7 +28,7 @@ func AzureTokenWorker(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint Hit: tokenWorker")
 }
 
-func AzureCheckManager(w http.ResponseWriter, r *http.Request) {
+func (a AzureWeb) CheckManager(w http.ResponseWriter, r *http.Request) {
 	GetRequestInfo(r)
 
 	w.WriteHeader(http.StatusNotImplemented)
@@ -31,7 +36,7 @@ func AzureCheckManager(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AzureCheckWorker(w http.ResponseWriter, r *http.Request) {
+func (a AzureWeb) CheckWorker(w http.ResponseWriter, r *http.Request) {
 	GetRequestInfo(r)
 
 	w.WriteHeader(http.StatusNotImplemented)
@@ -39,7 +44,7 @@ func AzureCheckWorker(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AzureInstances(w http.ResponseWriter, r *http.Request) {
+func (a AzureWeb) Instances(w http.ResponseWriter, r *http.Request) {
 	GetRequestInfo(r)
 
 	w.WriteHeader(http.StatusNotImplemented)
@@ -47,7 +52,23 @@ func AzureInstances(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func AzureNodes(w http.ResponseWriter, r *http.Request) {
+func (a AzureWeb) ManagerInstances(w http.ResponseWriter, r *http.Request) {
+	GetRequestInfo(r)
+
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "Not implmented Yet\n")
+
+}
+
+func (a AzureWeb) WorkerInstances(w http.ResponseWriter, r *http.Request) {
+	GetRequestInfo(r)
+
+	w.WriteHeader(http.StatusNotImplemented)
+	fmt.Fprintf(w, "Not implmented Yet\n")
+
+}
+
+func (a AzureWeb) Nodes(w http.ResponseWriter, r *http.Request) {
 	GetRequestInfo(r)
 
 	w.WriteHeader(http.StatusNotImplemented)
