@@ -26,19 +26,19 @@ type AWSWeb struct {
 func (a AWSWeb) TokenManager(w http.ResponseWriter, r *http.Request) {
 	// get the swarm manager token, if they are a manager node,
 	// and are not already in the swarm. Block otherwise
-	GetRequestInfo(r)
-	found := AlreadyInSwarm(r)
-	isManager := IsManagerNode(r)
+	RequestInfo(r)
+	found := alreadyInSwarm(r)
+	isManager := isManagerNode(r)
 
 	if found || !isManager {
 		// they are either already in the swarm, or they are not a manager
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "Access Denied\n")
+		fmt.Fprintln(w, "Access Denied")
 		return
 	}
 
 	// They are not in the swarm, and they are a manager, so good to go.
-	cli, ctx := GetDockerClient()
+	cli, ctx := DockerClient()
 	swarm, err := cli.SwarmInspect(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -51,20 +51,20 @@ func (a AWSWeb) TokenManager(w http.ResponseWriter, r *http.Request) {
 func (a AWSWeb) TokenWorker(w http.ResponseWriter, r *http.Request) {
 	// get the swarm worker token, if they are a worker node,
 	// and are not already in the swarm. block otherwise
-	GetRequestInfo(r)
+	RequestInfo(r)
 
-	found := AlreadyInSwarm(r)
-	isWorker := IsWorkerNode(r)
+	found := alreadyInSwarm(r)
+	isWorker := isWorkerNode(r)
 
 	if found || !isWorker {
 		// they are either already in the swarm, or they are not a worker
 		w.WriteHeader(http.StatusForbidden)
-		fmt.Fprintf(w, "Access Denied\n")
+		fmt.Fprintln(w, "Access Denied")
 		return
 	}
 
 	// They are not in the swarm, and they are a worker, so good to go.
-	cli, ctx := GetDockerClient()
+	cli, ctx := DockerClient()
 	swarm, err := cli.SwarmInspect(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -74,73 +74,12 @@ func (a AWSWeb) TokenWorker(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, swarm.JoinTokens.Worker)
 }
 
-func (a AWSWeb) CheckManager(w http.ResponseWriter, r *http.Request) {
-	// check if this node is a manager and already in the swarm.
-	GetRequestInfo(r)
-	ip := GetRequestIP(r)
-	found := AlreadyInSwarm(r)
-	isManager := IsManagerNode(r)
-	fmt.Fprintf(w, "IP:%s;InSwarm:%v;IsManager:%v;\n", ip, found, isManager)
-}
-
-func (a AWSWeb) CheckWorker(w http.ResponseWriter, r *http.Request) {
-	// check if this node is a worker, and already in the swarm.
-	GetRequestInfo(r)
-	ip := GetRequestIP(r)
-	found := AlreadyInSwarm(r)
-	isWorker := IsWorkerNode(r)
-	fmt.Fprintf(w, "IP:%s;InSwarm:%v;IsWorker:%v;\n", ip, found, isWorker)
-}
-
-func (a AWSWeb) Instances(w http.ResponseWriter, r *http.Request) {
-	// show both manager and worker instances
-	GetRequestInfo(r)
-	fmt.Fprintf(w, "Managers: \n")
-	instances := GetAWSManagers()
-	for _, instance := range instances {
-		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
-	}
-	fmt.Fprintf(w, "Workers: \n")
-	instances = GetAWSWorkers()
-	for _, instance := range instances {
-		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
-	}
-}
-
-func (a AWSWeb) ManagerInstances(w http.ResponseWriter, r *http.Request) {
-	// only show manager instances
-	GetRequestInfo(r)
-	instances := GetAWSManagers()
-	for _, instance := range instances {
-		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
-	}
-}
-
-func (a AWSWeb) WorkerInstances(w http.ResponseWriter, r *http.Request) {
-	// only show worker instances
-	GetRequestInfo(r)
-	instances := GetAWSWorkers()
-	for _, instance := range instances {
-		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
-	}
-}
-
-func (a AWSWeb) Nodes(w http.ResponseWriter, r *http.Request) {
-	// print the list of nodes in the swarm.
-	GetRequestInfo(r)
-	nodes := GetSwarmNodes()
-	for _, node := range nodes {
-		ip := ConvertAWSHostToIP(node.Description.Hostname)
-		fmt.Fprintf(w, "%s %s %s\n", node.ID[:15], node.Description.Hostname, ip)
-	}
-}
-
-func AlreadyInSwarm(r *http.Request) bool {
+func alreadyInSwarm(r *http.Request) bool {
 	// Is the node making the request, already in the swarm.
-	ip := GetRequestIP(r)
-	nodes := GetSwarmNodes()
+	ip := RequestIP(r)
+	nodes := SwarmNodes()
 	for _, node := range nodes {
-		nodeIP := ConvertAWSHostToIP(node.Description.Hostname)
+		nodeIP := convertAWSHostToIP(node.Description.Hostname)
 		if ip == nodeIP {
 			return true
 		}
@@ -148,10 +87,10 @@ func AlreadyInSwarm(r *http.Request) bool {
 	return false
 }
 
-func IsManagerNode(r *http.Request) bool {
+func isManagerNode(r *http.Request) bool {
 	// Is the node making the request a manager node
-	ip := GetRequestIP(r)
-	instances := GetAWSManagers()
+	ip := RequestIP(r)
+	instances := awsManagers()
 	for _, instance := range instances {
 		if ip == instance.PrivateIPAddress {
 			return true
@@ -160,10 +99,10 @@ func IsManagerNode(r *http.Request) bool {
 	return false
 }
 
-func IsWorkerNode(r *http.Request) bool {
+func isWorkerNode(r *http.Request) bool {
 	// Is the node making the request a worker node
-	ip := GetRequestIP(r)
-	instances := GetAWSWorkers()
+	ip := RequestIP(r)
+	instances := awsWorkers()
 	for _, instance := range instances {
 		if ip == instance.PrivateIPAddress {
 			return true
@@ -172,7 +111,7 @@ func IsWorkerNode(r *http.Request) bool {
 	return false
 }
 
-func GetAWSWorkers() []AwsInstance {
+func awsWorkers() []AwsInstance {
 	// get the instances from AWS worker security group
 
 	customFilter := []*ec2.Filter{
@@ -188,10 +127,10 @@ func GetAWSWorkers() []AwsInstance {
 		Values: []*string{aws.String(os.Getenv("WORKER_SECURITY_GROUP_ID"))},
 	})
 
-	return getInstances(customFilter)
+	return awsInstances(customFilter)
 }
 
-func GetAWSManagers() []AwsInstance {
+func awsManagers() []AwsInstance {
 	// get the instances from AWS Manager security group
 
 	customFilter := []*ec2.Filter{
@@ -207,10 +146,10 @@ func GetAWSManagers() []AwsInstance {
 		Values: []*string{aws.String(os.Getenv("MANAGER_SECURITY_GROUP_ID"))},
 	})
 
-	return getInstances(customFilter)
+	return awsInstances(customFilter)
 }
 
-func getInstances(customFilters []*ec2.Filter) []AwsInstance {
+func awsInstances(customFilters []*ec2.Filter) []AwsInstance {
 	// get the instances from AWS, takes a filter to limit the results.
 
 	client := ec2.New(session.New(&aws.Config{}))
@@ -255,7 +194,7 @@ func getInstances(customFilters []*ec2.Filter) []AwsInstance {
 	return instances
 }
 
-func ConvertAWSHostToIP(hostStr string) string {
+func convertAWSHostToIP(hostStr string) string {
 	// This is risky, this assumes the following formation for hosts in swarm node ls
 	// ip-10-0-3-149.ec2.internal
 	// there was one use case when someone had an old account, and their hostnames were not

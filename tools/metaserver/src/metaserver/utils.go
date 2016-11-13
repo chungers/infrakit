@@ -21,7 +21,7 @@ const (
 	clientVersion = "1.24" // docker client version
 )
 
-func GetDockerClient() (client.APIClient, context.Context) {
+func DockerClient() (client.APIClient, context.Context) {
 	// get the docker client
 	tlsOptions := tlsconfig.Options{}
 	host := "unix:///var/run/docker.sock"
@@ -33,7 +33,7 @@ func GetDockerClient() (client.APIClient, context.Context) {
 	return dockerClient, ctx
 }
 
-func GetRequestIP(r *http.Request) string {
+func RequestIP(r *http.Request) string {
 	//given the request return the IP address of the requestor
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	return ip
@@ -89,7 +89,7 @@ func clientUserAgent() string {
 	return fmt.Sprintf("Docker-Client/%s (%s)", clientVersion, runtime.GOOS)
 }
 
-func GetRequestInfo(r *http.Request) {
+func RequestInfo(r *http.Request) {
 	// Mostly used for debugging, we can cut this down,
 	// since it isn't really used much anymore.
 	fmt.Printf("Path:[%s] %s \n", r.Method, r.URL.Path)
@@ -105,11 +105,11 @@ func GetRequestInfo(r *http.Request) {
 			fmt.Println(ip)
 		}
 	}
-	fmt.Printf("\n")
+	fmt.Println("")
 }
 
-func GetSwarmNodes() []swarm.Node {
-	cli, ctx := GetDockerClient()
+func SwarmNodes() []swarm.Node {
+	cli, ctx := DockerClient()
 
 	// get the list of swarm nodes
 	nodes, err := cli.NodeList(ctx, types.NodeListOptions{})

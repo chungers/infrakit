@@ -16,42 +16,24 @@ import (
 type Web interface {
 	TokenManager(w http.ResponseWriter, r *http.Request)
 	TokenWorker(w http.ResponseWriter, r *http.Request)
-	CheckManager(w http.ResponseWriter, r *http.Request)
-	CheckWorker(w http.ResponseWriter, r *http.Request)
-	Instances(w http.ResponseWriter, r *http.Request)
-	Nodes(w http.ResponseWriter, r *http.Request)
-	ManagerInstances(w http.ResponseWriter, r *http.Request)
-	WorkerInstances(w http.ResponseWriter, r *http.Request)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
 	// print the home index page.
-	GetRequestInfo(r)
-	fmt.Fprintf(w, "token/\ncheck/\nnodes/\ninstances/\n")
-}
-
-func instanceIndex(w http.ResponseWriter, r *http.Request) {
-	// print the instance index page.
-	GetRequestInfo(r)
-	fmt.Fprintf(w, "all/\nmanagers/\nworkers/\n")
+	RequestInfo(r)
+	fmt.Fprintln(w, "token/")
 }
 
 func tokenIndex(w http.ResponseWriter, r *http.Request) {
 	// print the token index page.
-	GetRequestInfo(r)
-	fmt.Fprintf(w, "manager/\nworker/\n")
-}
-
-func check(w http.ResponseWriter, r *http.Request) {
-	// print the check index page
-	GetRequestInfo(r)
-	fmt.Fprintf(w, "manager/\nworker/\n")
+	RequestInfo(r)
+	fmt.Fprintln(w, "manager/\nworker/")
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request) {
 	// handle the errors
 	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprint(w, "404: Page not found")
+	fmt.Fprintln(w, "404: Page not found")
 }
 
 func handleRequests(flavor string) {
@@ -62,9 +44,7 @@ func handleRequests(flavor string) {
 
 	// common handlers
 	r.HandleFunc("/", index)
-	r.HandleFunc("/instances/", instanceIndex)
 	r.HandleFunc("/token/", tokenIndex)
-	r.HandleFunc("/check/", check)
 
 	// specific to the service
 	var w Web
@@ -82,14 +62,6 @@ func handleRequests(flavor string) {
 	// used to get the swarm tokens
 	r.HandleFunc("/token/manager/", w.TokenManager)
 	r.HandleFunc("/token/worker/", w.TokenWorker)
-
-	// These are for debugging
-	r.HandleFunc("/nodes/", w.Nodes)                         //swarm nodes
-	r.HandleFunc("/instances/all/", w.Instances)             //provider instances
-	r.HandleFunc("/instances/managers/", w.ManagerInstances) //provider instances
-	r.HandleFunc("/instances/workers/", w.WorkerInstances)   //provider instances
-	r.HandleFunc("/check/manager/", w.CheckManager)          //would it pass manager check
-	r.HandleFunc("/check/worker/", w.CheckWorker)            //would it pass worker check
 
 	// setup the custom server.
 	srv := &http.Server{
