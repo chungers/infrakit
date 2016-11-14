@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -77,12 +78,39 @@ func handleRequests(flavor string) {
 	log.Fatal(srv.ListenAndServe())
 }
 
+func validate(flavor string) {
+	// validate that we have everything we need in order to start. If anything is missing.
+	// Then exit.
+	if flavor == "aws" {
+		// make sure our required ENV variables are available, if not fail.
+		workerGroupId := os.Getenv("WORKER_SECURITY_GROUP_ID")
+		managerGroupId := os.Getenv("MANAGER_SECURITY_GROUP_ID")
+		if workerGroupId == "" {
+			fmt.Printf("ERROR: Missing environment variable: WORKER_SECURITY_GROUP_ID.")
+			os.Exit(1)
+		}
+		if managerGroupId == "" {
+			fmt.Printf("ERROR: Missing environment variable: MANAGER_SECURITY_GROUP_ID")
+			os.Exit(1)
+		}
+	} else if flavor == "azure" {
+		// add azure validation code here.
+
+	} else {
+		fmt.Printf("ERROR: -flavor %v was not a valid option. please pick either 'aws' or 'azure'", flavor)
+		os.Exit(1)
+	}
+
+}
+
 func main() {
 	// pass in the flavor to determine which IAAS provider we are on.
 	// currently defaults to AWS, since that is the only one implemnted
 	flavor := flag.String("flavor", "aws", "IAAS Flavor (aws, azure, etc)")
 	flag.Parse()
 
+	// make sure we are good to go, before we fully start up.
+	validate(*flavor)
 	// lets handle those requests
 	handleRequests(*flavor)
 }

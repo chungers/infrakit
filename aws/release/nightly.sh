@@ -78,6 +78,9 @@ export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
 cd $BUILD_HOME/code/editions/tools/buoy/
 ./build_buoy.sh
 
+cd $BUILD_HOME/code/editions/tools/metaserver/
+./build.sh
+
 cd $BUILD_HOME/code/editions/aws/dockerfiles/
 
 # build images
