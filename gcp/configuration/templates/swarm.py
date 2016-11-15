@@ -4,10 +4,11 @@
 
 def GenerateConfig(context):
   zone = context.properties['zone']
+  managerCount = context.properties['managerCount']
   managerMachineType = context.properties['managerMachineType']
+  workerCount = context.properties['workerCount']
   workerMachineType = context.properties['workerMachineType']
   preemptible = context.properties['preemptible']
-  size = context.properties['size']
 
   resources = [{
       'name': 'docker',
@@ -22,6 +23,14 @@ def GenerateConfig(context):
           'network': 'swarm-network'
       }
   }, {
+      'name': 'managers',
+      'type': 'templates/managers.py',
+      'properties': {
+          'zone': zone,
+          'template': '$(ref.manager.name)',
+          'size': managerCount
+      }
+  }, {
       'name': 'worker',
       'type': 'templates/worker.py',
       'properties': {
@@ -30,7 +39,6 @@ def GenerateConfig(context):
           'preemptible': preemptible,
           'image': '$(ref.docker.selfLink)',
           'network': 'swarm-network',
-          'managerIP': '$(ref.manager.internalIP)'
       }
   }, {
       'name': 'workers',
@@ -38,7 +46,7 @@ def GenerateConfig(context):
       'properties': {
           'zone': zone,
           'template': '$(ref.worker.name)',
-          'size': size
+          'size': workerCount
       }
   }, {
       'name': 'swarm-network',

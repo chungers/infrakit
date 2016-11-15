@@ -6,7 +6,12 @@ imports:
 - path: swarm.py
 
 properties:
-  size:
+  managerCount:
+    type: integer
+    default: 1
+    description: Number of Managers
+
+  workerCount:
     type: integer
     default: 2
     description: Number of Workers

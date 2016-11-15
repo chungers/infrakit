@@ -2,15 +2,12 @@
 
 """Worker Instance Template."""
 
-COMPUTE_URL_BASE = 'https://www.googleapis.com/compute/v1'
-
 def GenerateConfig(context):
   project = context.env['project']
   zone = context.properties['zone']
   machineType = context.properties['machineType']
   preemptible = context.properties['preemptible']
   image = context.properties['image']
-  managerIP = context.properties['managerIP']
   network = '$(ref.' + context.properties['network'] + '.selfLink)'
 
   script = r"""
@@ -23,9 +20,10 @@ PROJECT=$(curl -s http://metadata.google.internal/computeMetadata/v1/project/pro
 ACCESS_TOKEN=$(curl -s http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token -H "Metadata-Flavor: Google" | jq -r ".access_token")
 
 for i in $(seq 1 300); do
-    TOKEN=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/token" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text")
-    if [ "${TOKEN}" != "" ]; then
-        docker swarm join --token "${TOKEN}" """ + managerIP + r""" --advertise-addr ens4:2377 --listen-addr ens4:2377
+    LEADER_IP=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/leader-ip" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
+    if [ ! -z "${LEADER_IP}" ]; then
+        TOKEN=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/worker-token" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
+        docker swarm join --token "${TOKEN}" "${LEADER_IP}" --advertise-addr eth0:2377 --listen-addr eth0:2377
         break
     fi
 

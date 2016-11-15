@@ -1,6 +1,6 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-"""Worker Instance Group."""
+"""Manager Instance Group."""
 
 def GenerateConfig(context):
   project = context.env['project']
