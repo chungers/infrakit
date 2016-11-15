@@ -588,7 +588,7 @@
                                 "-e MANAGER_SECURITY_GROUP_ID='",{ "Ref" : "ManagerVpcSG" }, "' ",
                                 "-e WORKER_SECURITY_GROUP_ID='",{ "Ref" : "NodeVpcSG" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
-                                "kencochrane/meta:latest\n",
+                                "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=aws\n",
 
                                 "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
