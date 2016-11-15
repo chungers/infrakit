@@ -4,7 +4,9 @@
 
 def GenerateConfig(context):
   zone = context.properties['zone']
-  machineType = context.properties['machineType']
+  managerMachineType = context.properties['managerMachineType']
+  workerMachineType = context.properties['workerMachineType']
+  preemptible = context.properties['preemptible']
   size = context.properties['size']
 
   resources = [{
@@ -15,7 +17,7 @@ def GenerateConfig(context):
       'type': 'templates/manager.py',
       'properties': {
           'zone': zone,
-          'machineType': machineType,
+          'machineType': managerMachineType,
           'image': '$(ref.docker.selfLink)',
           'network': 'swarm-network'
       }
@@ -24,7 +26,8 @@ def GenerateConfig(context):
       'type': 'templates/worker.py',
       'properties': {
           'zone': zone,
-          'machineType': machineType,
+          'machineType': workerMachineType,
+          'preemptible': preemptible,
           'image': '$(ref.docker.selfLink)',
           'network': 'swarm-network',
           'managerIP': '$(ref.manager.internalIP)'

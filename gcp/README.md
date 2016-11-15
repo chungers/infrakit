@@ -29,7 +29,6 @@ make revoke
  + Monitoring
  + Configure project
  + Multiple managers
- + Different machine types for workers and managers
  + SSH keys
  + Additional swarm properties
  + Publish the templates
@@ -40,4 +39,3 @@ make revoke
  + Have each worker increment a counter to be able to wait from outside
  + Manager pool
  + Diagnostics
- + Option to use preemptible VMs

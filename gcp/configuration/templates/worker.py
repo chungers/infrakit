@@ -8,6 +8,7 @@ def GenerateConfig(context):
   project = context.env['project']
   zone = context.properties['zone']
   machineType = context.properties['machineType']
+  preemptible = context.properties['preemptible']
   image = context.properties['image']
   managerIP = context.properties['managerIP']
   network = '$(ref.' + context.properties['network'] + '.selfLink)'
@@ -65,7 +66,7 @@ done
                   }]
               },
               'scheduling': {
-                  'preemptible': False,
+                  'preemptible': preemptible,
                   'onHostMaintenance': 'TERMINATE',
                   'automaticRestart': False
               },

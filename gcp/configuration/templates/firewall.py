@@ -6,38 +6,39 @@ def GenerateConfig(context):
   network = '$(ref.' + context.properties['network'] + '.selfLink)'
 
   resources = [{
-      'name': 'ssh',
+      'name': 'allow-ssh',
       'type': 'compute.v1.firewall',
       'properties': {
           'network': network,
           'sourceRanges': ['0.0.0.0/0'],
           'allowed': [{
-              'IPProtocol': 'TCP',
-              'ports': [22]
+              'IPProtocol': 'tcp',
+              'ports': ['22']
           }]
       }
   },{
-      'name': 'http',
+      'name': 'allow-http',
       'type': 'compute.v1.firewall',
       'properties': {
           'network': network,
           'sourceRanges': ['0.0.0.0/0'],
           'allowed': [{
-              'IPProtocol': 'TCP',
-              'ports': [80]
+              'IPProtocol': 'tcp',
+              'ports': ['80', '443']
+          }]
+      }
+  },{
+      'name': 'allow-internal',
+      'type': 'compute.v1.firewall',
+      'properties': {
+          'network': network,
+          'sourceRanges': ['10.128.0.0/9'],
+          'allowed': [{
+              'IPProtocol': 'tcp',
+              "ports": ['0-65535']
           },{
-              'IPProtocol': 'TCP',
-              'ports': [443]
-          }]
-      }
-  },{
-      'name': 'internal',
-      'type': 'compute.v1.firewall',
-      'properties': {
-          'network': network,
-          'sourceTags': ['swarm'],
-          'allowed': [{
-              'IPProtocol': 'TCP'
+              'IPProtocol': 'udp',
+              "ports": ['0-65535']
           }]
       }
   }]
