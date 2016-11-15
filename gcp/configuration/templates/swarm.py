@@ -8,11 +8,15 @@ def GenerateConfig(context):
   size = context.properties['size']
 
   resources = [{
+      'name': 'docker',
+      'type': 'templates/disk-image.py'
+  }, {
       'name': 'manager',
       'type': 'templates/manager.py',
       'properties': {
           'zone': zone,
           'machineType': machineType,
+          'image': '$(ref.docker.selfLink)',
           'network': 'swarm-network'
       }
   }, {
@@ -21,6 +25,7 @@ def GenerateConfig(context):
       'properties': {
           'zone': zone,
           'machineType': machineType,
+          'image': '$(ref.docker.selfLink)',
           'network': 'swarm-network',
           'managerIP': '$(ref.manager.internalIP)'
       }

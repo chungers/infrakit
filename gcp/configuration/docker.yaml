@@ -1,6 +1,7 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
 imports:
+- path: templates/disk-image.py
 - path: templates/swarm.py
 - path: templates/manager.py
 - path: templates/worker.py

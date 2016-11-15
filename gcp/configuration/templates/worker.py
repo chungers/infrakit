@@ -8,6 +8,7 @@ def GenerateConfig(context):
   project = context.env['project']
   zone = context.properties['zone']
   machineType = context.properties['machineType']
+  image = context.properties['image']
   managerIP = context.properties['managerIP']
   network = '$(ref.' + context.properties['network'] + '.selfLink)'
 
@@ -47,9 +48,7 @@ done
                   'boot': True,
                   'autoDelete': True,
                   'initializeParams': {
-                      'sourceImage': '/'.join(['projects', project,
-                                              'global',
-                                              'images', 'docker2'])
+                      'sourceImage': image
                   }
               }],
               'networkInterfaces': [{
