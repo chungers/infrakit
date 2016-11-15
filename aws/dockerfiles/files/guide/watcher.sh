@@ -83,10 +83,6 @@ if [ "$NODE_TYPE" == "manager" ] ; then
 
     MANAGER=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}')
     export CURRENT_MANAGER_IP=$(echo $MANAGER | jq -r '.Item.ip.S')
-    export MANAGER_TOKEN=$(echo $MANAGER | jq -r '.Item.manager_token.S')
-    export WORKER_TOKEN=$(echo $MANAGER | jq -r '.Item.worker_token.S')
-    echo "MANAGER_TOKEN=$MANAGER_TOKEN"
-    echo "WORKER_TOKEN=$WORKER_TOKEN"
 
     echo "Current manager IP = $CURRENT_MANAGER_IP ; my IP = $MYIP"
 
@@ -154,7 +150,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
             aws dynamodb put-item \
                 --table-name $DYNAMODB_TABLE \
                 --region $REGION \
-                --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$NEW_MANAGER_IP"'"},"manager_token": {"S":"'"$MANAGER_TOKEN"'"},"worker_token": {"S":"'"$WORKER_TOKEN"'"}}' \
+                --item '{"node_type":{"S": "primary_manager"},"ip": {"S":"'"$NEW_MANAGER_IP"'"}}' \
                 --return-consumed-capacity TOTAL
         fi
     fi
