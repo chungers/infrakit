@@ -25,7 +25,7 @@ make revoke
  + External load balancer
  + Better UX
  + Use Moby
- + Logs
+ + Use Google Log driver
  + Monitoring
  + Configure project
  + Multiple managers
@@ -35,5 +35,9 @@ make revoke
  + Publish the templates
  + See how the Cloud Shell fits in the big picture
  + DTR/DDC
- + List the Apis we need
  + Auto-enable all the Apis we need
+ + Share manager's url through the runtime config to be able to create workers sooner
+ + Have each worker increment a counter to be able to wait from outside
+ + Manager pool
+ + Diagnostics
+ + Option to use preemptible VMs
