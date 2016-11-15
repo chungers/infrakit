@@ -113,6 +113,9 @@ CURRPATH=`pwd`
 cd ../../tools/buoy/
 ./build_buoy.sh
 
+cd ../metaserver/
+./build.sh
+
 echo "=== CURRPATH=$CURRPATH ==="
 # back to release dir
 cd $CURRPATH

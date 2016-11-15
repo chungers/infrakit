@@ -172,6 +172,10 @@ echo "= Build Buoy ="
 cd ../../tools/buoy
 ./build_buoy.sh
 
+echo "= Build Metaserver ="
+cd ../metaserver
+./build.sh
+
 cd $BASE_DIR
 cd ../dockerfiles
 

@@ -5,7 +5,7 @@ set -e
 NAMESPACE="${NAMESPACE:-docker4x}"
 VERSION="${VERSION:-latest}"
 
-for IMAGE in shell init guide ddc-init cloud
+for IMAGE in shell init guide ddc-init cloud meta
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${VERSION}"
 	docker build -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .
