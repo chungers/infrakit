@@ -27,12 +27,10 @@ make revoke
  + Use Moby
  + Use Google Log driver
  + Monitoring
- + Configure project
  + SSH keys
  + Additional swarm properties
  + Publish the templates
  + See how the Cloud Shell fits in the big picture
  + DTR/DDC
- + Auto-enable all the Apis we need
  + Have each worker increment a counter to be able to wait from outside
  + Diagnostics
