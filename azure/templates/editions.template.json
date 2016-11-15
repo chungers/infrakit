@@ -351,6 +351,20 @@
             }
           },
           {
+            "name": "diagnostics",
+            "properties": {
+              "description": "Allow communication for the diagnostics server",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "44554",
+              "sourceAddressPrefix": "[variables('subnetPrefix')]",
+              "destinationAddressPrefix": "[variables('subnetPrefix')]",
+              "access": "Allow",
+              "priority": 205,
+              "direction": "Inbound"
+            }
+          },
+          {
             "name": "docker-port",
             "properties": {
               "description": "Allow 'docker' ingress to manager node",
@@ -360,7 +374,7 @@
               "sourceAddressPrefix": "[variables('subnetPrefix')]",
               "destinationAddressPrefix": "[variables('subnetPrefix')]",
               "access": "Allow",
-              "priority": 205,
+              "priority": 206,
               "direction": "Inbound"
             }
           }
