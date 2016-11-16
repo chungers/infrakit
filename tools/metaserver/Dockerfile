@@ -6,6 +6,7 @@ RUN go get github.com/docker/docker/api/types
 RUN go get github.com/docker/go-connections/tlsconfig
 RUN go get github.com/docker/go-connections/sockets
 RUN go get github.com/gorilla/mux
+RUN go get -u github.com/rancher/trash
 
 ENV USER root
 WORKDIR /go/

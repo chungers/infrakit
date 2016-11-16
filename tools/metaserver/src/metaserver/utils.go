@@ -21,6 +21,7 @@ const (
 	clientVersion = "1.24" // docker client version
 )
 
+// DockerClient get docker APIclient and context
 func DockerClient() (client.APIClient, context.Context) {
 	// get the docker client
 	tlsOptions := tlsconfig.Options{}
@@ -33,6 +34,7 @@ func DockerClient() (client.APIClient, context.Context) {
 	return dockerClient, ctx
 }
 
+// RequestIP get IP from request
 func RequestIP(r *http.Request) string {
 	//given the request return the IP address of the requestor
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -89,6 +91,7 @@ func clientUserAgent() string {
 	return fmt.Sprintf("Docker-Client/%s (%s)", clientVersion, runtime.GOOS)
 }
 
+// RequestInfo get info about the request
 func RequestInfo(r *http.Request) {
 	// Mostly used for debugging, we can cut this down,
 	// since it isn't really used much anymore.
@@ -108,6 +111,7 @@ func RequestInfo(r *http.Request) {
 	fmt.Println("")
 }
 
+// SwarmNodes get a list of swarm nodes
 func SwarmNodes() []swarm.Node {
 	cli, ctx := DockerClient()
 
@@ -117,4 +121,51 @@ func SwarmNodes() []swarm.Node {
 		panic(err)
 	}
 	return nodes
+}
+
+func alreadyInSwarm(ip string) bool {
+	// Is the node making the request, already in the swarm.
+	nodes := SwarmNodes()
+	for _, node := range nodes {
+		nodeIP := convertHostToIP(node.Description.Hostname)
+		if ip == nodeIP {
+			return true
+		}
+	}
+	return false
+}
+
+func convertHostToIP(hostStr string) string {
+	// This is risky, this assumes the following formation for hosts in swarm node ls
+	// ip-10-0-3-149.ec2.internal
+	// there was one use case when someone had an old account, and their hostnames were not
+	// in this format. they just had
+	// ip-192-168-33-67
+	// not sure how many other formats there are.
+	// This will work for both formats above.
+	hostSplit := strings.Split(hostStr, ".")
+	host := hostSplit[0]
+	host = strings.Replace(host, "ip-", "", -1)
+	ip := strings.Replace(host, "-", ".", -1)
+	return ip
+}
+
+func isNodeInList(ip string, instances []WebInstance) bool {
+	// given an IP, find out if it is in the instance list.
+	for _, instance := range instances {
+		if ip == instance.PrivateIPAddress {
+			return true
+		}
+	}
+	return false
+}
+
+func isManagerNode(a Web, ip string) bool {
+	// Is the node making the request a manager node
+	return isNodeInList(ip, a.Managers())
+}
+
+func isWorkerNode(a Web, ip string) bool {
+	// Is the node making the request a worker node
+	return isNodeInList(ip, a.Workers())
 }
