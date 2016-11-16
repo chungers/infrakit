@@ -48,3 +48,20 @@ azure-release:
 
 azure-template:
 	$(MAKE) -C azure/release template
+
+# Package list
+PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
+PKGS := $(shell echo $(PKGS_AND_MOCKS) | tr ' ' '\n' | grep -v /mock$)
+
+get-gomock:
+	@echo "+ $@"
+	-go get github.com/golang/mock/gomock
+	-go get github.com/golang/mock/mockgen
+
+generate:
+	@echo "+ $@"
+	@go generate -x $(PKGS_AND_MOCKS)
+
+test:
+	@echo "+ $@"
+	@go test -v github.com/docker/editions/pkg/loadbalancer
