@@ -19,10 +19,10 @@ PARAMETERS = [('ClusterSize', 2),
 DDC_PARAMETERS = [('ClusterSize', 2),
               ('InstanceType', 't2.micro'),
               ('KeyName', 'ken_cochrane'),
-              ('ManagerInstanceType', 'm3.medium'),
+              ('ManagerInstanceType', 'm4.large'),
               ('ManagerSize', 3),
               ('DDCPasswordSet', 'password'),
-	      ('License', '{}')]
+              ('License', '{}')]
 
 CLOUD_PARAMETERS = [('ClusterSize', 2),
               ('InstanceType', 't2.micro'),
