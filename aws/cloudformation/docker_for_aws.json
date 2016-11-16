@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 10 (docker 1.12.3)",
+    "Description": "Docker for AWS 1.13.0-rc1 (alpha11)",
 
     "Parameters": {
         "KeyName": {
@@ -71,8 +71,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.3",
-                "forAws": "aws-v1.12.3-beta10"
+                "docker": "1.13.0-rc1",
+                "forAws": "aws-v1.13.0-rc1-alpha11"
             }
         },
 
@@ -221,51 +221,50 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-d3d271b2",
+                "HVM64": "ami-d1b318b0",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-5e31e530",
+                "HVM64": "ami-4f914621",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-south-1": {
-                "HVM64": "ami-d24b3fbd",
+                "HVM64": "ami-19e79376",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-7a60c119",
+                "HVM64": "ami-0e41e26d",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-869aa7e5",
+                "HVM64": "ami-a2b986c1",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-922ed6fd",
+                "HVM64": "ami-49995c26",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-6af5bd19",
+                "HVM64": "ami-029ccc71",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-3cc35f50",
+                "HVM64": "ami-d67ce3ba",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-24ffa133",
+                "HVM64": "ami-8ba48d9c",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "ami-d95a00bc",
+                "HVM64": "ami-12782277",
                 "HVMG2": "NOT_SUPPORTED"
-            },
-            "us-west-1": {
-                "HVM64": "ami-9ab0fbfa",
+            },"us-west-1": {
+                "HVM64": "ami-6b91c40b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-6d22850d",
+                "HVM64": "ami-7a5efc1a",
                 "HVMG2": "NOT_SUPPORTED"
             }
         }
@@ -548,13 +547,21 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
-                                "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
+                                "export LOCAL_IP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)\n",
+                                "echo '{\"experimental\": true, \"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
                                 { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
                                 "\" }}' > /etc/docker/daemon.json \n",
                                 "chown -R docker /home/docker/\n",
                                 "chgrp -R docker /home/docker/\n",
                                 "rc-service docker restart\n",
                                 "sleep 5\n",
+
+                                "docker run --log-driver=json-file --name=meta-aws --restart=always -d -p $LOCAL_IP:9024:8080 ",
+                                "-e AWS_REGION='",{ "Ref" : "AWS::Region" }, "' ",
+                                "-e MANAGER_SECURITY_GROUP_ID='",{ "Ref" : "ManagerVpcSG" }, "' ",
+                                "-e WORKER_SECURITY_GROUP_ID='",{ "Ref" : "NodeVpcSG" }, "' ",
+                                "-v /var/run/docker.sock:/var/run/docker.sock ",
+                                "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=aws\n",
 
                                 "docker run --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
@@ -686,7 +693,7 @@
                             "", [
                                 "#!/bin/sh\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
-                                "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
+                                "echo '{\"experimental\": true, \"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
                                 { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
                                 "\" }}' > /etc/docker/daemon.json \n",
                                 "chown -R docker /home/docker/\n",
