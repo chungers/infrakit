@@ -23,7 +23,7 @@ for i in $(seq 1 300); do
     LEADER_IP=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/leader-ip" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
     if [ ! -z "${LEADER_IP}" ]; then
         TOKEN=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/worker-token" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
-        docker swarm join --token "${TOKEN}" "${LEADER_IP}" --advertise-addr eth0:2377 --listen-addr eth0:2377
+        docker swarm join --token "${TOKEN}" "${LEADER_IP}"
         break
     fi
 
