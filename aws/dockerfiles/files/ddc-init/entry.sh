@@ -7,8 +7,8 @@ INSTALL_DDC=${INSTALL_DDC:-"yes"}
 
 PRODUCTION_HUB_NAMESPACE='docker'
 HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0-beta4"}
-DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0-beta4"}
+UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0"}
+DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0"}
 UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
 DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
 DTR_PORT=8443
@@ -40,15 +40,10 @@ if [[ "$INSTALL_DDC" != "yes" ]] ; then
     exit 0
 fi
 
-# Loading Beta Images without login
-# TODO : Remove this step when DTR+UCP go GA
-curl -o docker-datacenter.tar.gz https://packages.docker.com/caas/ucp-2.0.0-beta4_dtr-2.1.0-beta4.tar.gz  && docker load -i docker-datacenter.tar.gz && rm docker-datacenter.tar.gz
-
-# TODO: Add this section back when UCP goes GA
-#images=$(docker run --rm "${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}" images --list $IMAGE_LIST_ARGS )
-#for im in $images; do
-#    docker pull $im
-#done
+images=$(docker run --rm "${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}" images --list $IMAGE_LIST_ARGS )
+for im in $images; do
+    docker pull $im
+done
 
 if [ "$NODE_TYPE" == "worker" ] ; then
      echo "Let AWS know this worker node is ready."
