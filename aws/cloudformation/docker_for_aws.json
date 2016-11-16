@@ -368,13 +368,13 @@
         },
 
         "SwarmWideSG": {
-            "DependsOn": "NodeVpcSG",
+            "DependsOn": "Vpc",
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
                     "Ref": "Vpc"
                 },
-                "GroupDescription": "Wide open",
+                "GroupDescription": "Swarm wide access",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "-1",
@@ -428,8 +428,7 @@
                 },
                 "GroupDescription": "Manager SecurityGroup",
                 "SecurityGroupIngress": [
-                    {"IpProtocol": "tcp","FromPort": "22","ToPort": "22","CidrIp": "0.0.0.0/0"},
-                    {"IpProtocol": "tcp","FromPort": "2375","ToPort": "2375", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
+                    {"IpProtocol": "tcp", "FromPort": "22","ToPort": "22","CidrIp": "0.0.0.0/0"},
                     {"IpProtocol" : "tcp", "FromPort" : "2377", "ToPort" : "2377", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
                     {"IpProtocol" : "udp", "FromPort" : "4789", "ToPort" : "4789", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
                     {"IpProtocol" : "tcp", "FromPort" : "7946", "ToPort" : "7946", "SourceSecurityGroupId" : { "Fn::GetAtt" : [ "NodeVpcSG", "GroupId" ] } },
@@ -444,7 +443,21 @@
                 "VpcId": {
                     "Ref": "Vpc"
                 },
-                "GroupDescription": "Node SecurityGroup"
+                "GroupDescription": "Node SecurityGroup",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "-1",
+                        "FromPort": "0",
+                        "ToPort": "65535",
+                        "CidrIp": { "Fn::FindInMap" : [ "VpcCidrs", "vpc", "cidr" ] }
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {"IpProtocol" : "icmp", "FromPort" : "8", "ToPort" : "0", "CidrIp": "0.0.0.0/0" },
+                    {"IpProtocol" : "udp", "FromPort" : "0", "ToPort" : "65535", "CidrIp": "0.0.0.0/0" },
+                    {"IpProtocol" : "tcp", "FromPort" : "0", "ToPort" : "2374", "CidrIp": "0.0.0.0/0" },
+                    {"IpProtocol" : "tcp", "FromPort" : "2376", "ToPort" : "65535", "CidrIp": "0.0.0.0/0" }
+                ]
             }
         },
 
@@ -686,7 +699,7 @@
                     }]
                 },
                 "AssociatePublicIpAddress": "true",
-                "SecurityGroups": [ { "Ref" : "NodeVpcSG"}, { "Ref" : "SwarmWideSG"} ],
+                "SecurityGroups": [ { "Ref" : "NodeVpcSG"} ],
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [
@@ -771,7 +784,7 @@
                 "HealthCheck" : {
                     "HealthyThreshold" : "2",
                     "Interval" : "10",
-                    "Target" : "TCP:2375",
+                    "Target" : "TCP:44554",
                     "Timeout" : "2",
                     "UnhealthyThreshold" : "4"
                 },
