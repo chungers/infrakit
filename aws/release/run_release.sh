@@ -13,6 +13,7 @@ AMI_SRC_REGION=
 CHANNEL=
 CHANNEL_CLOUD=
 AWS_ACCOUNT_LIST_URL=
+MAKE_AMI_PUBLIC="no"
 
 usage()
 {
@@ -35,10 +36,11 @@ OPTIONS:
    -c      Release Channel (beta, nightly, etc)
    -u      Cloud Release Channel (beta, nightly, etc)
    -l      AWS account list URL
+   -p      Make AMI public (yes, no)
 EOF
 }
 
-while getopts "hc:u:l:d:e:a:r:" OPTION
+while getopts "hc:u:l:d:e:a:r:p:" OPTION
 do
      case $OPTION in
          h)
@@ -65,6 +67,9 @@ do
              ;;
          l)
              AWS_ACCOUNT_LIST_URL=$OPTARG
+             ;;
+         p)
+             MAKE_AMI_PUBLIC=$OPTARG
              ;;
          ?)
              usage
@@ -102,6 +107,7 @@ echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
 echo "CHANNEL_CLOUD=$CHANNEL_CLOUD"
 echo "AWS_ACCOUNT_LIST_URL=$AWS_ACCOUNT_LIST_URL"
+echo "MAKE_AMI_PUBLIC=$MAKE_AMI_PUBLIC"
 echo "-------"
 echo "== Prepare files =="
 
@@ -134,6 +140,7 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e CHANNEL="$CHANNEL" \
 -e CHANNEL_CLOUD="$CHANNEL_CLOUD" \
 -e AWS_ACCOUNT_LIST_URL="$AWS_ACCOUNT_LIST_URL" \
+-e MAKE_AMI_PUBLIC="$MAKE_AMI_PUBLIC" \
 docker4x/release-$BUILD_NUMBER
 
 # posthook

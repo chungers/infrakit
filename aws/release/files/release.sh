@@ -7,10 +7,13 @@
 # EDITION_VERSION
 # AMI_ID
 # AMI_SRC_REGION
+# MAKE_AMI_PUBLIC
 
 # don't buffer the output
 export PYTHONUNBUFFERED=1
 
 python /home/docker/aws_release.py --docker_version="$DOCKER_VERSION" \
     --edition_version="$EDITION_VERSION" --ami_id="$AMI_ID" \
-    --ami_src_region="$AMI_SRC_REGION" --channel="$CHANNEL" --channel_cloud="$CHANNEL_CLOUD" --account_list_url="$AWS_ACCOUNT_LIST_URL"
+    --ami_src_region="$AMI_SRC_REGION" --channel="$CHANNEL" \
+    --channel_cloud="$CHANNEL_CLOUD" --account_list_url="$AWS_ACCOUNT_LIST_URL" \
+    --public="$MAKE_AMI_PUBLIC"

@@ -12,6 +12,7 @@ DOCKER_VERSION=
 EDITION_VERSION=
 CHANNEL=
 DOCKER_AWS_ACCOUNT_URL=
+MAKE_AMI_PUBLIC="no"
 
 usage()
 {
@@ -32,10 +33,11 @@ OPTIONS:
    -b      Docker Bin URL (location where tar.gz file can be downloaded)
    -c      Release Channel (beta, nightly, etc)
    -l      AWS account list URL
+   -p      Make AMI public (yes, no)
 EOF
 }
 
-while getopts "hc:l:d:e:b:" OPTION
+while getopts "hc:l:d:e:b:p:" OPTION
 do
      case $OPTION in
          h)
@@ -56,6 +58,9 @@ do
              ;;
          l)
              DOCKER_AWS_ACCOUNT_URL=$OPTARG
+             ;;
+         p)
+             MAKE_AMI_PUBLIC=$OPTARG
              ;;
          ?)
              usage
@@ -99,6 +104,7 @@ echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
 echo "DOCKER_AWS_ACCOUNT_URL=$DOCKER_AWS_ACCOUNT_URL"
 echo "Docker Hub Login ID=$HUB_LOGIN_ID"
+echo "MAKE_AMI_PUBLIC=$MAKE_AMI_PUBLIC"
 echo "-------"
 echo "== Checking Hub login =="
 
@@ -193,6 +199,6 @@ echo "== Build Docker images =="
 cd $BASE_DIR
 
 # run release, this will create CFN templates and push them to s3, push AMI to different regions and share with list of approved accounts.
-./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SRC_REGION -c $CHANNEL -l $DOCKER_AWS_ACCOUNT_URL -u cloud-$CHANNEL
+./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SRC_REGION -c $CHANNEL -l $DOCKER_AWS_ACCOUNT_URL -u cloud-$CHANNEL -p $MAKE_AMI_PUBLIC
 
 echo "===== Done ====="

@@ -147,6 +147,25 @@ def approve_accounts(ami_list, account_list):
     return ami_list
 
 
+def set_ami_public(ami_list):
+    """ set the AMI's to public """
+    for ami in ami_list:
+        print(u"Set AMI public: {}".format(ami))
+        region = ami
+        ami_id = ami_list.get(region).get('HVM64')
+        print(u"Set public AMI: {} ; Region: {} ".format(ami_id, region))
+        con = ec2.connect_to_region(region, aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+
+        print("Wait until the AMI is available before we continue.")
+        wait_for_ami_to_be_available(con, ami_id)
+
+        con.modify_image_attribute(ami_id,
+                                   operation='add',
+                                   attribute='launchPermission',
+                                   groups='all')
+
+
 def upload_cfn_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
 
     # upload to s3, make public, return s3 URL

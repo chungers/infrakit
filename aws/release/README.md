@@ -20,13 +20,14 @@ This script will take some parameters and then it will do the following.
 1. Checkout the master branch from `https://github.com/docker/editions` and make sure local copy is up to date.
 2. Calling `aws/release/run_release.sh` script, passing in correct variables. For example:
 
-    $ aws/release/run_release.sh -d docker_version -e edition_version -a ami_id -r ami_src_region
+    $ aws/release/run_release.sh -d docker_version -e edition_version -a ami_id -r ami_src_region -p no
 
-    $ aws/release/run_release.sh -d "1.12.0" -e "beta4" -a "ami-148c4e74" -r "us-west-2"
+    $ aws/release/run_release.sh -d "1.12.0" -e "beta4" -a "ami-148c4e74" -r "us-west-2" -p no
 
     optional fields:
     -c channel (defaults to beta) [beta, nightly, alpha, etc]
     -l AWS account list url, url for the list of Answers4AWS accounts we want to give access to the AMI.
+    -p make the ami public? (yes, no)
 
 3. Look at the logs and find the CloudFormation s3 url, and give that to who needs it.
 4. Tag the code and push tags to github, and create release from tag.

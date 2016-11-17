@@ -43,7 +43,7 @@ To run the automated release process:
     - make sure the file is made public.
 7. Run the release script: (change variables to match the release)
     - `cd aws/release/`
-    - example: `./run_release.sh -d 1.12.1-rc1 -e beta5 -a ami-61f6b501 -r us-west-1 -c beta`
+    - example: `./run_release.sh -d 1.12.1-rc1 -e beta5 -a ami-61f6b501 -r us-west-1 -c beta -p no`
 8. Get the URL output from release script, give to person creating release notes and sending emails.
 9. Test out CloudFormation template before sending out emails.
 10. Update beta docs site

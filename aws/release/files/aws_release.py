@@ -3,12 +3,13 @@ import json
 import argparse
 
 from utils import (
-    get_ami, wait_for_ami_to_be_available, copy_amis, strip_and_padd, get_account_list,
+    copy_amis, get_account_list, set_ami_public,
     approve_accounts, ACCOUNT_LIST_FILE_URL, create_cfn_template)
 
 
 CFN_TEMPLATE = '/home/docker/docker_for_aws.template'
 CFN_CLOUD_TEMPLATE = '/home/docker/docker_for_aws_cloud.template'
+
 
 def main():
     parser = argparse.ArgumentParser(description='Release Docker for AWS')
@@ -33,6 +34,9 @@ def main():
     parser.add_argument('-l', '--account_list_url',
                         dest='account_list_url', default=ACCOUNT_LIST_FILE_URL,
                         help="The URL for the aws account list for ami approvals")
+    parser.add_argument('-p', '--public',
+                        dest='make_ami_public', default="no",
+                        help="Make the AMI public")
 
     args = parser.parse_args()
 
@@ -53,6 +57,7 @@ def main():
     print(u"ami_id={}".format(args.ami_id))
     print(u"ami_src_region={}".format(args.ami_src_region))
     print(u"account_list_url={}".format(args.account_list_url))
+    print(u"make_ami_public={}".format(args.make_ami_public))
     if not args.account_list_url:
         print("account_list_url parameter is None, defaulting")
         account_list_url = ACCOUNT_LIST_FILE_URL
@@ -60,15 +65,32 @@ def main():
         account_list_url = args.account_list_url
     print(u"account_list_url={}".format(account_list_url))
 
+    if not args.make_ami_public:
+        make_ami_public = False
+    else:
+        make_ami_public = args.make_ami_public
+        if make_ami_public.lower() == 'yes':
+            make_ami_public = True
+        else:
+            make_ami_public = False
+    print(u"make_ami_public={}".format(make_ami_public))
+
     print("Copy AMI to each region..")
     ami_list = copy_amis(args.ami_id, args.ami_src_region,
                          image_name, image_description, release_channel)
     ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)
     print(u"AMI copy complete. AMI List: \n{}".format(ami_list_json))
-    print("Get account list..")
-    account_list = get_account_list(account_list_url)
-    print(u"Approving AMIs for {} accounts..".format(len(account_list)))
-    approve_accounts(ami_list, account_list)
+
+    if make_ami_public:
+        print("Make AMI's public.")
+        # we want to make this public.
+        set_ami_public(ami_list)
+        print("Finished making AMI's public.")
+    else:
+        print("Get account list..")
+        account_list = get_account_list(account_list_url)
+        print(u"Approving AMIs for {} accounts..".format(len(account_list)))
+        approve_accounts(ami_list, account_list)
     print("Accounts have been approved.")
 
     print("Create CloudFormation template..")
@@ -76,13 +98,14 @@ def main():
                                  docker_for_aws_version, edition_version, CFN_TEMPLATE,
                                  docker_for_aws_version)
     s3_cloud_url = create_cfn_template(ami_list, release_cloud_channel, docker_version,
-                                 docker_for_aws_version, edition_version, CFN_CLOUD_TEMPLATE,
-                                 docker_for_aws_version)
+                                       docker_for_aws_version, edition_version, CFN_CLOUD_TEMPLATE,
+                                       docker_for_aws_version)
 
     # TODO: git commit, tag release. requires github keys, etc.
 
     print("------------------")
-    print(u"Finshed.. CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n".format(s3_url, s3_cloud_url))
+    print(u"Finshed.. CloudFormation \n\t URL={0} \n\t CLOUD_URL={1} \n".format(
+        s3_url, s3_cloud_url))
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
         docker_version, flat_edition_version))
     print("------------------")
