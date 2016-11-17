@@ -20,7 +20,7 @@ weight="400"
 
 Release date: 11/17/2016
 
-<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc1-beta11.json" data-rel="Beta-10" target="_blank" id="aws-deploy">![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)</a>
+<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc1-beta11.json" data-rel="Beta-11" target="_blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
 
 ### New
 
