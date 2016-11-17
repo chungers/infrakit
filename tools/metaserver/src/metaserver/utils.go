@@ -123,31 +123,26 @@ func SwarmNodes() []swarm.Node {
 	return nodes
 }
 
+func nodeIP(id string) string {
+	cli, ctx := DockerClient()
+	// inspect the node ID provided
+	node, _, err := cli.NodeInspectWithRaw(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return node.Status.Addr
+}
+
 func alreadyInSwarm(ip string) bool {
 	// Is the node making the request, already in the swarm.
 	nodes := SwarmNodes()
 	for _, node := range nodes {
-		nodeIP := convertHostToIP(node.Description.Hostname)
+		nodeIP := nodeIP(node.ID)
 		if ip == nodeIP {
 			return true
 		}
 	}
 	return false
-}
-
-func convertHostToIP(hostStr string) string {
-	// This is risky, this assumes the following formation for hosts in swarm node ls
-	// ip-10-0-3-149.ec2.internal
-	// there was one use case when someone had an old account, and their hostnames were not
-	// in this format. they just had
-	// ip-192-168-33-67
-	// not sure how many other formats there are.
-	// This will work for both formats above.
-	hostSplit := strings.Split(hostStr, ".")
-	host := hostSplit[0]
-	host = strings.Replace(host, "ip-", "", -1)
-	ip := strings.Replace(host, "-", ".", -1)
-	return ip
 }
 
 func isNodeInList(ip string, instances []WebInstance) bool {

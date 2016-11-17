@@ -79,16 +79,17 @@ func (a AzureWeb) Managers() []WebInstance {
 		"AZURE_SUBSCRIPTION_ID": os.Getenv("SUBSCRIPTION_ID"),
 		"AZURE_TENANT_ID":       os.Getenv("TENANT_ID"),
 		"AZURE_GROUP_NAME":      os.Getenv("GROUP_NAME"),
-		"AZURE_PREFIX":          os.Getenv("PREFIX")}
+		"AZURE_VMSS_MGR":        os.Getenv("VMSS_MGR"),
+		"AZURE_VMSS_WRK":        os.Getenv("VMSS_WRK")}
 	nicClient, vmssClient := initClients(env)
 	// Get list of VMSS Network Interfaces for Managers
-	managerIPTable, err := getVMSSNic(nicClient, env, "managervmss")
+	managerIPTable, err := getVMSSNic(nicClient, env, env["AZURE_VMSS_MGR"])
 	if err != nil {
 		fmt.Printf("Couldn't get Manager Nic for VMSS: %v", err)
 		return []WebInstance{}
 	}
 	// Get list of VMSS for Managers
-	managerVMs, err := getVMSSList(vmssClient, env, "managervmss", managerIPTable)
+	managerVMs, err := getVMSSList(vmssClient, env, env["AZURE_VMSS_MGR"], managerIPTable)
 	if err != nil {
 		fmt.Printf("Couldn't get List of Manager VMSS: %v", err)
 	}
@@ -104,16 +105,17 @@ func (a AzureWeb) Workers() []WebInstance {
 		"AZURE_SUBSCRIPTION_ID": os.Getenv("SUBSCRIPTION_ID"),
 		"AZURE_TENANT_ID":       os.Getenv("TENANT_ID"),
 		"AZURE_GROUP_NAME":      os.Getenv("GROUP_NAME"),
-		"AZURE_PREFIX":          os.Getenv("PREFIX")}
+		"AZURE_VMSS_MGR":        os.Getenv("VMSS_MGR"),
+		"AZURE_VMSS_WRK":        os.Getenv("VMSS_WRK")}
 	nicClient, vmssClient := initClients(env)
 	// Get list of VMSS Network Interfaces for Managers
-	workerIPTable, err := getVMSSNic(nicClient, env, "worker-vmss")
+	workerIPTable, err := getVMSSNic(nicClient, env, env["AZURE_VMSS_WRK"])
 	if err != nil {
-		fmt.Errorf("Couldn't get Worker Nic for VMSS: %v", err)
+		fmt.Printf("Couldn't get Worker Nic for VMSS: %v", err)
 		return []WebInstance{}
 	}
 	// Get list of VMSS for Managers
-	workerVMs, err := getVMSSList(vmssClient, env, "worker-vmss", workerIPTable)
+	workerVMs, err := getVMSSList(vmssClient, env, env["AZURE_VMSS_WRK"], workerIPTable)
 	if err != nil {
 		fmt.Printf("Couldn't get List of Worker VMSS: %v", err)
 	}
@@ -136,8 +138,7 @@ func initClients(env map[string]string) (network.InterfacesClient, compute.Virtu
 	return nicClient, vmssClient
 }
 
-func getVMSSNic(client network.InterfacesClient, env map[string]string, vmType string) (IPTable map[string]string, err error) {
-	vmss := fmt.Sprintf("%s-%s", env["AZURE_PREFIX"], vmType)
+func getVMSSNic(client network.InterfacesClient, env map[string]string, vmss string) (IPTable map[string]string, err error) {
 	result, err := client.ListVirtualMachineScaleSetNetworkInterfaces(env["AZURE_GROUP_NAME"], vmss)
 	if err != nil {
 		// Message from an error.
@@ -151,7 +152,6 @@ func getVMSSNic(client network.InterfacesClient, env map[string]string, vmType s
 		if *nic.Properties.Primary {
 			for _, ipConfig := range *nic.Properties.IPConfigurations {
 				if *ipConfig.Properties.Primary {
-					fmt.Printf("Adding: %s to table at index: %s\n\n", *ipConfig.Properties.PrivateIPAddress, *nic.ID)
 					IPTable[*nic.ID] = *ipConfig.Properties.PrivateIPAddress
 				}
 			}
@@ -160,8 +160,7 @@ func getVMSSNic(client network.InterfacesClient, env map[string]string, vmType s
 	return IPTable, nil
 }
 
-func getVMSSList(client compute.VirtualMachineScaleSetVMsClient, env map[string]string, vmType string, nicIPTable map[string]string) ([]WebInstance, error) {
-	vmss := fmt.Sprintf("%s-%s", env["AZURE_PREFIX"], vmType)
+func getVMSSList(client compute.VirtualMachineScaleSetVMsClient, env map[string]string, vmss string, nicIPTable map[string]string) ([]WebInstance, error) {
 	vms := []WebInstance{}
 
 	result, err := client.List(env["AZURE_GROUP_NAME"], vmss, "", "", "")
