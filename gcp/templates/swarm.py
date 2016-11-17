@@ -12,19 +12,20 @@ def GenerateConfig(context):
 
   resources = [{
       'name': 'docker',
-      'type': 'templates/disk-image.py'
+      'type': 'disk-image.py'
   }, {
       'name': 'manager',
-      'type': 'templates/manager.py',
+      'type': 'manager.py',
       'properties': {
           'zone': zone,
           'machineType': managerMachineType,
           'image': '$(ref.docker.selfLink)',
-          'network': 'swarm-network'
+          'network': '$(ref.swarm-network.selfLink)',
+          'config': '$(ref.swarm-config.selfLink)'
       }
   }, {
       'name': 'managers',
-      'type': 'templates/managers.py',
+      'type': 'managers.py',
       'properties': {
           'zone': zone,
           'template': '$(ref.manager.name)',
@@ -32,17 +33,18 @@ def GenerateConfig(context):
       }
   }, {
       'name': 'worker',
-      'type': 'templates/worker.py',
+      'type': 'worker.py',
       'properties': {
           'zone': zone,
           'machineType': workerMachineType,
           'preemptible': preemptible,
           'image': '$(ref.docker.selfLink)',
-          'network': 'swarm-network',
+          'network': '$(ref.swarm-network.selfLink)',
+          'config': '$(ref.swarm-config.selfLink)'
       }
   }, {
       'name': 'workers',
-      'type': 'templates/workers.py',
+      'type': 'workers.py',
       'properties': {
           'zone': zone,
           'template': '$(ref.worker.name)',
@@ -50,12 +52,15 @@ def GenerateConfig(context):
       }
   }, {
       'name': 'swarm-network',
-      'type': 'templates/network.py'
+      'type': 'network.py'
   }, {
       'name': 'firewall-rules',
-      'type': 'templates/firewall.py',
+      'type': 'firewall.py',
       'properties': {
           'network': 'swarm-network'
       }
+  }, {
+      'name': 'swarm-config',
+      'type': 'config.py'
   }]
   return {'resources': resources}

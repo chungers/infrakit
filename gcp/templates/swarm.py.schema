@@ -4,16 +4,24 @@ info:
 
 imports:
 - path: swarm.py
+- path: config.py
+- path: disk-image.py
+- path: manager.py
+- path: managers.py
+- path: worker.py
+- path: workers.py
+- path: network.py
+- path: firewall.py
 
 properties:
   managerCount:
-    type: integer
-    default: 1
+    type: string
+    default: 3
     description: Number of Managers
 
   workerCount:
-    type: integer
-    default: 2
+    type: string
+    default: 1
     description: Number of Workers
 
   zone:

@@ -1,34 +1,65 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-"""Worker Instance Template."""
+"""Swarm manager."""
 
 def GenerateConfig(context):
   project = context.env['project']
   zone = context.properties['zone']
   machineType = context.properties['machineType']
-  preemptible = context.properties['preemptible']
   image = context.properties['image']
-  network = '$(ref.' + context.properties['network'] + '.selfLink)'
+  network = context.properties['network']
+  config = context.properties['config']
 
   script = r"""
 #!/bin/bash
 set -x
 
 service docker start
+docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
 
-PROJECT=$(curl -s http://metadata.google.internal/computeMetadata/v1/project/project-id -H "Metadata-Flavor: Google")
-ACCESS_TOKEN=$(curl -s http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token -H "Metadata-Flavor: Google" | jq -r ".access_token")
+function get-metadata {
+    curl -s "http://metadata.google.internal/computeMetadata/v1/$1" \
+        -H "Metadata-Flavor: Google"
+}
 
-for i in $(seq 1 300); do
-    LEADER_IP=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/leader-ip" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
-    if [ ! -z "${LEADER_IP}" ]; then
-        TOKEN=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/worker-token" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
-        docker swarm join --token "${TOKEN}" "${LEADER_IP}"
-        break
-    fi
+function get-value {
+    PROJECT=$(get-metadata project/project-id)
+    AUTH=$(get-metadata instance/service-accounts/default/token | jq -r ".access_token")
 
+    curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/$1" \
+        -H "Authorization":"Bearer ${AUTH}" | jq -r ".text // empty"
+}
+
+function set-value {
+    PROJECT=$(get-metadata project/project-id)
+    AUTH=$(get-metadata instance/service-accounts/default/token | jq -r ".access_token")
+
+    curl -f -s -X POST "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables" \
+        -H "Content-Type: application/json" \
+        -H "Authorization":"Bearer ${AUTH}" \
+        -d "{'name':'projects/${PROJECT}/configs/swarm-config/variables/$1','text':'$2'}"
+}
+
+set-value leader-ip $(get-metadata instance/network-interfaces/0/ip)
+if [ $? -eq 0 ]; then
+    echo "I'm a leader"
+
+    set-value worker-token $(docker swarm join-token worker -q)
+    set-value manager-token $(docker swarm join-token manager -q)
+
+    exit 0
+fi
+
+echo "I'm not a leader"
+
+while [ -z "$(get-value manager-token)" ]; do
     sleep 1
 done
+
+docker swarm leave --force
+docker swarm join --token "$(get-value manager-token)" "$(get-value leader-ip)" --advertise-addr eth0:2377 --listen-addr eth0:2377
+
+exit 0
 """
 
   resources = [{
@@ -64,7 +95,7 @@ done
                   }]
               },
               'scheduling': {
-                  'preemptible': preemptible,
+                  'preemptible': False,
                   'onHostMaintenance': 'TERMINATE',
                   'automaticRestart': False
               },
