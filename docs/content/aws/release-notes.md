@@ -26,11 +26,11 @@ Release date: 11/17/2016
 
 - Docker Engine upgraded to Docker 1.13.0-rc1
 - Changes to port 2375 access. For security reasons we locked down access to port 2375 in the following ways.
+    - You can't connect to port 2375 on managers from workers (changed)
+    - You can't connect to port 2375 on workers from other workers (changed)
     - You can't connect to port 2375 on managers and workers from the public internet (no change)
     - You can connect to port 2375 on workers from managers (no change)
     - You can connect to port 2375 on managers from other managers (no change)
-    - You can't connect to port 2375 on managers from workers (new change)
-    - You can't connect to port 2375 on workers from other workers (new change)
 - Added changes to the way we manage swarm tokens to make it more secure.
 
 ### Important
