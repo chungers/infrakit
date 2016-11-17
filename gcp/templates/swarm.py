@@ -3,6 +3,7 @@
 """Creates the Swarm."""
 
 def GenerateConfig(context):
+  region = context.properties['region']
   zone = context.properties['zone']
   managerCount = context.properties['managerCount']
   managerMachineType = context.properties['managerMachineType']
@@ -13,6 +14,12 @@ def GenerateConfig(context):
   resources = [{
       'name': 'docker',
       'type': 'disk-image.py'
+  }, {
+      'name': 'docker-ip',
+      'type': 'ip.py',
+      'properties': {
+          'region': region
+      }
   }, {
       'name': 'manager',
       'type': 'manager.py',
@@ -29,7 +36,8 @@ def GenerateConfig(context):
       'properties': {
           'zone': zone,
           'template': '$(ref.manager.name)',
-          'size': managerCount
+          'size': managerCount,
+          'pool': '$(ref.docker-pool.selfLink)'
       }
   }, {
       'name': 'worker',
@@ -48,7 +56,22 @@ def GenerateConfig(context):
       'properties': {
           'zone': zone,
           'template': '$(ref.worker.name)',
-          'size': workerCount
+          'size': workerCount,
+          'pool': '$(ref.docker-pool.selfLink)'
+      }
+  }, {
+      'name': 'docker-pool',
+      'type': 'pool.py',
+      'properties': {
+          'region': region
+      }
+  }, {
+      'name': 'forwarding',
+      'type': 'forwarding.py',
+      'properties': {
+          'region': region,
+          'pool': '$(ref.docker-pool.selfLink)',
+          'ip': '$(ref.docker-ip.address)'
       }
   }, {
       'name': 'swarm-network',
@@ -63,4 +86,10 @@ def GenerateConfig(context):
       'name': 'swarm-config',
       'type': 'config.py'
   }]
-  return {'resources': resources}
+
+  outputs = [{
+      'name': 'externalIp',
+      'value': '$(ref.docker-ip.address)'
+  }]
+
+  return {'resources': resources, 'outputs': outputs}

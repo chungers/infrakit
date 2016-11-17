@@ -37,6 +37,8 @@ echome gcloud deployment-manager deployments create docker \
   --config https://storage.googleapis.com/docker-template/swarm.py \
   --properties managerCount=${managerCount},workerCount=${workerCount}
 
+EXTERNAL_IP=$(gcloud compute addresses describe --region europe-west1 docker-ip --format=json | jq -r '.address')
+
 cat << EOF
 Welcome to Docker
 
@@ -51,6 +53,9 @@ Welcome to Docker
 
 To delete the Swarm, run this command:
    gcloud deployment-manager deployments delete docker
+
+The swarm is reachable via this address:
+  ${EXTERNAL_IP}
 
 Have fun!
 EOF

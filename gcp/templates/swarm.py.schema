@@ -12,6 +12,9 @@ imports:
 - path: workers.py
 - path: network.py
 - path: firewall.py
+- path: ip.py
+- path: pool.py
+- path: forwarding.py
 
 properties:
   managerCount:
@@ -23,6 +26,11 @@ properties:
     type: string
     default: 1
     description: Number of Workers
+
+  region:
+    type: string
+    default: europe-west1
+    description: Region
 
   zone:
     type: string

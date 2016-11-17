@@ -7,6 +7,7 @@ def GenerateConfig(context):
   zone = context.properties['zone']
   size = context.properties['size']
   template = context.properties['template']
+  pool = context.properties['pool']
 
   resources = [{
       'name': context.env['name'],
@@ -18,6 +19,7 @@ def GenerateConfig(context):
                                        'instanceTemplates', template]),
           'baseInstanceName': context.env['name'],
           'targetSize': int(size),
+          'targetPools': [pool],
           'autoHealingPolicies': [{
               'initialDelaySec': 300
           }]
