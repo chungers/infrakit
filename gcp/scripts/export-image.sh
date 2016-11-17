@@ -27,6 +27,7 @@ set -x
 sudo mkdir /mnt/image-disk
 sudo mount /dev/disk/by-id/google-image-disk-part1 /mnt/image-disk
 sudo rm -Rf /mnt/image-disk/home/*
+echo '{"log-driver":"gcplogs"}' | sudo tee /mnt/image-disk/etc/docker/daemon.json
 sudo umount /mnt/image-disk/
 sudo dd if=/dev/disk/by-id/google-image-disk of=/tmp/disk.raw bs=4M conv=sparse
 cd /tmp

@@ -87,7 +87,8 @@ fi
               },
               'serviceAccounts': [{
                   'scopes': [
-                      'https://www.googleapis.com/auth/cloudruntimeconfig'
+                      'https://www.googleapis.com/auth/cloudruntimeconfig',
+                      'https://www.googleapis.com/auth/logging.write'
                   ]
               }]
           }
