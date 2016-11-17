@@ -16,16 +16,37 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.13.0-rc1-beta11
+
+Release date: 11/17/2016
+
+<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc1-beta11.json" data-rel="Beta-10" target="_blank" id="aws-deploy">![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)</a>
+
+### New
+
+- Docker Engine upgraded to Docker 1.13.0-rc1
+- Changes to port 2375 access. For security reasons we locked down access to port 2375 in the following ways.
+    - You can't connect to port 2375 on managers and workers from the public internet (no change)
+    - You can connect to port 2375 on workers from managers (no change)
+    - You can connect to port 2375 on managers from other managers (no change)
+    - You can't connect to port 2375 on managers from workers (new change)
+    - You can't connect to port 2375 on workers from other workers (new change)
+- Added changes to the way we manage swarm tokens to make it more secure.
+
+### Important
+- Due to some changes with the IP ranges in the subnets in Beta10, it will not be possible to upgrade from beta 10 to beta 11. You will need to start from scratch using beta11. We are sorry for any issues this might cause. We needed to make the change, and it was decided it was best to do it now, while still in private beta to limit the impact.
+
+
 ## 1.12.3-beta10
 
 Release date: 10/27/2016
 
-<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.12.3-beta10.json" data-rel="Beta-10" target="_blank" id="aws-deploy">![Docker for AWS](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/da458f6b-3c2c-414b-9f3e-e5819ad3761b.png)</a>
+
 
 ### New
 
 - Docker Engine upgraded to Docker 1.12.3
-- Fixed the shell container that runs on the managers, to remove a ssh host key that was accidentally added to the image. 
+- Fixed the shell container that runs on the managers, to remove a ssh host key that was accidentally added to the image.
 This could have led to a potential man in the middle (MITM) attack. The ssh host key is now generated on host startup, so that each host has its own key.
 - The SSH ELB for SSH'ing into the managers has been removed because it is no longer possible to SSH into the managers without getting a security warning
 - Each Manager can be SSH'd into by following our deploy [guide](../deploy)
