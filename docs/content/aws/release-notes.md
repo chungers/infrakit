@@ -24,7 +24,7 @@ Release date: 11/17/2016
 
 ### New
 
-- Docker Engine upgraded to Docker 1.13.0-rc1
+- Docker Engine upgraded to [Docker 1.13.0-rc1](https://github.com/docker/docker/blob/master/CHANGELOG.md)
 - Changes to port 2375 access. For security reasons we locked down access to port 2375 in the following ways.
     - You can't connect to port 2375 on managers from workers (changed)
     - You can't connect to port 2375 on workers from other workers (changed)
