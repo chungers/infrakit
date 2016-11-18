@@ -15,28 +15,28 @@ def GenerateConfig(context):
 #!/bin/bash
 set -x
 
-service docker start
-
-function get-metadata {
+function metadata {
     curl -s "http://metadata.google.internal/computeMetadata/v1/$1" \
         -H "Metadata-Flavor: Google"
 }
 
-function get-value {
-    PROJECT=$(get-metadata project/project-id)
-    AUTH=$(get-metadata instance/service-accounts/default/token | jq -r ".access_token")
+function get-val {
+    PROJECT=$(metadata project/project-id)
+    AUTH=$(metadata instance/service-accounts/default/token | jq -r ".access_token")
 
-    curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/$1" \
-        -H "Authorization":"Bearer ${AUTH}" | jq -r ".text // empty"
+    curl -s "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/$1" \
+        -H "Authorization: Bearer ${AUTH}" | jq -r ".text // empty"
 }
+
+service docker start
 
 echo "I'm a worker"
 
-while [ -z "$(get-value worker-token)" ]; do
+while [ -z "$(get-val worker-token)" ]; do
     sleep 1
 done
 
-docker swarm join --token "$(get-value worker-token)" "$(get-value leader-ip)"
+docker swarm join --token "$(get-val worker-token)" "$(get-val leader-ip)"
 
 exit 0
 """

@@ -34,3 +34,4 @@ make revoke
  + DTR/DDC
  + Have each worker increment a counter to be able to wait from outside
  + Diagnostics
+ + Reuse access tokens in scripts
