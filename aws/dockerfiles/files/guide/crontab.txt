@@ -2,3 +2,4 @@
 */1 * * * * /usr/bin/watcher.sh >> /var/log/docker/watcher.log
 */5 * * * * /usr/bin/cleanup.sh >> /var/log/docker/cleanup.log
 24 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log
+42 * * * * /usr/bin/vacuum.sh >> /var/log/docker/vacuum.log
