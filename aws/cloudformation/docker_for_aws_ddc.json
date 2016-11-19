@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 10 (docker 1.12.3) DDC",
+    "Description": "Docker for AWS Beta 10 (docker 1.12.3-cs4) DDC",
 
     "Parameters": {
         "KeyName": {
@@ -97,7 +97,7 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.12.3",
+                "docker": "1.12.3-cs4",
                 "forAws": "aws-v1.12.3-beta10"
             }
         },
@@ -247,51 +247,51 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-472e8d26",
+                "HVM64": "ami-a958f2c8",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-2133e74f",
+                "HVM64": "ami-52b6613c",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-south-1": {
-                "HVM64": "ami-34b7c35b",
+                "HVM64": "ami-f2c4b09d",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-8048e9e3",
+                "HVM64": "ami-f2e64491",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-e6754985",
+                "HVM64": "ami-17655b74",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-ca758da5",
+                "HVM64": "ami-bd1cd9d2",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-7e7c370d",
+                "HVM64": "ami-b0df8cc3",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-d7801cbb",
+                "HVM64": "ami-f62eb19a",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-71ecb566",
+                "HVM64": "ami-0fbf9518",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "ami-89247eec",
+                "HVM64": "ami-09752f6c",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
-                "HVM64": "ami-84d79ce4",
+                "HVM64": "ami-47c39627",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-87f355e7",
+                "HVM64": "ami-db76dbbb",
                 "HVMG2": "NOT_SUPPORTED"
             }
         }
