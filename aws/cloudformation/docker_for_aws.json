@@ -44,13 +44,13 @@
             "Default" : "20",
             "MinValue" : "20",
             "MaxValue" : "1024",
-            "Description" : "Size of Workers's EBS volume in GiB"
+            "Description" : "Size of Workers's ephemeral storage volume in GiB"
         },
         "WorkerDiskType" : {
             "Type" : "String",
             "Default" : "standard",
             "AllowedValues" : ["standard", "gp2"],
-            "Description" : "Worker EBS volume type"
+            "Description" : "Worker ephemeral storage volume type"
         },
         "ManagerSize" : {
             "Type" : "Number",
@@ -69,13 +69,13 @@
             "Default" : "20",
             "MinValue" : "20",
             "MaxValue" : "1024",
-            "Description" : "Size of Manager's EBS volume in GiB"
+            "Description" : "Size of Manager's ephemeral storage volume in GiB"
         },
         "ManagerDiskType" : {
             "Type" : "String",
             "Default" : "standard",
             "AllowedValues" : ["standard", "gp2"],
-            "Description" : "Manager EBS volume type"
+            "Description" : "Manager ephemeral storage volume type"
         }
 
     },
@@ -106,10 +106,10 @@
                 "ManagerInstanceType" : { "default" : "Swarm manager instance type?" },
                 "KeyName" : { "default" : "Which SSH key to use?" },
                 "EnableSystemPrune": {"default" : "Enable daily resource cleanup?"},
-                "WorkerDiskSize" : { "default" : "Worker ELB size?" },
-                "WorkerDiskType" : { "default" : "Worker EBS volume type" },
-                "ManagerDiskSize" : { "default" : "Manager EBS size?" },
-                "ManagerDiskType" : { "default" : "Manager EBS volume type" }
+                "WorkerDiskSize" : { "default" : "Worker ephemeral storage volume size?" },
+                "WorkerDiskType" : { "default" : "Worker ephemeral storage volume type" },
+                "ManagerDiskSize" : { "default" : "Manager ephemeral storage volume size?" },
+                "ManagerDiskType" : { "default" : "Manager ephemeral storage volume type" }
             }
         }
     },
