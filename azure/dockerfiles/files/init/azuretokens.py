@@ -36,23 +36,23 @@ def get_storage_key():
     return storage_keys['key1']
 
 
-def print_tokens(sa_key):
+def print_ip(sa_key):
     global PARTITION_NAME, ROW_ID, SA_NAME, TBL_NAME
     tbl_svc = TableService(account_name=SA_NAME, account_key=sa_key)
     if not tbl_svc.exists(TBL_NAME):
         return False
     try:
         token = tbl_svc.get_entity(TBL_NAME, PARTITION_NAME, ROW_ID)
-        print '{}|{}|{}'.format(token.manager_ip, token.manager_token, token.worker_token)
+        print '{}'.format(token.manager_ip)
         return True
     except:
         return False
 
 
-def insert_tokens(sa_key, manager_ip, manager_token, worker_token):
+def insert_ip(sa_key, manager_ip):
     global PARTITION_NAME, ROW_ID, TBL_NAME, SA_NAME
     tbl_svc = TableService(account_name=SA_NAME, account_key=sa_key)
-    token = {'PartitionKey': PARTITION_NAME, 'RowKey': ROW_ID, 'manager_ip': manager_ip, 'manager_token': manager_token, 'worker_token': worker_token}
+    token = {'PartitionKey': PARTITION_NAME, 'RowKey': ROW_ID, 'manager_ip': manager_ip}
     try:
         # this upsert operation should always succeed
         tbl_svc.insert_or_replace_entity(TBL_NAME, token)
@@ -80,11 +80,9 @@ def main():
     parser = argparse.ArgumentParser(description='Tool to store Docker Swarm info in Azure Tables')
     subparsers = parser.add_subparsers(help='commands', dest='action')
     create_table_parser = subparsers.add_parser('create-table', help='Create table specified in env var AZURE_TBL_NAME')
-    get_tokens_parser = subparsers.add_parser('get-tokens', help='Get swarm info from table specified in env var AZURE_TBL_NAME')
-    insert_tokens_parser = subparsers.add_parser('insert-tokens', help='Insert swarm info to table specified in env var AZURE_TBL_NAME')
+    get_tokens_parser = subparsers.add_parser('get-ip', help='Get swarm info from table specified in env var AZURE_TBL_NAME')
+    insert_tokens_parser = subparsers.add_parser('insert-ip', help='Insert swarm info to table specified in env var AZURE_TBL_NAME')
     insert_tokens_parser.add_argument('ip', help='IP address of the primary swarm manager')
-    insert_tokens_parser.add_argument('manager_token', help='Manager Token for the swarm')
-    insert_tokens_parser.add_argument('worker_token', help='Worker token for the swarm')
 
     args = parser.parse_args()
 
@@ -93,10 +91,10 @@ def main():
     if args.action == 'create-table':
         if not create_table(key):
             sys.exit(1)
-    elif args.action == 'get-tokens':
-        print_tokens(key)
-    elif args.action == 'insert-tokens':
-        insert_tokens(key, args.ip, args.manager_token, args.worker_token)
+    elif args.action == 'get-ip':
+        print_ip(key)
+    elif args.action == 'insert-ip':
+        insert_ip(key, args.ip)
     else:
         parser.print_usage()
 

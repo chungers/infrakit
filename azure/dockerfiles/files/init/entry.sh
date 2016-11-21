@@ -30,14 +30,10 @@ get_node_id()
 
 get_tokens_db()
 {
-    echo "Get tokens from Azure Table"
-    DATA=$(python azuretokens.py get-tokens)
-    export MANAGER_IP=$(echo $DATA | cut -d'|' -f 1)
-    export MANAGER_TOKEN=$(echo $DATA | cut -d'|' -f 2)
-    export WORKER_TOKEN=$(echo $DATA | cut -d'|' -f 3)
-
-    echo "MANAGER_TOKEN=$MANAGER_TOKEN"
-    echo "WORKER_TOKEN=$WORKER_TOKEN"
+    echo "Get MANAGER IP from Azure Table"
+    export MANAGER_IP=$(python azuretokens.py get-ip)
+    get_manager_token
+    get_worker_token
 }
 
 get_tokens_local()
@@ -46,6 +42,26 @@ get_tokens_local()
     export WORKER_TOKEN=$(docker swarm join-token worker -q)
     echo "MANAGER_TOKEN=$MANAGER_TOKEN"
     echo "WORKER_TOKEN=$WORKER_TOKEN"
+}
+
+get_manager_token()
+{
+    if [ -n "$MANAGER_IP" ]; then
+        export MANAGER_TOKEN=$(wget -qO- http://$MANAGER_IP:9024/token/manager/)
+        echo "MANAGER_TOKEN=$MANAGER_TOKEN"
+    else
+        echo "MANAGER_TOKEN can't be found yet. MANAGER_IP isn't set yet."
+    fi
+}
+
+get_worker_token()
+{
+    if [ -n "$MANAGER_IP" ]; then
+        export WORKER_TOKEN=$(wget -qO- http://$MANAGER_IP:9024/token/worker/)
+        echo "WORKER_TOKEN=$WORKER_TOKEN"
+    else
+        echo "WORKER_TOKEN can't be found yet. MANAGER_IP isn't set yet."
+    fi
 }
 
 confirm_primary_ready()
@@ -132,7 +148,7 @@ setup_manager()
             get_node_id
 
             # update azure table with the tokens
-            python azuretokens.py insert-tokens $PRIVATE_IP $MANAGER_TOKEN $WORKER_TOKEN
+            python azuretokens.py insert-ip $PRIVATE_IP
 
             echo "   Primary Manager init complete"
             # send identify message
@@ -192,9 +208,11 @@ get_tokens_db
 # if it is a manager, setup as manager, if not, setup as worker node.
 if [ "$ROLE" == "MANAGER" ] ; then
     echo " It's a Manager, run setup"
+    get_manager_token
     setup_manager
 else
     echo " It's a worker Node, run setup"
+    get_worker_token
     setup_worker
 fi
 
