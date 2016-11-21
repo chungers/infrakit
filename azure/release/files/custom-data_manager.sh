@@ -12,6 +12,8 @@ export SWARM_INFO_TABLE="variables('swarmInfoTable')"
 export SWARM_INFO_STORAGE_ACCOUNT="variables('swarmInfoStorageAccount')"
 export SWARM_LOGS_STORAGE_ACCOUNT="variables('swarmLogsStorageAccount')"
 export MANAGER_IP=$(ifconfig eth0 | grep "inet addr:" | cut -d: -f2 | cut -d" " -f1)
+export VMSS_MGR="dockerswarm-managervmss"
+export VMSS_WRK="dockerswarm-worker-vmss"
 # create daemon config with custom tag
 echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}/{{.ID}}\" }}" > /etc/docker/daemon.json
 service docker restart
@@ -26,3 +28,5 @@ docker run --log-driver=json-file  --restart=always -d -e ROLE="$ROLE" -e REGION
 echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config
 echo "$LB_NAME" > /var/lib/docker/swarm/lb_name
 docker run -d --log-driver=json-file  -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/swarm:/var/lib/docker/swarm --name=editions_controller docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" run --ad_app_id="$APP_ID" --ad_app_secret="$APP_SECRET" --subscription_id="$SUB_ID" --resource_group="$GROUP_NAME" --log=4 --default_lb_name="$LB_NAME" --environment=AzurePublicCloud
+
+docker run  --log-driver=json-file --name=meta-azure --restart=always -d -p $MANAGER_IP:9024:8080 -e APP_ID="$APP_ID" -e APP_SECRET="$APP_SECRET" -e SUBSCRIPTION_ID="$SUB_ID" -e TENANT_ID="$TENANT_ID" -e GROUP_NAME="$GROUP_NAME" -e VMSS_MGR="$VMSS_MGR" -e VMSS_WRK="$VMSS_WRK" -v /var/run/docker.sock:/var/run/docker.sock docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=azure
