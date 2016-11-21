@@ -1,5 +1,5 @@
-EDITIONS_TAG := beta10
-EDITIONS_DOCKER_VERSION := 1.12.3
+EDITIONS_TAG := beta11
+EDITIONS_DOCKER_VERSION := 1.13.0-RC1
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 REGION := us-west-1
 CHANNEL := beta
@@ -7,11 +7,11 @@ CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
 VHD_SKU := docker4azure
-VHD_VERSION := 1.12.18
+VHD_VERSION := 1.12.20
 # stage offer will have the -preview 
 OFFER_ID := docker4azure
 CS_VHD_SKU := docker4azure-cs-1_12
-CS_VHD_VERSION := 1.0.1
+CS_VHD_VERSION := 1.0.4
 # stage offer will have the -preview 
 CS_OFFER_ID := docker4azure-cs-preview
 export
@@ -21,7 +21,13 @@ release: moby/alpine/cloud/aws/ami_id.out moby/alpine/cloud/azure/vhd_blob_url.o
 	# VHD=$(shell cat moby/alpine/cloud/azure/vhd_blob_url.out)
 
 dockerimages: buoy
+	dockerimages-aws
+	dockerimages-azure
+	
+dockerimages-aws:
 	$(MAKE) -C aws/dockerfiles
+
+dockerimages-azure:
 	$(MAKE) -C azure/dockerfiles
 
 buoy:
