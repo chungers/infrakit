@@ -92,6 +92,7 @@ func (a AzureWeb) Managers() []WebInstance {
 	managerVMs, err := getVMSSList(vmssClient, env, env["AZURE_VMSS_MGR"], managerIPTable)
 	if err != nil {
 		fmt.Printf("Couldn't get List of Manager VMSS: %v", err)
+		return []WebInstance{}
 	}
 	return managerVMs
 }
@@ -118,6 +119,7 @@ func (a AzureWeb) Workers() []WebInstance {
 	workerVMs, err := getVMSSList(vmssClient, env, env["AZURE_VMSS_WRK"], workerIPTable)
 	if err != nil {
 		fmt.Printf("Couldn't get List of Worker VMSS: %v", err)
+		return []WebInstance{}
 	}
 	return workerVMs
 }
