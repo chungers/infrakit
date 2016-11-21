@@ -14,9 +14,26 @@ import (
 // Each IAAS service needs to implement these 8 methods.
 // AWS already implemnted in aws.go
 // Azure stubbed out in azure.go
+
+// WebInstance instance struct returned by the different cloud providers
+type WebInstance struct {
+	ID               string
+	InstanceName     string
+	InstanceID       string
+	InstanceType     string
+	InstanceNic      string
+	PublicIPAddress  string
+	PrivateIPAddress string
+	InstanceState    string
+	InstanceAZ       string
+}
+
+// Web interface for all cloud providers
 type Web interface {
 	TokenManager(w http.ResponseWriter, r *http.Request)
 	TokenWorker(w http.ResponseWriter, r *http.Request)
+	Managers() []WebInstance
+	Workers() []WebInstance
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -83,24 +100,28 @@ func validate(flavor string) {
 	// Then exit.
 	if flavor == "aws" {
 		// make sure our required ENV variables are available, if not fail.
-		workerGroupId := os.Getenv("WORKER_SECURITY_GROUP_ID")
-		managerGroupId := os.Getenv("MANAGER_SECURITY_GROUP_ID")
-		if workerGroupId == "" {
-			fmt.Printf("ERROR: Missing environment variable: WORKER_SECURITY_GROUP_ID.")
-			os.Exit(1)
-		}
-		if managerGroupId == "" {
-			fmt.Printf("ERROR: Missing environment variable: MANAGER_SECURITY_GROUP_ID")
+		if !checkEnvVars("WORKER_SECURITY_GROUP_ID", "MANAGER_SECURITY_GROUP_ID") {
 			os.Exit(1)
 		}
 	} else if flavor == "azure" {
-		// add azure validation code here.
-
+		// make sure our required ENV variables are available, if not fail.
+		if !checkEnvVars("APP_ID", "APP_SECRET", "SUBSCRIPTION_ID", "TENANT_ID", "GROUP_NAME", "VMSS_MGR", "VMSS_WRK") {
+			os.Exit(1)
+		}
 	} else {
 		fmt.Printf("ERROR: -flavor %v was not a valid option. please pick either 'aws' or 'azure'", flavor)
 		os.Exit(1)
 	}
+}
 
+func checkEnvVars(envVars ...string) bool {
+	for _, envVar := range envVars {
+		if os.Getenv(envVar) == "" {
+			fmt.Printf("ERROR: Missing environment variable: %s.\n", envVar)
+			return false
+		}
+	}
+	return true
 }
 
 func main() {

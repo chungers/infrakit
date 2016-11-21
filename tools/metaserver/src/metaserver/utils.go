@@ -21,6 +21,7 @@ const (
 	clientVersion = "1.24" // docker client version
 )
 
+// DockerClient get docker APIclient and context
 func DockerClient() (client.APIClient, context.Context) {
 	// get the docker client
 	tlsOptions := tlsconfig.Options{}
@@ -33,6 +34,7 @@ func DockerClient() (client.APIClient, context.Context) {
 	return dockerClient, ctx
 }
 
+// RequestIP get IP from request
 func RequestIP(r *http.Request) string {
 	//given the request return the IP address of the requestor
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -89,6 +91,7 @@ func clientUserAgent() string {
 	return fmt.Sprintf("Docker-Client/%s (%s)", clientVersion, runtime.GOOS)
 }
 
+// RequestInfo get info about the request
 func RequestInfo(r *http.Request) {
 	// Mostly used for debugging, we can cut this down,
 	// since it isn't really used much anymore.
@@ -108,6 +111,7 @@ func RequestInfo(r *http.Request) {
 	fmt.Println("")
 }
 
+// SwarmNodes get a list of swarm nodes
 func SwarmNodes() []swarm.Node {
 	cli, ctx := DockerClient()
 
@@ -117,4 +121,46 @@ func SwarmNodes() []swarm.Node {
 		panic(err)
 	}
 	return nodes
+}
+
+func nodeIP(id string) string {
+	cli, ctx := DockerClient()
+	// inspect the node ID provided
+	node, _, err := cli.NodeInspectWithRaw(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return node.Status.Addr
+}
+
+func alreadyInSwarm(ip string) bool {
+	// Is the node making the request, already in the swarm.
+	nodes := SwarmNodes()
+	for _, node := range nodes {
+		nodeIP := nodeIP(node.ID)
+		if ip == nodeIP {
+			return true
+		}
+	}
+	return false
+}
+
+func isNodeInList(ip string, instances []WebInstance) bool {
+	// given an IP, find out if it is in the instance list.
+	for _, instance := range instances {
+		if ip == instance.PrivateIPAddress {
+			return true
+		}
+	}
+	return false
+}
+
+func isManagerNode(a Web, ip string) bool {
+	// Is the node making the request a manager node
+	return isNodeInList(ip, a.Managers())
+}
+
+func isWorkerNode(a Web, ip string) bool {
+	// Is the node making the request a worker node
+	return isNodeInList(ip, a.Workers())
 }
