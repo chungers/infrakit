@@ -39,6 +39,19 @@
             "MaxValue" : "1000",
             "Description" : "Number of worker nodes in the Swarm (1-1000)."
         },
+        "WorkerDiskSize" : {
+            "Type" : "Number",
+            "Default" : "20",
+            "MinValue" : "20",
+            "MaxValue" : "1024",
+            "Description" : "Size of Workers's ephemeral storage volume in GiB"
+        },
+        "WorkerDiskType" : {
+            "Type" : "String",
+            "Default" : "standard",
+            "AllowedValues" : ["standard", "gp2"],
+            "Description" : "Worker ephemeral storage volume type"
+        },
         "ManagerSize" : {
             "Type" : "Number",
             "Default" : "3",
@@ -50,6 +63,19 @@
             "Default" : "no",
             "AllowedValues" : ["no", "yes"],
             "Description" : "Cleans up unused images, containers, networks and volumes"
+        },
+        "ManagerDiskSize" : {
+            "Type" : "Number",
+            "Default" : "20",
+            "MinValue" : "20",
+            "MaxValue" : "1024",
+            "Description" : "Size of Manager's ephemeral storage volume in GiB"
+        },
+        "ManagerDiskType" : {
+            "Type" : "String",
+            "Default" : "standard",
+            "AllowedValues" : ["standard", "gp2"],
+            "Description" : "Manager ephemeral storage volume type"
         }
 
     },
@@ -61,8 +87,16 @@
                     "Parameters" : [ "ManagerSize", "ClusterSize" ]
                 },
                 {
-                    "Label" : { "default":"Swarm Properties" },
-                    "Parameters" : [ "ManagerInstanceType", "InstanceType", "KeyName", "EnableSystemPrune" ]
+                    "Label" : { "default" : "Swarm Properties" },
+                    "Parameters" : [ "KeyName", "EnableSystemPrune" ]
+                },
+                {
+                    "Label" : { "default":"Swarm Manager Properties" },
+                    "Parameters" : [ "ManagerInstanceType", "ManagerDiskSize", "ManagerDiskType"  ]
+                },
+                {
+                    "Label" : { "default":"Swarm Worker Properties" },
+                    "Parameters" : [ "InstanceType", "WorkerDiskSize", "WorkerDiskType" ]
                 }
             ],
             "ParameterLabels" : {
@@ -71,7 +105,11 @@
                 "InstanceType" : { "default" : "Agent worker instance type?" },
                 "ManagerInstanceType" : { "default" : "Swarm manager instance type?" },
                 "KeyName" : { "default" : "Which SSH key to use?" },
-                "EnableSystemPrune": {"default" : "Enable daily resource cleanup?"}
+                "EnableSystemPrune": {"default" : "Enable daily resource cleanup?"},
+                "WorkerDiskSize" : { "default" : "Worker ephemeral storage volume size?" },
+                "WorkerDiskType" : { "default" : "Worker ephemeral storage volume type" },
+                "ManagerDiskSize" : { "default" : "Manager ephemeral storage volume size?" },
+                "ManagerDiskType" : { "default" : "Manager ephemeral storage volume type" }
             }
         }
     },
@@ -545,6 +583,13 @@
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
                 "InstanceType": {"Ref" : "ManagerInstanceType"},
+                "BlockDeviceMappings" : [ {
+                    "DeviceName" : "/dev/xvdb",
+                    "Ebs" : {
+                        "VolumeSize" : { "Ref" : "ManagerDiskSize" },
+                        "VolumeType" : { "Ref" : "ManagerDiskType" }
+                    }
+                 }],
                 "IamInstanceProfile" : { "Ref" : "ProxyInstanceProfile" },
                 "KeyName": {
                     "Ref": "KeyName"
@@ -697,6 +742,13 @@
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
                 "InstanceType": {"Ref" : "InstanceType"},
+                "BlockDeviceMappings" : [ {
+                    "DeviceName" : "/dev/xvdb",
+                    "Ebs" : {
+                        "VolumeSize" : { "Ref" : "WorkerDiskSize" },
+                        "VolumeType" : { "Ref" : "WorkerDiskType" }
+                    }
+                 }],
                 "IamInstanceProfile" : { "Ref" : "ProxyInstanceProfile" },
                 "KeyName": {
                     "Ref": "KeyName"
