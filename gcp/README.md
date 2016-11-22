@@ -25,15 +25,12 @@ make revoke
  + External load balancer
  + Better UX
  + Use Moby
- + Logs
+ + Use Google Log driver
  + Monitoring
- + Configure project
- + Multiple managers
- + Different machine types for workers and managers
  + SSH keys
  + Additional swarm properties
  + Publish the templates
  + See how the Cloud Shell fits in the big picture
  + DTR/DDC
- + List the Apis we need
- + Auto-enable all the Apis we need
+ + Have each worker increment a counter to be able to wait from outside
+ + Diagnostics

@@ -1,8 +1,10 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
 imports:
+- path: templates/disk-image.py
 - path: templates/swarm.py
 - path: templates/manager.py
+- path: templates/managers.py
 - path: templates/worker.py
 - path: templates/workers.py
 - path: templates/network.py
@@ -16,10 +18,3 @@ resources:
   type: runtimeconfig.v1beta1.config
   properties:
     config: swarm-config
-
-- name: swarm-token
-  type: runtimeconfig.v1beta1.variable
-  properties:
-    parent: $(ref.swarm-config.name)
-    variable: token
-    value: ""

@@ -6,7 +6,12 @@ imports:
 - path: swarm.py
 
 properties:
-  size:
+  managerCount:
+    type: integer
+    default: 1
+    description: Number of Managers
+
+  workerCount:
     type: integer
     default: 2
     description: Number of Workers
@@ -16,7 +21,17 @@ properties:
     default: europe-west1-d
     description: Zone
 
-  machineType:
+  managerMachineType:
+    type: string
+    default: g1-small
+    description: Manager machine type
+
+  workerMachineType:
     type: string
     default: g1-small
     description: Worker machine type
+
+  preemptible:
+    type: boolean
+    default: False
+    description: Are workers preemptible?
