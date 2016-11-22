@@ -9,17 +9,13 @@ IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
     # we are the leader, We only need to call once, so we only call from the current leader.
-    DATA=$(python /usr/bin/azuretokens.py get-tokens)
-    MANAGER_IP=$(echo $DATA | cut -d'|' -f 1)
-    STORED_MANAGER_TOKEN=$(echo $DATA | cut -d'|' -f 2)
-    STORED_WORKER_TOKEN=$(echo $DATA | cut -d'|' -f 3)
+    MYIP=$(ifconfig eth0 | grep "inet addr:" | cut -d: -f2 | cut -d" " -f1)
+    CURRENT_MANAGER_IP=$(python /usr/bin/azureleader.py get-ip)
+    echo "Current manager IP = $CURRENT_MANAGER_IP ; my IP = $MYIP"
 
-    MANAGER_TOKEN=$(docker swarm join-token manager -q)
-    WORKER_TOKEN=$(docker swarm join-token worker -q)
-
-    if [[ "$STORED_MANAGER_TOKEN" != "$MANAGER_TOKEN" ]] || [[ "$STORED_WORKER_TOKEN" != "$WORKER_TOKEN" ]]; then
-        echo "Swarm tokens changed, updating azure table with new tokens"
-        python /usr/bin/azuretokens.py insert-tokens $MANAGER_IP $MANAGER_TOKEN $WORKER_TOKEN
+    if [ "$CURRENT_MANAGER_IP" == "$MYIP" ]; then
+        echo "Swarm Manager IP changed, updating azure table with new ip"
+        python /usr/bin/azureleader.py insert-ip $MYIP
     fi
 
 fi
