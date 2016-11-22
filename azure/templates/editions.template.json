@@ -386,7 +386,8 @@
       "dependsOn": [
         "[variables('vnetID')]",
         "[variables('managerNSGID')]",
-        "[variables('lbSSHID')]"
+        "[variables('lbSSHID')]",
+        "storageLoop"
       ],
       "location": "[variables('storageLocation')]",
       "name": "[variables('vmssManagersName')]",
