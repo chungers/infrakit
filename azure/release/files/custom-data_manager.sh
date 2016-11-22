@@ -15,7 +15,7 @@ export MANAGER_IP=$(ifconfig eth0 | grep "inet addr:" | cut -d: -f2 | cut -d" " 
 export VMSS_MGR="dockerswarm-managervmss"
 export VMSS_WRK="dockerswarm-worker-vmss"
 # create daemon config with custom tag
-echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}/{{.ID}}\" }}" > /etc/docker/daemon.json
+echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}-{{.ID}}\" }}" > /etc/docker/daemon.json
 service docker restart
 sleep 5
 
