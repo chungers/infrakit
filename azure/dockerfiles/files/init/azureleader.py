@@ -43,7 +43,7 @@ def print_ip(sa_key):
         return False
     try:
         token = tbl_svc.get_entity(TBL_NAME, PARTITION_NAME, ROW_ID)
-        print '{}'.format(token.manager_ip)
+        print('{}'.format(token.manager_ip))
         return True
     except:
         return False

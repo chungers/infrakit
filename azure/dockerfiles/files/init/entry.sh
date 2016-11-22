@@ -28,20 +28,12 @@ get_node_id()
     echo "NODE: $NODE_ID"
 }
 
-get_tokens_db()
+get_tokens()
 {
     echo "Get MANAGER IP from Azure Table"
-    export MANAGER_IP=$(python azuretokens.py get-ip)
+    export MANAGER_IP=$(python azureleader.py get-ip)
     get_manager_token
     get_worker_token
-}
-
-get_tokens_local()
-{
-    export MANAGER_TOKEN=$(docker swarm join-token manager -q)
-    export WORKER_TOKEN=$(docker swarm join-token worker -q)
-    echo "MANAGER_TOKEN=$MANAGER_TOKEN"
-    echo "WORKER_TOKEN=$WORKER_TOKEN"
 }
 
 get_manager_token()
@@ -69,7 +61,7 @@ confirm_primary_ready()
     n=0
     until [ $n -ge 5 ]
     do
-        get_tokens_db
+        get_tokens
         echo "PRIMARY_MANAGER_IP=$MANAGER_IP"
         # if Manager IP or manager_token is empty or manager_token is null, not ready yet.
         # token would be null for a short time between swarm init, and the time the
@@ -113,7 +105,7 @@ join_as_secondary_manager()
             n=$[$n+1]
 
             # query azure table again, incase the manager changed
-            get_tokens_db
+            get_tokens
         else
             echo "Connected to primary manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
             break
@@ -134,7 +126,7 @@ setup_manager()
         # try to create the azure table that will store tokens, if it succeeds then it is the first
         # and it is the primary manager. If it fails, then it isn't first, and treat the record
         # that is there, as the primary manager, and join that swarm.
-        python azuretokens.py create-table
+        python azureleader.py create-table
         PRIMARY_RESULT=$?
         echo "   PRIMARY_RESULT=$PRIMARY_RESULT"
 
@@ -142,13 +134,12 @@ setup_manager()
             echo "   Primary Manager init"
             # we are the primary, so init the cluster
             docker swarm init --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377
-            # we can now get the tokens.
-            get_tokens_local
+            # we can now get the swarm id and node id.
             get_swarm_id
             get_node_id
 
-            # update azure table with the tokens
-            python azuretokens.py insert-ip $PRIVATE_IP
+            # update azure table with the ip
+            python azureleader.py insert-ip $PRIVATE_IP
 
             echo "   Primary Manager init complete"
             # send identify message
@@ -193,7 +184,7 @@ setup_worker()
             n=$[$n+1]
 
             # query azure table again, incase the manager changed
-            get_tokens_db
+            get_tokens
         else
             echo "Connected to manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
             break
@@ -203,7 +194,7 @@ setup_worker()
 }
 
 # init variables based on azure token table contents (if populated)
-get_tokens_db
+get_tokens
 
 # if it is a manager, setup as manager, if not, setup as worker node.
 if [ "$ROLE" == "MANAGER" ] ; then
