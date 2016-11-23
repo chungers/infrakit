@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS 1.13.0-rc1 (beta11) Cloud",
+    "Description": "Docker for AWS 1.13.0-rc2 (beta12) Cloud",
 
     "Parameters": {
         "KeyName": {
@@ -95,8 +95,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.13.0-rc1",
-                "forAws": "aws-v1.13.0-rc1-beta11"
+                "docker": "1.13.0-rc2",
+                "forAws": "aws-v1.13.0-rc2-beta12"
             }
         },
 
@@ -245,51 +245,51 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-d162c8b0",
+                "HVM64": "ami-b8be09d9",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-6cb46302",
+                "HVM64": "ami-65dc0b0b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-south-1": {
-                "HVM64": "ami-35d9ad5a",
+                "HVM64": "ami-562d5a39",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-63e24000",
+                "HVM64": "ami-f35bf990",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-c86658ab",
+                "HVM64": "ami-2bc8f648",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-5e09cc31",
+                "HVM64": "ami-8efd39e1",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-09d7847a",
+                "HVM64": "ami-33297540",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-422fb02e",
+                "HVM64": "ami-29861845",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-70def467",
+                "HVM64": "ami-d9c4f4ce",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "ami-24742e41",
+                "HVM64": "ami-d29fc5b7",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
-                "HVM64": "ami-10c59070",
+                "HVM64": "ami-fc7e2a9c",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-847cd1e4",
+                "HVM64": "ami-71bb1411",
                 "HVMG2": "NOT_SUPPORTED"
             }
         }
@@ -641,7 +641,7 @@
                                 "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --log-driver=json-file --name=l4controller-aws --restart=always -d --name=editions_controller ",
+                                "docker run --log-driver=json-file --name=l4controller-aws --restart=always -d ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",

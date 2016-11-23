@@ -16,11 +16,21 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.13.0-rc2-beta12
+Release date: 11/23/2016
+
+<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc2-beta12.json" data-rel="Beta-12" target="_blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
+
+### New
+- Docker Engine upgraded to [Docker 1.13.0-rc2](https://github.com/docker/docker/blob/master/CHANGELOG.md)
+- New option to cleanup unused resources on your Swarm using new Docker prune command available in 1.13
+- New option to pick the size of the ephemeral storage volume size on workers and managers
+- New option to pick the disk type for the ephemeral storage on workers and managers
+- Changed the Cloud Watch container log name from container "ID" to "Container Name-ID"
+
 ## 1.13.0-rc1-beta11
 
 Release date: 11/17/2016
-
-<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc1-beta11.json" data-rel="Beta-11" target="_blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
 
 ### New
 
