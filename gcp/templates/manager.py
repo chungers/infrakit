@@ -47,6 +47,10 @@ if [ $? -eq 0 ]; then
     set-val worker-token $(docker swarm join-token worker -q)
     set-val manager-token $(docker swarm join-token manager -q)
 
+    set-val leader-name $(hostname)
+    set-val project $(metadata project/project-id)
+    set-val zone $(metadata instance/zone)
+
     exit 0
 fi
 
