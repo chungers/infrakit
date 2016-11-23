@@ -1,12 +1,20 @@
 #!/bin/bash
 # This script will prevent autoscaling from terminating until we leave the swarm
-set -e
 MYIP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 MYNODE=$(wget -qO- http://169.254.169.254/latest/meta-data/instance-id)
 
 QUEUE=$SWARM_QUEUE
 VPC_ID=$VPC_ID # TODO pass in.
 STACK_ID=$STACK_ID # TODO pass in.
+HAS_DDC=${HAS_DDC:-"no"}
+DTR_DYNAMO_FIELD='dtr_replicas'
+PRODUCTION_HUB_NAMESPACE='docker'
+HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
+UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.1"}
+DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0"}
+UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
+DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
+DTR_PORT=8443
 # also pass in DYNAMODB_TABLE
 
 if [ -e /tmp/.shutdown-init ]
@@ -34,6 +42,47 @@ fi
 # echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
 sleep $[ ( $RANDOM % 10 )  + 1 ]
 # echo "Finished sleep, lets get going."
+
+# Checking if UCP is up and running
+checkUCP(){
+    echo "Checking to see if UCP is up and healthy"
+    n=0
+    until [ $n -gt 20 ];
+    do
+        echo "Checking managers. Try # $n .."
+        MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+        # Find first node that's not myself
+        echo "List of available Managers = $MANAGERS"
+        ALLGOOD='yes'
+        for I in $MANAGERS; do
+            echo "Checking $I to see if UCP is up"
+            # Checking if UCP is up and running
+            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
+                echo "UCP on $I is NOT healty"
+                ALLGOOD='no'
+            else
+                echo "UCP on $I is healthy!"
+            fi
+        done
+
+        if [[ "$ALLGOOD" == "yes" ]] ; then
+            echo "UCP is all healty, good to move on!"
+            break
+        else
+            echo "Not all healthy, rest and try again.."
+            if [[ $n -eq 20 ]] ; then
+                # this will cause the Autoscale group to timeout, and leave this node in the swarm
+                # it will eventually be killed once the timeout it his. TODO: Do something about this.
+                echo "UCP failed status check after $n tries. Aborting..."
+                exit 0
+            fi
+            sleep 30
+            let n+=1
+        fi
+
+    done
+}
+
 
 # Find SQS message with termination message
 FOUND=false
@@ -155,6 +204,69 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         fi
     fi
 
+    # check if DDC is installed, if so, make sure it is in a stable state before we continue.
+    if [[ "$HAS_DDC" == "yes" ]] ; then
+        echo "UCP is installed, make sure it is ready, before we continue."
+        checkUCP
+
+        echo "Remove DTR"
+        LOCAL_DTR_ID=$(docker ps --format '{{.Names}}' -f name=dtr-registry | tail -c 13)
+        echo " LOCAL_DTR_ID=$LOCAL_DTR_ID"
+        echo "remove from dynamodb"
+        aws dynamodb update-item \
+            --table-name $DYNAMODB_TABLE \
+            --region $REGION \
+            --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}' \
+            --update-expression 'DELETE nodes :n' \
+            --expression-attribute-values '{":n": {"SS":["'"$LOCAL_DTR_ID"'"]}}' \
+            --return-consumed-capacity TOTAL
+
+        REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
+        EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
+        echo "EXISTING_REPLICA_ID=$EXISTING_REPLICA_ID"
+        echo "Remove DTR node."
+        # set LEAVE_RESULT to 1, so we guarentee it goes into until loop at least once.
+        LEAVE_RESULT=1
+        try=1
+        # try to remove node, keep trying until we have a good removal status result of 0
+        until [ $LEAVE_RESULT -eq 0 ];
+        do
+            echo " [$try] removing DTR node..."
+            docker run --rm "$DTR_IMAGE" remove --ucp-url https://$UCP_ELB_HOSTNAME --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID --replica-id $LOCAL_DTR_ID
+            LEAVE_RESULT=$?
+            echo " [$try]  LEAVE_RESULT=$LEAVE_RESULT"
+            if [ $LEAVE_RESULT -ne 0 ]; then
+                if [[ $try -eq 20 ]] ; then
+                    echo "Tried to remove node $try times. We are over limit, aborting..."
+                    exit 1
+                fi
+                echo "We failed for a reason, lets retry again after a brief delay."
+                sleep 30
+                let try+=1
+            else
+                echo "Node removal complete"
+            fi
+        done
+
+        echo "Final cleanup check.."
+        REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
+        NUM_REPLICAS=$(echo $REPLICAS | jq -r '.Item.nodes.SS | length')
+        echo "REPLICAS=$REPLICAS"
+        echo "NUM_REPLICAS=$NUM_REPLICAS"
+        if [ -z "$REPLICAS" ] || [ -z "$NUM_REPLICAS" ] || [ $NUM_REPLICAS -eq 0 ]; then
+            echo "We need to delete dyno record, we are last one."
+            aws dynamodb delete-item --table-name $DYNAMODB_TABLE --region $REGION --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}'
+        else
+            echo "We are not last, we are good to leave things as is."
+        fi
+
+        echo "DTR remove is complete."
+        checkUCP
+        echo "UCP is good to go, continue."
+    else
+        echo "No DDC, skip this step."
+    fi
+
     # if not the last manager, demote, if it is the last manager, then we can't demote, it won't let us.
     if [ -z "$LAST_MANAGER" ]; then
         echo "demote the node from manager to worker for NODE: $NODE_ID"
@@ -165,7 +277,16 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     echo "Give time for the demotation to take place"
     buoy -event="node:demote" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     sleep 30
+
+    if [[ "$HAS_DDC" == "yes" ]] ; then
+        # since we have DDC installed, lets wait for ucp-reconcile
+        echo "Wait for UCP-reconcile to finish"
+        docker wait ucp-reconcile
+        echo "UCP-reconcile is finished"
+    fi
+
 fi
+
 
 # remove the node from swarm for both the manager and the worker.
 echo "Remove the node"

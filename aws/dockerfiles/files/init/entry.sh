@@ -5,6 +5,7 @@ echo "Start Swarm setup"
 # Setup path with the docker binaries
 export MYHOST=`wget -qO- http://169.254.169.254/latest/meta-data/hostname`
 SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+HAS_DDC=${HAS_DDC:-"no"}
 
 echo "PATH=$PATH"
 echo "NODE_TYPE=$NODE_TYPE"
@@ -15,6 +16,7 @@ echo "INSTANCE_NAME=$INSTANCE_NAME"
 echo "AWS_REGION=$REGION"
 echo "MANAGER_IP=$MANAGER_IP"
 echo "SWARM_STATE=$SWARM_STATE"
+echo "HAS_DDC=$HAS_DDC"
 echo "#================"
 
 get_swarm_id()
@@ -120,30 +122,33 @@ join_as_secondary_manager()
     sleep 30
     # we are not primary, so join as secondary manager.
     n=0
-    until [ $n -ge 5 ]
+    until [ $n -gt 5 ]
     do
         docker swarm join --token $MANAGER_TOKEN --listen-addr $PRIVATE_IP:2377 --advertise-addr $PRIVATE_IP:2377 $MANAGER_IP:2377
 
         get_swarm_id
         get_node_id
 
-        # check if we have a NODE_ID, if so, we were able to join, if not, it failed.
-        if [ -z "$NODE_ID" ]; then
+        # check if we have a SWARM_ID, if so, we were able to join, if not, it failed.
+        if [ -z "$SWARM_ID" ]; then
             echo "Can't connect to primary manager, sleep and try again"
             sleep 60
             n=$[$n+1]
+
+            # if we are pending, we might have hit the primary when it was shutting down.
+            # we should leave the swarm, and try again, after getting the new primary ip.
+            SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
+            echo "SWARM_STATE=$SWARM_STATE"
+            if [ "$SWARM_STATE" == "pending" ] ; then
+                echo "Swarm state is pending, something happened, lets reset, and try again."
+                docker swarm leave --force
+                sleep 30
+            fi
 
             # query dynamodb again, incase the manager changed
             get_primary_manager_ip
         else
             echo "Connected to primary manager, NODE_ID=$NODE_ID , SWARM_ID=$SWARM_ID"
-            break
-        fi
-
-        SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
-        echo "SWARM_STATE=$SWARM_STATE"
-        if [ "$SWARM_STATE" == "pending" ] ; then
-            echo "Swarm state is pending, it will keep trying in background."
             break
         fi
 
@@ -210,7 +215,7 @@ setup_node()
     echo "   MANAGER_IP=$MANAGER_IP"
     # try an connect to the swarm manager.
     n=0
-    until [ $n -ge 5 ]
+    until [ $n -gt 5 ]
     do
         docker swarm join --token $WORKER_TOKEN $MANAGER_IP:2377
         get_swarm_id
@@ -233,6 +238,8 @@ setup_node()
         echo "SWARM_STATE=$SWARM_STATE"
         if [ "$SWARM_STATE" == "pending" ] ; then
             echo "Swarm state is pending, it will keep trying in background."
+            # if this fails to join in the long run, it will require a manual cleanup.
+            # Easiest cleanup would be to destroy node, and start a new one.
             break
         fi
 
@@ -260,7 +267,12 @@ docker info
 echo "#================ docker node ls ==="
 docker node ls
 echo "#==================================="
-echo "Notify AWS that server is ready"
-cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $REGION
+
+if [[ "$HAS_DDC" == "no" ]] ; then
+    echo "Notify AWS that server is ready"
+    cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $REGION
+else
+    echo "DDC is installed, it will lets AWS know that the server is ready, when it's ready."
+fi
 
 echo "Complete Swarm setup"
