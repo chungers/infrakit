@@ -7,7 +7,7 @@ INSTALL_DDC=${INSTALL_DDC:-"yes"}
 
 PRODUCTION_HUB_NAMESPACE='docker'
 HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0"}
+UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.1"}
 DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0"}
 UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
 DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
@@ -25,6 +25,7 @@ echo "REGION=$REGION"
 echo "S3_BUCKET_NAME=$S3_BUCKET_NAME"
 echo "LICENSE=$LICENSE"
 echo "INSTALL_DDC=$INSTALL_DDC"
+echo "APP_ELB_HOSTNAME=$APP_ELB_HOSTNAME"
 echo "UCP_ELB_HOSTNAME=$UCP_ELB_HOSTNAME"
 echo "DTR_ELB_HOSTNAME=$DTR_ELB_HOSTNAME"
 echo "NODE_NAME=$NODE_NAME"
@@ -153,10 +154,10 @@ if [[ "$IS_LEADER" == "true" ]]; then
         # Installing UCP
         echo "Run the UCP install script"
         if [[ ${IS_VALID_LICENSE} -eq 1 ]]; then
-            docker run --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$UCP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+            docker run --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
             echo "Finished installing UCP with license"
         else
-            docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$UCP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+            docker run --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
             echo "Finished installing UCP without license. Please upload your license in UCP and DTR UI. "
         fi
     else
@@ -187,9 +188,14 @@ if [[ "$IS_LEADER" == "true" ]]; then
             docker run --rm "$DTR_IMAGE" install --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$NODE_NAME" --dtr-external-url $DTR_ELB_HOSTNAME:443 --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --replica-id $REPLICA_ID
             echo "After running install via Docker"
             date
+            # make sure everything is good, sleep for a bit, then keep going.
             sleep 30
             echo "Finished installing DTR"
         else
+            # lets make sure everything is good to go, before we get started.
+            # If we start too soon, it could choke. random sleep so we don't step
+            # on other nodes that are also joining
+            sleep $[ ( $RANDOM % 30 )  + 11 ]
             echo "DTR already installed, need to join instead of install"
             DTR_LEADER_INSTALL="no"
             EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
@@ -277,10 +283,11 @@ else
             fi
         done
 
+        sleep 30
         # once available.
         # get record, and then join, add replica ID to dynamodb
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
-        docker run --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
+        docker run --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-ca --existing-replica-id $EXISTING_REPLICA_ID
 
         JOIN_RESULT=$?
         echo "   JOIN_RESULT=$JOIN_RESULT"

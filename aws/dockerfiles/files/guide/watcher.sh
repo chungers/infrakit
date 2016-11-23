@@ -11,7 +11,7 @@ HAS_DDC=${HAS_DDC:-"no"}
 DTR_DYNAMO_FIELD='dtr_replicas'
 PRODUCTION_HUB_NAMESPACE='docker'
 HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.0"}
+UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.1"}
 DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0"}
 UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
 DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
@@ -43,6 +43,47 @@ fi
 # echo "Sleep for a short time (1-10 seconds). To prevent scripts from stepping on each other"
 sleep $[ ( $RANDOM % 10 )  + 1 ]
 # echo "Finished sleep, lets get going."
+
+# Checking if UCP is up and running
+checkUCP(){
+    echo "Checking to see if UCP is up and healthy"
+    n=0
+    until [ $n -gt 20 ];
+    do
+        echo "Checking managers. Try # $n .."
+        MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
+        # Find first node that's not myself
+        echo "List of available Managers = $MANAGERS"
+        ALLGOOD='yes'
+        for I in $MANAGERS; do
+            echo "Checking $I to see if UCP is up"
+            # Checking if UCP is up and running
+            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
+                echo "UCP on $I is NOT healty"
+                ALLGOOD='no'
+            else
+                echo "UCP on $I is healthy!"
+            fi
+        done
+
+        if [[ "$ALLGOOD" == "yes" ]] ; then
+            echo "UCP is all healty, good to move on!"
+            break
+        else
+            echo "Not all healthy, rest and try again.."
+            if [[ $n -eq 20 ]] ; then
+                # this will cause the Autoscale group to timeout, and leave this node in the swarm
+                # it will eventually be killed once the timeout it his. TODO: Do something about this.
+                echo "UCP failed status check after $n tries. Aborting..."
+                exit 0
+            fi
+            sleep 30
+            let n+=1
+        fi
+
+    done
+}
+
 
 # Find SQS message with termination message
 FOUND=false
@@ -167,41 +208,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     # check if DDC is installed, if so, make sure it is in a stable state before we continue.
     if [[ "$HAS_DDC" == "yes" ]] ; then
         echo "UCP is installed, make sure it is ready, before we continue."
-        n=0
-        until [ $n -gt 20 ];
-        do
-            echo "Checking managers. Try # $n .."
-            MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]')
-            # Find first node that's not myself
-            echo "List of available Managers = $MANAGERS"
-            ALLGOOD='yes'
-            for I in $MANAGERS; do
-                echo "Checking $I to see if UCP is up"
-                # Checking if UCP is up and running
-                if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
-                    echo "UCP on $I is NOT healty"
-                    ALLGOOD='no'
-                else
-                    echo "UCP on $I is healthy!"
-                fi
-            done
-
-            if [[ "$ALLGOOD" == "yes" ]] ; then
-                echo "UCP is all healty, good to move on!"
-                break
-            else
-                echo "Not all healthy, rest and try again.."
-                if [[ $n -eq 20 ]] ; then
-                    # this will cause the Autoscale group to timeout, and leave this node in the swarm
-                    # it will eventually be killed once the timeout it his. TODO: Do something about this.
-                    echo "UCP failed status check after $n tries. Aborting..."
-                    exit 0
-                fi
-                sleep 30
-                let n+=1
-            fi
-
-        done
+        checkUCP
 
         echo "Remove DTR"
         LOCAL_DTR_ID=$(docker ps --format '{{.Names}}' -f name=dtr-registry | tail -c 13)
@@ -236,7 +243,8 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         fi
 
         echo "DTR remove is complete."
-
+        checkUCP
+        echo "UCP is good to go, continue."
     else
         echo "No DDC, skip this step."
     fi

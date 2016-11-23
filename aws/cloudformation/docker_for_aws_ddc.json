@@ -98,7 +98,7 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.12.3-cs4",
-                "forAws": "ken2"
+                "forAws": "ken3"
             }
         },
 
@@ -664,6 +664,7 @@
                                 "-e LICENSE='",{ "Ref": "License" }, "' ",
                                 "-e UCP_ELB_HOSTNAME='",{"Fn::GetAtt": ["UCPLoadBalancer","DNSName"]}, "' ",
                                 "-e DTR_ELB_HOSTNAME='",{"Fn::GetAtt": ["DTRLoadBalancer","DNSName"]}, "' ",
+                                "-e APP_ELB_HOSTNAME='",{"Fn::GetAtt": [ "ExternalLoadBalancer","DNSName"]}, "' ",
                                 "-e INSTALL_DDC='yes' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
                                 "-e MANAGER_COUNT='",{ "Ref" : "ManagerSize" }, "' ",
@@ -795,6 +796,7 @@
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
                                 "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPasswordSet" }, "' ",
+                                "-e APP_ELB_HOSTNAME='",{"Fn::GetAtt": [ "ExternalLoadBalancer","DNSName"]}, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
                                 "-e INSTALL_DDC='yes' ",
                                 "-e MANAGER_COUNT='",{ "Ref" : "ManagerSize" }, "' ",
