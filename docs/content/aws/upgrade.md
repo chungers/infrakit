@@ -28,7 +28,7 @@ To be notified of updates, submit your email address at [https://beta.docker.com
  
 ## Upgrading
 
-If you submit your email address at [https://beta.docker.com/](beta.docker.com) Docker will notify you of new releases by email. New releases are also posted on the [Releas Notes](https://beta.docker.com/docs/aws/release-notes/) page.
+If you submit your email address at [https://beta.docker.com/](beta.docker.com) Docker will notify you of new releases by email. New releases are also posted on the [Release Notes](https://beta.docker.com/docs/aws/release-notes/) page.
 
 To initiate an update, use either the AWS Console of the AWS cli to initiate a stack update. Use the S3 template URL for the new release and complete the update wizard. This will initiate a rolling upgrade of the Docker swarm, and service state will be maintained during and after the upgrade. Appropriately scaled services should not experience downtime during an upgrade.
 
