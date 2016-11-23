@@ -238,10 +238,10 @@
 			"revisionTime": "2016-11-14T23:22:52Z"
 		},
 		{
-			"checksumSHA1": "dJSH0r1iCWsqqk02ngrfKjWOraI=",
+			"checksumSHA1": "IK1Guk6Qa7uk7CN15bBV9NsaF0Q=",
 			"path": "github.com/docker/docker/api/types",
-			"revision": "5f577bfa6b319ab88dacc4259b4d8485bd7e1b9f",
-			"revisionTime": "2016-11-15T21:31:06Z"
+			"revision": "ae64cae74e387f77b5d5a7b13d1abf0e084112b4",
+			"revisionTime": "2016-11-23T20:29:55Z"
 		},
 		{
 			"checksumSHA1": "jVJDbe0IcyjoKc2xbohwzQr+FF0=",
@@ -322,10 +322,10 @@
 			"revisionTime": "2016-11-15T21:31:06Z"
 		},
 		{
-			"checksumSHA1": "pwOlKyMkC2o9H1gfjTtdyUfRpRs=",
+			"checksumSHA1": "CALdvH14EIDr8do2QT8AsGCo5Bs=",
 			"path": "github.com/docker/docker/client",
-			"revision": "5f577bfa6b319ab88dacc4259b4d8485bd7e1b9f",
-			"revisionTime": "2016-11-15T21:31:06Z"
+			"revision": "ae64cae74e387f77b5d5a7b13d1abf0e084112b4",
+			"revisionTime": "2016-11-23T20:29:55Z"
 		},
 		{
 			"checksumSHA1": "8I0Ez+aUYGpsDEVZ8wN/Ztf6Zqs=",
