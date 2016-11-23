@@ -32,7 +32,7 @@ for region in REGIONS:
             is_nightly = False
             delete = False
             has_files = False
-            if bucket.get_location() == region:
+            if (bucket.get_location() == region) or (bucket.get_location() == ''):
                 print("  {}".format(bucket.name))
                 tags = bucket.get_tags()[0]
                 for tag in tags:
