@@ -653,7 +653,7 @@
                                 "  -e DOCKER_USER='",{ "Ref": "DockerCloudUsername" },"' ",
                                 "  -e DOCKER_PASS='",{ "Ref": "DockerCloudAPIKey" },"' ",
                                 "  -e SWARM_NAME='",{ "Ref": "DockerCloudClusterName" },"' ",
-                                "  -e INTERNAL_ENDPOINT='",{"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] },":2376' ",
+                                "  -e INTERNAL_ENDPOINT='",{"Fn::GetAtt" : [ "SSHLoadBalancer", "DNSName"] },"' ",
                                 "  docker4x/cloud-aws:$DOCKER_FOR_IAAS_VERSION\n",
                                 "fi\n"
                             ]
