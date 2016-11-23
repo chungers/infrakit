@@ -1,6 +1,5 @@
 #!/bin/bash
 # This script will prevent autoscaling from terminating until we leave the swarm
-set -e
 MYIP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 MYNODE=$(wget -qO- http://169.254.169.254/latest/meta-data/instance-id)
 
@@ -226,9 +225,28 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
         echo "EXISTING_REPLICA_ID=$EXISTING_REPLICA_ID"
         echo "Remove DTR node."
-        docker run --rm "$DTR_IMAGE" remove --ucp-url https://$UCP_ELB_HOSTNAME --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID --replica-id $LOCAL_DTR_ID
-        LEAVE_RESULT=$?
-        echo "   LEAVE_RESULT=$LEAVE_RESULT"
+        # set LEAVE_RESULT to 1, so we guarentee it goes into until loop at least once.
+        LEAVE_RESULT=1
+        try=1
+        # try to remove node, keep trying until we have a good removal status result of 0
+        until [ $LEAVE_RESULT -eq 0 ];
+        do
+            echo " [$try] removing DTR node..."
+            docker run --rm "$DTR_IMAGE" remove --ucp-url https://$UCP_ELB_HOSTNAME --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID --replica-id $LOCAL_DTR_ID
+            LEAVE_RESULT=$?
+            echo " [$try]  LEAVE_RESULT=$LEAVE_RESULT"
+            if [ $LEAVE_RESULT -ne 0 ]; then
+                if [[ $try -eq 20 ]] ; then
+                    echo "Tried to remove node $try times. We are over limit, aborting..."
+                    exit 1
+                fi
+                echo "We failed for a reason, lets retry again after a brief delay."
+                sleep 30
+                let try+=1
+            else
+                echo "Node removal complete"
+            fi
+        done
 
         echo "Final cleanup check.."
         REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
