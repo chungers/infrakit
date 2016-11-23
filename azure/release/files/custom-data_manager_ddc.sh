@@ -19,7 +19,7 @@ export DDC_USER="variables('ddcUser')"
 export DDC_PASS="variables('ddcPass')"
 
 # create daemon config with custom tag
-echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}/{{.ID}}\" }}" > /etc/docker/daemon.json
+echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}-{{.ID}}\" }}" > /etc/docker/daemon.json
 service docker restart
 sleep 5
 
