@@ -12,16 +12,30 @@ weight="300"
 <![end-metadata]-->
 
 # Docker for AWS Upgrades
-There is currently limited support for upgrades, we will be improving this in future releases. The way upgrades work is as follows. We will release a new CloudFormation template, and you will update your CloudFormation stack with the new CloudFormation template. CloudFormation will look at your current stack, and see what is different, and let you know what it is about to do. If you confirm the changes it will start to update your stack.
 
-If there is a change to the AMI, then one by one the old nodes will be shut down, and replaced by newer nodes. How long this takes will depend on how many nodes you have. We do a slow rolling update, so the more nodes, the longer it will take. Eventually when complete, all of the older nodes will be gone, and replaced with a completely new set of nodes.
+Docker for AWS has support upgrading from one beta version to the next. Upgrades are done by applying a new version of the AWS Cloudformation template that powers Docker for Azure. Depending on changes in the next version, an upgrade involves:
 
-Since we are doing a slow rolling upgrade, the services that are running on a node that is getting shut down, will be rescheduled by swarm, and put on to a new healthy node. If your service is properly scaled it should not notice any downtime.
+ * Changing the AMI backing manager and worker nodes (the Docker engine ships in the AMI)
+ * Upgrading service containers
+ * Changing the resource setup in the VPC that hosts Docker for AWS
 
-Since this feature is still very new, there is a chance things could go wrong, so we don't recommend using Docker for AWS for production critical workloads at this time.
+To be notified of updates, submit your email address at [https://beta.docker.com/](https://beta.docker.com/).
 
+## Prerequisites
 
-## Upgrading Docker and changing instance sizes
-In the AWS Console, find your CloudFormation stack and select "Update stack". Use the CloudFormation template link. This will let you change the input parameters for the template. AWS will summarize the proposed changes, whether that's changing the AMIs to upgrade Docker or to change instance sizes.
+ * We recommend only attempting upgrades of swarms with at least 3 managers. A 1-manager swarm may not be able to maintain quorum during the upgrade
+ * Upgrades are only supported from one version to the next version, for example beta-11 to beta-12. Skipping a version during an upgrade is not supported. For example, upgrading from beta-10 to beta-12 is not supported. Downgrades are not tested.
+ 
+## Upgrading
 
-Docker will ensure that upgrade and instance size changes are handled with minimal impact to running apps.
+If you submit your email address at [https://beta.docker.com/](beta.docker.com) Docker will notify you of new releases by email. New releases are also posted on the [Release Notes](https://beta.docker.com/docs/aws/release-notes/) page.
+
+To initiate an update, use either the AWS Console of the AWS cli to initiate a stack update. Use the S3 template URL for the new release and complete the update wizard. This will initiate a rolling upgrade of the Docker swarm, and service state will be maintained during and after the upgrade. Appropriately scaled services should not experience downtime during an upgrade.
+
+![Upgrade in AWS console](/img/aws/cloudformation_update.png)
+
+Note that single containers started (for example) with `docker run -d` are **not** preserved during an upgrade. This is because the're not Docker Swarm objects, but are known only to the individual Docker engines.
+
+## Changing instance sizes and other template parameters
+
+In addition to upgrading Docker for AWS from one version to the next you can also use the AWS Update Stack feature to change template parameters such as worker count and instance type. Changing manager count is **not** supported.
