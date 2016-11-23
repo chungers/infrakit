@@ -42,8 +42,8 @@
         "ManagerSize" : {
             "Type" : "Number",
             "Default" : "3",
-            "AllowedValues" : ["1", "3", "5"],
-            "Description" : "Number of Swarm manager nodes (1, 3, 5)"
+            "AllowedValues" : ["3", "5"],
+            "Description" : "Number of Swarm manager nodes (3, 5)"
         },
         "DDCUsernameSet" : {
             "Type" : "String",
