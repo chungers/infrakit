@@ -37,7 +37,7 @@ build-in-container: govendor
 container:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
 	-docker rm elb-controller-build
-	cd ../../../../../ && docker build -t elb-controller:build -f ${CURDIR}/Dockerfile.build .
+	cd ../../../../../ && docker build --no-cache --pull -t elb-controller:build -f ${CURDIR}/Dockerfile.build .
 	docker run \
 		-e EDITIONS_VERSION=$(EDITIONS_VERSION) \
 		-e VERSION=$(VERSION) \
@@ -48,7 +48,7 @@ container:
 		--name elb-controller-build elb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker cp elb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
-	docker build -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
+	docker build --no-cache --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
 ifeq (${DOCKER_PUSH},true)
 	docker push ${DOCKER_IMAGE}
 ifeq (${DOCKER_TAG_LATEST},true)
