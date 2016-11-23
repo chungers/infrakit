@@ -13,13 +13,8 @@ weight="100"
 
 # Docker for AWS Setup
 
-## Getting access to the beta
-
-Docker for AWS is currently in private beta. [Sign up](https://beta.docker.com) to get access. When you get into the beta, you will receive an email with an install link and setup details.
-
 ## Prerequisites
 
-- Welcome email
 - Access to an AWS account with permissions to use CloudFormation and creating the following objects
     - EC2 instances + Auto Scaling groups
     - IAM profiles
@@ -36,12 +31,59 @@ For more information about adding an SSH key pair to your account, please refer 
 
 ## Configuration
 
-Once you're in the beta, Docker will share with you a set of AMIs. You will also get a link to a CloudFormation template that orchestrates deploying a swarm using the AMIs.
+Docker for AWS has a CloudFormation template that orchestrates deploying a swarm using our custom AMIs. There are two ways you can deploy Docker for AWS. You can use the AWS Management Console (browser based), or use the AWS CLI. Both have the following configuration options.
 
-The simplest way to use the template is with the AWS web console. The welcome email will include a link.
+### Configuration options
 
+#### KeyName
+Pick the SSH key that will be used when you SSH into the manager nodes.
+
+#### InstanceType
+The EC2 instance type for your worker nodes
+
+#### ManagerInstanceType
+The EC2 instance type for your manager nodes. The larger your swarm, the larger the instance size you should use.
+
+#### ClusterSize
+The number of workers you want in your swarm? (1-1000)
+
+#### ManagerSize
+The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantee's with 1 manager, if it fails the swarm will go down as well.
+
+We recommend at least 3 managers, and if you have a lot of workers, you should pick 5 managers.
+
+#### EnableSystemPrune
+Enable if you want Docker for AWS to automatically cleanup unused space on your swarm nodes
+
+Every day at 1:42AM UTC, it will run `docker system prune` on each of your nodes (workers, and managers). Each run is staggered slightly so that they are not run on all nodes at the same time. This limits any resource spikes on the swarm that resource cleanup might cause.
+
+This will remove the following:
+- All stopped containers
+- All volumes not used by at least one container
+- All dangling images
+- All unused networks
+
+#### WorkerDiskSize
+Size of Workers's ephemeral storage volume in GiB (20 - 1024)
+
+#### WorkerDiskType
+Worker ephemeral storage volume type ("standard", "gp2")
+
+#### ManagerDiskSize
+Size of Manager's ephemeral storage volume in GiB (20 - 1024)
+
+#### ManagerDiskType
+Manager ephemeral storage volume type ("standard", "gp2")
+
+### Installing with the AWS Management Console
+The simplest way to use the template is with the CloudFormation section of the AWS Management Console.
+
+Go to the [Release notes](../deploy.md) page, and click on the "launch stack" button, to start the deployment process.
+
+### Installing with the CLI
 You can also invoke the template from the AWS CLI:
 
+Here is an example of how to use the CLI, make sure you populate all of the parameters and their values.
 ```
 $ aws cloudformation create-stack --stack-name teststack --template-url <templateurl> --parameters ParameterKey=KeyName,ParameterValue=<keyname> ParameterKey=InstanceType,ParameterValue=t2.micro ParameterKey=ManagerInstanceType,ParameterValue=t2.micro ParameterKey=ClusterSize,ParameterValue=1 --capabilities CAPABILITY_IAM
 ```
