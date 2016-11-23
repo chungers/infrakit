@@ -260,6 +260,13 @@ if [ "$NODE_TYPE" == "manager" ] ; then
     buoy -event="node:demote" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
     sleep 30
 
+    if [[ "$HAS_DDC" == "yes" ]] ; then
+        # since we have DDC installed, lets wait for ucp-reconcile
+        echo "Wait for UCP-reconcile to finish"
+        docker wait ucp-reconcile
+        echo "UCP-reconcile is finished"
+    fi
+
 fi
 
 

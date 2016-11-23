@@ -287,12 +287,14 @@ else
         # once available.
         # get record, and then join, add replica ID to dynamodb
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
-        docker run --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-ca --existing-replica-id $EXISTING_REPLICA_ID
+        docker run --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
 
         JOIN_RESULT=$?
         echo "   JOIN_RESULT=$JOIN_RESULT"
         if [ $JOIN_RESULT -ne 0 ]; then
-            echo "We failed for a reason, lets retry again from the top."
+            echo "We failed for a reason, lets retry again from the top after a brief delay."
+            # sleep for a bit first so we give some time for it to recover from the error.
+            sleep 30
             exit $JOIN_RESULT
         fi
 
