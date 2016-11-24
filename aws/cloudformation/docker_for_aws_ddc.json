@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS Beta 10 (docker 1.12.3-cs4) DDC",
+    "Description": "Docker for AWS Beta 12 (docker 1.12.3-cs4) DDC",
 
     "Parameters": {
         "KeyName": {
@@ -98,7 +98,7 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.12.3-cs4",
-                "forAws": "ken3"
+                "forAws": "aws-v1.12.3-cs4-beta12-ddc"
             }
         },
 
