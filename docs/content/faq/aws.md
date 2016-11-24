@@ -13,19 +13,11 @@ weight="130"
 
 # Docker for AWS FAQ
 
-## Why do you need my Amazon Account Number?
-We are using a private Custom AMI, and in order to give you access to this AMI, we need your Amazon account number.
-
-## How do I find my Amazon Account Number?
-You can find this information your Amazon Support Center. For more info, look at the directions on [this page](../index.md).
-
-## I use more than one Amazon account, how do I get access to all of them.
-Use the beta sign up form, and put the account number that you need to use most there. Then email us <docker-for-iaas@docker.com> with your information and your other Amazon account numbers, and we will do our best to add those accounts as well. But due to the large amount of requests, it might take a while before those accounts to get added, so be sure to include the important one in the sign up form, so at least you will have that one.
-
 ## Can I use my own AMI?
-No, at this time we only support our AMI.
 
-## How to use Docker for AWS with an AWS account with an EC2-Classic region.
+No, at this time we only support the default Docker for AWS AMI.
+
+## How to use Docker for AWS with an AWS account in an EC2-Classic region.
 
 If you have an AWS account that was created before **December 4th, 2013** you have what is known as an **EC2-Classic** account on regions where you have previously deployed resources. **EC2-Classic** accounts don't have default VPC's or the associated subnets, etc. This causes a problem when using our CloudFormation template  because we are using the [Fn:GetAZs](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getavailabilityzones.html) function they provide to determine which availability zones you have access too. When used in a region where you have **EC2-Classic**, this function will return all availability zones for a region, even ones you don't have access too. When you have an **EC2-VPC** account, it will return only the availability zones you have access to.
 
@@ -57,17 +49,16 @@ There are a few work arounds that you can try to get Docker for AWS up and runni
 
 
 ## Can I use my existing VPC?
-Not at this time, but it is on our roadmap for future releases.
 
-## Can I specify the type of EBS volume I use for my EC2 instances?
 Not at this time, but it is on our roadmap for future releases.
 
 ## Which AWS regions will this work with.
+
 Docker for AWS should work with all regions except for AWS China, which is a little different than the other regions.
 
 ## How many Availability Zones does Docker for AWS use?
-All of Amazons regions have at least 2 AZ's, and some have more. To make sure we work in all regions, we currently only support 2 AZ's even if there are more available.
 
+All of Amazons regions have at least 2 AZ's, and some have more. To make sure Docker for AWS works in all regions, only 2 AZ's are used even if more are available.
 
 ## What do I do if I get "KeyPair error" on AWS?
 As part of the prerequisites, you need to have an SSH key uploaded to the AWS region you are trying to deploy to.

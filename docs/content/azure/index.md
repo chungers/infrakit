@@ -17,6 +17,20 @@ weight="2"
 
 Docker for Azure is currently in private beta. [Sign up](https://beta.docker.com) to get access. When you get into the beta, you will receive an email with an install link and setup details.
 
+### Docker for Azure private beta sign-up details
+
+When you fill out the sign-up form, make sure you fill in all of the fields, especially the Azure Subscriber ID (36 alphanumeric value, i.e. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx). Docker for Azure uses a custom VHD that is currently private, and we need your Azure Subscription ID in order to give your account access to the VHD. If you have more than one Azure Subcription that you use (testing, stage, production, etc), email us <docker-for-iaas@docker.com> after you have filled out the form with the list of additional subscription ID that need access. Make sure you put the primary subscriber ID in the form that you filled out, as it might take time for the other subscription IDd to get added to your profile.
+
+You can find your Azure subscription ID by doing the following.
+
+1. Login to the [Azure Portal](https://portal.azure.com/#blade/Microsoft_Azure_Billing/SubscriptionsBlade).
+2. On the left hand side menu, select [Subscriptions](https://portal.azure.com/#blade/Microsoft_Azure_Billing/SubscriptionsBlade)
+
+    <img src="/img/azure/subscription.png">
+
+3. Select the subscription you will be using for testing.
+3. Copy the subscription identifier from the right-hand column. If you currently do not have an Azure subscription, you can create one on that page.
+
 ## Prerequisites
 
 - Welcome email
