@@ -100,6 +100,12 @@ If you increase the number of instances running in your worker Auto Scaling Grou
 
 Elastic Load Balancers (ELBs) are set up to help with routing traffic to your swarm.
 
+## Logging
+
+Docker for AWS automatically configures logging to Cloudwatch for containers you run on Docker for AWS. A Log Group is created for each Docker for AWS install, and a log stream for each container.
+
+`docker logs` and `docker service logs` are not supported on Docker for AWS. Instead, you should check container in CloudWatch.
+
 ## System containers
 
 Each node will have a few system containers running on them to help run your swarm cluster. In order for everything to run smoothly, please keep those containers running, and don't make any changes. If you make any changes, Docker for AWS will not work correctly.
