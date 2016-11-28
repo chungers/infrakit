@@ -50,7 +50,7 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
     if cfn_type:
         latest_name = "{}-latest.json".format(cfn_type)
 
-    s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
+    s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
 
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -62,14 +62,14 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
     key.set_contents_from_filename(tempfile)
     key.set_acl("public-read")
 
-    if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
-        print("This is a nightly build, update the latest.json file.")
-        print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
-            s3_path_latest, S3_BUCKET_NAME))
-        key = bucket.new_key(s3_path_latest)
-        key.set_metadata("Content-Type", "application/json")
-        key.set_contents_from_filename(tempfile)
-        key.set_acl("public-read")
+    # Create latest.json endpoint for all releases
+    print("Update the latest.json file.")
+    print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
+        s3_path_latest, S3_BUCKET_NAME))
+    key = bucket.new_key(s3_path_latest)
+    key.set_metadata("Content-Type", "application/json")
+    key.set_contents_from_filename(tempfile)
+    key.set_acl("public-read")
 
     return s3_full_url
 
