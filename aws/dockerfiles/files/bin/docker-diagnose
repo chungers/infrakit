@@ -12,9 +12,9 @@ platform()
 	# (and/or might be more elegant to pass in the platform via environment
 	# variables, etc.)
 	PLATFORM=$(docker images | grep aws)
-	if [ $? -eq 0 ]
+	if [ $? -eq 0 ]; then
 		echo "aws"
-	then
+	else
 		echo "azure"
 	fi
 }
