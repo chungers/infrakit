@@ -36,6 +36,7 @@ RUN cp bin/* /usr/sbin/
 # Should be implemented more elegantly.
 RUN mkdir /daemons && \
     rm /entry.sh && \
+    mv /etc/ssl/openssl.cnf /opt/openssl.cnf && \
     mv /etc/ssh/sshd_config /opt/sshd_config && \
     mv /etc/motd /opt/motd
 
