@@ -179,7 +179,7 @@
     "imagePublisher": "docker",
     "imageOffer": "docker4azure",
     "imageSku": "docker4azure",
-    "imageVersion": "latest",
+    "imageVersion": "1.12.11",
     "imageReference": {
       "publisher": "[variables('imagePublisher')]",
       "offer": "[variables('imageOffer')]",

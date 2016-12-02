@@ -108,7 +108,7 @@ func (a AzureWeb) Workers() []WebInstance {
 		"AZURE_GROUP_NAME":      os.Getenv("GROUP_NAME"),
 		"AZURE_VMSS_MGR":        os.Getenv("VMSS_MGR"),
 		"AZURE_VMSS_WRK":        os.Getenv("VMSS_WRK")}
-  nicClient, vmssClient := initClients(env)
+	nicClient, vmssClient := initClients(env)
 	// Get list of VMSS Network Interfaces for Managers
 	workerIPTable, err := getVMSSNic(nicClient, env, env["AZURE_VMSS_WRK"])
 	if err != nil {
