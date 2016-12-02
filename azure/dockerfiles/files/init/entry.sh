@@ -1,15 +1,20 @@
 #!/bin/bash
 echo "#================"
 echo "Start Swarm setup"
-
 echo "PATH=$PATH"
 echo "ROLE=$ROLE"
-echo "MANAGER_IP=$MANAGER_IP"
 echo "PRIVATE_IP=$PRIVATE_IP"
 echo "DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION"
 echo "ACCOUNT_ID=$ACCOUNT_ID"
 echo "REGION=$REGION"
+echo "AZURE_HOSTNAME=$HOSTNAME"
 echo "#================"
+
+# these need to be kept in sync with the template file
+# we cannot reference variables to pass these in through customData
+# since changes in customData will block upgrades!
+export VMSS_MGR="swarm-manager-vmss"
+export VMSS_WRK="swarm-worker-vmss"
 
 get_swarm_id()
 {
@@ -193,8 +198,90 @@ setup_worker()
     buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=azure -node_id=$NODE_ID
 }
 
+
+run_system_containers()
+{
+    # add logging container
+    docker volume create --name container-logs
+
+    echo "kick off logger container"
+    docker run \
+        --log-driver=json-file \
+        --name=editions_logger \
+        --restart=always \
+        -d \
+        -e ROLE \
+        -e REGION \
+        -e TENANT_ID \
+        -e APP_ID \
+        -e APP_SECRET \
+        -e ACCOUNT_ID \
+        -e GROUP_NAME \
+        -e SWARM_LOGS_STORAGE_ACCOUNT \
+        -e SWARM_FILE_SHARE="$AZURE_HOSTNAME" \
+        -p 514:514/udp \
+        -v container-logs:/log/ \
+        docker4x/logger-azure:$DOCKER_FOR_IAAS_VERSION
+
+    if [ "$ROLE" = "MANAGER" ]; then
+        echo "kick off meta container"
+        docker run \
+            --log-driver=json-file \
+            --name=meta-azure \
+            --restart=always \
+            -d \
+            -p $PRIVATE_IP:9024:8080 \
+            -e APP_ID \
+            -e APP_SECRET \
+            -e ACCOUNT_ID \
+            -e TENANT_ID \
+            -e GROUP_NAME \
+            -e VMSS_MGR="$VMSS_MGR" \
+            -e VMSS_WRK="$VMSS_WRK" \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=azure
+
+        echo "kick off guide container"
+        docker run \
+            --log-driver=json-file \
+            --restart=always  \
+            --name=editions_guide \
+            -d \
+            -e ROLE \
+            -e REGION \
+            -e ACCOUNT_ID \
+            -e PRIVATE_IP \
+            -e DOCKER_FOR_IAAS_VERSION \
+            -e SWARM_LOGS_STORAGE_ACCOUNT \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v /usr/bin/docker:/usr/bin/docker \
+            docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION
+
+        echo "kick off l4controller container"
+        echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config
+        echo "$LB_NAME" > /var/lib/docker/swarm/lb_name
+        docker run \
+            -d \
+            --log-driver=json-file  \
+            --name=editions_controller \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v /var/lib/docker/swarm:/var/lib/docker/swarm \
+            --ad_app_id="$APP_ID" \
+            --ad_app_secret="$APP_SECRET" \
+            --subscription_id="$SUB_ID" \
+            --resource_group="$GROUP_NAME" \
+            --log=4 \
+            --default_lb_name="$LB_NAME" \
+            --environment=AzurePublicCloud \
+            docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION"
+    fi
+}
+
 # init variables based on azure token table contents (if populated)
 get_tokens
+
+# invoke system containers
+run_system_containers
 
 # if it is a manager, setup as manager, if not, setup as worker node.
 if [ "$ROLE" == "MANAGER" ] ; then

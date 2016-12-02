@@ -10,6 +10,7 @@ from azure.storage.table import TableService, Entity
 
 PARTITION_NAME = 'tokens'
 ROW_ID = '1'
+TBL_NAME = 'swarminfo'
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
@@ -17,7 +18,6 @@ APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
-TBL_NAME = os.environ['SWARM_INFO_TABLE']
 
 def get_storage_key():
     global SUB_ID, TENANT_ID, APP_ID, APP_SECRET, RG_NAME, SA_NAME

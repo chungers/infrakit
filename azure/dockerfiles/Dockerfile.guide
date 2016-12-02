@@ -15,12 +15,12 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 # setup cron
 RUN mkdir -p /usr/docker /var/log/docker/
 ADD files/guide/crontab.txt /usr/docker/crontab.txt
-ADD files/init/azuretokens.py /usr/bin/azuretokens.py
+ADD files/init/azureleader.py /usr/bin/azureleader.py
 ADD files/guide/buoy.sh /usr/bin
 ADD files/guide/refresh.sh /usr/bin
 ADD files/bin/buoy /usr/bin
 COPY files/guide/entry.sh /entry.sh
-RUN chmod 755 /entry.sh  /usr/bin/azuretokens.py \
+RUN chmod 755 /entry.sh  /usr/bin/azureleader.py \
     /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/refresh.sh
 RUN /usr/bin/crontab /usr/docker/crontab.txt
 

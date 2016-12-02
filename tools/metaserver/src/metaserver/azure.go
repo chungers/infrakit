@@ -76,7 +76,7 @@ func (a AzureWeb) Managers() []WebInstance {
 	env := map[string]string{
 		"AZURE_CLIENT_ID":       os.Getenv("APP_ID"),
 		"AZURE_CLIENT_SECRET":   os.Getenv("APP_SECRET"),
-		"AZURE_SUBSCRIPTION_ID": os.Getenv("SUBSCRIPTION_ID"),
+		"AZURE_SUBSCRIPTION_ID": os.Getenv("ACCOUNT_ID"),
 		"AZURE_TENANT_ID":       os.Getenv("TENANT_ID"),
 		"AZURE_GROUP_NAME":      os.Getenv("GROUP_NAME"),
 		"AZURE_VMSS_MGR":        os.Getenv("VMSS_MGR"),
@@ -103,12 +103,12 @@ func (a AzureWeb) Workers() []WebInstance {
 	env := map[string]string{
 		"AZURE_CLIENT_ID":       os.Getenv("APP_ID"),
 		"AZURE_CLIENT_SECRET":   os.Getenv("APP_SECRET"),
-		"AZURE_SUBSCRIPTION_ID": os.Getenv("SUBSCRIPTION_ID"),
+		"AZURE_SUBSCRIPTION_ID": os.Getenv("ACCOUNT_ID"),
 		"AZURE_TENANT_ID":       os.Getenv("TENANT_ID"),
 		"AZURE_GROUP_NAME":      os.Getenv("GROUP_NAME"),
 		"AZURE_VMSS_MGR":        os.Getenv("VMSS_MGR"),
 		"AZURE_VMSS_WRK":        os.Getenv("VMSS_WRK")}
-	nicClient, vmssClient := initClients(env)
+  nicClient, vmssClient := initClients(env)
 	// Get list of VMSS Network Interfaces for Managers
 	workerIPTable, err := getVMSSNic(nicClient, env, env["AZURE_VMSS_WRK"])
 	if err != nil {

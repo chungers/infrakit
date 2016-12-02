@@ -1,4 +1,4 @@
-TAG := latest
+TAG := azure-v1.13.0-rc2-beta12
 
 default: build
 
