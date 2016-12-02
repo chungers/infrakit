@@ -15,8 +15,8 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 # setup init
 RUN mkdir -p /usr/bin/ /var/log/docker/
 COPY files/init/entry.sh /entry.sh
-COPY files/init/azuretokens.py /azuretokens.py
+COPY files/init/azureleader.py /azureleader.py
 ADD files/bin/buoy /usr/bin
-RUN chmod 755 /entry.sh /azuretokens.py /usr/bin/buoy
+RUN chmod 755 /entry.sh /azureleader.py /usr/bin/buoy
 
 CMD ["/entry.sh"]
