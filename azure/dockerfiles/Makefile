@@ -1,5 +1,8 @@
-default: alb-controller
+default: alb-controller walinuxagent
 	VERSION="azure-v$(EDITIONS_VERSION)" ./build_and_push_all.sh
+
+walinuxagent:
+	make -C walinuxagent push TAG="azure-v$(EDITIONS_VERSION)"
 
 alb-controller:
 	cd files/alb-controller/container && \
