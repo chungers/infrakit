@@ -105,7 +105,7 @@ func validate(flavor string) {
 		}
 	} else if flavor == "azure" {
 		// make sure our required ENV variables are available, if not fail.
-		if !checkEnvVars("APP_ID", "APP_SECRET", "SUBSCRIPTION_ID", "TENANT_ID", "GROUP_NAME", "VMSS_MGR", "VMSS_WRK") {
+		if !checkEnvVars("APP_ID", "APP_SECRET", "ACCOUNT_ID", "TENANT_ID", "GROUP_NAME", "VMSS_MGR", "VMSS_WRK") {
 			os.Exit(1)
 		}
 	} else {

@@ -1,4 +1,4 @@
-TAG := latest
+TAG := dev
 
 default: build
 

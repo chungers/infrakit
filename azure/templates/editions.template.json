@@ -174,9 +174,8 @@
     }
   },
   "variables": {
-    "Description": "Docker for Azure 1.12.2 (v1.12.2-beta9)",
+    "Description": "Docker for Azure 1.13.0-rc2-beta12",
     "storageLocation": "[resourceGroup().location]",
-    "dockerForIAASVersion": "azure-v1.12.1-beta5",
     "imagePublisher": "docker",
     "imageOffer": "docker4azure",
     "imageSku": "docker4azure",
@@ -198,9 +197,9 @@
     "workerVMSize": "[parameters('workerVMSize')]",
     "basePrefix": "[parameters('swarmName')]",
     "managerVMSize": "[parameters('managerVMSize')]",
-    "workerVMNamePrefix": "[concat(variables('basePrefix'), '-worker-')]",
+    "workerVMNamePrefix": "swarm-worker",
     "managerEndpointDNSNamePrefix": "manager",
-    "vmssName": "[concat(variables('workerVMNamePrefix'), 'vmss')]",
+    "vmssName": "swarm-worker-vmss",
     "lbSSHName": "externalSSHLoadBalancer",
     "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
     "lbSSHBackendAddressPoolID": "[concat(variables('lbSSHID'),'/backendAddressPools/default')]",
@@ -224,8 +223,8 @@
     "subnetPrefix": "10.0.0.0/8",
     "managerNSGName": "[concat(variables('basePrefix'), '-manager-nsg')]",
     "managerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('managerNSGName'))]",
-    "managerVMNamePrefix": "[concat(variables('basePrefix'), '-manager')]",
-    "vmssManagersName": "[concat(variables('managerVMNamePrefix'), 'vmss')]",
+    "managerVMNamePrefix": "swarm-manager",
+    "vmssManagersName": "swarm-manager-vmss",
     "managerFirstAddr": 5,
     "storageAccountSuffix": "docker",
     "vhdContainerName": "dockervhd",
@@ -239,8 +238,7 @@
     "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]",
     "swarmInfoTable": "swarminfo",
     "swarmLogsStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'logs')]",
-    "customDataManager": "",
-    "customDataWorker": ""
+    "customData": ""
   },
   "resources": [
     {
@@ -445,7 +443,7 @@
           "osProfile": {
             "adminUsername": "[variables('adminUsername')]",
             "computerNamePrefix": "[variables('managerVMNamePrefix')]",
-            "customData": "[base64(concat('#!/bin/bash', '\n',  'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataManager')))]",
+            "customData": "[base64(concat('#!/bin/bash', '\n',  'export ROLE=\"MANAGER\"', '\n', 'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customData')))]",
             "linuxConfiguration": {
               "disablePasswordAuthentication": true,
               "ssh": {
@@ -494,9 +492,9 @@
         "capacity": "[variables('workerCount')]"
       },
       "plan": {
-        "publisher": "[variables('imagePublisher')]",
         "name": "[variables('imageSku')]",
-        "product": "[variables('imageOffer')]"
+        "product": "[variables('imageOffer')]",
+        "publisher": "[variables('imagePublisher')]"
       },
       "properties": {
         "overprovision": false,
@@ -522,7 +520,7 @@
           "osProfile": {
             "computerNamePrefix": "[variables('workerVMNamePrefix')]",
             "adminUsername": "[variables('adminUsername')]",
-            "customData": "[base64(concat('#!/bin/bash', '\n', 'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customDataWorker')))]",
+            "customData": "[base64(concat('#!/bin/bash', '\n', 'export ROLE=\"WORKER\"', '\n', 'export LB_IP=\"', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress, '\"', '\n', variables('customData')))]",
             "linuxConfiguration": {
               "disablePasswordAuthentication": true,
               "ssh": {

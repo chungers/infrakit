@@ -86,15 +86,10 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
-    data['variables']['dockerForIAASVersion'] = docker_for_azure_version
 
-    # Updated Manager custom data
-    manager_data = buildCustomData('custom-data_manager.sh')
-    data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
-    # Updated Worker custom data
-    worker_data = buildCustomData('custom-data_worker.sh')
-    data['variables']['customDataWorker'] = '[concat(' + ', '.join(worker_data) + ')]'
-
+    # Updated custom data for Managers and Workers
+    custom_data = buildCustomData('custom-data.sh')
+    data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ')]'
 
     outdir = u"dist/azure/{}".format(release_channel)
     # if the directory doesn't exist, create it.
