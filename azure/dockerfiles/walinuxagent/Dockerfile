@@ -1,4 +1,4 @@
-FROM docker4x/shell
+FROM docker4x/shell@sha256:6d131f24f752806f8baa416c2d2463017cd2c1b1aeeb74db9c95db04e2199c60
 
 RUN apk add --no-cache --update \
         sfdisk \
