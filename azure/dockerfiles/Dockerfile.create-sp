@@ -2,8 +2,8 @@ FROM alpine:edge
 
 MAINTAINER David Chung <david.chung@docker.com>
 
-RUN apk add --no-cache --update --virtual builddeps g++ python make && \
-    apk add --no-cache --update nodejs jq bash && \
+RUN apk add --no-cache --update --virtual builddeps ca-certificates g++ make python && \
+    apk add --no-cache nodejs jq bash && \
     npm install -g azure-cli && \
     apk del builddeps
 RUN azure telemetry --disable
