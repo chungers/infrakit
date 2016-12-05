@@ -27,10 +27,11 @@ getval() {
         -H "Authorization: Bearer ${AUTH}" | jq -r ".text // empty"
 }
 
-echo "Let's install Docker!"
-echo "First, here's a few questions:"
 echo
-echo "How many managers? (3,5 or 7. Default is 3)"
+echo "Let's install Docker!"
+echo "First, let's answer a few questions:"
+echo
+echo -n "How many managers? (3, 5 or 7. Default is 3) "
 read managerCount </dev/tty
 case ${managerCount} in
   "")     managerCount=3;;
@@ -39,7 +40,7 @@ case ${managerCount} in
 esac
 
 echo
-echo "How many workers? (Default is 1)"
+echo -n "How many workers? (Default is 1) "
 read workerCount </dev/tty
 case ${workerCount} in
   0)      echo "There must be at least one worker"; exit 1;;
@@ -49,7 +50,7 @@ case ${workerCount} in
 esac
 
 echo
-echo "Let's install Docker!"
+echo "If you don't want to curl this script, you can run the following command directly:"
 echome gcloud deployment-manager deployments create docker \
   --config https://storage.googleapis.com/docker-template/swarm.py \
   --properties managerCount=${managerCount},workerCount=${workerCount}
