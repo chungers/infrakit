@@ -63,6 +63,9 @@ Pruning removes the following:
 - All dangling images
 - All unused networks
 
+#### EnableCloudWatchLogs
+Enable if you want Docker to send your container logs to CloudWatch. ("yes", "no") Defaults to yes.
+
 #### WorkerDiskSize
 Size of Workers's ephemeral storage volume in GiB (20 - 1024).
 

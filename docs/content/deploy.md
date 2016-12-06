@@ -63,6 +63,67 @@ You can also tunnel the Docker socket over SSH to remotely run commands on the c
 
 If you don't want to pass `-H` when using the tunnel, you can set the `DOCKER_HOST` environment variable to point to the localhost tunnel opening.
 
+#### Connecting to worker nodes via SSH
+
+As of Beta 13, the worker nodes also have SSH enabled. By default SSH access is not allowed to the worker nodes from the public internet. To access the worker nodes, you will need to first connect to a manager node (see above). On the manager node you can then ssh to the worker node, over the private network. Make sure you have `ssh agent forwarding` enabled (see below). If you run the `docker node ls` command you can see the full list of nodes in your swarm. You can then `ssh docker@<worker-host>` to have access to that node.
+
+```
+$ docker node ls
+ID                           HOSTNAME                                     STATUS  AVAILABILITY  MANAGER STATUS
+a3d4vdn9b277p7bszd0lz8grp *  ip-172-31-31-40.us-east-2.compute.internal   Ready   Active        Reachable
+axv7lb0quc6lhwl41iixbnbev    ip-172-31-22-131.us-east-2.compute.internal  Ready   Active
+kpjqylqkm3c5sr2lfwn0ov063    ip-172-31-8-210.us-east-2.compute.internal   Ready   Active        Reachable
+rb52lqiku01b1o10grx6qiu9x    ip-172-31-8-211.us-east-2.compute.internal   Ready   Active        Leader
+xxnoctzqji2k3l5rz7zkvdevp    ip-172-31-13-108.us-east-2.compute.internal  Ready   Active
+```
+
+Connecting to a worker node from the list above.
+
+```
+$ ssh docker@ip-172-31-22-131.us-east-2.compute.internal
+```
+
+##### SSH agent forwarding
+
+SSH agent forwarding allows you to forward along your ssh keys when connecting from one node to another. This eliminates the need for installing your private key on all nodes you might want to connect from.
+
+If your haven't added your ssh key to the `ssh-agent` you will also need to do this first.
+
+See the keys in the agent already.
+
+```
+$ ssh-add -L
+```
+
+If you don't see your key, add it like this.
+
+```
+$ ssh-add ~/.ssh/your_key
+```
+
+On Mac OS X, the `ssh-agent` will forget this key, once it gets restarted. But you can import your SSH key into your Keychain like this. This will have your key survive restarts.
+
+```
+$ ssh-add -K ~/.ssh/your_key
+```
+
+If you don't have agent forwarding turned on by default, you won't be able to SSH into the worker, and you will need to enable it when connecting to the manager. You can enable using the `-A` flag for the ssh command.
+
+Connecting to the Manager.
+```
+$ ssh -A docker@<manager ip>
+```
+
+To always have it turned on, you can edit your ssh config file (`/etc/ssh_config`, `~/.ssh/config`, etc) and make sure it says `ForwardAgent yes`
+
+For example, on Mac OS X the file is `/etc/ssh_config` and you need the following.
+
+```
+Host *
+  ForwardAgent yes
+```
+
+
 ## Running apps
 
 You can now start creating containers and services.
