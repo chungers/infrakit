@@ -12,7 +12,9 @@ COPY files/etc/ /etc/
 
 COPY files/shell/entry.sh /entry.sh
 COPY files/bin/docker-diagnose /usr/bin/docker-diagnose
+COPY files/bin/swarm-exec /usr/bin/swarm-exec
 RUN chmod 755 /entry.sh
+RUN chmod 755 /usr/bin/swarm-exec
 
 EXPOSE 22
 
