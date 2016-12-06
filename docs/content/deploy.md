@@ -75,6 +75,18 @@ You can run websites too. Ports exposed with `-p` are automatically exposed thro
 
 Once up, find the `DefaultDNSTarget` output in either the AWS or Azure portals to access the site.
 
+### Execute docker commands in all swarm nodes
+
+There are cases (such as installing a volume plugin) wherein a docker command may need to be executed in all the nodes across the cluster. You can use the `swarm-exec` tool to achieve that.
+
+Usage : `swarm-exec {Docker command}`
+
+The following will install a test plugin in all the nodes in the cluster
+
+Example : `swarm-exec docker plugin install --grant-all-permissions mavenugo/test-docker-netplugin`
+
+This tool internally makes use of docker global-mode service that runs a task on each of the nodes in the cluster. This task in turn executes your docker command. The global-mode service also guarantees that when a new node is added to the cluster or during upgrades, a new task is executed on that node and hence the docker command will be automatically executed.
+
 ### Distributed Application Bundles
 
 To deploy complex multi-container apps, you can use [distributed application bundles](https://github.com/docker/docker/blob/master/experimental/docker-stacks-and-bundles.md). You can either run `docker deploy` to deploy a bundle on your machine over an SSH tunnel, or copy the bundle (for example using `scp`) to a manager node, SSH into the manager and then run `docker deploy` (if you have multiple managers, you have to ensure that your session is on one that has the bundle file).
