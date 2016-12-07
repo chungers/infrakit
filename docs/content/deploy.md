@@ -105,8 +105,7 @@ Prepend the domain from `/etc/resolv.conf` to the returned `HOSTNAME` in
 
 ```
 $ docker node ls
-ID                           HOSTNAME             STATUS  AVAILABILITY  MANAGER
-STATUS
+ID                           HOSTNAME             STATUS  AVAILABILITY  MANAGER STATUS
 e5grdng229oazh79252fpbgcc    swarm-worker000000   Ready   Active
 ...
 
