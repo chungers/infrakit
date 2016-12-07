@@ -7,9 +7,7 @@ import sys
 import subprocess
 import pytz
 from time import sleep
-
 from docker import Client
-
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
@@ -51,7 +49,7 @@ def update_deployment_template(template_url, resource_client):
 
     for deployment in deployments:
         state = deployment.properties.provisioning_state
-        print(("Eval Deployment: {} at state {}").format(
+        print(("Inspecting deployment: {} at state {}").format(
                 deployment.name, state))
         if state != "Succeeded":
             continue
@@ -137,7 +135,7 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
         node_ip = node['Status']['Addr']
         print("Node ID: {} IP: {}".format(node['ID'], node_ip))
         if node_ip not in vm_ip_table:
-            print("Error: Node IP {} not found in list of VM IPs {}".format(
+            print("ERROR: Node IP {} not found in list of VM IPs {}".format(
                     node_ip, vm_ip_table))
             return
         vm_id_table[vm_ip_table[node_ip]] = node['ID']
@@ -241,16 +239,19 @@ def main():
 
     qsvc.create_queue(UPGRADE_MSG_QUEUE)
 
+    # Update the resource group template
     print("Updating Resource Group template. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
     print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/overview".format(
             SUB_ID, RG_NAME))
     update_deployment_template(args.template_url, resource_client)
 
+    # Update manager nodes (except the one this script is initiated from)
     print("Starting rolling upgrade of swarm manager nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
     print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
             SUB_ID, RG_NAME, MGR_VMSS_NAME))
     update_vmss(MGR_VMSS_NAME, docker_client, compute_client, network_client, tbl_svc)
 
+    # Update worker nodes
     print("Starting rolling upgrade of swarm worker nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
     print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
             SUB_ID, RG_NAME, WRK_VMSS_NAME))
@@ -259,7 +260,7 @@ def main():
     print("The current VM will be rebooted soon for an upgrade. You can follow the status of the upgrade from the Azure console using the URL below:")
     print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
             SUB_ID, RG_NAME, MGR_VMSS_NAME))
-    # lastly, signal another node to upgrade the current node and update leader if necessary
+    # Signal another node to upgrade the current node and update leader if necessary
     qsvc.put_message(UPGRADE_MSG_QUEUE, docker_client.info()['Swarm']['NodeID'])
 
 if __name__ == "__main__":

@@ -6,9 +6,7 @@ import argparse
 import sys
 import subprocess
 from time import sleep
-
 from docker import Client
-
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
@@ -67,7 +65,7 @@ def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, sto
         node_ip = node['Status']['Addr']
         print("Node ID: {} IP: {}".format(node['ID'], node_ip))
         if node_ip not in vm_ip_table:
-            print("Error: Node IP {} not found in list of VM IPs {}".format(
+            print("ERROR: Node IP {} not found in list of VM IPs {}".format(
                     node_ip, vm_ip_table))
             return
         if node['ID'] == node_id:
@@ -125,7 +123,7 @@ def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, sto
                 # are a bit unstable and keys are missing. So retry.
                 print("Description/Hostname not found. Retrying ..")
                 continue
-    print ("VMSS node:{} successfully connected back to swarm").format(instance_id)
+    print("VMSS node:{} successfully connected back to swarm").format(instance_id)
 
 
 def main():
@@ -150,7 +148,7 @@ def main():
     qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'])
 
     if not qsvc.exists(UPGRADE_MSG_QUEUE):
-        print("Upgrade message queue not present. Exiting ...")
+        # print("Upgrade message queue not present. Exiting ...")
         return
 
     msgs = qsvc.peek_messages(UPGRADE_MSG_QUEUE)
