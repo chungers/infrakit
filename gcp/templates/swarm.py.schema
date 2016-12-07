@@ -4,47 +4,55 @@ info:
 
 imports:
 - path: swarm.py
+- path: leader.py
 - path: config.py
 - path: disk-image.py
-- path: manager.py
-- path: managers.py
-- path: worker.py
-- path: workers.py
 - path: network.py
 - path: firewall.py
 - path: ip.py
 - path: pool.py
 - path: forwarding.py
 
+outputs:
+  externalIp:
+    description: External IP to connect to published services
+    type: string
+  leaderIp:
+    description: IP of the first manager
+    type: string
+  zone:
+    description: Zone
+    type: string
+
 properties:
   managerCount:
     type: string
-    default: 3
+    default: "3"
     description: Number of Managers
 
   workerCount:
     type: string
-    default: 1
+    default: "1"
     description: Number of Workers
 
   region:
     type: string
-    default: europe-west1
+    default: "europe-west1"
     description: Region
 
   zone:
     type: string
-    default: europe-west1-d
+    default: "europe-west1-d"
     description: Zone
 
   managerMachineType:
     type: string
-    default: g1-small
+    default: "g1-small"
     description: Manager machine type
 
   workerMachineType:
     type: string
-    default: g1-small
+    default: "g1-small"
     description: Worker machine type
 
   preemptible:

@@ -2,9 +2,9 @@
 
 ## Installation from Google Cloud Shell
 
-- Open Cloud Shell for a GCP project
-- Run `curl -sSL http://get.docker-gcp.com/ | sh`
-- There's no step 3
+1. Open Cloud Shell for a GCP project
+2. Run `curl -sSL http://get.docker-gcp.com/ | sh`
+3. There's no step 3
 
 ## Installation from the command line
 
@@ -34,13 +34,8 @@ make revoke
  + External load balancer
  + Better UX
  + Use Moby
- + Use Google Log driver
  + Monitoring
  + SSH keys
  + Additional swarm properties
- + Publish the templates
- + See how the Cloud Shell fits in the big picture
  + DTR/DDC
- + Have each worker increment a counter to be able to wait from outside
  + Diagnostics
- + Reuse access tokens in scripts

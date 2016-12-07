@@ -1,15 +1,13 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-"""Creates the Swarm."""
+"""Configure the project to host a Swarm."""
 
 def GenerateConfig(context):
   region = context.properties['region']
   zone = context.properties['zone']
-  managerCount = context.properties['managerCount']
   managerMachineType = context.properties['managerMachineType']
+  managerCount = context.properties['managerCount']
   workerCount = context.properties['workerCount']
-  workerMachineType = context.properties['workerMachineType']
-  preemptible = context.properties['preemptible']
 
   resources = [{
       'name': 'docker',
@@ -21,49 +19,11 @@ def GenerateConfig(context):
           'region': region
       }
   }, {
-      'name': 'manager',
-      'type': 'manager.py',
-      'properties': {
-          'zone': zone,
-          'machineType': managerMachineType,
-          'image': '$(ref.docker.selfLink)',
-          'network': '$(ref.swarm-network.selfLink)',
-          'config': '$(ref.swarm-config.selfLink)'
-      }
-  }, {
-      'name': 'managers',
-      'type': 'managers.py',
-      'properties': {
-          'zone': zone,
-          'template': '$(ref.manager.name)',
-          'size': managerCount,
-          'pool': '$(ref.docker-pool.selfLink)'
-      }
-  }, {
-      'name': 'worker',
-      'type': 'worker.py',
-      'properties': {
-          'zone': zone,
-          'machineType': workerMachineType,
-          'preemptible': preemptible,
-          'image': '$(ref.docker.selfLink)',
-          'network': '$(ref.swarm-network.selfLink)',
-          'config': '$(ref.swarm-config.selfLink)'
-      }
-  }, {
-      'name': 'workers',
-      'type': 'workers.py',
-      'properties': {
-          'zone': zone,
-          'template': '$(ref.worker.name)',
-          'size': workerCount,
-          'pool': '$(ref.docker-pool.selfLink)'
-      }
-  }, {
       'name': 'docker-pool',
       'type': 'pool.py',
       'properties': {
-          'region': region
+          'region': region,
+          'firstInstance': '$(ref.manager-1.selfLink)'
       }
   }, {
       'name': 'forwarding',
@@ -83,6 +43,18 @@ def GenerateConfig(context):
           'network': 'swarm-network'
       }
   }, {
+      'name': 'manager-1',
+      'type': 'leader.py',
+      'properties': {
+          'zone': zone,
+          'machineType': managerMachineType,
+          'image': '$(ref.docker.selfLink)',
+          'network': '$(ref.swarm-network.selfLink)',
+          'config': '$(ref.swarm-config.selfLink)',
+          'managerCount': managerCount,
+          'workerCount': workerCount
+      }
+  }, {
       'name': 'swarm-config',
       'type': 'config.py'
   }]
@@ -90,6 +62,12 @@ def GenerateConfig(context):
   outputs = [{
       'name': 'externalIp',
       'value': '$(ref.docker-ip.address)'
+  },{
+      'name': 'leaderIp',
+      'value': '$(ref.manager-1.networkInterfaces[0].accessConfigs[0].natIP)'
+  },{
+      'name': 'zone',
+      'value': zone
   }]
 
   return {'resources': resources, 'outputs': outputs}
