@@ -14,39 +14,49 @@ weight="3"
 
 ## Connecting to your manager nodes
 
-First, obtain the public IP address for a manager node (any manager node is
-acceptable).
+This section will walk you through connecting to your installation and deploying
+applications.  Instructions are included for both AWS and Azure, so be sure to
+follow the instructions for the cloud provider of your choice in each section.
 
-### Manager Public IP on AWS
+First, you will obtain the public IP address for a manager node. Any manager
+node can be used for administrating the swarm.
+
+##### Manager Public IP on AWS
 
 Once you've deployed Docker on AWS, go to the "Outputs" tab for the stack in
 CloudFormation.
 
 The "Managers" output is a URL you can use to see the available manager nodes of
-the cluster in your AWS console.  Once present on this page, you can see the
+the swarm in your AWS console.  Once present on this page, you can see the
 "Public IP" of each manager node in the table and/or "Description" tab if you
 click on the instance.
 
 ![](/img/aws/managers.png)
 
-### Manager Public IP and SSH ports on Azure
+##### Manager Public IP and SSH ports on Azure
 
-Once you've deployed Docker on Azure, go to the "Outputs" section of the resource
-group deployment. The "SSH Targets" output is a URL to a blade that describes
-the IP address (common across all the manager nodes) and the SSH port (unique for
-each manager node) that you can use to log in to each manager node.
+Once you've deployed Docker on Azure, go to the "Outputs" section of the
+resource group deployment.
+
+![](/img/azure/sshtargets.png)
+
+The "SSH Targets" output is a URL to a blade that describes the IP address
+(common across all the manager nodes) and the SSH port (unique for each manager
+node) that you can use to log in to each manager node.
 
 ![](/img/azure/managers.png)
 
-### Connecting via SSH
+## Connecting via SSH
 
-Obtain the public IP for the manager node and SSH in using your provided key to
-begin administrating your cluster:
+#### Manager nodes
+
+Obtain the public IP and/or port for the manager node as instructed above and
+using the provided SSH key to begin administrating your swarm:
 
     $ ssh -i <path-to-ssh-key> docker@<ssh-host>
     Welcome to Docker!
 
-In case of Azure, you also need to specify the unique port associated with a manager
+In case of Azure, you also need to specify the unique port associated with a manager.
 
     $ ssh -i <path-to-ssh-key> -p <ssh-port> docker@<ip>
     Welcome to Docker!
@@ -63,33 +73,62 @@ You can also tunnel the Docker socket over SSH to remotely run commands on the c
 
 If you don't want to pass `-H` when using the tunnel, you can set the `DOCKER_HOST` environment variable to point to the localhost tunnel opening.
 
-#### Connecting to worker nodes via SSH
+### Worker nodes
 
-As of Beta 13, the worker nodes also have SSH enabled. By default SSH access is not allowed to the worker nodes from the public internet. To access the worker nodes, you will need to first connect to a manager node (see above). On the manager node you can then ssh to the worker node, over the private network. Make sure you have `ssh agent forwarding` enabled (see below). If you run the `docker node ls` command you can see the full list of nodes in your swarm. You can then `ssh docker@<worker-host>` to have access to that node.
+As of Beta 13, the worker nodes also have SSH enabled when connecting from
+manager nodes. SSH access is not possible to the worker nodes from the public
+Internet. To access the worker nodes, you will need to first connect to a
+manager node (see above).
+
+On the manager node you can then `ssh` to the worker node, over the private
+network. Make sure you have SSH agent forwarding enabled (see below). If you run
+the `docker node ls` command you can see the full list of nodes in your swarm.
+You can then `ssh docker@<worker-host>` to get access to that node.
+
+##### AWS
+
+Use the `HOSTNAME` reported in `docker node ls` directly.
 
 ```
 $ docker node ls
 ID                           HOSTNAME                                     STATUS  AVAILABILITY  MANAGER STATUS
 a3d4vdn9b277p7bszd0lz8grp *  ip-172-31-31-40.us-east-2.compute.internal   Ready   Active        Reachable
-axv7lb0quc6lhwl41iixbnbev    ip-172-31-22-131.us-east-2.compute.internal  Ready   Active
-kpjqylqkm3c5sr2lfwn0ov063    ip-172-31-8-210.us-east-2.compute.internal   Ready   Active        Reachable
-rb52lqiku01b1o10grx6qiu9x    ip-172-31-8-211.us-east-2.compute.internal   Ready   Active        Leader
-xxnoctzqji2k3l5rz7zkvdevp    ip-172-31-13-108.us-east-2.compute.internal  Ready   Active
+...
+
+$ ssh docker@ip-172-31-31-40.us-east-2.compute.internal
 ```
 
-Connecting to a worker node from the list above.
+##### Azure
+
+Prepend the domain from `/etc/resolv.conf` to the returned `HOSTNAME` in
+`docker node ls`.
 
 ```
-$ ssh docker@ip-172-31-22-131.us-east-2.compute.internal
+$ docker node ls
+ID                           HOSTNAME             STATUS  AVAILABILITY  MANAGER STATUS
+e5grdng229oazh79252fpbgcc    swarm-worker000000   Ready   Active
+...
+
+$ cat /etc/resolv.conf
+# Generated by dhcpcd from eth0.dhcp
+# /etc/resolv.conf.head can replace this line
+domain 2ct34bzag3fejkndbh0ypx4nnb.gx.internal.cloudapp.net
+nameserver 168.63.129.16
+# /etc/resolv.conf.tail can replace this line
+
+$ ssh docker@swarm-worker000000.2ct34bzag3fejkndbh0ypx4nnb.gx.internal.cloudapp.net
 ```
 
-##### SSH agent forwarding
+##### Using SSH agent forwarding
 
 SSH agent forwarding allows you to forward along your ssh keys when connecting from one node to another. This eliminates the need for installing your private key on all nodes you might want to connect from.
 
+You can use this feature to SSH into worker nodes from a manager node without
+installing keys directly on the manager.
+
 If your haven't added your ssh key to the `ssh-agent` you will also need to do this first.
 
-See the keys in the agent already.
+To see the keys in the agent already, run:
 
 ```
 $ ssh-add -L
@@ -107,22 +146,29 @@ On Mac OS X, the `ssh-agent` will forget this key, once it gets restarted. But y
 $ ssh-add -K ~/.ssh/your_key
 ```
 
-If you don't have agent forwarding turned on by default, you won't be able to SSH into the worker, and you will need to enable it when connecting to the manager. You can enable using the `-A` flag for the ssh command.
+You can then enable SSH forwarding per-session using the `-A` flag for the ssh command.
 
 Connecting to the Manager.
 ```
 $ ssh -A docker@<manager ip>
 ```
 
-To always have it turned on, you can edit your ssh config file (`/etc/ssh_config`, `~/.ssh/config`, etc) and make sure it says `ForwardAgent yes`
+To always have it turned on for a given host, you can edit your ssh config file
+(`/etc/ssh_config`, `~/.ssh/config`, etc) to add the `ForwardAgent yes` option.
 
-For example, on Mac OS X the file is `/etc/ssh_config` and you need the following.
+Example configuration:
 
 ```
-Host *
+Host manager0
+  Host <manager ip>
   ForwardAgent yes
 ```
 
+To SSH in to the manager with the above settings:
+
+```
+$ ssh docker@manager0
+```
 
 ## Running apps
 
