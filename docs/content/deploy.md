@@ -18,8 +18,8 @@ This section will walk you through connecting to your installation and deploying
 applications.  Instructions are included for both AWS and Azure, so be sure to
 follow the instructions for the cloud provider of your choice in each section.
 
-First, we you will obtain the public IP address for a manager node (any manager
-node is acceptable).
+First, you will obtain the public IP address for a manager node. Any manager
+node can be used for administrating the swarm.
 
 ##### Manager Public IP on AWS
 
@@ -27,7 +27,7 @@ Once you've deployed Docker on AWS, go to the "Outputs" tab for the stack in
 CloudFormation.
 
 The "Managers" output is a URL you can use to see the available manager nodes of
-the cluster in your AWS console.  Once present on this page, you can see the
+the swarm in your AWS console.  Once present on this page, you can see the
 "Public IP" of each manager node in the table and/or "Description" tab if you
 click on the instance.
 
@@ -51,7 +51,7 @@ node) that you can use to log in to each manager node.
 #### Manager nodes
 
 Obtain the public IP and/or port for the manager node as instructed above and
-SSH in using your provided key to begin administrating your cluster:
+using the provided SSH key to begin administrating your swarm:
 
     $ ssh -i <path-to-ssh-key> docker@<ssh-host>
     Welcome to Docker!
@@ -75,14 +75,15 @@ If you don't want to pass `-H` when using the tunnel, you can set the `DOCKER_HO
 
 ### Worker nodes
 
-As of Beta 13, the worker nodes also have SSH enabled. By default SSH access is
-not allowed to the worker nodes from the public Internet. To access the worker
-nodes, you will need to first connect to a manager node (see above).
+As of Beta 13, the worker nodes also have SSH enabled when connecting from
+manager nodes. SSH access is not possible to the worker nodes from the public
+Internet. To access the worker nodes, you will need to first connect to a
+manager node (see above).
 
 On the manager node you can then `ssh` to the worker node, over the private
 network. Make sure you have SSH agent forwarding enabled (see below). If you run
 the `docker node ls` command you can see the full list of nodes in your swarm.
-You can then `ssh docker@<worker-host>` to have access to that node.
+You can then `ssh docker@<worker-host>` to get access to that node.
 
 ##### AWS
 
