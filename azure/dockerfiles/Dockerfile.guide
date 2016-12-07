@@ -6,6 +6,8 @@ RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev p
     && pip install msrest \
     && pip install msrestazure \
     && pip install --pre azure \
+    && pip install docker-py \
+    && pip install pytz \
     && apk --purge -v del py-pip \
     && rm -rf /var/cache/apk/*
 
@@ -19,9 +21,16 @@ ADD files/init/azureleader.py /usr/bin/azureleader.py
 ADD files/guide/buoy.sh /usr/bin
 ADD files/guide/refresh.sh /usr/bin
 ADD files/bin/buoy /usr/bin
+ADD files/guide/azutils.py /usr/bin
+ADD files/guide/azupgrade.py /usr/bin
+ADD files/guide/azupg_listener.py /usr/bin
+ADD files/guide/kick_azupg_listener.sh /usr/bin
 COPY files/guide/entry.sh /entry.sh
 RUN chmod 755 /entry.sh  /usr/bin/azureleader.py \
-    /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/refresh.sh
+    /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/refresh.sh \
+    /usr/bin/azutils.py /usr/bin/azupgrade.py \
+    /usr/bin/azupg_listener.py /usr/bin/kick_azupg_listener.sh
+
 RUN /usr/bin/crontab /usr/docker/crontab.txt
 
 CMD ["/entry.sh"]
