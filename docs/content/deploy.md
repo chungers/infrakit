@@ -153,13 +153,21 @@ Connecting to the Manager.
 $ ssh -A docker@<manager ip>
 ```
 
-To always have it turned on for a given host, you can edit your ssh config file (`/etc/ssh_config`, `~/.ssh/config`, etc) to add the `ForwardAgent yes` option.
+To always have it turned on for a given host, you can edit your ssh config file
+(`/etc/ssh_config`, `~/.ssh/config`, etc) to add the `ForwardAgent yes` option.
 
-For example, on Mac OS X the file is `/etc/ssh_config` and you need the following.
+Example configuration:
 
 ```
-Host <manager ip>
+Host manager0
+  Host <manager ip>
   ForwardAgent yes
+```
+
+To SSH in to the manager with the above settings:
+
+```
+$ ssh docker@manager0
 ```
 
 ## Running apps
