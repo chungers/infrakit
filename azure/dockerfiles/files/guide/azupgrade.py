@@ -32,27 +32,12 @@ APP_SECRET = os.environ['APP_SECRET']
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
 
-'''
-SWARM_TABLE = 'swarminfo'
-LEADER_PARTITION = 'tokens'
-LEADER_ROW = '1'
-
-MGR_VMSS_NAME = "swarm-manager-vmss"
-WRK_VMSS_NAME = "swarm-worker-vmss"
-
-UPGRADE_MSG_QUEUE = 'upgradeq'
-'''
-
 VMSS_ROLE_MAPPING = {
     MGR_VMSS_NAME: 'manager',
     WRK_VMSS_NAME: 'worker'
 }
 
-
-
-
 def update_deployment_template(template_url, resource_client):
-    # global RG_NAME, APP_SECRET
 
     print("Updating Resource Group: {}".format(RG_NAME))
 
@@ -123,8 +108,6 @@ def update_deployment_template(template_url, resource_client):
 
 
 def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_svc):
-    # global RG_NAME
-    # global SWARM_TABLE, LEADER_PARTITION, LEADER_ROW
 
     nic_id_table = {}
     vm_ip_table = {}
@@ -224,9 +207,6 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
 
 
 def main():
-    # global MGR_VMSS_NAME, WRK_VMSS_NAME, SUB_ID, TENANT_ID, APP_ID, \
-    #        APP_SECRET, RG_NAME, SA_NAME, UPGRADE_MSG_QUEUE
-    # global SUB_ID, TENANT_ID, APP_ID, APP_SECRET, RG_NAME, SA_NAME
 
     parser = argparse.ArgumentParser(description='Upgrade a Docker4Azure resource group')
     parser.add_argument('template_url', help='New template to upgrade to')

@@ -27,20 +27,7 @@ APP_SECRET = os.environ['APP_SECRET']
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
 
-'''
-SWARM_TABLE = 'swarminfo'
-LEADER_PARTITION = 'tokens'
-LEADER_ROW = '1'
-
-MGR_VMSS_NAME = "swarm-manager-vmss"
-WRK_VMSS_NAME = "swarm-worker-vmss"
-
-UPGRADE_MSG_QUEUE = 'upgradeq'
-'''
-
 def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, storage_key, tbl_svc):
-    # global RG_NAME, SA_NAME
-    # MGR_VMSS_NAME
 
     vmss = compute_client.virtual_machine_scale_sets.get(RG_NAME, MGR_VMSS_NAME)
 
@@ -142,10 +129,6 @@ def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, sto
 
 
 def main():
-    # global MGR_VMSS_NAME, WRK_VMSS_NAME, SUB_ID, TENANT_ID, APP_ID, APP_SECRET, \
-    #    RG_NAME, SA_NAME, UPGRADE_MSG_QUEUE
-    # global SUB_ID, TENANT_ID, APP_ID, APP_SECRET, RG_NAME, SA_NAME
-
     # init various Azure API clients using credentials
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
