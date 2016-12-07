@@ -6,6 +6,7 @@ import argparse
 import sys
 import subprocess
 import pytz
+from datetime import datetime
 from time import sleep
 from docker import Client
 from azure.common.credentials import ServicePrincipalCredentials
