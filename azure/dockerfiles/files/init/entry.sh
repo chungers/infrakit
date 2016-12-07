@@ -266,14 +266,14 @@ run_system_containers()
             --name=editions_controller \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v /var/lib/docker/swarm:/var/lib/docker/swarm \
+            docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" \
+	    run \
+            --default_lb_name="$LB_NAME" \
+            --environment=AzurePublicCloud \
             --ad_app_id="$APP_ID" \
             --ad_app_secret="$APP_SECRET" \
             --subscription_id="$SUB_ID" \
-            --resource_group="$GROUP_NAME" \
-            --log=4 \
-            --default_lb_name="$LB_NAME" \
-            --environment=AzurePublicCloud \
-            docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION"
+            --resource_group="$GROUP_NAME"
     fi
 }
 
