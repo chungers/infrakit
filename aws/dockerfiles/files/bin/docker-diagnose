@@ -59,7 +59,7 @@ for NODE in ${NODES}
 do
 	curl -X POST \
 		-F "session=${SESSION}" \
-		"http://${NODE}:${DIAGNOSTICS_MAGIC_PORT}/diagnose"
+		"http://${NODE}:${DIAGNOSTICS_MAGIC_PORT}/diagnose" || true
 done
 
 echo "Done requesting diagnostics."
