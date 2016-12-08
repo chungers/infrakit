@@ -6,6 +6,7 @@ import argparse
 import sys
 import subprocess
 import pytz
+import urllib2
 from datetime import datetime
 from time import sleep
 from docker import Client
@@ -35,6 +36,10 @@ VMSS_ROLE_MAPPING = {
     MGR_VMSS_NAME: 'manager',
     WRK_VMSS_NAME: 'worker'
 }
+
+def validate_template(template_url):
+   response = urllib2.urlopen(template_url)
+   template = json.load(response)
 
 def update_deployment_template(template_url, resource_client):
 
@@ -232,37 +237,51 @@ def main():
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}
     tbl_svc = TableService(account_name=SA_NAME, account_key=storage_keys['key1'])
 
+    try:
+        print("Validate Template URL to upgrade to")
+        validate_template(args.template_url)
+    except:
+        print("ERROR: Template validation failed. Please make sure the template URL has a valid JSON file and is accessible.")
+        return
+
     qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'])
     # the Upgrade Msg Queue should only exist when an upgrade is in progress
     if qsvc.exists(UPGRADE_MSG_QUEUE):
         print "Upgrade message queue already exists. Please make sure another upgrade is not in progress."
         return
 
+    print("Initiating upgrade. Create queue to prevent another simultaneous upgrade.")
     qsvc.create_queue(UPGRADE_MSG_QUEUE)
 
-    # Update the resource group template
-    print("Updating Resource Group template. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
-    print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/overview".format(
-            SUB_ID, RG_NAME))
-    update_deployment_template(args.template_url, resource_client)
+    try:
+        # Update the resource group template
+        print("Updating Resource Group template. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
+        print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/overview".format(
+                SUB_ID, RG_NAME))
+        update_deployment_template(args.template_url, resource_client)
 
-    # Update manager nodes (except the one this script is initiated from)
-    print("Starting rolling upgrade of swarm manager nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
-    print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
-            SUB_ID, RG_NAME, MGR_VMSS_NAME))
-    update_vmss(MGR_VMSS_NAME, docker_client, compute_client, network_client, tbl_svc)
+        # Update manager nodes (except the one this script is initiated from)
+        print("Starting rolling upgrade of swarm manager nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
+        print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
+                SUB_ID, RG_NAME, MGR_VMSS_NAME))
+        update_vmss(MGR_VMSS_NAME, docker_client, compute_client, network_client, tbl_svc)
 
-    # Update worker nodes
-    print("Starting rolling upgrade of swarm worker nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
-    print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
-            SUB_ID, RG_NAME, WRK_VMSS_NAME))
-    update_vmss(WRK_VMSS_NAME, docker_client, compute_client, network_client, tbl_svc)
+        # Update worker nodes
+        print("Starting rolling upgrade of swarm worker nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
+        print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
+                SUB_ID, RG_NAME, WRK_VMSS_NAME))
+        update_vmss(WRK_VMSS_NAME, docker_client, compute_client, network_client, tbl_svc)
 
-    print("The current VM will be rebooted soon for an upgrade. You can follow the status of the upgrade from the Azure console using the URL below:")
-    print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
-            SUB_ID, RG_NAME, MGR_VMSS_NAME))
-    # Signal another node to upgrade the current node and update leader if necessary
-    qsvc.put_message(UPGRADE_MSG_QUEUE, docker_client.info()['Swarm']['NodeID'])
+        print("The current VM will be rebooted soon for an upgrade. You can follow the status of the upgrade from the Azure console using the URL below:")
+        print("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
+                SUB_ID, RG_NAME, MGR_VMSS_NAME))
+        # Signal another node to upgrade the current node and update leader if necessary
+        qsvc.put_message(UPGRADE_MSG_QUEUE, docker_client.info()['Swarm']['NodeID'])
+
+    except:
+        print("The upgrade process encountered errors. Details below:")
+        qsvc.delete_queue(UPGRADE_MSG_QUEUE)
+        raise
 
 if __name__ == "__main__":
     main()
