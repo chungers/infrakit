@@ -242,7 +242,7 @@ def main():
         validate_template(args.template_url)
     except:
         print("ERROR: Template validation failed. Please make sure the template URL has a valid JSON file and is accessible.")
-        return
+        raise
 
     qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'])
     # the Upgrade Msg Queue should only exist when an upgrade is in progress
