@@ -8,27 +8,37 @@ def GenerateConfig(context):
   machineType = context.properties['machineType']
   preemptible = context.properties['preemptible']
   image = context.properties['image']
-  network = '$(ref.' + context.properties['network'] + '.selfLink)'
+  network = context.properties['network']
+  config = context.properties['config']
 
   script = r"""
 #!/bin/bash
 set -x
 
+function metadata {
+    curl -s "http://metadata.google.internal/computeMetadata/v1/$1" \
+        -H "Metadata-Flavor: Google"
+}
+
+function get-val {
+    PROJECT=$(metadata project/project-id)
+    AUTH=$(metadata instance/service-accounts/default/token | jq -r ".access_token")
+
+    curl -s "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/$1" \
+        -H "Authorization: Bearer ${AUTH}" | jq -r ".text // empty"
+}
+
 service docker start
 
-PROJECT=$(curl -s http://metadata.google.internal/computeMetadata/v1/project/project-id -H "Metadata-Flavor: Google")
-ACCESS_TOKEN=$(curl -s http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token -H "Metadata-Flavor: Google" | jq -r ".access_token")
+echo "I'm a worker"
 
-for i in $(seq 1 300); do
-    LEADER_IP=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/leader-ip" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
-    if [ ! -z "${LEADER_IP}" ]; then
-        TOKEN=$(curl -sSL "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/worker-token" -H "Authorization":"Bearer ${ACCESS_TOKEN}" | jq -r ".text // empty")
-        docker swarm join --token "${TOKEN}" "${LEADER_IP}"
-        break
-    fi
-
+while [ -z "$(get-val worker-token)" ]; do
     sleep 1
 done
+
+docker swarm join --token "$(get-val worker-token)" "$(get-val leader-ip)"
+
+exit 0
 """
 
   resources = [{
@@ -70,7 +80,8 @@ done
               },
               'serviceAccounts': [{
                   'scopes': [
-                      'https://www.googleapis.com/auth/cloudruntimeconfig'
+                      'https://www.googleapis.com/auth/cloudruntimeconfig',
+                      'https://www.googleapis.com/auth/logging.write'
                   ]
               }]
           }
