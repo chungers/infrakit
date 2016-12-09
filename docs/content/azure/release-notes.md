@@ -16,12 +16,23 @@ weight="400"
 
 # Docker for Azure Release notes
 
+## 1.13.0-beta12
+
+Release date: 12/09/2016
+
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.13.0-rc2-beta12.json" data-rel="Beta-12" target="_blank" id="azure-deploy">![Docker for Azure](http://azuredeploy.net/deploybutton.png)</a>
+
+### New
+
+- Docker Engine upgraded to [Docker 1.13.0-rc2](https://github.com/docker/docker/blob/master/CHANGELOG.md)
+- SSH access has been added to the worker nodes
+- The Docker daemon no longer listens on port 2375
+- Added a `swarm-exec` to execute a docker command across all of the swarm nodes. See [Executing Docker commands in all swarm nodes](../deploy#execute-docker-commands-in-all-swarm-nodes) for more details.
+
 
 ## 1.12.3-beta10
 
 Release date: 11/08/2016
-
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.3-beta10.json" data-rel="Beta-10" target="_blank" id="azure-deploy">![Docker for Azure](https://gallery.mailchimp.com/761fa9756d4209ea04a811254/images/f9aab976-fd63-4e64-bb66-5e57e1ffd9c1.png)</a>
 
 ### New
 
