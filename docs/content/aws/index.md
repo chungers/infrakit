@@ -47,7 +47,7 @@ The EC2 instance type for your manager nodes. The larger your swarm, the larger 
 The number of workers you want in your swarm (1-1000).
 
 #### ManagerSize
-The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantee's with 1 manager — if the single manager fails the swarm will go down as well. Additionally, upgrading single-manager swarms is not currently guaranteed to succeed.
+The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantees with 1 manager — if the single manager fails the swarm will go down as well. Additionally, upgrading single-manager swarms is not currently guaranteed to succeed.
 
 We recommend at least 3 managers, and if you have a lot of workers, you should pick 5 managers.
 
