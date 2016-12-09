@@ -20,23 +20,23 @@ weight="2"
 
 ## Configuration
 
-Docker for Azure is installed with an Azure template that configures Docker in swarm-mode, running on vm backed custom VHDs. There are two ways you can deploy Docker for Azure. You can use the Azure Portal (browser based), or use the Azure CLI. Both have the following configuration options.
+Docker for Azure is installed with an Azure template that configures Docker in swarm-mode, running on VMs backed by a custom VHD. There are two ways you can deploy Docker for Azure. You can use the Azure Portal (browser based), or use the Azure CLI. Both have the following configuration options.
 
 ### Configuration options
 
 #### Manager Count
-The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantee's with 1 manager — if the single manager fails the swarm will go down as well. Additionally, upgrading single-manager swarms is not currently guaranteed to succeed.
+The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantees with 1 manager — if the single manager fails the swarm will go down as well. Additionally, upgrading single-manager swarms is not currently guaranteed to succeed.
 
 We recommend at least 3 managers, and if you have a lot of workers, you should pick 5 managers.
 
 #### Manager VM size
-The VM type for your manager nodes. The larger your swarm, the larger the vm size you should use.
+The VM type for your manager nodes. The larger your swarm, the larger the VM size you should use.
 
 #### Worker VM size
 The VM type for your worker nodes.
 
 #### Worker Count
-The number of workers you want in your swarm (1-1000).
+The number of workers you want in your swarm (1-100).
 
 ### Service Principal
 
