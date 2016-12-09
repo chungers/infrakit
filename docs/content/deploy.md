@@ -160,7 +160,7 @@ Example configuration:
 
 ```
 Host manager0
-  Host <manager ip>
+  HostName <manager ip>
   ForwardAgent yes
 ```
 
