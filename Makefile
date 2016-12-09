@@ -7,7 +7,7 @@ CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
 VHD_SKU := docker4azure
-VHD_VERSION := 1.12.20
+VHD_VERSION := 1.13.1
 # stage offer will have the -preview 
 OFFER_ID := docker4azure
 CS_VHD_SKU := docker4azure-cs-1_12

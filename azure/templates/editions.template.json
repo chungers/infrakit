@@ -179,7 +179,7 @@
     "imagePublisher": "docker",
     "imageOffer": "docker4azure",
     "imageSku": "docker4azure",
-    "imageVersion": "1.12.11",
+    "imageVersion": "1.13.1",
     "imageReference": {
       "publisher": "[variables('imagePublisher')]",
       "offer": "[variables('imageOffer')]",
@@ -359,20 +359,6 @@
               "destinationAddressPrefix": "[variables('subnetPrefix')]",
               "access": "Allow",
               "priority": 205,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "docker-port",
-            "properties": {
-              "description": "Allow 'docker' ingress to manager node",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "2375",
-              "sourceAddressPrefix": "[variables('subnetPrefix')]",
-              "destinationAddressPrefix": "[variables('subnetPrefix')]",
-              "access": "Allow",
-              "priority": 206,
               "direction": "Inbound"
             }
           }
@@ -606,7 +592,7 @@
             "name": "default",
             "properties": {
               "protocol": "Tcp",
-              "port": 2375,
+              "port": 44554,
               "intervalInSeconds": 10,
               "numberOfProbes": 2
             }

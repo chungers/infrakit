@@ -2,7 +2,7 @@
 
 ## Launch Latest Release
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.12.2-beta9.json"><img src="https://s3.amazonaws.com/docker-for-azure/deploy_to_azure.png"></a>
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.13.0-rc2-beta12.json"><img src="https://s3.amazonaws.com/docker-for-azure/deploy_to_azure.png"></a>
 
 ## Development
 

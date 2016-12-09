@@ -12,7 +12,7 @@ template: clean build
 	docker run -ti --rm -v $(PWD)/dist:/home/docker/dist/ azure-release --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)" --channel_ddc="$(CHANNEL_DDC)" --cs_vhd_sku="$(CS_VHD_SKU)" --cs_vhd_version="$(CS_VHD_VERSION)" --cs_offer_id="$(CS_OFFER_ID)" 
 
 release: clean build
-	docker run -ti --rm -v $(PWD)/dist:/home/docker/dist/ azure-release --upload --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)" --channel_ddc="$(CHANNEL_DDC)" --cs_vhd_sku="$(CS_VHD_SKU)" --cs_vhd_version="$(CS_VHD_VERSION)"  --cs_offer_id="$(CS_OFFER_ID)"
+	docker run -ti --rm -v $(PWD)/dist:/home/docker/dist/ -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY azure-release --upload --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)" --channel_ddc="$(CHANNEL_DDC)" --cs_vhd_sku="$(CS_VHD_SKU)" --cs_vhd_version="$(CS_VHD_VERSION)"  --cs_offer_id="$(CS_OFFER_ID)"
 
 clean:
 	# rm -f tmp/*
