@@ -32,11 +32,11 @@ To be notified of updates, submit your email address at [https://beta.docker.com
 
 If you submit your email address at [https://beta.docker.com/](beta.docker.com) Docker will notify you of new releases by email. New releases are also posted on the [Release Notes](https://beta.docker.com/docs/azure/release-notes/) page.
 
-To initiate an upgrade, ssh into a manager node and issue the following command:
+To initiate an upgrade, SSH into a manager node and issue the following command:
 
     docker exec -it editions_guide azupgrade.py url_to_template.json
 
-This will initiate a rolling upgrade of the Docker swarm, and service state will be maintained during and after the upgrade. Appropriately scaled services should not experience downtime during an upgrade. Note that single containers started (for example) with `docker run -d` are **not** preserved during an upgrade. This is because the're not Docker Swarm objects, but are known only to the individual Docker engines.
+This will initiate a rolling upgrade of the Docker swarm, and service state will be maintained during and after the upgrade. Appropriately scaled services should not experience downtime during an upgrade. Note that single containers started (for example) with `docker run -d` are **not** preserved during an upgrade. This is because they are not Docker Swarm services but are known only to the individual Docker engines.
 
 ## Monitoring
 
@@ -50,7 +50,7 @@ Note that in the last stage of the upgrade, the manager node where the upgrade i
 
 ## Post Upgrade
 
-After the upgrade, the IP address and the port needed to SSH into the manager nodes do not change. However the host identity of the manager nodes does change as the VMs get reimaged. So when you try to SSH in after a successful upgrade, your SSH client may suspect a Man-In-The-Middle attack. You will need to delete the old entries in your SSH client's store [typically ~/.ssh/known_hosts] for new SSH connections to succeed to the upgraded manager nodes.
+After the upgrade, the IP address and the port needed to SSH into the manager nodes do not change. However, the host identity of the manager nodes does change as the VMs get reimaged. So when you try to SSH in after a successful upgrade, your SSH client may suspect a Man-In-The-Middle attack. You will need to delete the old entries in your SSH client's store [typically `~/.ssh/known_hosts`] for new SSH connections to succeed to the upgraded manager nodes.
 
 ## Changing instance sizes and other template parameters
 
