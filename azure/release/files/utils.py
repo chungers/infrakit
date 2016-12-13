@@ -42,7 +42,7 @@ def buildCustomData(data_file):
   return customData
 
 def upload_rg_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
-
+	
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
     s3_path = u"azure/{}/{}".format(release_channel, cloudformation_template_name)
@@ -50,7 +50,7 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
     if cfn_type:
         latest_name = "{}-latest.json".format(cfn_type)
 
-    s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
+    s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
 
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -71,6 +71,25 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
         key.set_contents_from_filename(tempfile)
         key.set_acl("public-read")
 
+    return s3_full_url
+
+def publish_rg_template(release_channel, docker_for_azure_version):
+    # upload to s3, make public, return s3 URL
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
+    s3_path = u"azure/{}/{}.json".format(release_channel, docker_for_azure_version)
+    
+    print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_azure_version, release_channel))
+    latest_name = "latest.json"
+    s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
+    s3_full_url = u"{}/{}".format(s3_host_name, s3_path_latest)
+
+    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
+
+    print(u"Copy Azure template from {} to {} s3 bucket".format(s3_path, s3_path_latest))
+    srckey = bucket.get_key(s3_path)
+    dstkey = bucket.new_key(s3_path_latest)
+    srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
     return s3_full_url
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
