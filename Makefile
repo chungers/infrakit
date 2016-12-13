@@ -1,5 +1,5 @@
-EDITIONS_TAG := beta12
-EDITIONS_DOCKER_VERSION := 1.13.0-rc2
+EDITIONS_TAG := beta13
+EDITIONS_DOCKER_VERSION := 1.13.0-rc3
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 REGION := us-west-1
 CHANNEL := beta
@@ -7,7 +7,7 @@ CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
 VHD_SKU := docker4azure
-VHD_VERSION := 1.13.1
+VHD_VERSION := 1.13.2
 # stage offer will have the -preview 
 OFFER_ID := docker4azure
 CS_VHD_SKU := docker4azure-cs-1_12
