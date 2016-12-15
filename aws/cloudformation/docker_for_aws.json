@@ -682,7 +682,13 @@
             "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "PubSubnetAz3", "ExternalLoadBalancer"],
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }, { "Ref" : "PubSubnetAz3" } ] ] } ],
+                "VPCZoneIdentifier" : [{
+                    "Fn::If": [
+                      "HasOnly2AZs",
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] },
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }, { "Ref" : "PubSubnetAz3" } ] ] }
+                    ]
+                }],
                 "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
@@ -847,7 +853,13 @@
             "DependsOn" : "ManagerAsg",
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }, { "Ref" : "PubSubnetAz3" } ] ] } ],
+                "VPCZoneIdentifier" : [{
+                    "Fn::If": [
+                      "HasOnly2AZs",
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] },
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }, { "Ref" : "PubSubnetAz3" } ] ] }
+                    ]
+                }],
                 "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
