@@ -552,6 +552,8 @@
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "5",
+                "HealthCheckType": "ELB",
+                "HealthCheckGracePeriod": "300",
                 "DesiredCapacity" : { "Ref" : "ManagerSize" },
                 "Tags": [
                     { "Key" : "Name",
@@ -717,6 +719,8 @@
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
                 "MaxSize" : "1000",
+                "HealthCheckType": "ELB",
+                "HealthCheckGracePeriod": "300",
                 "DesiredCapacity" : { "Ref" : "ClusterSize"},
                 "Tags": [
                     { "Key" : "Name",
