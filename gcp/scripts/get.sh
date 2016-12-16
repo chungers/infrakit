@@ -39,7 +39,7 @@ esac
 echo
 echo "If you don't want to curl this script, you can run the following command directly:"
 echome gcloud deployment-manager deployments create docker \
-  --config https://storage.googleapis.com/docker-template/swarm.py \
+  --config https://storage.googleapis.com/docker-template/swarm.jinja \
   --properties managerCount=${managerCount},workerCount=${workerCount}
 
 echo

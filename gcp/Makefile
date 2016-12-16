@@ -18,11 +18,11 @@ revoke:
 	docker rm gcloud-config 2>/dev/null || true
 
 create:
-	$(DEPLOYMENTS) create docker --config /templates/swarm.py
+	$(DEPLOYMENTS) create docker --config /templates/swarm.jinja
 
 describe:
 	$(DEPLOYMENTS) describe docker
 
 delete:
-	$(GCLOUD) compute instances delete $$(gcloud compute instances list --filter='tags.items ~ swarm' --uri)
+	$(GCLOUD) compute instances delete $$(gcloud compute instances list --filter='tags.items ~ swarm' --uri) || true
 	$(DEPLOYMENTS) delete docker
