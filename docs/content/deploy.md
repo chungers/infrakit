@@ -126,6 +126,11 @@ SSH agent forwarding allows you to forward along your ssh keys when connecting f
 You can use this feature to SSH into worker nodes from a manager node without
 installing keys directly on the manager.
 
+(Note: The following section will detail setting up agent forwarding via CLI,
+but if you are using PuTTY on Windows you will need to follow the instructions
+[here](https://the.earth.li/~sgtatham/putty/0.58/htmldoc/Chapter9.html#S9.4) to
+use Pageant for this).
+
 If your haven't added your ssh key to the `ssh-agent` you will also need to do this first.
 
 To see the keys in the agent already, run:
