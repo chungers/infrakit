@@ -10,7 +10,7 @@ from boto import ec2
 NOW = datetime.now()
 NOW_STRING = NOW.strftime("%m_%d_%Y")
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
-           'eu-west-1', 'eu-central-1', 'ap-southeast-1',
+           'eu-west-1', 'eu-west-2', 'eu-central-1', 'ap-southeast-1',
            'ap-northeast-1', 'ap-southeast-2', 'ap-northeast-2',
            'sa-east-1', 'ap-south-1', 'us-east-2', 'ca-central-1']
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
@@ -167,7 +167,7 @@ def set_ami_public(ami_list):
 
 
 def upload_cfn_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
-	
+
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
     s3_path = u"aws/{}/{}".format(release_channel, cloudformation_template_name)
@@ -202,7 +202,7 @@ def publish_cfn_template(release_channel, docker_for_aws_version):
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
     s3_path = u"aws/{}/{}.json".format(release_channel, docker_for_aws_version)
-    
+
     print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_aws_version, release_channel))
     latest_name = "latest.json"
     s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
