@@ -223,6 +223,27 @@ run_system_containers()
         -v container-logs:/log/ \
         docker4x/logger-azure:$DOCKER_FOR_IAAS_VERSION
 
+    echo "kick off guide container"
+    docker run \
+        --log-driver=json-file \
+        --restart=always  \
+        --name=editions_guide \
+        -d \
+        -e ROLE \
+        -e REGION \
+        -e ACCOUNT_ID \
+        -e TENANT_ID \
+        -e APP_ID \
+        -e APP_SECRET \
+        -e GROUP_NAME \
+        -e PRIVATE_IP \
+        -e DOCKER_FOR_IAAS_VERSION \
+        -e SWARM_LOGS_STORAGE_ACCOUNT \
+        -e SWARM_INFO_STORAGE_ACCOUNT \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -v /usr/bin/docker:/usr/bin/docker \
+        docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION
+
     if [ "$ROLE" = "MANAGER" ]; then
         echo "kick off meta container"
         docker run \
@@ -240,27 +261,6 @@ run_system_containers()
             -e VMSS_WRK="$VMSS_WRK" \
             -v /var/run/docker.sock:/var/run/docker.sock \
             docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=azure
-
-        echo "kick off guide container"
-        docker run \
-            --log-driver=json-file \
-            --restart=always  \
-            --name=editions_guide \
-            -d \
-            -e ROLE \
-            -e REGION \
-            -e ACCOUNT_ID \
-            -e TENANT_ID \
-            -e APP_ID \
-            -e APP_SECRET \
-            -e GROUP_NAME \
-            -e PRIVATE_IP \
-            -e DOCKER_FOR_IAAS_VERSION \
-            -e SWARM_LOGS_STORAGE_ACCOUNT \
-            -e SWARM_INFO_STORAGE_ACCOUNT \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /usr/bin/docker:/usr/bin/docker \
-            docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION
 
         echo "kick off l4controller container"
         echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config

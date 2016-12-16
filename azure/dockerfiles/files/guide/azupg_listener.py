@@ -21,9 +21,79 @@ SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
 APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
+ROLE = os.environ['ROLE']
 
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
+
+def get_manager_count(compute_client):
+    vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, MGR_VMSS_NAME)
+    nodes = 0
+    # vms is not a regular list which can be passed to len .. instead it's paged
+    for vm in vms:
+        nodes += 1
+    return nodes
+
+def get_single_manager_instance_id(compute_client):
+    vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, MGR_VMSS_NAME)
+    instance_id = 0
+    # expect just one. vms[0] does not work since it's not a regular list. so iterate
+    for vm in vms:
+        instance_id = vm.instance_id
+    return instance_id
+
+def notify_workers_to_rejoin_swarm(compute_client, network_client, qsvc):
+    print("Initiating swarm rejoin. Create queue for notifications")
+    qsvc.create_queue(REJOIN_MSG_QUEUE, fail_on_exist=False)
+
+    nic_id_table = {}
+    # Find the Azure VMSS instance ID corresponding to the Node ID
+    nics = network_client.network_interfaces.list_virtual_machine_scale_set_network_interfaces(
+                                                            RG_NAME, WRK_VMSS_NAME)
+    for nic in nics:
+        # print ("NIC: {} Primary:{}").format(nic.id, nic.primary)
+        if nic.primary:
+            for ips in nic.ip_configurations:
+                # print ("IP: {} Primary:{}").format(ips.private_ip_address, ips.primary)
+                if ips.primary:
+                    nic_id_table[nic.id] = ips.private_ip_address
+
+    vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, WRK_VMSS_NAME)
+    for vm in vms:
+        # print("Getting IP of VM: {} in VMSS {}".format(vm.instance_id, WRK_VMSS_NAME))
+        for nic in vm.network_profile.network_interfaces:
+            if nic.id in nic_id_table:
+                # print ("IP Address: {}").format(nic_ip_table[nic.id])
+                qsvc.put_message(REJOIN_MSG_QUEUE, nic_id_table[nic.id])
+
+    print("Monitor rejoin queue")
+    # let things settle down for a bit in the queue and items be consumed
+    sleep(300)
+    delete_queue = False
+    while not delete_queue:
+        sleep(120)
+        metadata = qsvc.get_queue_metadata(REJOIN_MSG_QUEUE)
+        count = metadata.approximate_message_count
+        if count == 0:
+            delete_queue = True
+
+    print("Delete rejoin queue")
+    qsvc.delete_queue(REJOIN_MSG_QUEUE)
+
+
+def upgrade_azure_node(compute_client, instance_id):
+    print("Initiating update for instance:{}".format(instance_id))
+    async_vmss_update = compute_client.virtual_machine_scale_sets.update_instances(
+                                            RG_NAME, MGR_VMSS_NAME, instance_id)
+    wait_with_status(async_vmss_update, "Waiting for VM OS info update to complete ...")
+    print("Update OS info completed for VMSS node: {}".format(instance_id))
+
+    print("Reimage started for VMSS node: {}".format(instance_id))
+    async_vmss_update = compute_client.virtual_machine_scale_set_vms.reimage(
+                                            RG_NAME, MGR_VMSS_NAME, instance_id)
+    wait_with_status(async_vmss_update, "Waiting for VM reimage to complete ...")
+    print("Reimage completed for VMSS node: {}".format(instance_id))
+
 
 def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, storage_key, tbl_svc):
 
@@ -96,17 +166,8 @@ def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, sto
 
     subprocess.check_output(["docker", "node", "rm", "--force", node_id])
 
-    print("Initiating update for instance:{} node:{}".format(instance_id, node_id))
-    async_vmss_update = compute_client.virtual_machine_scale_sets.update_instances(
-                                            RG_NAME, MGR_VMSS_NAME, instance_id)
-    wait_with_status(async_vmss_update, "Waiting for VM OS info update to complete ...")
-    print("Update OS info completed for VMSS node: {}".format(instance_id))
-
-    print("Reimage started for VMSS node: {}".format(instance_id))
-    async_vmss_update = compute_client.virtual_machine_scale_set_vms.reimage(
-                                            RG_NAME, MGR_VMSS_NAME, instance_id)
-    wait_with_status(async_vmss_update, "Waiting for VM reimage to complete ...")
-    print("Reimage completed for VMSS node: {}".format(instance_id))
+    # call the core Azure APIs to upgrade the node
+    upgrade_azure_node(compute_client, instance_id)
 
     node_booting = True
     while node_booting:
@@ -151,6 +212,12 @@ def main():
         # print("Upgrade message queue not present. Exiting ...")
         return
 
+    metadata = qsvc.get_queue_metadata(UPGRADE_MSG_QUEUE)
+    count = metadata.approximate_message_count
+    if count == 0:
+        print("Nothing detected in queue yet")
+        return
+
     msgs = qsvc.peek_messages(UPGRADE_MSG_QUEUE)
     for msg in msgs:
         node_id = msg.content
@@ -159,16 +226,36 @@ def main():
             print("Recvd msg on the same node we want to upgrade. Skip ..")
             return
 
-    msgs = qsvc.get_messages(UPGRADE_MSG_QUEUE)
-    delete_queue = False
-    for msg in msgs:
-        node_id = msg.content
-        print("Obtained Node: {}".format(node_id))
-        qsvc.delete_message(UPGRADE_MSG_QUEUE, msg.id, msg.pop_receipt)
-        upgrade_mgr_node(node_id, docker_client, compute_client, network_client,
-                        storage_keys['key1'], tbl_svc)
-        # after successful upgrade, we delete the queue for a fresh new upgrade
-        delete_queue = True
+    if get_manager_count(compute_client) == 1 and ROLE == WRK_ROLE:
+        # print("Single Manager Swarm detected")
+        msgs = qsvc.get_messages(UPGRADE_MSG_QUEUE)
+        perform_upgrade = False
+        for msg in msgs:
+            # no need to look at node id since worker can't do anything with it
+            qsvc.delete_message(UPGRADE_MSG_QUEUE, msg.id, msg.pop_receipt)
+            perform_upgrade = True
+
+        # multiple worker nodes will reach here even if they didn't dequeue msg
+        # so set a flag above and only proceed for the node that did dequeue
+        if perform_upgrade:
+            # delete the swarm table that gets created by leader/manager
+            tbl_svc.delete_table(SWARM_TABLE)
+            # directly call the core azure upgrade node since there is a single manager
+            upgrade_azure_node(compute_client, get_single_manager_instance_id(compute_client))
+            notify_workers_to_rejoin_swarm(compute_client, network_client, qsvc)
+            delete_queue = True
+
+    if ROLE == MGR_ROLE:
+        msgs = qsvc.get_messages(UPGRADE_MSG_QUEUE)
+        delete_queue = False
+        for msg in msgs:
+            node_id = msg.content
+            print("Obtained Node: {}".format(node_id))
+            qsvc.delete_message(UPGRADE_MSG_QUEUE, msg.id, msg.pop_receipt)
+            upgrade_mgr_node(node_id, docker_client, compute_client, network_client,
+                                storage_keys['key1'], tbl_svc)
+            # after successful upgrade, we delete the queue for a fresh new upgrade
+            delete_queue = True
 
     if delete_queue:
         qsvc.delete_queue(UPGRADE_MSG_QUEUE)

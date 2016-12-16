@@ -2,3 +2,4 @@
 36 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log
 42 * * * * /usr/bin/refresh.sh >> /var/log/docker/refresh.log
 * * * * * /usr/bin/kick_azupg_listener.sh >> /var/log/kick_upgrade.log
+* * * * * /usr/bin/kick_azrejoin_listener.sh >> /var/log/kick_rejoin.log
