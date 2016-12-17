@@ -3,7 +3,7 @@ FROM alpine:3.3
 MAINTAINER KenCochrane <Ken.Cochrane@Docker.com>
 
 RUN apk add --update bash ca-certificates jq groff python py-pip py-setuptools \
-    && pip install awscli boto \
+    && pip install awscli boto==2.45.0 \
     && pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz \
     && apk --purge -v del py-pip \
     && rm -rf /var/cache/apk/*
