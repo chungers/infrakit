@@ -14,7 +14,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     echo "Current manager IP = $CURRENT_MANAGER_IP ; my IP = $MYIP"
 
     if [ "$CURRENT_MANAGER_IP" != "$MYIP" ]; then
-        echo "Swarm Manager IP cwqhanged, updating azure table with new ip"
+        echo "Swarm Manager IP changed, updating azure table with new ip"
         python /usr/bin/azureleader.py insert-ip $MYIP
     fi
 
