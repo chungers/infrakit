@@ -11,18 +11,18 @@ RUN apk add --update bash ca-certificates jq groff python py-pip py-setuptools c
 # needed in order for go binary to work.
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
-
 # setup cron
 RUN mkdir -p /usr/docker /var/log/docker/
 ADD files/guide/crontab.txt /usr/docker/crontab.txt
 ADD files/guide/watcher.sh /usr/bin
 ADD files/guide/cleanup.sh /usr/bin
 ADD files/guide/buoy.sh /usr/bin
+ADD files/guide/refresh.sh /usr/bin
 ADD files/guide/vacuum.sh /usr/bin
 ADD files/bin/buoy /usr/bin
 COPY files/guide/entry.sh /entry.sh
 RUN chmod 755 /usr/bin/watcher.sh /entry.sh /usr/bin/cleanup.sh \
-    /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/vacuum.sh
+    /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/vacuum.sh /usr/bin/refresh.sh
 RUN /usr/bin/crontab /usr/docker/crontab.txt
 
 CMD ["/entry.sh"]
