@@ -5,7 +5,7 @@ info:
 imports:
 - path: swarm.jinja
 - path: leader.py
-- path: infrakit.json
+- path: infrakit.json.template
 - path: manager-startup.sh
 - path: leader-startup.sh
 
