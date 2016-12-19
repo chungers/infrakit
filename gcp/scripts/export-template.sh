@@ -2,10 +2,9 @@
 
 set -ex
 
-export CLOUDSDK_CORE_PROJECT='code-story-blog'
-export CLOUDSDK_COMPUTE_ZONE='europe-west1-d'
+export CLOUDSDK_CORE_PROJECT='docker-for-gcp'
 
-BUCKET="gs://docker-template"
+BUCKET="gs://docker-for-gcp-templates"
 
 gsutil ls -b ${BUCKET} || gsutil mb ${BUCKET}
 gsutil -m rsync -r ../templates/ ${BUCKET}

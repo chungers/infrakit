@@ -3,7 +3,7 @@
 set -ex
 
 download() {
-  curl -s -o /tmp/$1 https://storage.googleapis.com/docker-infrakit/$1
+  curl -s -o /tmp/$1 https://storage.googleapis.com/docker-for-gcp-infrakit/$1
   chmod u+x /tmp/$1
 }
 

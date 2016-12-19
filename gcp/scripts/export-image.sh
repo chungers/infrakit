@@ -2,8 +2,8 @@
 
 set -ex
 
-export CLOUDSDK_COMPUTE_ZONE='europe-west1-d'
-export CLOUDSDK_CORE_PROJECT='code-story-blog'
+export CLOUDSDK_CORE_PROJECT='docker-for-gcp'
+export CLOUDSDK_COMPUTE_ZONE='us-central1-f'
 
 VM='exportdisk'
 
@@ -33,8 +33,8 @@ sudo dd if=/dev/disk/by-id/google-image-disk of=/tmp/disk.raw bs=4M conv=sparse
 cd /tmp
 sudo apt-get install -y pigz
 sudo tar --use-compress-program=pigz -cSf docker.image.tar.gz disk.raw
-gsutil mb gs://docker-image
-gsutil -h "Cache-Control:private, max-age=0, no-transform" cp -a public-read docker.image.tar.gz gs://docker-image
+gsutil mb gs://docker-for-gcp-images
+gsutil -h "Cache-Control:private, max-age=0, no-transform" cp -a public-read docker.image.tar.gz gs://docker-for-gcp-images
 EOF
 
 echo "Cleaning up"

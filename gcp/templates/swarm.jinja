@@ -26,7 +26,7 @@ resources:
   properties:
     family: docker
     rawDisk:
-      source: https://storage.cloud.google.com/docker-image/docker.image.tar.gz
+      source: https://storage.cloud.google.com/docker-for-gcp-images/docker.image.tar.gz
 
 - name: {{ env['deployment'] }}-external-ip
   type: compute.v1.address
