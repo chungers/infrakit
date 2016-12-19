@@ -2,111 +2,30 @@
 
 """Initial leader."""
 
+def ManagerIds(deployment, managerCount):
+  return '[%s]' % ','.join('"%s-manager-%d"' % (deployment, i) for i in range(1,int(managerCount)+1))
+
+def SplitLines(script):
+  return ','.join('"%s"' % (line.replace('"', '\\"')) for line in script.split('\n'))
+
+def InfrakitJson(context, type, allocationType, allocation, machineType, script):
+  return context.imports['infrakit.json.template'] % (type + 's', allocationType, allocation, machineType, context.properties['network'], context.env['deployment'] + '-' + type, 10, context.properties['diskImage'], context.env['deployment'] + '-target-pool', context.env['deployment'], SplitLines(script), type)
+
+def ManagerJson(context, count, machineType, script):
+  return InfrakitJson(context, 'manager', 'LogicalIDS', ManagerIds(context.env['deployment'], count), machineType, script)
+
+def WorkerJson(context, count, machineType, script):
+  return InfrakitJson(context, 'worker', 'Size', count, machineType, script)
+
 def GenerateConfig(context):
-  zone = context.properties['zone']
-  machineType = context.properties['machineType']
-  image = context.properties['image']
-  network = context.properties['network']
-  managerCount = context.properties['managerCount']
-  workerCount = context.properties['workerCount']
-  managerIds = '[%s]' % ','.join('"manager-%d"' % i for i in range(1,int(managerCount)+1))
-
-  managerScript = r"""
-#!/bin/bash
-set -ex
-
-download() {
-  curl -s -o /tmp/$1 https://storage.googleapis.com/docker-infrakit/$1
-  chmod u+x /tmp/$1
-}
-
-runPlugin() {
-  download ${1}
-  nohup /tmp/"$@" --log 5 >/tmp/log-${1} 2>&1 &
-  sleep 1
-}
-
-service docker start
-
-runPlugin infrakit-flavor-combo
-runPlugin infrakit-flavor-swarm
-runPlugin infrakit-flavor-vanilla
-runPlugin infrakit-group-default --name group-stateless
-runPlugin infrakit-instance-gcp
-runPlugin infrakit-manager swarm --proxy-for-group group-stateless --name group
-"""
-
-  leaderScript = managerScript + r"""
-docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
-
-curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/managersJson > /tmp/managers.json
-curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/workersJson > /tmp/workers.json
-
-download "infrakit"
-for i in $(seq 1 60); do /tmp/infrakit group commit /tmp/managers.json && break || sleep 1; done
-for i in $(seq 1 60); do /tmp/infrakit group commit /tmp/workers.json && break || sleep 1; done
-"""
-
-  infraKitJson = r"""
-{
-  "ID": "%s",
-  "Properties": {
-    "Allocation": {
-      "%s": %s
-    },
-    "Instance": {
-      "Plugin": "instance-gcp",
-      "Properties": {
-        "MachineType": "%s",
-        "Network": "%s",
-        "NamePrefix": "%s",
-        "DiskSizeMb": %d,
-        "DiskImage": "%s",
-        "TargetPool": "%s",
-        "Tags": ["swarm"],
-        "Scopes": [
-          "https://www.googleapis.com/auth/cloudruntimeconfig",
-          "https://www.googleapis.com/auth/logging.write"
-        ]
-      }
-    },
-    "Flavor": {
-      "Plugin": "flavor-combo",
-      "Properties": {
-        "Flavors": [
-          {
-            "Plugin": "flavor-vanilla",
-            "Properties": {
-              "Init": [%s]
-            }
-          },
-          {
-            "Plugin": "flavor-swarm",
-            "Properties": {
-              "Type": "%s",
-              "DockerRestartCommand": "service docker restart"
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-"""
-
-  managerScriptLines = ','.join('"%s"' % (line.replace('"', '\\"')) for line in managerScript.split('\n'))
-  managersJson = infraKitJson % ("managers", "LogicalIDS", managerIds, machineType, network, "manager", 10, "docker", "docker-pool", managerScriptLines, "manager")
-  workersJson = infraKitJson % ("workers", "Size", workerCount, machineType, network, "worker", 10, "docker", "docker-pool", "", "worker")
-
   resources = [{
       'name': context.env['name'],
       'type': 'compute.v1.instance',
       'properties': {
-          'zone': zone,
-          'machineType': 'zones/' + zone + '/machineTypes/' + machineType,
-          'tags': ['swarm'],
+          'zone': context.properties['zone'],
+          'machineType': 'zones/' + context.properties['zone'] + '/machineTypes/' + context.properties['managerMachineType'],
           'tags': {
-              'items': ['swarm']
+              'items': ['swarm', context.env['deployment'] + '-node']
           },
           'disks': [{
               'deviceName': 'boot',
@@ -114,11 +33,11 @@ for i in $(seq 1 60); do /tmp/infrakit group commit /tmp/workers.json && break |
               'boot': True,
               'autoDelete': True,
               'initializeParams': {
-                  'sourceImage': image
+                  'sourceImage': context.properties['diskImage']
               }
           }],
           'networkInterfaces': [{
-              'network': network,
+              'network': context.properties['network'],
               'accessConfigs': [{
                   'name': 'External NAT',
                   'type': 'ONE_TO_ONE_NAT'
@@ -127,13 +46,13 @@ for i in $(seq 1 60); do /tmp/infrakit group commit /tmp/workers.json && break |
           'metadata': {
               'items': [{
                   'key': 'startup-script',
-                  'value': leaderScript
+                  'value': context.imports['manager-startup.sh'] + context.imports['leader-startup.sh']
               }, {
                   'key': 'managersJson',
-                  'value': managersJson
+                  'value': ManagerJson(context, context.properties['managerCount'], context.properties['managerMachineType'], context.imports['manager-startup.sh'])
               }, {
                   'key': 'workersJson',
-                  'value': workersJson
+                  'value': WorkerJson(context, context.properties['workerCount'], context.properties['workerMachineType'], "")
               }]
           },
           'scheduling': {

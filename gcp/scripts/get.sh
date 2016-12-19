@@ -30,7 +30,6 @@ echo
 echo -n "How many workers? (Default is 1) "
 read workerCount </dev/tty
 case ${workerCount} in
-  0)      echo "There must be at least one worker"; exit 1;;
   ""|1)   workerCount=1;;
   [0-9]*) ;;
   *)      echo "Invalid value"; exit 1;;
@@ -39,7 +38,7 @@ esac
 echo
 echo "If you don't want to curl this script, you can run the following command directly:"
 echome gcloud deployment-manager deployments create docker \
-  --config https://storage.googleapis.com/docker-template/swarm.py \
+  --config https://storage.googleapis.com/docker-for-gcp-templates/swarm.jinja \
   --properties managerCount=${managerCount},workerCount=${workerCount}
 
 echo
@@ -82,7 +81,7 @@ The services are published on:
   ${EXTERNAL_IP}
 
 To uninstall Docker, run these commands:
-  gcloud compute instances delete \$(gcloud compute instances list --filter='tags.items ~ swarm' --uri)
+  gcloud compute instances delete \$(gcloud compute instances list --filter='tags.items ~ docker-node' --uri)
   gcloud deployment-manager deployments delete docker
 
 Have fun!

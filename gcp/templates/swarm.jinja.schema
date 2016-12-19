@@ -3,15 +3,11 @@ info:
   version: 1.0
 
 imports:
-- path: swarm.py
+- path: swarm.jinja
 - path: leader.py
-- path: config.py
-- path: disk-image.py
-- path: network.py
-- path: firewall.py
-- path: ip.py
-- path: pool.py
-- path: forwarding.py
+- path: infrakit.json.template
+- path: manager-startup.sh
+- path: leader-startup.sh
 
 outputs:
   externalIp:

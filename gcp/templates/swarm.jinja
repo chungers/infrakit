@@ -1,0 +1,84 @@
+{# Copyright 2016 Docker Inc. All rights reserved. #}
+
+outputs:
+- name: externalIp
+  value: $(ref.{{ env['deployment'] }}-external-ip.address)
+- name: leaderIp
+  value: $(ref.{{ env['deployment'] }}-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
+- name: zone
+  value: {{ properties['zone'] }}
+
+resources:
+- name: {{ env['deployment'] }}-manager-1
+  type: leader.py
+  properties:
+    zone: {{ properties['zone'] }}
+    managerMachineType: {{ properties['managerMachineType'] }}
+    workerMachineType: {{ properties['workerMachineType'] }}
+    managerCount: {{ properties['managerCount'] }}
+    workerCount: {{ properties['workerCount'] }}
+    diskImage: $(ref.{{ env['deployment'] }}-disk-image.selfLink)
+    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    targetPool: $(ref.{{ env['deployment'] }}-target-pool.selfLink)
+
+- name: {{ env['deployment'] }}-disk-image
+  type: compute.v1.image
+  properties:
+    family: docker
+    rawDisk:
+      source: https://storage.cloud.google.com/docker-for-gcp-images/docker.image.tar.gz
+
+- name: {{ env['deployment'] }}-external-ip
+  type: compute.v1.address
+  properties:
+    region: {{ properties['region'] }}
+
+- name: {{ env['deployment'] }}-target-pool
+  type: compute.v1.targetPool
+  properties:
+    region: {{ properties['region'] }}
+    sessionAffinity: NONE
+    instances: [$(ref.{{ env['deployment'] }}-manager-1.selfLink)]
+
+- name: {{ env['deployment'] }}-lb-forward
+  type: compute.v1.forwardingRule
+  properties:
+    region: {{ properties['region'] }}
+    IPProtocol: TCP
+    portRange: 80-65535
+    IPAddress: $(ref.{{ env['deployment'] }}-external-ip.address)
+    target: $(ref.{{ env['deployment'] }}-target-pool.selfLink)
+
+- name: {{ env['deployment'] }}-network
+  type: compute.v1.network
+  properties:
+    autoCreateSubnetworks: true
+
+- name: allow-ssh
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    sourceRanges: [0.0.0.0/0]
+    allowed:
+    - IPProtocol: tcp
+      ports: [22]
+
+- name: allow-http
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    sourceRanges: [0.0.0.0/0]
+    allowed:
+    - IPProtocol: tcp
+      ports: [80, 443]
+
+- name: allow-internal
+  type: compute.v1.firewall
+  properties:
+    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    sourceRanges: [10.128.0.0/9]
+    allowed:
+    - IPProtocol: tcp
+      ports: [0-65535]
+    - IPProtocol: udp
+      ports: [0-65535]
