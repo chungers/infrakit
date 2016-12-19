@@ -4,12 +4,12 @@ outputs:
 - name: externalIp
   value: $(ref.{{ env['deployment'] }}-external-ip.address)
 - name: leaderIp
-  value: $(ref.manager-1.networkInterfaces[0].accessConfigs[0].natIP)
+  value: $(ref.{{ env['deployment'] }}-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
 - name: zone
   value: {{ properties['zone'] }}
 
 resources:
-- name: manager-1
+- name: {{ env['deployment'] }}-manager-1
   type: leader.py
   properties:
     zone: {{ properties['zone'] }}
@@ -38,7 +38,7 @@ resources:
   properties:
     region: {{ properties['region'] }}
     sessionAffinity: NONE
-    instances: [$(ref.manager-1.selfLink)]
+    instances: [$(ref.{{ env['deployment'] }}-manager-1.selfLink)]
 
 - name: {{ env['deployment'] }}-lb-forward
   type: compute.v1.forwardingRule

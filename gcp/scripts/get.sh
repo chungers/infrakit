@@ -82,7 +82,7 @@ The services are published on:
   ${EXTERNAL_IP}
 
 To uninstall Docker, run these commands:
-  gcloud compute instances delete \$(gcloud compute instances list --filter='tags.items ~ swarm' --uri)
+  gcloud compute instances delete \$(gcloud compute instances list --filter='tags.items ~ docker-node' --uri)
   gcloud deployment-manager deployments delete docker
 
 Have fun!

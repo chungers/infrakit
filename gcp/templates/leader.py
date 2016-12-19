@@ -2,17 +2,17 @@
 
 """Initial leader."""
 
-def ManagerIds(managerCount):
-  return '[%s]' % ','.join('"manager-%d"' % i for i in range(1,int(managerCount)+1))
+def ManagerIds(deployment, managerCount):
+  return '[%s]' % ','.join('"%s-manager-%d"' % (deployment, i) for i in range(1,int(managerCount)+1))
 
 def SplitLines(script):
   return ','.join('"%s"' % (line.replace('"', '\\"')) for line in script.split('\n'))
 
 def InfrakitJson(context, type, allocationType, allocation, machineType, script):
-  return context.imports['infrakit.json'] % (type + 's', allocationType, allocation, machineType, context.properties['network'], type, 10, context.properties['diskImage'], context.env['deployment'] + '-target-pool', SplitLines(script), type)
+  return context.imports['infrakit.json'] % (type + 's', allocationType, allocation, machineType, context.properties['network'], context.env['deployment'] + '-' + type, 10, context.properties['diskImage'], context.env['deployment'] + '-target-pool', context.env['deployment'], SplitLines(script), type)
 
 def ManagerJson(context, count, machineType, script):
-  return InfrakitJson(context, 'manager', 'LogicalIDS', ManagerIds(count), machineType, script)
+  return InfrakitJson(context, 'manager', 'LogicalIDS', ManagerIds(context.env['deployment'], count), machineType, script)
 
 def WorkerJson(context, count, machineType, script):
   return InfrakitJson(context, 'worker', 'Size', count, machineType, script)
@@ -25,7 +25,7 @@ def GenerateConfig(context):
           'zone': context.properties['zone'],
           'machineType': 'zones/' + context.properties['zone'] + '/machineTypes/' + context.properties['managerMachineType'],
           'tags': {
-              'items': ['swarm']
+              'items': ['swarm', context.env['deployment'] + '-node']
           },
           'disks': [{
               'deviceName': 'boot',
