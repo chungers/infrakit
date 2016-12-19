@@ -72,7 +72,7 @@ resources:
     sourceRanges: [0.0.0.0/0]
     allowed:
     - IPProtocol: tcp
-      ports: [80, 443]
+      ports: [80]
 
 - name: {{ env['deployment'] }}-allow-internal
   type: compute.v1.firewall
