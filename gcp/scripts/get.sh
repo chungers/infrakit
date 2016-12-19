@@ -30,7 +30,6 @@ echo
 echo -n "How many workers? (Default is 1) "
 read workerCount </dev/tty
 case ${workerCount} in
-  0)      echo "There must be at least one worker"; exit 1;;
   ""|1)   workerCount=1;;
   [0-9]*) ;;
   *)      echo "Invalid value"; exit 1;;
