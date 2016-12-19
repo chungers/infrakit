@@ -4,6 +4,7 @@
 
 def GenerateConfig(context):
   region = context.properties['region']
+  firstInstance = context.properties['firstInstance']
 
   resources = [{
       'name': context.env['name'],
@@ -11,7 +12,8 @@ def GenerateConfig(context):
       'properties': {
           'region': region,
           'healthChecks': [],
-          'sessionAffinity': 'NONE'
+          'sessionAffinity': 'NONE',
+          'instances': [firstInstance]
       }
   }]
 

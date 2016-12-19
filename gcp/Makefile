@@ -1,23 +1,28 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
-GCLOUD_IMAGE_TAG = sha256:3a4e572df0c716196b3ffdeacaba3ebdd36f8cdfdac6d5ee4bd50cd405366736
-GCLOUD = docker run --rm -ti -v $(CURDIR)/configuration:/configuration --volumes-from gcloud-config google/cloud-sdk gcloud
+GCLOUD_IMAGE_TAG = sha256:44296dea85d3f8f016a9ac2d3225ac494c8cfc4593b0d3fb316eb26413e5846d
+GCLOUD = docker run --rm -ti \
+	-v $(CURDIR)/templates:/templates \
+	--volumes-from gcloud-config \
+	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
+	gcloud
 DEPLOYMENTS = $(GCLOUD) deployment-manager deployments
 
 all: auth create
 
 auth: revoke
 	docker run -it --name gcloud-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) true
-	$(GCLOUD) init
+	$(GCLOUD) init --skip-diagnostics
 
 revoke:
-	docker rm gcloud-config || true
+	docker rm gcloud-config 2>/dev/null || true
 
 create:
-	$(DEPLOYMENTS) create docker --config configuration/docker.yaml
+	$(DEPLOYMENTS) create docker --config /templates/swarm.py
 
 describe:
 	$(DEPLOYMENTS) describe docker
 
 delete:
-	$(DEPLOYMENTS) delete docker -q
+	$(GCLOUD) compute instances delete $$(gcloud compute instances list --filter='tags.items ~ swarm' --uri)
+	$(DEPLOYMENTS) delete docker

@@ -14,32 +14,20 @@ echome() {
   $@
 }
 
-metadata() {
-    curl -s "http://metadata.google.internal/computeMetadata/v1/$1" \
-        -H "Metadata-Flavor: Google"
-}
-
-getval() {
-    PROJECT=$(gcloud config list project --format=json 2>/dev/null | jq -r .core.project)
-    AUTH=$(metadata instance/service-accounts/default/token | jq -r ".access_token")
-
-    curl -s "https://runtimeconfig.googleapis.com/v1beta1/projects/${PROJECT}/configs/swarm-config/variables/$1" \
-        -H "Authorization: Bearer ${AUTH}" | jq -r ".text // empty"
-}
-
-echo "Let's install Docker!"
-echo "First, here's a few questions:"
 echo
-echo "How many managers? (3,5 or 7. Default is 3)"
+echo "Let's install Docker!"
+echo "First, let's answer a few questions:"
+echo
+echo -n "How many managers? (1, 3 or 5. Default is 3) "
 read managerCount </dev/tty
 case ${managerCount} in
-  "")     managerCount=3;;
-  3|5|7)  ;;
-  *)      echo "Invalid value"; exit 1;;
+  "")    managerCount=3;;
+  1|3|5) ;;
+  *)     echo "Invalid value"; exit 1;;
 esac
 
 echo
-echo "How many workers? (Default is 1)"
+echo -n "How many workers? (Default is 1) "
 read workerCount </dev/tty
 case ${workerCount} in
   0)      echo "There must be at least one worker"; exit 1;;
@@ -49,7 +37,7 @@ case ${workerCount} in
 esac
 
 echo
-echo "Let's install Docker!"
+echo "If you don't want to curl this script, you can run the following command directly:"
 echome gcloud deployment-manager deployments create docker \
   --config https://storage.googleapis.com/docker-template/swarm.py \
   --properties managerCount=${managerCount},workerCount=${workerCount}
@@ -64,24 +52,11 @@ ENTRYPOINT ["/usr/bin/ssh", "-i", "~/.ssh/google_compute_engine", "-o", "StrictH
 EOF
 
 echo
-echo -n "Wait for the leader..."
-while [ -z "$(getval zone)" ]; do
-    echo -n "."
-    sleep 2
-done
-echo
-
-echo
 echo "Retrieve Swarm properties..."
-LEADER_IP=$(getval leader-ip)
-LEADER_NAME=$(getval leader-name)
-ZONE_URI=$(getval zone)
-ZONE=$(echo ${ZONE_URI} | awk -F/ '{print $NF}')
-REGION=$(echo ${ZONE} | awk -F- '{print $1 "-" $2}')
-LEADER_NAT_IP=$(gcloud compute instances describe --zone ${ZONE} ${LEADER_NAME} --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
-EXTERNAL_IP=$(gcloud compute addresses describe --region ${REGION} docker-ip --format=json | jq -r '.address')
-
-gcloud compute ssh --zone ${ZONE} ${LEADER_NAME} --command "sudo usermod -aG docker $(whoami)" >/dev/null 2>&1
+DEPLOYMENT=$(gcloud deployment-manager deployments describe docker --format='table(outputs)')
+ZONE=$(echo "${DEPLOYMENT}" | awk '/zone/ {print $2}')
+LEADER_IP=$(echo "${DEPLOYMENT}" | awk '/leaderIp/ {print $2}')
+EXTERNAL_IP=$(echo "${DEPLOYMENT}" | awk '/externalIp/ {print $2}')
 
 cat > ~/README-DOCKER << EOF
                         ##         .
@@ -96,17 +71,18 @@ cat > ~/README-DOCKER << EOF
 Welcome to Docker!
 
 You can ssh into the Swarm with:
-  gcloud compute ssh --zone ${ZONE} ${LEADER_NAME}
+  gcloud compute ssh --zone ${ZONE} manager-1
 
 Or connect via an ssh tunnel with:
-  /usr/bin/docker run -d --name tunnel -v \$HOME/.ssh:/root/.ssh -p 2374:2374 tunnel \$(whoami)@${LEADER_NAT_IP}
+  /usr/bin/docker run -d --name tunnel -v \$HOME/.ssh:/root/.ssh -p 2374:2374 tunnel \$(whoami)@${LEADER_IP}
   export DOCKER_HOST=localhost:2374
   docker ps
 
 The services are published on:
   ${EXTERNAL_IP}
 
-To uninstall Docker, run this command:
+To uninstall Docker, run these commands:
+  gcloud compute instances delete \$(gcloud compute instances list --filter='tags.items ~ swarm' --uri)
   gcloud deployment-manager deployments delete docker
 
 Have fun!
