@@ -51,19 +51,15 @@ def notify_workers_to_rejoin_swarm(compute_client, network_client, qsvc):
     nics = network_client.network_interfaces.list_virtual_machine_scale_set_network_interfaces(
                                                             RG_NAME, WRK_VMSS_NAME)
     for nic in nics:
-        # print ("NIC: {} Primary:{}").format(nic.id, nic.primary)
         if nic.primary:
             for ips in nic.ip_configurations:
-                # print ("IP: {} Primary:{}").format(ips.private_ip_address, ips.primary)
                 if ips.primary:
                     nic_id_table[nic.id] = ips.private_ip_address
 
     vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, WRK_VMSS_NAME)
     for vm in vms:
-        # print("Getting IP of VM: {} in VMSS {}".format(vm.instance_id, WRK_VMSS_NAME))
         for nic in vm.network_profile.network_interfaces:
             if nic.id in nic_id_table:
-                # print ("IP Address: {}").format(nic_ip_table[nic.id])
                 qsvc.put_message(REJOIN_MSG_QUEUE, nic_id_table[nic.id])
 
     print("Monitor rejoin queue")
