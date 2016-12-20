@@ -13,7 +13,7 @@ weight="300"
 
 # Docker for AWS Upgrades
 
-Docker for AWS has support upgrading from one beta version to the next. Upgrades are done by applying a new version of the AWS Cloudformation template that powers Docker for Azure. Depending on changes in the next version, an upgrade involves:
+Docker for AWS has support upgrading from one beta version to the next. Upgrades are done by applying a new version of the AWS CloudFormation template that powers Docker for AWS. Depending on changes in the next version, an upgrade involves:
 
  * Changing the AMI backing manager and worker nodes (the Docker engine ships in the AMI)
  * Upgrading service containers
@@ -25,7 +25,7 @@ To be notified of updates, submit your email address at [https://beta.docker.com
 
  * We recommend only attempting upgrades of swarms with at least 3 managers. A 1-manager swarm may not be able to maintain quorum during the upgrade
  * Upgrades are only supported from one version to the next version, for example beta-11 to beta-12. Skipping a version during an upgrade is not supported. For example, upgrading from beta-10 to beta-12 is not supported. Downgrades are not tested.
- 
+
 ## Upgrading
 
 If you submit your email address at [https://beta.docker.com/](beta.docker.com) Docker will notify you of new releases by email. New releases are also posted on the [Release Notes](https://beta.docker.com/docs/aws/release-notes/) page.

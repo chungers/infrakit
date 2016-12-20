@@ -15,12 +15,12 @@ weight="100"
 
 ## Prerequisites
 
-- Access to an AWS account with permissions to use CloudFormation and creating the following objects
+- Access to an AWS account with permissions to use CloudFormation and creating the following objects. [Full set of required permissions](iam_permissions.md).
     - EC2 instances + Auto Scaling groups
     - IAM profiles
     - DynamoDB Tables
     - SQS Queue
-    - VPC + subnets
+    - VPC + subnets and security groups
     - ELB
     - CloudWatch Log Group
 - SSH key in AWS in the region where you want to deploy (required to access the completed Docker install)
@@ -44,7 +44,7 @@ The EC2 instance type for your worker nodes.
 The EC2 instance type for your manager nodes. The larger your swarm, the larger the instance size you should use.
 
 #### ClusterSize
-The number of workers you want in your swarm (1-1000).
+The number of workers you want in your swarm (0-1000).
 
 #### ManagerSize
 The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantees with 1 manager — if the single manager fails the swarm will go down as well. Additionally, upgrading single-manager swarms is not currently guaranteed to succeed.
