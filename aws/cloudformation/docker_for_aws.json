@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS 1.13.0-rc2 (beta12)",
+    "Description": "Docker for AWS 1.13.0-rc3 (beta13)",
 
     "Parameters": {
         "KeyName": {
@@ -25,7 +25,7 @@
             "Type" : "String",
             "Description" : "EC2 HVM instance type (t2.micro, m3.medium, etc).",
             "AllowedValues" : [
-                "t2.micro","t2.small","t2.medium","t2.large","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
+                "t2.micro","t2.small","t2.medium","t2.large","t2.xlarge","t2.2xlarge","m4.large","m4.xlarge","m4.2xlarge","m4.4xlarge","m4.10xlarge","m3.medium",
                 "m3.large","m3.xlarge","m3.2xlarge","c4.large","c4.xlarge","c4.2xlarge","c4.4xlarge","c4.8xlarge","c3.large","c3.xlarge",
                 "c3.2xlarge","c3.4xlarge","c3.8xlarge","r3.large","r3.xlarge","r3.2xlarge","r3.4xlarge","r3.8xlarge","i2.xlarge",
                 "i2.2xlarge","i2.4xlarge","i2.8xlarge" ],
@@ -35,9 +35,9 @@
         "ClusterSize" : {
             "Type" : "Number",
             "Default" : "5",
-            "MinValue" : "1",
+            "MinValue" : "0",
             "MaxValue" : "1000",
-            "Description" : "Number of worker nodes in the Swarm (1-1000)."
+            "Description" : "Number of worker nodes in the Swarm (0-1000)."
         },
         "WorkerDiskSize" : {
             "Type" : "Number",
@@ -85,7 +85,8 @@
         }
     },
     "Conditions" : {
-        "CreateLogResources" : {"Fn::Equals" : [{"Ref" : "EnableCloudWatchLogs"}, "yes"]}
+        "CreateLogResources" : {"Fn::Equals" : [{"Ref" : "EnableCloudWatchLogs"}, "yes"]},
+        "HasOnly2AZs" : {"Fn::Equals" : [{"Fn::FindInMap": ["AWSRegion2AZ", { "Ref": "AWS::Region" }, "NumAZs"]}, "2"]}
     },
     "Metadata" : {
         "AWS::CloudFormation::Interface" : {
@@ -123,11 +124,111 @@
         }
     },
     "Mappings": {
+        "AWSRegion2AZ": {
+            "ap-northeast-1": {
+                "Name": "Tokyo",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "ap-northeast-2": {
+                "Name": "Seoul",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "ap-south-1": {
+                "Name": "Mumbai",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "ap-southeast-1": {
+                "Name": "Singapore",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "ap-southeast-2": {
+                "Name": "Sydney",
+                "NumAZs": "3",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "2"
+            },
+            "ca-central-1": {
+                "Name": "Central",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "eu-central-1": {
+                "Name": "Frankfurt",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "eu-west-1": {
+                "Name": "Ireland",
+                "NumAZs": "3",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "2"
+            },
+            "eu-west-2": {
+                "Name": "London",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "sa-east-1": {
+                "Name": "Sao Paulo",
+                "NumAZs": "3",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "2"
+            },
+            "us-east-1": {
+                "Name": "N. Virgina",
+                "NumAZs": "4",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "2"
+            },
+            "us-east-2": {
+                "Name": "Ohio",
+                "NumAZs": "3",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "2"
+            },
+            "us-west-1": {
+                "Name": "N. California",
+                "NumAZs": "2",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "0"
+            },
+            "us-west-2": {
+                "Name": "Oregon",
+                "NumAZs": "3",
+                "AZ0": "0",
+                "AZ1": "1",
+                "AZ2": "2"
+            }
+        },
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.13.0-rc2",
-                "forAws": "aws-v1.13.0-rc2-beta12"
+                "docker": "1.13.0-rc3",
+                "forAws": "aws-v1.13.0-rc3-beta13"
             }
         },
 
@@ -160,6 +261,12 @@
                 "Arch": "HVM64"
             },
             "t2.large": {
+                "Arch": "HVM64"
+            },
+            "t2.xlarge": {
+                "Arch": "HVM64"
+            },
+            "t2.2xlarge": {
                 "Arch": "HVM64"
             },
             "m3.medium": {
@@ -276,51 +383,51 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-b8be09d9",
+                "HVM64": "ami-2adf624b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-65dc0b0b",
+                "HVM64": "ami-c625f2a8",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-south-1": {
-                "HVM64": "ami-562d5a39",
+                "HVM64": "ami-0441366b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-f35bf990",
+                "HVM64": "ami-e7a30f84",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-2bc8f648",
+                "HVM64": "ami-1b6a5278",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-8efd39e1",
+                "HVM64": "ami-b7e325d8",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-33297540",
+                "HVM64": "ami-aaadf6d9",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-29861845",
+                "HVM64": "ami-20871e4c",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-d9c4f4ce",
+                "HVM64": "ami-7ce6e16b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "ami-d29fc5b7",
+                "HVM64": "ami-cfbbe1aa",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
-                "HVM64": "ami-fc7e2a9c",
+                "HVM64": "ami-5ba6f13b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-71bb1411",
+                "HVM64": "ami-02258d62",
                 "HVMG2": "NOT_SUPPORTED"
             }
         }
@@ -345,7 +452,9 @@
             "Properties" : {
                 "VpcId" : { "Ref" : "Vpc" },
                 "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", "pubsubnet1", "cidr" ] },
-                "AvailabilityZone" : { "Fn::Select" : [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+                "AvailabilityZone" : { "Fn::Select" : [
+                    {"Fn::FindInMap": ["AWSRegion2AZ", { "Ref": "AWS::Region" }, "AZ0"]},
+                    { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
                 "Tags": [
                     { "Key" : "Name", "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "Subnet1"] ] } }
                 ]
@@ -358,9 +467,26 @@
             "Properties" : {
                 "VpcId" : { "Ref" : "Vpc" },
                 "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", "pubsubnet2", "cidr" ] },
-                "AvailabilityZone" :  { "Fn::Select" : [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+                "AvailabilityZone" :  { "Fn::Select" : [
+                    {"Fn::FindInMap": ["AWSRegion2AZ", { "Ref": "AWS::Region" }, "AZ1"]},
+                    { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
                 "Tags": [
                     { "Key" : "Name", "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "Subnet2"] ] } }
+                ]
+            }
+        },
+
+        "PubSubnetAz3" : {
+            "DependsOn" : "Vpc",
+            "Type" : "AWS::EC2::Subnet",
+            "Properties" : {
+                "VpcId" : { "Ref" : "Vpc" },
+                "CidrBlock" : { "Fn::FindInMap" : [ "VpcCidrs", "pubsubnet3", "cidr" ] },
+                "AvailabilityZone" :  { "Fn::Select" : [
+                    {"Fn::FindInMap": ["AWSRegion2AZ", { "Ref": "AWS::Region" }, "AZ2"]},
+                    { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+                "Tags": [
+                    { "Key" : "Name", "Value" : { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "Subnet3"] ] } }
                 ]
             }
         },
@@ -419,6 +545,15 @@
             "Type" : "AWS::EC2::SubnetRouteTableAssociation",
             "Properties" : {
                 "SubnetId" : { "Ref" : "PubSubnetAz2" },
+                "RouteTableId" : { "Ref" : "RouteViaIgw" }
+            }
+        },
+
+        "PubSubnet3RouteTableAssociation" : {
+            "DependsOn": ["PubSubnetAz3", "RouteViaIgw"],
+            "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties" : {
+                "SubnetId" : { "Ref" : "PubSubnetAz3" },
                 "RouteTableId" : { "Ref" : "RouteViaIgw" }
             }
         },
@@ -544,10 +679,16 @@
           }
         },
         "ManagerAsg" : {
-            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "ExternalLoadBalancer"],
+            "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1", "PubSubnetAz2", "PubSubnetAz3", "ExternalLoadBalancer"],
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
+                "VPCZoneIdentifier" : [{
+                    "Fn::If": [
+                      "HasOnly2AZs",
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] },
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }, { "Ref" : "PubSubnetAz3" } ] ] }
+                    ]
+                }],
                 "LaunchConfigurationName" : { "Ref" : "ManagerLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
@@ -714,7 +855,13 @@
             "DependsOn" : "ManagerAsg",
             "Type" : "AWS::AutoScaling::AutoScalingGroup",
             "Properties" : {
-                "VPCZoneIdentifier" : [ { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] } ],
+                "VPCZoneIdentifier" : [{
+                    "Fn::If": [
+                      "HasOnly2AZs",
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" } ] ] },
+                        { "Fn::Join" : [",", [ { "Ref" : "PubSubnetAz1" }, { "Ref" : "PubSubnetAz2" }, { "Ref" : "PubSubnetAz3" } ] ] }
+                    ]
+                }],
                 "LaunchConfigurationName" : { "Ref" : "NodeLaunchConfigBeta3" },
                 "LoadBalancerNames" : [ { "Ref" : "ExternalLoadBalancer" } ],
                 "MinSize" : "0",
@@ -869,16 +1016,26 @@
             }
         },
         "ExternalLoadBalancer" : {
-            "DependsOn" : ["AttachGateway", "ExternalLoadBalancerSG", "PubSubnetAz1", "PubSubnetAz2"],
+            "DependsOn" : ["AttachGateway", "ExternalLoadBalancerSG", "PubSubnetAz1", "PubSubnetAz2", "PubSubnetAz3"],
             "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties" : {
                 "ConnectionSettings" : {
                     "IdleTimeout" : "600"
                 },
-                "Subnets" : [
-                    {"Ref" : "PubSubnetAz1" },
-                    {"Ref" : "PubSubnetAz2" }
-                ],
+                "Subnets": {
+                    "Fn::If": [
+                      "HasOnly2AZs",
+                      [
+                              { "Ref" : "PubSubnetAz1" },
+                              { "Ref" : "PubSubnetAz2" }
+                      ],
+                      [
+                              { "Ref" : "PubSubnetAz1" },
+                              { "Ref" : "PubSubnetAz2" },
+                              { "Ref" : "PubSubnetAz3" }
+                      ]
+                  ]
+                },
                 "Listeners" : [
                     {
                         "LoadBalancerPort" : "7",
@@ -1048,24 +1205,34 @@
     }
     },
     "Outputs": {
-	"Managers": {
-	    "Description": "You can see the manager nodes associated with this cluster here.  Follow the instructions here: https://beta.docker.com/docs/deploy/",
-	    "Value": {
-		"Fn::Join": [ "", [
-		    "https://",
-		    { "Ref": "AWS::Region" },
-		    ".console.aws.amazon.com/ec2/v2/home?region=",
-		    { "Ref": "AWS::Region" },
-		    "#Instances:tag:aws:autoscaling:groupName=",
-		    { "Ref": "ManagerAsg" },
-		    ";sort=desc:dnsName"
-		]]
-	    }
-	},
+    	"Managers": {
+    	    "Description": "You can see the manager nodes associated with this cluster here.  Follow the instructions here: https://beta.docker.com/docs/deploy/",
+    	    "Value": {
+    		"Fn::Join": [ "", [
+    		    "https://",
+    		    { "Ref": "AWS::Region" },
+    		    ".console.aws.amazon.com/ec2/v2/home?region=",
+    		    { "Ref": "AWS::Region" },
+    		    "#Instances:tag:aws:autoscaling:groupName=",
+    		    { "Ref": "ManagerAsg" },
+    		    ";sort=desc:dnsName"
+    		]]
+    	    }
+    	},
         "DefaultDNSTarget" : {
-            "Description" : "Use this name to update your DNS records",
+                "Description" : "Use this name to update your DNS records",
+                "Value" : {
+                "Fn::GetAtt" : [ "ExternalLoadBalancer", "DNSName" ]
+                }
+        },
+        "ZoneAvailabilityComment" : {
+            "Description" : "Availabilty Zones Comment",
             "Value" : {
-            "Fn::GetAtt" : [ "ExternalLoadBalancer", "DNSName" ]
+                "Fn::If" : [
+                  "HasOnly2AZs",
+                  "This region only has 2 Availabiliy Zones (AZ). If one of those AZs goes away, it will cause problems for your Swarm Managers. Please use a Region with at least 3 AZs.",
+                  "This region has at least 3 Availability Zones (AZ). This is ideal to ensure a fully functional Swarm in case you lose an AZ."
+                ]
             }
         }
     }
