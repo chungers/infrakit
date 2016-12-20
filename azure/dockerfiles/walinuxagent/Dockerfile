@@ -1,4 +1,5 @@
-FROM docker4x/shell-aws@sha256:4db54a31a060cd0efd3792882c7740dc97938224314e2a1cddf818d05ec9272a
+FROM docker4x/shell-aws@sha256:976a48261805160a3bdd834847c44af6097cb3886f5fb80e1c0e459c0c82544e
+# Created from aws-v1.14.0-dev-nightly_12_19_2016 tag
 
 RUN apk add --no-cache --update \
         sfdisk \
