@@ -205,7 +205,6 @@ def main():
     qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'])
 
     if not qsvc.exists(UPGRADE_MSG_QUEUE):
-        # print("Upgrade message queue not present. Exiting ...")
         return
 
     metadata = qsvc.get_queue_metadata(UPGRADE_MSG_QUEUE)
@@ -223,7 +222,6 @@ def main():
             return
 
     if get_manager_count(compute_client) == 1 and ROLE == WRK_ROLE:
-        # print("Single Manager Swarm detected")
         msgs = qsvc.get_messages(UPGRADE_MSG_QUEUE)
         perform_upgrade = False
         for msg in msgs:

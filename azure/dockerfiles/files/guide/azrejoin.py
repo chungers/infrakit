@@ -85,7 +85,6 @@ def main():
 
 
     if not qsvc.exists(REJOIN_MSG_QUEUE):
-        # print("Rejoin message queue not present. Exiting ...")
         return
 
     if not tbl_svc.exists(SWARM_TABLE):
