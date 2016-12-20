@@ -1,6 +1,6 @@
 #!/bin/bash
 # this script refreshes the swarm tokens in azure table if they have changed.
-if [ "$NODE_TYPE" == "worker" ] ; then
+if [ "$ROLE" == "WORKER" ] ; then
     # this doesn't run on workers, only managers.
     exit 0
 fi

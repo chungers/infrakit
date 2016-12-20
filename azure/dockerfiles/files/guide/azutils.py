@@ -13,7 +13,15 @@ LEADER_ROW = '1'
 MGR_VMSS_NAME = "swarm-manager-vmss"
 WRK_VMSS_NAME = "swarm-worker-vmss"
 
+MGR_ROLE = "MANAGER"
+WRK_ROLE = "WORKER"
+
 UPGRADE_MSG_QUEUE = 'upgradeq'
+REJOIN_MSG_QUEUE = 'rejoinq'
+
+WRK_TOKEN_ENDPOINT = "http://{}:9024/token/worker/"
+SWARM_LISTEN_PORT = 2377
+SWARM_LISTEN_ADDR = "0.0.0.0"
 
 def get_swarm_leader_ip(docker_client):
     # find the leader in the swarm and return it's IP address from above mappings
