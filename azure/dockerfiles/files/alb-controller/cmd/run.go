@@ -17,6 +17,7 @@ func runCommand() *cobra.Command {
 	elbConfig := ""
 	interval := 3
 	forceLeader := false
+	hardSync := true
 
 	options := loadbalancer.Options{
 		RemoveListeners:   true,
@@ -156,6 +157,7 @@ func runCommand() *cobra.Command {
 
 			poller, err := loadbalancer.NewServicePoller(client, time.Duration(interval)*time.Second).
 				AddService("elb-rule", loadbalancer.AnyServices, actionExposePublishedPorts).
+				SetHardSyncWithLB(true).
 				Build()
 
 			if err != nil {
@@ -167,6 +169,7 @@ func runCommand() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&forceLeader, "leader", forceLeader, "True forces this instance to be a leader")
+	cmd.Flags().BoolVar(&hardSync, "hard_sync", true, "True to force syncing")
 	cmd.Flags().IntVar(&interval, "poll_interval", interval, "Polling interval in seconds")
 	cmd.Flags().StringVar(&elbConfig, "config", "/var/lib/docker/swarm/elb.config", "Loadbalancer config")
 
