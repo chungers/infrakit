@@ -31,28 +31,27 @@ RG_NAME = os.environ['GROUP_NAME']
 def get_deployment_parameter(resource_client, parameter_name):
 
     deployments = resource_client.deployments.list(RG_NAME)
-    latest_timestamp = datetime.min
-    latest_deployment = None
-
-    deployments = resource_client.deployments.list(RG_NAME)
     latest_timestamp = datetime.min.replace(tzinfo=pytz.UTC)
     latest_deployment = None
 
     for deployment in deployments:
+        if deployment.properties is None:
+            continue
         state = deployment.properties.provisioning_state
         if state != "Succeeded":
             continue
-        timestamp = deployment.properties.timestamp
 
+
+        timestamp = deployment.properties.timestamp
         if timestamp > latest_timestamp:
             latest_timestamp = timestamp
             latest_deployment = deployment
 
     if latest_deployment is None:
-        raise RuntimeError("No successful deployment found for {}".format(RG_NAME))
+        raise RuntimeError(u"No successful deployment found for {}".format(RG_NAME))
 
     if latest_deployment.properties.parameters is None:
-        raise RuntimeError("Parameter Link Not Supported")
+        raise RuntimeError(u"Parameter Link Not Supported")
 
     return latest_deployment.properties.parameters[parameter_name]['value']
 
