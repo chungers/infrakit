@@ -10,10 +10,10 @@
 
 ### Prerequisites
 
+- Access to a Google Cloud project with those Apis enabled:
+  - [Google Cloud Deployment Manager V2 API](https://console.developers.google.com/apis/api/deploymentmanager-json.googleapis.com/overview?project=docker4x&duration=PT1H)
+  - [Google Cloud RuntimeConfig API](https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview?project=docker4x)
 - Have `make` installed
-- Access to a Google Cloud project
-- Enable [Google Cloud Deployment Manager V2 API](https://console.developers.google.com/apis/api/deploymentmanager-json.googleapis.com/overview?project=docker4x&duration=PT1H)
-- Enable [Google Cloud RuntimeConfig API](https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview?project=docker4x)
 
 ### Create a swarm
 
@@ -28,14 +28,3 @@ make create
 make delete
 make revoke
 ```
-
-# TODO
-
- + External load balancer
- + Better UX
- + Use Moby
- + Monitoring
- + SSH keys
- + Additional swarm properties
- + DTR/DDC
- + Diagnostics

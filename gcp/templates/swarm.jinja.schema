@@ -31,11 +31,6 @@ properties:
     default: "1"
     description: Number of Workers
 
-  region:
-    type: string
-    default: "europe-west1"
-    description: Region
-
   zone:
     type: string
     default: "europe-west1-d"

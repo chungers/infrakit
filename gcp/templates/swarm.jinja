@@ -1,5 +1,7 @@
 {# Copyright 2016 Docker Inc. All rights reserved. #}
 
+{% set REGION = properties['zone'][:properties['zone'].rfind('-')] %}
+
 outputs:
 - name: externalIp
   value: $(ref.{{ env['deployment'] }}-external-ip.address)
@@ -31,19 +33,19 @@ resources:
 - name: {{ env['deployment'] }}-external-ip
   type: compute.v1.address
   properties:
-    region: {{ properties['region'] }}
+    region: {{ REGION }}
 
 - name: {{ env['deployment'] }}-target-pool
   type: compute.v1.targetPool
   properties:
-    region: {{ properties['region'] }}
+    region: {{ REGION }}
     sessionAffinity: NONE
     instances: [$(ref.{{ env['deployment'] }}-manager-1.selfLink)]
 
 - name: {{ env['deployment'] }}-lb-forward
   type: compute.v1.forwardingRule
   properties:
-    region: {{ properties['region'] }}
+    region: {{ REGION }}
     IPProtocol: TCP
     portRange: 80-65535
     IPAddress: $(ref.{{ env['deployment'] }}-external-ip.address)
@@ -54,7 +56,7 @@ resources:
   properties:
     autoCreateSubnetworks: true
 
-- name: allow-ssh
+- name: {{ env['deployment'] }}-allow-ssh
   type: compute.v1.firewall
   properties:
     network: $(ref.{{ env['deployment'] }}-network.selfLink)
@@ -63,7 +65,7 @@ resources:
     - IPProtocol: tcp
       ports: [22]
 
-- name: allow-http
+- name: {{ env['deployment'] }}-allow-lb
   type: compute.v1.firewall
   properties:
     network: $(ref.{{ env['deployment'] }}-network.selfLink)
@@ -72,7 +74,7 @@ resources:
     - IPProtocol: tcp
       ports: [80, 443]
 
-- name: allow-internal
+- name: {{ env['deployment'] }}-allow-internal
   type: compute.v1.firewall
   properties:
     network: $(ref.{{ env['deployment'] }}-network.selfLink)
