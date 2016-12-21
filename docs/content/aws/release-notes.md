@@ -16,10 +16,23 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.13.0-rc4-beta14
+Release date: 12/21/2016
+
+<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc4-beta14.json" data-rel="Beta-14" target="blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
+
+### New
+- Docker Engine upgraded to [Docker 1.13.0-rc4](https://github.com/docker/docker/blob/master/CHANGELOG.md)
+- Previously we always only used 2 Availability Zones per region, even if the region had more. We now dynamically pick the best number of Availability Zones to use based on the region. If a region only has two AZs it will only use 2. If it has three or more, it will use 3
+- Changed the AutoScaleGroup HealthCheck from an EC2 check to an ELB check
+- Removed password prompt when ssh key is invalid
+- Added new Canada Central region `ca-central-1`
+- Added new London region `eu-west-2`
+- Made recovery improvements when primary swarm node crashes
+
+
 ## 1.13.0-rc3-beta13
 Release date: 12/06/2016
-
-<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc3-beta13.json" data-rel="Beta-13" target="blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
 
 ### New
 - Docker Engine upgraded to [Docker 1.13.0-rc3](https://github.com/docker/docker/blob/master/CHANGELOG.md)
