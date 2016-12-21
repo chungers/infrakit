@@ -171,6 +171,17 @@
       "metadata": {
         "description": "The SSH public key used to authenticate with the created swarm. Usually available in $HOME/.ssh/id_rsa.pub file"
       }
+    },
+    "enableSystemPrune": {
+      "type": "string",
+      "defaultValue": "no",
+      "allowedValues": [
+          "yes",
+          "no"
+      ],
+      "metadata": {
+        "description": "Cleans up unused images, containers, networks and volumes"
+      }
     }
   },
   "variables": {
