@@ -29,6 +29,7 @@ Release date: 12/21/2016
 - Removed password prompt when ssh key is invalid
 - New option to cleanup unused resources on your Swarm using new Docker prune command available in 1.13
 - Added support for single-manager upgrade
+- Support for manager and worker VM instances to be restarted
 
 
 ## 1.13.0-rc2-beta12
