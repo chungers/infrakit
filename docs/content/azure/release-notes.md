@@ -16,11 +16,25 @@ weight="400"
 
 # Docker for Azure Release notes
 
-## 1.13.0-beta12
+## 1.13.0-rc4-beta14
+
+Release date: 12/21/2016
+
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.13.0-rc4-beta14.json" data-rel="Beta-14" target="_blank" id="azure-deploy">![Docker for Azure](http://azuredeploy.net/deploybutton.png)</a>
+
+### New
+
+- Docker Engine upgraded to [Docker 1.13.0-rc4](https://github.com/docker/docker/blob/master/CHANGELOG.md)
+- Writing to the home directory requires `sudo`
+- Removed password prompt when ssh key is invalid
+- New option to cleanup unused resources on your Swarm using new Docker prune command available in 1.13
+- Added support for single-manager upgrade
+- Support for manager and worker VM instances to be restarted
+
+
+## 1.13.0-rc2-beta12
 
 Release date: 12/09/2016
-
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.13.0-rc2-beta12.json" data-rel="Beta-12" target="_blank" id="azure-deploy">![Docker for Azure](http://azuredeploy.net/deploybutton.png)</a>
 
 ### New
 
