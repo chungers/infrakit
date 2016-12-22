@@ -42,7 +42,7 @@ get_leader_ip()
 get_manager_token()
 {
     if [ -n "$LEADER_IP" ]; then
-        export MANAGER_TOKEN=$(wget -qO- http://$LEADER_IP:9024/token/manager/)
+        export MANAGER_TOKEN=$(curl http://$LEADER_IP:9024/token/manager/)
         echo "MANAGER_TOKEN=$MANAGER_TOKEN"
     else
         echo "MANAGER_TOKEN can't be found yet. LEADER_IP isn't set yet."
@@ -52,7 +52,7 @@ get_manager_token()
 get_worker_token()
 {
     if [ -n "$LEADER_IP" ]; then
-        export WORKER_TOKEN=$(wget -qO- http://$LEADER_IP:9024/token/worker/)
+        export WORKER_TOKEN=$(curl http://$LEADER_IP:9024/token/worker/)
         echo "WORKER_TOKEN=$WORKER_TOKEN"
     else
         echo "WORKER_TOKEN can't be found yet. LEADER_IP isn't set yet."
