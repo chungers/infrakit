@@ -35,5 +35,5 @@ describe:
 	$(DEPLOYMENTS) describe docker
 
 delete:
-	$(GCLOUD) compute instances delete $(shell $(GCLOUD) compute instances list --filter='tags.items ~ $(DEPLOYMENT_NAME)-node' --uri) || true
+	$(GCLOUD) compute instances delete $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri) || true
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)

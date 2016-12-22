@@ -13,7 +13,7 @@
         "DiskSizeMb": %d,
         "DiskImage": "%s",
         "TargetPool": "%s",
-        "Tags": ["swarm", "%s-node"],
+        "Tags": ["swarm"],
         "Scopes": [
           "https://www.googleapis.com/auth/cloudruntimeconfig",
           "https://www.googleapis.com/auth/logging.write"

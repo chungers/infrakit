@@ -9,7 +9,7 @@ def SplitLines(script):
   return ','.join('"%s"' % (line.replace('"', '\\"')) for line in script.split('\n'))
 
 def InfrakitJson(context, type, allocationType, allocation, machineType, script):
-  return context.imports['infrakit.json.template'] % (type + 's', allocationType, allocation, machineType, context.properties['network'], context.env['deployment'] + '-' + type, 10, context.properties['diskImage'], context.env['deployment'] + '-target-pool', context.env['deployment'], SplitLines(script), type)
+  return context.imports['infrakit.json.template'] % (type + 's', allocationType, allocation, machineType, context.properties['network'], context.env['deployment'] + '-' + type, 10, context.properties['diskImage'], context.env['deployment'] + '-target-pool', SplitLines(script), type)
 
 def ManagerJson(context, count, machineType, script):
   return InfrakitJson(context, 'manager', 'LogicalIDS', ManagerIds(context.env['deployment'], count), machineType, script)
@@ -25,7 +25,7 @@ def GenerateConfig(context):
           'zone': context.properties['zone'],
           'machineType': 'zones/' + context.properties['zone'] + '/machineTypes/' + context.properties['managerMachineType'],
           'tags': {
-              'items': ['swarm', context.env['deployment'] + '-node']
+              'items': ['swarm']
           },
           'disks': [{
               'deviceName': 'boot',
