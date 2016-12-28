@@ -2,7 +2,7 @@ FROM alpine:3.3
 
 MAINTAINER Ken Cochrane <Ken.Cochrane@Docker.com>
 
-RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev python python-dev musl-dev linux-headers py-pip gcc py-setuptools \
+RUN apk add --update bash ca-certificates jq groff less openssl-dev libffi-dev python python-dev musl-dev linux-headers py-pip gcc curl py-setuptools \
     && pip install msrest \
     && pip install msrestazure \
     && pip install --pre azure \
