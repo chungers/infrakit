@@ -4,10 +4,10 @@ info:
 
 imports:
 - path: swarm.jinja
-- path: leader.py
-- path: infrakit.json.template
-- path: manager-startup.sh
-- path: leader-startup.sh
+- path: infrakit/managers.json.template
+- path: infrakit/workers.json.template
+- path: startup/manager.sh
+- path: startup/leader.sh
 
 outputs:
   externalIp:
@@ -18,6 +18,9 @@ outputs:
     type: string
   zone:
     description: Zone
+    type: string
+  ssh:
+    description: How to ssh into the Swarm
     type: string
 
 properties:

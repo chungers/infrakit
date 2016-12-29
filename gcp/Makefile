@@ -29,11 +29,11 @@ revoke:
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
 		--config /templates/swarm.jinja \
-		--properties managerCount=$(MANAGER_COUNT),workerCount=$(MANAGER_COUNT),zone=$(ZONE),managerMachineType=$(MANAGER_MACHINE_TYPE),workerMachineType=$(WORKER_MACHINE_TYPE)
+		--properties managerCount=$(MANAGER_COUNT),workerCount=$(WORKER_COUNT),zone=$(ZONE),managerMachineType=$(MANAGER_MACHINE_TYPE),workerMachineType=$(WORKER_MACHINE_TYPE)
 
 describe:
 	$(DEPLOYMENTS) describe docker
 
 delete:
-	$(GCLOUD) compute instances delete $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri) || true
+	$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri) || true
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)

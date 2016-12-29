@@ -1,0 +1,15 @@
+Port 22
+
+# Disable PasswordAuthentication as ssh keys are more secure.
+PasswordAuthentication no
+
+# Disable root login, using sudo provides better auditing.
+PermitRootLogin no
+
+PermitTunnel no
+AllowTcpForwarding yes
+X11Forwarding no
+
+# Compute times out connections after 10 minutes of inactivity.  Keep alive
+# ssh connections by sending a packet every 7 minutes.
+ClientAliveInterval 420

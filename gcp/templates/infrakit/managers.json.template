@@ -1,0 +1,49 @@
+{
+  "ID": "managers",
+  "Properties": {
+    "Allocation": {
+      "LogicalIDS": [
+        {%- set comma = joiner(",") -%}
+        {%- for i in range(1,properties['managerCount']|int + 1) -%}
+        {{ comma() }}"{{ env['deployment'] }}-manager-{{ i }}"
+        {%- endfor -%}
+      ]
+    },
+    "Instance": {
+      "Plugin": "instance-gcp",
+      "Properties": {
+        "MachineType": "{{ properties['managerMachineType'] }}",
+        "Network": "$(ref.{{ env['deployment'] }}-network.selfLink)",
+        "NamePrefix": "{{ env['deployment'] }}-manager",
+        "DiskSizeMb": 10,
+        "DiskImage": "$(ref.{{ env['deployment'] }}-disk-image.selfLink)",
+        "TargetPool": "{{ env['deployment'] }}-target-pool",
+        "Tags": ["swarm"],
+        "Scopes": [
+          "https://www.googleapis.com/auth/logging.write",
+          "https://www.googleapis.com/auth/compute"
+        ]
+      }
+    },
+    "Flavor": {
+      "Plugin": "flavor-combo",
+      "Properties": {
+        "Flavors": [
+          {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+              "Init": [ "{{ imports['startup/manager.sh']|replace('\\', '\\\\')|replace('"', '\\"')|replace('\n', '","') }}" ]
+            }
+          },
+          {
+            "Plugin": "flavor-swarm",
+            "Properties": {
+              "Type": "manager",
+              "DockerRestartCommand": "service docker restart"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

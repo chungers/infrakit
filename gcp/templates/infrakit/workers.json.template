@@ -1,0 +1,30 @@
+{
+  "ID": "workers",
+  "Properties": {
+    "Allocation": {
+      "Size": {{ properties['workerCount'] }}
+    },
+    "Instance": {
+      "Plugin": "instance-gcp",
+      "Properties": {
+        "MachineType": "{{ properties['workerMachineType'] }}",
+        "Network": "$(ref.{{ env['deployment'] }}-network.selfLink)",
+        "NamePrefix": "{{ env['deployment'] }}-worker",
+        "DiskSizeMb": 10,
+        "DiskImage": "$(ref.{{ env['deployment'] }}-disk-image.selfLink)",
+        "TargetPool": "{{ env['deployment'] }}-target-pool",
+        "Tags": ["swarm"],
+        "Scopes": [
+          "https://www.googleapis.com/auth/logging.write"
+        ]
+      }
+    },
+    "Flavor": {
+      "Plugin": "flavor-swarm",
+      "Properties": {
+        "Type": "worker",
+        "DockerRestartCommand": "service docker restart"
+      }
+    }
+  }
+}

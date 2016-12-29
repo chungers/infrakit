@@ -9,26 +9,56 @@ outputs:
   value: $(ref.{{ env['deployment'] }}-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
 - name: zone
   value: {{ properties['zone'] }}
+- name: ssh
+  value: "You can ssh into the Swarm with: gcloud compute ssh --zone {{ properties['zone'] }} {{ env['deployment'] }}-manager-1"
 
 resources:
 - name: {{ env['deployment'] }}-manager-1
-  type: leader.py
+  type: compute.v1.instance
   properties:
     zone: {{ properties['zone'] }}
-    managerMachineType: {{ properties['managerMachineType'] }}
-    workerMachineType: {{ properties['workerMachineType'] }}
-    managerCount: {{ properties['managerCount'] }}
-    workerCount: {{ properties['workerCount'] }}
-    diskImage: $(ref.{{ env['deployment'] }}-disk-image.selfLink)
-    network: $(ref.{{ env['deployment'] }}-network.selfLink)
-    targetPool: $(ref.{{ env['deployment'] }}-target-pool.selfLink)
+    machineType: zones/{{ properties['zone']}}/machineTypes/{{ properties['managerMachineType'] }}
+    tags:
+      items: [swarm, {{ env['deployment'] }}-node]
+    disks:
+    - type: PERSISTENT
+      boot: true
+      autoDelete: false
+      initializeParams:
+        sourceImage: $(ref.{{ env['deployment'] }}-disk-image.selfLink)
+        diskSizeGb: 10
+    networkInterfaces:
+    - network: $(ref.{{ env['deployment'] }}-network.selfLink)
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+    metadata:
+      items:
+      - key: startup-script
+        value: |
+          {% filter indent(10) %}{% include 'startup/manager.sh' %}{% endfilter %}
+          {% filter indent(10) %}{% include 'startup/leader.sh' %}{% endfilter %}
+      - key: managersJson
+        value: |
+          {% filter indent(10) %}{% include 'infrakit/managers.json.template' %}{% endfilter %}
+      - key: workersJson
+        value: |
+          {% filter indent(10) %}{% include 'infrakit/workers.json.template' %}{% endfilter %}
+    scheduling:
+      preemptible: false
+      onHostMaintenance: TERMINATE
+      automaticRestart: false
+    serviceAccounts:
+    - scopes:
+      - https://www.googleapis.com/auth/logging.write
+      - https://www.googleapis.com/auth/compute
 
 - name: {{ env['deployment'] }}-disk-image
   type: compute.v1.image
   properties:
     family: docker
     rawDisk:
-      source: https://storage.cloud.google.com/docker-for-gcp-images/docker.image.tar.gz
+      source: https://storage.googleapis.com/docker-for-gcp-images/gce.img.tar.gz
 
 - name: {{ env['deployment'] }}-external-ip
   type: compute.v1.address

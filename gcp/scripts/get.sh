@@ -70,7 +70,7 @@ cat > ~/README-DOCKER << EOF
 Welcome to Docker!
 
 You can ssh into the Swarm with:
-  gcloud compute ssh --zone ${ZONE} manager-1
+  gcloud compute ssh --zone ${ZONE} docker-manager-1
 
 Or connect via an ssh tunnel with:
   /usr/bin/docker run -d --name tunnel -v \$HOME/.ssh:/root/.ssh -p 2374:2374 tunnel \$(whoami)@${LEADER_IP}
@@ -81,7 +81,7 @@ The services are published on:
   ${EXTERNAL_IP}
 
 To uninstall Docker, run these commands:
-  gcloud compute instances delete \$(gcloud compute instances list --filter='networkInterfaces[0].network ~ docker-network' --uri)
+  gcloud compute instances delete --delete-disks=boot \$(gcloud compute instances list --filter='networkInterfaces[0].network ~ docker-network' --uri)
   gcloud deployment-manager deployments delete docker
 
 Have fun!
