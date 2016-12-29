@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:3.5
 MAINTAINER madhu@docker.com
 
 RUN apk add --update ca-certificates && rm -Rf /tmp/* /var/lib/cache/apk/*

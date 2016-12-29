@@ -45,7 +45,7 @@ echo
 echo "Build a container to open an ssh tunnel..."
 /usr/bin/docker ps -aq -f "name=tunnel" | xargs --no-run-if-empty /usr/bin/docker rm -f
 /usr/bin/docker build -q -t tunnel - >/dev/null 2>&1 << EOF
-FROM alpine:3.4
+FROM alpine:3.5
 RUN apk --update add openssh && rm -Rf /var/lib/cache/apk/*
 ENTRYPOINT ["/usr/bin/ssh", "-i", "~/.ssh/google_compute_engine", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-o", "CheckHostIP=no", "-NL", "0.0.0.0:2374:/var/run/docker.sock"]
 EOF
