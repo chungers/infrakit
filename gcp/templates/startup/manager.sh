@@ -6,7 +6,7 @@ DOCKER_FOR_IAAS_VERSION='gcp-v1.13.0-rc2-beta12'
 
 shell_image="docker4x/shell-gcp:$DOCKER_FOR_IAAS_VERSION"
 lb_image="docker4x/l4controller-gcp:$DOCKER_FOR_IAAS_VERSION"
-infrakit_image="infrakit/devbundle:master-1041"
+infrakit_image="infrakit/devbundle:$DOCKER_FOR_IAAS_VERSION"
 infrakit_gcp_image="infrakit/gcp:$DOCKER_FOR_IAAS_VERSION"
 
 docker_run='docker run --log-driver=json-file'
