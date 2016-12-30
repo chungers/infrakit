@@ -24,18 +24,15 @@ auth: revoke
 	$(GCLOUD) init --skip-diagnostics
 
 revoke:
-	docker rm gcloud-config 2>/dev/null || true
+	-docker rm gcloud-config 2>/dev/null
 
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
 		--config /templates/swarm.jinja \
 		--properties managerCount=$(MANAGER_COUNT),workerCount=$(WORKER_COUNT),zone=$(ZONE),managerMachineType=$(MANAGER_MACHINE_TYPE),workerMachineType=$(WORKER_MACHINE_TYPE)
 
-describe:
-	$(DEPLOYMENTS) describe docker
-
 delete:
-	$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri) || true
+	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)
 
 integration-tests:
