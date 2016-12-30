@@ -1,5 +1,9 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
+CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
+EDITIONS_VERSION ?= latest
+BUCKET ?= gs://docker-for-gcp-templates
+
 DEPLOYMENT_NAME ?= docker
 MANAGER_COUNT ?= 3
 WORKER_COUNT ?= 1
@@ -7,15 +11,21 @@ ZONE ?= europe-west1-d
 MANAGER_MACHINE_TYPE ?= g1-small
 WORKER_MACHINE_TYPE ?= g1-small
 
-GCLOUD_IMAGE_TAG = sha256:44296dea85d3f8f016a9ac2d3225ac494c8cfc4593b0d3fb316eb26413e5846d
+GCLOUD_IMAGE_TAG ?= sha256:44296dea85d3f8f016a9ac2d3225ac494c8cfc4593b0d3fb316eb26413e5846d
 GCLOUD = docker run --rm -ti \
 	-v $(CURDIR)/templates:/templates \
 	--volumes-from gcloud-config \
 	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 	gcloud
 DEPLOYMENTS = $(GCLOUD) deployment-manager deployments
+GSUTIL = docker run --rm -ti \
+  -v $(CURDIR)/templates:/templates \
+	--volumes-from gsutil-config \
+	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
+	gsutil
+FORCE_GSUTIL_AUTH ?= 1
 
-.PHONY: all auth revoke create describe delete
+.PHONY: all auth revoke create describe delete export-templates
 .DEFAULT: all
 all: auth create
 
@@ -38,3 +48,13 @@ delete:
 integration-tests:
 	@echo "+ $@"
 	@cd ${CURDIR}/integration; ./run.sh
+
+export-templates:
+ifeq "$(FORCE_GSUTIL_AUTH)" "1"
+	-docker rm gsutil-config 2>/dev/null
+	docker run -it --name gsutil-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) gcloud auth login --brief --project=$(CLOUDSDK_CORE_PROJECT)
+endif
+	$(GSUTIL) ls -b $(BUCKET) || gsutil mb $(BUCKET)
+	$(GSUTIL) -m rsync -r /templates $(BUCKET)/$(EDITIONS_VERSION)
+	$(GSUTIL) -m acl -r set public-read $(BUCKET)/$(EDITIONS_VERSION)
+	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(BUCKET)/$(EDITIONS_VERSION)

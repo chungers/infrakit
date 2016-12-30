@@ -2,7 +2,7 @@
 
 set -ex
 
-DOCKER_FOR_IAAS_VERSION='gcp-v1.13.0-rc2-beta12'
+DOCKER_FOR_IAAS_VERSION='{{ VERSION }}'
 
 shell_image="docker4x/shell-gcp:$DOCKER_FOR_IAAS_VERSION"
 lb_image="docker4x/l4controller-gcp:$DOCKER_FOR_IAAS_VERSION"

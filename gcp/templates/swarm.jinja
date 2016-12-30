@@ -1,6 +1,7 @@
 {# Copyright 2016 Docker Inc. All rights reserved. #}
 
 {% set REGION = properties['zone'][:properties['zone'].rfind('-')] %}
+{% set VERSION = 'gcp-v1.13.0-rc2-beta12' %}
 
 outputs:
 - name: externalIp
@@ -58,7 +59,7 @@ resources:
   properties:
     family: docker
     rawDisk:
-      source: https://storage.googleapis.com/docker-for-gcp-images/gce.img.tar.gz
+      source: https://storage.googleapis.com/docker-for-gcp-images/{{ VERSION }}/gce.img.tar.gz
 
 - name: {{ env['deployment'] }}-external-ip
   type: compute.v1.address
