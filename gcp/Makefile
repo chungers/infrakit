@@ -37,3 +37,7 @@ describe:
 delete:
 	$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri) || true
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)
+
+integration-tests:
+	@echo "+ $@"
+	@cd ${CURDIR}/integration; ./run.sh
