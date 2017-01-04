@@ -26,7 +26,7 @@ $docker_run -ti --rm \
   $shell_image \
   -A
 
-$docker_run --name=shell --restart=always -d -p 22:22 \
+$docker_daemon --name=shell -p 22:22 \
   $docker_client \
   -v /usr/bin/docker:/usr/bin/docker \
   -v /dev/log:/dev/log \

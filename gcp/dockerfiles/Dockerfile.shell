@@ -9,6 +9,7 @@ EXPOSE 22
 
 COPY files/etc/ /etc/
 COPY files/shell/entry.sh /entry.sh
+RUN chmod 755 /entry.sh
 
 RUN mkdir -p /src \
     && cd /src \
