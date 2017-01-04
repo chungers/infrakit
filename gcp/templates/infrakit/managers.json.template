@@ -32,7 +32,7 @@
           {
             "Plugin": "flavor-vanilla",
             "Properties": {
-              "Init": [ "{{ imports['startup/manager.sh']|replace('\\', '\\\\')|replace('"', '\\"')|replace('\n', '","') }}" ]
+              "Init": [ "{% filter replace('\n', '","') %}{% filter replace('"', '\\"') %}{% filter replace('\\', '\\\\') %}{% include 'startup/manager.sh' %}{% endfilter %}{% endfilter %}{% endfilter %}" ]
             }
           },
           {
