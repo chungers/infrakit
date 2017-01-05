@@ -2,6 +2,11 @@
 
 set -ex
 
+if [ "$(docker info -f '{{ "{{" }}.Swarm.LocalNodeState{{ "}}" }}')" != "inactive" ]; then
+  echo "Skipping the startup script"
+  exit 0
+fi
+
 DOCKER_FOR_IAAS_VERSION='{{ VERSION }}'
 
 shell_image="docker4x/shell-gcp:$DOCKER_FOR_IAAS_VERSION"
@@ -17,25 +22,27 @@ echo Start sshd
 
 for i in $(seq 1 60); do docker pull $shell_image && break || sleep 1; done
 
-docker volume create --name sshkey
-
-$docker_run -ti --rm \
+$docker_run -it --name=etc \
   --user root \
-  -v sshkey:/etc/ssh \
+  -v /etc \
   --entrypoint ssh-keygen \
   $shell_image \
   -A
 
+$docker_daemon --name=accounts \
+  -v /dev/log:/dev/log \
+  -v /home:/home \
+  --volumes-from=etc \
+  $shell_image \
+  /usr/bin/google_accounts_daemon -d
+
 $docker_daemon --name=shell -p 22:22 \
   $docker_client \
   -v /usr/bin/docker:/usr/bin/docker \
-  -v /dev/log:/dev/log \
   -v /var/log:/var/log \
   -v /home:/home \
-  -v sshkey:/etc/ssh \
+  --volumes-from=etc \
   $shell_image
-
-docker exec -d shell /usr/bin/google_accounts_daemon -d
 
 echo Start infrakit
 
