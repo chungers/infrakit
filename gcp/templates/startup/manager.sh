@@ -63,4 +63,4 @@ echo Start Load Balancer Listener
 
 for i in $(seq 1 60); do docker pull $lb_image && break || sleep 1; done
 
-$docker_daemon --name=l4controller-gcp $docker_client $lb_image run --log=5
+$docker_daemon --name=lbcontroller $docker_client $lb_image run --log=5
