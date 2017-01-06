@@ -52,25 +52,25 @@ def create_new_vmss_nodes(compute_client, vmss_name, node_count):
     vmss.sku.capacity += node_count
     async_update = compute_client.virtual_machine_scale_sets.create_or_update(
                     RG_NAME, vmss_name, vmss)
-    wait_with_status(async_update, "Waiting for vmss capacity to update ...")
+    wait_with_status(async_update, u"Waiting for vmss capacity to update ...")
 
     # after the above steps, vmss model gets updated leading to pre-existing
     # VMs reporting not running latest model in the VMSS blade. So update them.
     vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, vmss_name)
     for vm in vms:
         if not vm.latest_model_applied:
-            print("Add {} to list of VMs to update".format(vm.instance_id))
+            print(u"Add {} to list of VMs to update".format(vm.instance_id))
             vms_requiring_update.append(vm.instance_id)
 
     async_update = compute_client.virtual_machine_scale_sets.update_instances(
                             RG_NAME, vmss_name, vms_requiring_update)
-    wait_with_status(async_update, "Waiting for vmss update to complete ...")
+    wait_with_status(async_update, u"Waiting for vmss update to complete ...")
 
 
 def delete_vmss_node(compute_client, node_id, vmss_name):
     async_update = compute_client.virtual_machine_scale_set_vms.delete(
                     RG_NAME, vmss_name, node_id)
-    wait_with_status(async_update, "Waiting for vmss to deallocate vm ...")
+    wait_with_status(async_update, u"Waiting for vmss to deallocate vm ...")
 
 
 def delete_swarm_node(docker_client, ip_addr, role):
@@ -84,7 +84,7 @@ def delete_swarm_node(docker_client, ip_addr, role):
             continue
         if node_ip == ip_addr:
             node_id = node['ID']
-            print("Remove swarm node ID: {} IP: {} Status:{}".format(
+            print(u"Remove swarm node ID: {} IP: {} Status:{}".format(
                     node_id, node_ip, node_status))
             if node['Spec']['Role'] == 'manager':
                 subprocess.check_output(["docker", "node", "demote", node_id])
@@ -114,7 +114,7 @@ def docker_magic_port_up(ip_addr):
             s.shutdown(2)
             return True
         except socket.error, e:
-            print("Could not reach {} due to: {}".format(ip_addr, e))
+            print(u"Could not reach {} due to: {}".format(ip_addr, e))
             sleep(RETRY_INTERVAL)
     return False
 
@@ -149,13 +149,13 @@ def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name)
         if (not docker_magic_port_up(ip_addr) and
             swarm_node_status(docker_client, ip_addr,
                 VMSS_ROLE_MAPPING[vmss_name]) != SWARM_NODE_STATUS_READY):
-            print("Dead node detected with IP {}".format(ip_addr))
+            print(u"Dead node detected with IP {}".format(ip_addr))
             delete_swarm_node(docker_client, ip_addr, VMSS_ROLE_MAPPING[vmss_name])
             delete_vmss_node(compute_client, vm_ip_table[ip_addr], vmss_name)
             dead_node_count += 1
 
     if dead_node_count > 0:
-        print("Replace {} dead nodes in VMSS".format(dead_node_count))
+        print(u"Replace {} dead nodes in VMSS".format(dead_node_count))
         create_new_vmss_nodes(compute_client, vmss_name, dead_node_count)
 
 
