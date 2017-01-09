@@ -6,7 +6,7 @@ keywords = ["iaas, aws"]
 [menu.main]
 identifier="docs-aws-iam-permissions"
 parent = "docs-aws"
-name = "iam_permissions"
+name = "IAM Permissions"
 weight="300"
 +++
 <![end-metadata]-->
