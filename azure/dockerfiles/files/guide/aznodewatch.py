@@ -6,11 +6,11 @@ import argparse
 import sys
 import subprocess
 import pytz
-import urllib2
 import socket
 from datetime import datetime
 from time import sleep
 from docker import Client
+from urllib2 import Request, urlopen, URLError, HTTPError
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
@@ -27,11 +27,9 @@ SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
 APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
-ROLE = os.environ['ROLE']
 
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
 RG_NAME = os.environ['GROUP_NAME']
-IP_ADDR = os.environ['PRIVATE_IP']
 
 RETRY_COUNT = 3
 RETRY_INTERVAL = 30
@@ -39,6 +37,7 @@ RETRY_INTERVAL = 30
 DIAGNOSTICS_MAGIC_PORT = 44554
 
 SWARM_NODE_STATUS_READY = u"ready"
+DOCKER_DIAG_RESPONSE_OK = u"LGTM"
 
 VMSS_ROLE_MAPPING = {
     MGR_VMSS_NAME: 'manager',
@@ -98,6 +97,7 @@ def swarm_node_status(docker_client, ip_addr, role):
         try:
             node_ip = node['Status']['Addr']
             node_status = node['Status']['State']
+            print(u"node ip {} swarm status {}".format(node_ip, node_status))
         except:
             # ignore key errors due to phantom/malformed node entries
             continue
@@ -106,17 +106,20 @@ def swarm_node_status(docker_client, ip_addr, role):
     return ""
 
 
-def docker_magic_port_up(ip_addr):
-    s = socket.socket()
+def docker_diagnostics_response(ip_addr):
+    req = Request("http://{}:{}".format(ip_addr, DIAGNOSTICS_MAGIC_PORT))
     for i in range (0, RETRY_COUNT):
         try:
-            s.connect((ip_addr, DIAGNOSTICS_MAGIC_PORT))
-            s.shutdown(2)
-            return True
-        except socket.error, e:
-            print(u"Could not reach {} due to: {}".format(ip_addr, e))
+            response = urlopen(req)
+            msg = response.read()
+            return msg
+        except HTTPError as e:
+            print(u"Could not reach {} due to: {}".format(ip_addr, e.code))
             sleep(RETRY_INTERVAL)
-    return False
+        except URLError as e:
+            print(u"Could not reach {} due to: {}".format(ip_addr, e.reason))
+            sleep(RETRY_INTERVAL)
+    return ""
 
 
 def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name):
@@ -146,7 +149,7 @@ def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name)
     # in another later invocation
 
     for ip_addr in vm_ip_table.keys():
-        if (not docker_magic_port_up(ip_addr) and
+        if (docker_diagnostics_response(ip_addr) != DOCKER_DIAG_RESPONSE_OK and
             swarm_node_status(docker_client, ip_addr,
                 VMSS_ROLE_MAPPING[vmss_name]) != SWARM_NODE_STATUS_READY):
             print(u"Dead node detected with IP {}".format(ip_addr))

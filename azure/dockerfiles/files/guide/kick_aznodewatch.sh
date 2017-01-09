@@ -19,6 +19,9 @@ then
     fi
   fi
 else
+  ## PID file not found .. Running for the first time
+  ## wait for a while the first time for things to stabilize
+  sleep 600
   echo $$ > $PIDFILE
   if [ $? -ne 0 ]
   then
