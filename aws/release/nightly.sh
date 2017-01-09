@@ -28,6 +28,7 @@ MASTER_DOCKER_VERSION=$(curl -s https://master.dockerproject.org/version)
 export DOCKER_BIN_URL="https://master.dockerproject.org/linux/amd64/docker-$MASTER_DOCKER_VERSION.tgz"
 
 cd $BUILD_HOME/code/moby/alpine
+git checkout master
 git pull
 
 make clean

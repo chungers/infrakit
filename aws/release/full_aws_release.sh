@@ -11,6 +11,7 @@ DOCKER_BIN_URL=
 DOCKER_VERSION=
 EDITION_VERSION=
 CHANNEL=
+MOBY_BRANCH="master"
 DOCKER_AWS_ACCOUNT_URL=
 MAKE_AMI_PUBLIC="no"
 
@@ -34,10 +35,11 @@ OPTIONS:
    -c      Release Channel (beta, nightly, etc)
    -l      AWS account list URL
    -p      Make AMI public (yes, no)
+   -m      Moby Branch (master, 1.13.x, etc)
 EOF
 }
 
-while getopts "hc:l:d:e:b:p:" OPTION
+while getopts "hc:l:d:e:b:p:m:" OPTION
 do
      case $OPTION in
          h)
@@ -61,6 +63,9 @@ do
              ;;
          p)
              MAKE_AMI_PUBLIC=$OPTARG
+             ;;
+         m)
+             MOBY_BRANCH=$OPTARG
              ;;
          ?)
              usage
@@ -102,6 +107,7 @@ echo "EDITIONS_VERSION=$EDITIONS_VERSION"
 echo "DOCKER_BIN_URL=$DOCKER_BIN_URL"
 echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
+echo "MOBY_BRANCH=$MOBY_BRANCH"
 echo "DOCKER_AWS_ACCOUNT_URL=$DOCKER_AWS_ACCOUNT_URL"
 echo "Docker Hub Login ID=$HUB_LOGIN_ID"
 echo "MAKE_AMI_PUBLIC=$MAKE_AMI_PUBLIC"
@@ -157,6 +163,8 @@ fi
 echo "-------"
 echo "== Build AMI =="
 cd $MOBY_DIR
+git checkout $MOBY_BRANCH
+git pull
 make ami-clean-mount || true
 make clean || true
 make ami
