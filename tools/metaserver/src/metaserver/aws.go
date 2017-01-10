@@ -109,6 +109,22 @@ func (a AWSWeb) Workers() []WebInstance {
 	return awsInstances(customFilter)
 }
 
+// Instances prints the list of Instance ID and their private IP
+func (a AWSWeb) Instances(w http.ResponseWriter, r *http.Request) {
+	// show both manager and worker instances
+	RequestInfo(r)
+	fmt.Fprintf(w, "Managers: \n")
+	instances := a.Managers()
+	for _, instance := range instances {
+		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
+	}
+	fmt.Fprintf(w, "Workers: \n")
+	instances = a.Workers()
+	for _, instance := range instances {
+		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
+	}
+}
+
 func awsInstances(customFilters []*ec2.Filter) []WebInstance {
 	// get the instances from AWS, takes a filter to limit the results.
 	client := ec2.New(session.New(&aws.Config{}))

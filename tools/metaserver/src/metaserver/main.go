@@ -34,6 +34,7 @@ type Web interface {
 	TokenWorker(w http.ResponseWriter, r *http.Request)
 	Managers() []WebInstance
 	Workers() []WebInstance
+	Instances(w http.ResponseWriter, r *http.Request)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -78,8 +79,9 @@ func handleRequests(flavor string) {
 	}
 
 	// used to get the swarm tokens
-	r.HandleFunc("/token/manager/", w.TokenManager)
-	r.HandleFunc("/token/worker/", w.TokenWorker)
+	r.HandleFunc("/token/manager/", w.TokenManager) // Return manager token
+	r.HandleFunc("/token/worker/", w.TokenWorker)   // Return worker token
+	r.HandleFunc("/instances/all/", w.Instances)    // Return all provider instances
 
 	// setup the custom server.
 	srv := &http.Server{
