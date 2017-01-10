@@ -213,6 +213,7 @@ run_system_containers()
 
     echo "kick off logger container"
     docker run \
+        --label com.docker.editions.system \
         --log-driver=json-file \
         --name=editions_logger \
         --restart=always \
@@ -232,6 +233,7 @@ run_system_containers()
 
     echo "kick off guide container"
     docker run \
+        --label com.docker.editions.system \
         --log-driver=json-file \
         --restart=always  \
         --name=editions_guide \
@@ -254,6 +256,7 @@ run_system_containers()
     if [ "$ROLE" = "MANAGER" ]; then
         echo "kick off meta container"
         docker run \
+            --label com.docker.editions.system \
             --log-driver=json-file \
             --name=meta-azure \
             --restart=always \
@@ -274,6 +277,7 @@ run_system_containers()
         echo "$LB_NAME" > /var/lib/docker/swarm/lb_name
         docker run \
             -d \
+            --label com.docker.editions.system \
             --log-driver=json-file  \
             --name=editions_controller \
             -v /var/run/docker.sock:/var/run/docker.sock \
