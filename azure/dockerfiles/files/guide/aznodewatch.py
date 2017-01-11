@@ -7,7 +7,7 @@ import sys
 import subprocess
 import pytz
 import socket
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 from docker import Client
 from urllib2 import Request, urlopen, URLError, HTTPError
@@ -37,13 +37,17 @@ RETRY_INTERVAL = 30
 DIAGNOSTICS_MAGIC_PORT = 44554
 
 SWARM_NODE_STATUS_READY = u"ready"
-DOCKER_DIAG_RESPONSE_OK = u"LGTM"
+HTTP_200_OK = 200
 
 VMSS_ROLE_MAPPING = {
     MGR_VMSS_NAME: 'manager',
     WRK_VMSS_NAME: 'worker'
 }
 
+AZURE_RUNNING = "PowerState/running"
+AZURE_PROVISIONED = "ProvisioningState/succeeded"
+# wait 10 mins after provisioning state change before starting health checks
+POST_PROVISIONING_WAIT = 600
 
 def create_new_vmss_nodes(compute_client, vmss_name, node_count):
     vms_requiring_update = []
@@ -94,6 +98,8 @@ def delete_swarm_node(docker_client, ip_addr, role):
 def swarm_node_status(docker_client, ip_addr, role):
     nodes = docker_client.nodes(filters={'role': role})
     for node in nodes:
+        node_ip = "0.0.0.0"
+        node_status = ""
         try:
             node_ip = node['Status']['Addr']
             node_status = node['Status']['State']
@@ -111,20 +117,20 @@ def docker_diagnostics_response(ip_addr):
     for i in range (0, RETRY_COUNT):
         try:
             response = urlopen(req)
-            msg = response.read()
-            return msg
+            return response.getcode()
         except HTTPError as e:
             print(u"Could not reach {} due to: {}".format(ip_addr, e.code))
             sleep(RETRY_INTERVAL)
         except URLError as e:
             print(u"Could not reach {} due to: {}".format(ip_addr, e.reason))
             sleep(RETRY_INTERVAL)
-    return ""
+    return -1
 
 
 def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name):
     nic_id_table = {}
     vm_ip_table = {}
+    vm_perform_health_check = {}
     dead_node_count = 0
 
     # Find out IP addresses of the nodes in the scale set
@@ -138,18 +144,45 @@ def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name)
 
     vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, vmss_name)
     for vm in vms:
+        provisioned_delta = timedelta.resolution
+        vm_running = False
+        vm_perform_health_check[vm.instance_id] = False
+
+        # find out how long back VM was provisioned to deal with delays
+        # during initial start or reboot
+        vm_view = compute_client.virtual_machine_scale_set_vms.get_instance_view(
+                                        RG_NAME, vmss_name, vm.instance_id)
+        for status in vm_view.statuses:
+            # Azure VMs have a power state [running/stopping/deallocating/etc]
+            # and a provisioning state with timestamp. Check both.
+
+            # We skip VMs in non running states since those have been subject to
+            # explicit action by admin through Azure mgmt and we honor that
+
+            if status.code == AZURE_RUNNING:
+                vm_running = True
+            if status.code == AZURE_PROVISIONED and status.time != None:
+                # timestamp gets reset during reboots (besides initial creation)
+                # allowing us to wait longer for things to stabilize after reboot
+                provisioned_delta = datetime.utcnow().replace(tzinfo=pytz.utc) - status.time
+
+        if vm_running and provisioned_delta.total_seconds() > POST_PROVISIONING_WAIT:
+            vm_perform_health_check[vm.instance_id] = True
+
         for nic in vm.network_profile.network_interfaces:
             if nic.id in nic_id_table:
                 vm_ip_table[nic_id_table[nic.id]] = vm.instance_id
 
-    # A node is considered dead if it's neither responding to magic port
-    # nor reporting as ready in swarm status. If these two conditions are
+
+    # A running/provisioned node is considered dead if it's neither responding to
+    # magic port nor reporting as ready in swarm status. If these two conditions are
     # not met, the node could be in an intermediate/transitory state such as
     # restarting .. so ignore it for now, let things settle down and re-examine
     # in another later invocation
 
     for ip_addr in vm_ip_table.keys():
-        if (docker_diagnostics_response(ip_addr) != DOCKER_DIAG_RESPONSE_OK and
+        if (vm_perform_health_check[vm_ip_table[ip_addr]] == True and
+            docker_diagnostics_response(ip_addr) != HTTP_200_OK and
             swarm_node_status(docker_client, ip_addr,
                 VMSS_ROLE_MAPPING[vmss_name]) != SWARM_NODE_STATUS_READY):
             print(u"Dead node detected with IP {}".format(ip_addr))
@@ -161,6 +194,42 @@ def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name)
         print(u"Replace {} dead nodes in VMSS".format(dead_node_count))
         create_new_vmss_nodes(compute_client, vmss_name, dead_node_count)
 
+
+def cleanup_swarm_nodes(docker_client, compute_client, network_client, vmss_name):
+    ip_list = []
+
+    # Find out IP addresses of NICs in the scale set
+    nics = network_client.network_interfaces.list_virtual_machine_scale_set_network_interfaces(
+                                                            RG_NAME, vmss_name)
+    for nic in nics:
+        if nic.primary:
+            for ips in nic.ip_configurations:
+                if ips.primary:
+                    ip_list.append(ips.private_ip_address)
+
+    nodes = docker_client.nodes(filters={'role': VMSS_ROLE_MAPPING[vmss_name]})
+    for node in nodes:
+        node_ip = "0.0.0.0"
+        node_status = ""
+        try:
+            node_ip = node['Status']['Addr']
+            node_status = node['Status']['State']
+        except:
+            # ignore key errors due to phantom/malformed node entries
+            continue
+
+        if node_ip in ip_list:
+            # node ip is present in vmss ip list so no action necessary here
+            continue
+
+        if node_status != SWARM_NODE_STATUS_READY:
+            node_id = node['ID']
+            print(u"Remove non existent swarm node ID: {} IP: {} Status:{}".format(
+                node_id, node_ip, node_status))
+            if node['Spec']['Role'] == 'manager':
+                subprocess.check_output(["docker", "node", "demote", node_id])
+                sleep(5)
+            subprocess.check_output(["docker", "node", "rm", "--force", node_id])
 
 def main():
 
@@ -196,6 +265,11 @@ def main():
     # which does not have several VMSS NIC APIs we need. So specify version here
     network_client = NetworkManagementClient(cred, SUB_ID, api_version='2016-09-01')
 
+    # cleanup swarm nodes that do not exist in vmss
+    cleanup_swarm_nodes(docker_client, compute_client, network_client, MGR_VMSS_NAME)
+    cleanup_swarm_nodes(docker_client, compute_client, network_client, WRK_VMSS_NAME)
+
+    # detect dead nodes and spin up replacements
     monitor_vmss_nodes(docker_client, compute_client, network_client, MGR_VMSS_NAME)
     monitor_vmss_nodes(docker_client, compute_client, network_client, WRK_VMSS_NAME)
 
