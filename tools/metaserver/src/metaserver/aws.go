@@ -116,12 +116,12 @@ func (a AWSWeb) Instances(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Managers: \n")
 	instances := a.Managers()
 	for _, instance := range instances {
-		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
+		fmt.Fprintf(w, "%s\n", instance.PrivateIPAddress)
 	}
 	fmt.Fprintf(w, "Workers: \n")
 	instances = a.Workers()
 	for _, instance := range instances {
-		fmt.Fprintf(w, "%s %s\n", instance.InstanceID, instance.PrivateIPAddress)
+		fmt.Fprintf(w, "%s\n", instance.PrivateIPAddress)
 	}
 }
 
