@@ -124,6 +124,20 @@ func (a AzureWeb) Workers() []WebInstance {
 	return workerVMs
 }
 
+// Instances prints the list of Instance ID and their private IP
+func (a AzureWeb) Instances(w http.ResponseWriter, r *http.Request) {
+	// show both manager and worker instances
+	RequestInfo(r)
+	instances := a.Managers()
+	for _, instance := range instances {
+		fmt.Fprintf(w, "%s\n", instance.PrivateIPAddress)
+	}
+	instances = a.Workers()
+	for _, instance := range instances {
+		fmt.Fprintf(w, "%s\n", instance.PrivateIPAddress)
+	}
+}
+
 func initClients(env map[string]string) (network.InterfacesClient, compute.VirtualMachineScaleSetVMsClient) {
 
 	spt, err := helpers.NewServicePrincipalTokenFromCredentials(env, azure.PublicCloud.ResourceManagerEndpoint)
