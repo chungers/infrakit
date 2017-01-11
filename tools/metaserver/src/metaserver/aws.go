@@ -113,12 +113,10 @@ func (a AWSWeb) Workers() []WebInstance {
 func (a AWSWeb) Instances(w http.ResponseWriter, r *http.Request) {
 	// show both manager and worker instances
 	RequestInfo(r)
-	fmt.Fprintf(w, "Managers: \n")
 	instances := a.Managers()
 	for _, instance := range instances {
 		fmt.Fprintf(w, "%s\n", instance.PrivateIPAddress)
 	}
-	fmt.Fprintf(w, "Workers: \n")
 	instances = a.Workers()
 	for _, instance := range instances {
 		fmt.Fprintf(w, "%s\n", instance.PrivateIPAddress)
