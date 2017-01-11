@@ -232,7 +232,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         until [ $LEAVE_RESULT -eq 0 ];
         do
             echo " [$try] removing DTR node..."
-            docker run --rm "$DTR_IMAGE" remove --ucp-url https://$UCP_ELB_HOSTNAME --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID --replica-id $LOCAL_DTR_ID
+            docker run --label com.docker.editions.system --rm "$DTR_IMAGE" remove --ucp-url https://$UCP_ELB_HOSTNAME --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID --replica-id $LOCAL_DTR_ID
             LEAVE_RESULT=$?
             echo " [$try]  LEAVE_RESULT=$LEAVE_RESULT"
             if [ $LEAVE_RESULT -ne 0 ]; then

@@ -789,14 +789,14 @@
                                 "rc-service docker restart\n",
                                 "sleep 5\n",
 
-                                "docker run --log-driver=json-file --name=meta-aws --restart=always -d -p $LOCAL_IP:9024:8080 ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --name=meta-aws --restart=always -d -p $LOCAL_IP:9024:8080 ",
                                 "-e AWS_REGION='",{ "Ref" : "AWS::Region" }, "' ",
                                 "-e MANAGER_SECURITY_GROUP_ID='",{ "Ref" : "ManagerVpcSG" }, "' ",
                                 "-e WORKER_SECURITY_GROUP_ID='",{ "Ref" : "NodeVpcSG" }, "' ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=aws\n",
 
-                                "docker run --log-driver=json-file --restart=no -d ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -810,7 +810,7 @@
                                 "-v /var/log:/var/log ",
                                 "docker4x/init-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='manager' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -829,14 +829,14 @@
 
                                 "docker volume create --name sshkey\n",
 
-                                "docker run --log-driver=json-file -ti --rm ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file -ti --rm ",
                                 "--user root ",
                                 "-v sshkey:/etc/ssh ",
                                 "--entrypoint ssh-keygen ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION ",
                                 "-A\n",
 
-                                "docker run --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
@@ -849,7 +849,7 @@
                                 "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --log-driver=json-file --name=l4controller-aws --restart=always -d ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --name=l4controller-aws --restart=always -d ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
                                 "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n"
@@ -954,7 +954,7 @@
                                 "chgrp -R docker /home/docker/\n",
                                 "rc-service docker restart\n",
                                 "sleep 5\n",
-                                "docker run --log-driver=json-file --restart=no -d ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --restart=no -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
@@ -970,14 +970,14 @@
 
                                 "docker volume create --name sshkey\n",
 
-                                "docker run --log-driver=json-file -ti --rm ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file -ti --rm ",
                                 "--user root ",
                                 "-v sshkey:/etc/ssh ",
                                 "--entrypoint ssh-keygen ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION ",
                                 "-A\n",
 
-                                "docker run --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                                 "-v /home/docker/:/home/docker/ ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
@@ -988,7 +988,7 @@
                                 "-v /etc/group:/etc/group:ro ",
                                 "docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION\n",
 
-                                "docker run --log-driver=json-file --name=guide-aws --restart=always -d ",
+                                "docker run --label com.docker.editions.system --log-driver=json-file --name=guide-aws --restart=always -d ",
                                 "-e DYNAMODB_TABLE='", { "Ref" : "SwarmDynDBTable" } , "' ",
                                 "-e NODE_TYPE='worker' ",
                                 "-e REGION='",{ "Ref" : "AWS::Region" }, "' ",
