@@ -14,7 +14,7 @@ lb_image="docker4x/l4controller-gcp:$DOCKER_FOR_IAAS_VERSION"
 infrakit_image="infrakit/devbundle:$DOCKER_FOR_IAAS_VERSION"
 infrakit_gcp_image="infrakit/gcp:$DOCKER_FOR_IAAS_VERSION"
 
-docker_run='docker run --log-driver=json-file'
+docker_run='docker run --label com.docker.editions.system --log-driver=json-file'
 docker_daemon="$docker_run -d --restart=always"
 docker_client='-v /var/run/docker.sock:/var/run/docker.sock'
 
