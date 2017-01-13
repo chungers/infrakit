@@ -24,11 +24,15 @@ ADD files/bin/buoy /usr/bin
 ADD files/guide/vacuum.sh /usr/bin
 ADD files/guide/azparameters.py /usr/bin
 ADD files/guide/azutils.py /usr/bin
+ADD files/guide/azupgrade_log_cfg.json /etc
 ADD files/guide/azupgrade.py /usr/bin
+ADD files/guide/azupg_listener_log_cfg.json /etc
 ADD files/guide/azupg_listener.py /usr/bin
 ADD files/guide/kick_azupg_listener.sh /usr/bin
+ADD files/guide/azrejoin_log_cfg.json /etc
 ADD files/guide/azrejoin.py /usr/bin
 ADD files/guide/kick_azrejoin_listener.sh /usr/bin
+ADD files/guide/aznodewatch_log_cfg.json /etc
 ADD files/guide/aznodewatch.py /usr/bin
 ADD files/guide/kick_aznodewatch.sh /usr/bin
 COPY files/guide/entry.sh /entry.sh

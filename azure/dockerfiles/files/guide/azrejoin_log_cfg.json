@@ -1,0 +1,49 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s azrejoin %(levelname)s: %(message)s"
+        }
+    },
+    "handlers": {
+        "file_handler_modules": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "ERROR",
+            "formatter": "simple",
+            "filename": "/var/log/docker/azrejoin_modules.log",
+            "maxBytes": 1048576,
+            "backupCount": 10,
+            "encoding": "utf8"
+        },
+        "file_handler_actions": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "filename": "/var/log/docker/azrejoin_actions.log",
+            "maxBytes": 1048576,
+            "backupCount": 10,
+            "encoding": "utf8"
+        },
+        "file_handler_daemon": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "filename": "/var/log/docker/azrejoin_daemon.log",
+            "maxBytes": 1048576,
+            "backupCount": 10,
+            "encoding": "utf8"
+        }
+    },
+    "loggers": {
+        "azrejoin": {
+            "level": "DEBUG",
+            "handlers": ["file_handler_daemon", "file_handler_actions"],
+            "propagate": "no"
+        }
+    },
+    "root": {
+        "level": "ERROR",
+        "handlers": ["file_handler_modules"]
+    }
+}
