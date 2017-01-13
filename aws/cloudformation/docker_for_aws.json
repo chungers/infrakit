@@ -1056,7 +1056,7 @@
                 "HealthCheck" : {
                     "HealthyThreshold" : "2",
                     "Interval" : "10",
-                    "Target" : "TCP:44554",
+                    "Target" : "HTTP:44554/",
                     "Timeout" : "2",
                     "UnhealthyThreshold" : "4"
                 },
