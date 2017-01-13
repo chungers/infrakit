@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "Docker for AWS 1.13.0-rc2 (beta12) Cloud",
+    "Description": "Docker for AWS 1.13.0-rc6 (beta16) Cloud",
 
     "Parameters": {
         "KeyName": {
@@ -95,8 +95,8 @@
 
         "DockerForAWS" : {
             "version" : {
-                "docker": "1.13.0-rc2",
-                "forAws": "aws-v1.13.0-rc2-beta12"
+                "docker": "1.13.0-rc6",
+                "forAws": "aws-v1.13.0-rc6-beta16"
             }
         },
 
@@ -117,7 +117,6 @@
                 "cidr": "172.31.48.0/20"
             }
         },
-
         "AWSInstanceType2Arch": {
             "t2.micro": {
                 "Arch": "HVM64"
@@ -245,54 +244,61 @@
         },
         "AWSRegionArch2AMI": {
             "ap-northeast-1": {
-                "HVM64": "ami-b8be09d9",
+                "HVM64": "ami-7d58241a",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-65dc0b0b",
+                "HVM64": "ami-919d4cff",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-south-1": {
-                "HVM64": "ami-562d5a39",
+                "HVM64": "ami-ba9bedd5",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-f35bf990",
+                "HVM64": "ami-5a933839",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-2bc8f648",
+                "HVM64": "ami-5c74703f",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ca-central-1": {
+                "HVM64": "ami-12f84576",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-8efd39e1",
+                "HVM64": "ami-6edb1701",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-33297540",
+                "HVM64": "ami-43072d30",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "eu-west-2": {
+                "HVM64": "ami-e7848e83",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-29861845",
+                "HVM64": "ami-4557cd29",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-d9c4f4ce",
+                "HVM64": "ami-cb9479dd",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "ami-d29fc5b7",
+                "HVM64": "ami-02705567",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
-                "HVM64": "ami-fc7e2a9c",
+                "HVM64": "ami-d897c4b8",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-71bb1411",
+                "HVM64": "ami-f5962b95",
                 "HVMG2": "NOT_SUPPORTED"
             }
-        }
     },
     "Resources": {
 

@@ -16,10 +16,17 @@ weight="400"
 
 # Docker for AWS Release notes
 
+## 1.13.0-rc6-beta16
+Release date: 1/13/2017
+
+<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc6-beta16.json" data-rel="Beta-16" target="blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
+
+### New
+- Docker Engine upgraded to [Docker 1.13.0-rc6](https://github.com/docker/docker/blob/master/CHANGELOG.md)
+
+
 ## 1.13.0-rc5-beta15
 Release date: 1/05/2017
-
-<a href="https://console.aws.amazon.com/cloudformation/home#/stacks/new?stackName=Docker&templateURL=https://docker-for-aws.s3.amazonaws.com/aws/beta/aws-v1.13.0-rc5-beta15.json" data-rel="Beta-15" target="blank" id="aws-deploy">![Docker for AWS](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)</a>
 
 ### New
 - Docker Engine upgraded to [Docker 1.13.0-rc5](https://github.com/docker/docker/blob/master/CHANGELOG.md)
