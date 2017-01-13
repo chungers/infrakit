@@ -73,7 +73,7 @@ def create_new_vmss_nodes(compute_client, vmss_name, node_count):
     async_update = compute_client.virtual_machine_scale_sets.update_instances(
                             RG_NAME, vmss_name, vms_requiring_update)
     wait_with_status(async_update, u"Waiting for vmss update to complete ...")
-
+    LOG.info(u"VM model update completed")
 
 def delete_vmss_node(compute_client, node_id, vmss_name):
     async_update = compute_client.virtual_machine_scale_set_vms.delete(
