@@ -2,6 +2,6 @@
 36 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log
 */4 * * * * /usr/bin/refresh.sh >> /var/log/docker/refresh.log
 42 1 * * * /usr/bin/vacuum.sh >> /var/log/docker/vacuum.log
-* * * * * /usr/bin/kick_azupg_listener.sh >> /var/log/kick_upgrade.log
-* * * * * /usr/bin/kick_azrejoin_listener.sh >> /var/log/kick_rejoin.log
-* * * * * /usr/bin/kick_aznodewatch.sh >> /var/log/kick_nodewatch.log
+* * * * * /usr/bin/kick_azupg_listener.sh >> /var/log/docker/kick_upgrade.log
+* * * * * /usr/bin/kick_azrejoin_listener.sh >> /var/log/docker/kick_rejoin.log
+* * * * * /usr/bin/kick_aznodewatch.sh >> /var/log/docker/kick_nodewatch.log
