@@ -7,6 +7,7 @@ echo "Initialize logging for guide daemons"
 # setup symlink to output logs from relevant scripts to container logs
 ln -s /proc/1/fd/1 /var/log/docker/refresh.log
 ln -s /proc/1/fd/1 /var/log/docker/azupg_listener_actions.log
+ln -s /proc/1/fd/1 /var/log/docker/azrejoin_actions.log
 ln -s /proc/1/fd/1 /var/log/docker/aznodewatch_actions.log
 ln -s /proc/1/fd/1 /var/log/docker/azupgrade_actions.log
 
