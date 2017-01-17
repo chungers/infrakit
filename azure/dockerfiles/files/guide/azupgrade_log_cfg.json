@@ -26,13 +26,10 @@
             "stream": "ext://sys.stdout"
         },
         "file_handler_actions": {
-            "class": "logging.handlers.RotatingFileHandler",
+            "class": "logging.FileHandler",
             "level": "DEBUG",
             "formatter": "simple",
-            "filename": "/var/log/docker/azupgrade_actions.log",
-            "maxBytes": 1048576,
-            "backupCount": 10,
-            "encoding": "utf8"
+            "filename": "/var/log/docker/azupgrade_actions.log"
         }
     },
     "loggers": {
