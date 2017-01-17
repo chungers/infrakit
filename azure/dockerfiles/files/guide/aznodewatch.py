@@ -7,6 +7,8 @@ import sys
 import subprocess
 import pytz
 import socket
+import logging
+import logging.config
 from datetime import datetime, timedelta
 from time import sleep
 from docker import Client
@@ -49,6 +51,9 @@ AZURE_PROVISIONED = "ProvisioningState/succeeded"
 # wait 10 mins after provisioning state change before starting health checks
 POST_PROVISIONING_WAIT = 600
 
+LOG_CFG_FILE = "/etc/aznodewatch_log_cfg.json"
+LOG = logging.getLogger("aznodewatch")
+
 def create_new_vmss_nodes(compute_client, vmss_name, node_count):
     vms_requiring_update = []
     vmss = compute_client.virtual_machine_scale_sets.get(RG_NAME, vmss_name)
@@ -62,13 +67,13 @@ def create_new_vmss_nodes(compute_client, vmss_name, node_count):
     vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, vmss_name)
     for vm in vms:
         if not vm.latest_model_applied:
-            print(u"Add {} to list of VMs to update".format(vm.instance_id))
+            LOG.info(u"Add {} to list of VMs to update".format(vm.instance_id))
             vms_requiring_update.append(vm.instance_id)
 
     async_update = compute_client.virtual_machine_scale_sets.update_instances(
                             RG_NAME, vmss_name, vms_requiring_update)
     wait_with_status(async_update, u"Waiting for vmss update to complete ...")
-
+    LOG.info(u"VM model update completed")
 
 def delete_vmss_node(compute_client, node_id, vmss_name):
     async_update = compute_client.virtual_machine_scale_set_vms.delete(
@@ -87,7 +92,7 @@ def delete_swarm_node(docker_client, ip_addr, role):
             continue
         if node_ip == ip_addr:
             node_id = node['ID']
-            print(u"Remove swarm node ID: {} IP: {} Status:{}".format(
+            LOG.info(u"Remove swarm node ID: {} IP: {} Status:{}".format(
                     node_id, node_ip, node_status))
             if node['Spec']['Role'] == 'manager':
                 subprocess.check_output(["docker", "node", "demote", node_id])
@@ -103,7 +108,7 @@ def swarm_node_status(docker_client, ip_addr, role):
         try:
             node_ip = node['Status']['Addr']
             node_status = node['Status']['State']
-            print(u"node ip {} swarm status {}".format(node_ip, node_status))
+            LOG.info(u"node ip {} swarm status {}".format(node_ip, node_status))
         except:
             # ignore key errors due to phantom/malformed node entries
             continue
@@ -119,10 +124,10 @@ def docker_diagnostics_response(ip_addr):
             response = urlopen(req)
             return response.getcode()
         except HTTPError as e:
-            print(u"Could not reach {} due to: {}".format(ip_addr, e.code))
+            LOG.warning(u"Could not reach {} due to: {}".format(ip_addr, e.code))
             sleep(RETRY_INTERVAL)
         except URLError as e:
-            print(u"Could not reach {} due to: {}".format(ip_addr, e.reason))
+            LOG.warning(u"Could not reach {} due to: {}".format(ip_addr, e.reason))
             sleep(RETRY_INTERVAL)
     return -1
 
@@ -185,13 +190,13 @@ def monitor_vmss_nodes(docker_client, compute_client, network_client, vmss_name)
             docker_diagnostics_response(ip_addr) != HTTP_200_OK and
             swarm_node_status(docker_client, ip_addr,
                 VMSS_ROLE_MAPPING[vmss_name]) != SWARM_NODE_STATUS_READY):
-            print(u"Dead node detected with IP {}".format(ip_addr))
+            LOG.info(u"Dead node detected with IP {}".format(ip_addr))
             delete_swarm_node(docker_client, ip_addr, VMSS_ROLE_MAPPING[vmss_name])
             delete_vmss_node(compute_client, vm_ip_table[ip_addr], vmss_name)
             dead_node_count += 1
 
     if dead_node_count > 0:
-        print(u"Replace {} dead nodes in VMSS".format(dead_node_count))
+        LOG.info(u"Replace {} dead nodes in VMSS".format(dead_node_count))
         create_new_vmss_nodes(compute_client, vmss_name, dead_node_count)
 
 
@@ -224,11 +229,13 @@ def cleanup_swarm_nodes(docker_client, compute_client, network_client, vmss_name
 
         if node_status != SWARM_NODE_STATUS_READY:
             node_id = node['ID']
-            print(u"Remove non existent swarm node ID: {} IP: {} Status:{}".format(
+            LOG.info(u"Remove non existent swarm node ID: {} IP: {} Status:{}".format(
                 node_id, node_ip, node_status))
             if node['Spec']['Role'] == 'manager':
+                LOG.info(u"Demote manager first")
                 subprocess.check_output(["docker", "node", "demote", node_id])
                 sleep(5)
+            LOG.info(u"Remove node from swarm")
             subprocess.check_output(["docker", "node", "rm", "--force", node_id])
 
 def main():
@@ -236,6 +243,12 @@ def main():
     # Assumes this is running on a single node: e.g. swarm leader. Whoever kicks
     # this off needs to ensure only one instance of this is running. Multiple
     # invocations of this script may lead to extra nodes being created.
+
+    with open(LOG_CFG_FILE) as log_cfg_file:
+        log_cfg = json.load(log_cfg_file)
+        logging.config.dictConfig(log_cfg)
+
+    LOG.debug("Node monitor started")
 
     docker_client = Client(base_url='unix://var/run/docker.sock', version="1.25")
 
@@ -259,6 +272,7 @@ def main():
     # don't try to restart nodes if an upgrade is in progress. Nodes are expected
     # to go down during a rolling upgrade and be unresponsive for periods of time
     if qsvc.exists(UPGRADE_MSG_QUEUE):
+        LOG.info("Upgrade is in progress. Exit")
         return
 
     # the default API version for the REST APIs for Network points to 2016-06-01
