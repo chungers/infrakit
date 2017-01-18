@@ -1,7 +1,17 @@
-{# Copyright 2016 Docker Inc. All rights reserved. #}
+{#- Copyright 2016 Docker Inc. All rights reserved. -#}
 
-{% set REGION = properties['zone'][:properties['zone'].rfind('-')] %}
-{% set VERSION = 'gcp-v1.13.0-rc2-beta12' %}
+{%- set REGION = properties['zone'][:properties['zone'].rfind('-')] -%}
+{%- set VERSION = 'gcp-v1.13.0-rc2-beta12' -%}
+
+{%- macro StartupScript(type) -%}
+  {%- filter replace('\n', '","') -%}
+    {%- filter replace('"', '\\"') -%}
+      {%- filter replace('\\', '\\\\') -%}
+        {%- include 'startup/script.sh' -%}
+      {%- endfilter -%}
+    {%- endfilter -%}
+  {%- endfilter -%}
+{%- endmacro -%}
 
 outputs:
 - name: externalIp
@@ -37,8 +47,7 @@ resources:
       items:
       - key: startup-script
         value: |
-          {% filter indent(10) %}{% include 'startup/manager.sh' %}{% endfilter %}
-          {% filter indent(10) %}{% include 'startup/leader.sh' %}{% endfilter %}
+          {% filter indent(10) %}{% set type='leader' %}{% include 'startup/script.sh' %}{% endfilter %}
       - key: managersJson
         value: |
           {% filter indent(10) %}{% include 'infrakit/managers.json.template' %}{% endfilter %}

@@ -37,14 +37,13 @@
           {
             "Plugin": "flavor-vanilla",
             "Properties": {
-              "Init": [ "{% filter replace('\n', '","') %}{% filter replace('"', '\\"') %}{% filter replace('\\', '\\\\') %}{% include 'startup/manager.sh' %}{% endfilter %}{% endfilter %}{% endfilter %}" ]
+              "Init": [ "{{ StartupScript('manager') }}" ]
             }
           },
           {
             "Plugin": "flavor-swarm",
             "Properties": {
-              "Type": "manager",
-              "DockerRestartCommand": "service docker restart"
+              "Type": "manager"
             }
           }
         ]

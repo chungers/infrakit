@@ -31,14 +31,13 @@
           {
             "Plugin": "flavor-vanilla",
             "Properties": {
-              "Init": [ "{% filter replace('\n', '","') %}{% filter replace('"', '\\"') %}{% filter replace('\\', '\\\\') %}{% include 'startup/worker.sh' %}{% endfilter %}{% endfilter %}{% endfilter %}" ]
+              "Init": [ "{{ StartupScript('worker') }}" ]
             }
           },
           {
             "Plugin": "flavor-swarm",
             "Properties": {
-              "Type": "worker",
-              "DockerRestartCommand": "service docker restart"
+              "Type": "worker"
             }
           }
         ]
