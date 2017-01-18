@@ -39,7 +39,7 @@ echo
 echo "If you don't want to curl this script, you can run the following command directly:"
 echome gcloud deployment-manager deployments create docker \
   --config https://storage.googleapis.com/docker-for-gcp-templates/latest/swarm.jinja \
-  --properties managerCount=${managerCount},workerCount=${workerCount}
+  --properties managerCount:${managerCount},workerCount:${workerCount}
 
 echo
 echo "Build a container to open an ssh tunnel..."

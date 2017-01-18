@@ -26,13 +26,13 @@ outputs:
 
 properties:
   managerCount:
-    type: string
-    default: "3"
+    type: integer
+    default: 3
     description: Number of Managers
 
   workerCount:
-    type: string
-    default: "1"
+    type: integer
+    default: 1
     description: Number of Workers
 
   zone:

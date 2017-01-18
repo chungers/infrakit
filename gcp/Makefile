@@ -11,7 +11,7 @@ ZONE ?= europe-west1-d
 MANAGER_MACHINE_TYPE ?= g1-small
 WORKER_MACHINE_TYPE ?= g1-small
 
-GCLOUD_IMAGE_TAG ?= sha256:44296dea85d3f8f016a9ac2d3225ac494c8cfc4593b0d3fb316eb26413e5846d
+GCLOUD_IMAGE_TAG ?= sha256:fb904276e8a902ccd9564989d9222bdfbe37ffcd7f9989ca7e24b4019a9b4b6b
 GCLOUD = docker run --rm -ti \
 	-v $(CURDIR)/templates:/templates \
 	--volumes-from gcloud-config \
@@ -39,7 +39,7 @@ revoke:
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
 		--config /templates/swarm.jinja \
-		--properties managerCount=$(MANAGER_COUNT),workerCount=$(WORKER_COUNT),zone=$(ZONE),managerMachineType=$(MANAGER_MACHINE_TYPE),workerMachineType=$(WORKER_MACHINE_TYPE)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE)
 
 delete:
 	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)

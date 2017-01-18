@@ -4,7 +4,7 @@
     "Allocation": {
       "LogicalIDS": [
         {%- set comma = joiner(",") -%}
-        {%- for i in range(1,properties['managerCount']|int + 1) -%}
+        {%- for i in range(1,properties['managerCount'] + 1) -%}
         {{ comma() }}"{{ env['deployment'] }}-manager-{{ i }}"
         {%- endfor -%}
       ]
