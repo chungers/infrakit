@@ -16,11 +16,23 @@ weight="400"
 
 # Docker for Azure Release notes
 
+## 1.13.0-1
+Release date: 1/18/2017
+
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fstable%2Fazure-v1.13.0-1.json" data-rel="Stable-1" target="_blank" id="azure-deploy">![Docker for Azure](http://azuredeploy.net/deploybutton.png)</a>
+
+### New
+
+- Docker Engine upgraded to [Docker 1.13.0](https://github.com/docker/docker/blob/master/CHANGELOG.md)
+- Writing to home directory no longer requires `sudo`
+- Added support to perform fine grained monitoring of health status of swarm nodes, destroy unhealthy nodes and create replacement nodes
+- Added support to scale the number of nodes in manager and worker vm scale sets through Azure UI/CLI for managing the number of nodes in a scale set
+- Improved logging and remote diagnostics mechanisms for system containers
+
+
 ## 1.13.0-rc4-beta14
 
 Release date: 12/21/2016
-
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fdocker-for-azure.s3.amazonaws.com%2Fazure%2Fbeta%2Fazure-v1.13.0-rc4-beta14.json" data-rel="Beta-14" target="_blank" id="azure-deploy">![Docker for Azure](http://azuredeploy.net/deploybutton.png)</a>
 
 ### New
 
