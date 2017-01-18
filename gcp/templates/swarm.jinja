@@ -20,7 +20,7 @@ resources:
     zone: {{ properties['zone'] }}
     machineType: zones/{{ properties['zone']}}/machineTypes/{{ properties['managerMachineType'] }}
     tags:
-      items: [swarm, {{ env['deployment'] }}-node]
+      items: [swarm, swarm-manager]
     disks:
     - type: PERSISTENT
       boot: true
@@ -97,6 +97,8 @@ resources:
   properties:
     network: $(ref.{{ env['deployment'] }}-network.selfLink)
     sourceRanges: [0.0.0.0/0]
+    targetTags:
+    - swarm-manager
     allowed:
     - IPProtocol: tcp
       ports: [22]

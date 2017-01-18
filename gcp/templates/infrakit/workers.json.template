@@ -13,7 +13,7 @@
         "DiskSizeMb": 10,
         "DiskImage": "$(ref.{{ env['deployment'] }}-disk-image.selfLink)",
         "TargetPool": "{{ env['deployment'] }}-target-pool",
-        "Tags": ["swarm"],
+        "Tags": ["swarm", "swarm-worker"],
         "Scopes": [
           "https://www.googleapis.com/auth/devstorage.read_only",
           "https://www.googleapis.com/auth/logging.write",
@@ -25,10 +25,23 @@
       }
     },
     "Flavor": {
-      "Plugin": "flavor-swarm",
+      "Plugin": "flavor-combo",
       "Properties": {
-        "Type": "worker",
-        "DockerRestartCommand": "service docker restart"
+        "Flavors": [
+          {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+              "Init": [ "{% filter replace('\n', '","') %}{% filter replace('"', '\\"') %}{% filter replace('\\', '\\\\') %}{% include 'startup/worker.sh' %}{% endfilter %}{% endfilter %}{% endfilter %}" ]
+            }
+          },
+          {
+            "Plugin": "flavor-swarm",
+            "Properties": {
+              "Type": "worker",
+              "DockerRestartCommand": "service docker restart"
+            }
+          }
+        ]
       }
     }
   }

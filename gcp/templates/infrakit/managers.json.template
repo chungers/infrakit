@@ -18,7 +18,7 @@
         "DiskSizeMb": 10,
         "DiskImage": "$(ref.{{ env['deployment'] }}-disk-image.selfLink)",
         "TargetPool": "{{ env['deployment'] }}-target-pool",
-        "Tags": ["swarm"],
+        "Tags": ["swarm", "swarm-manager"],
         "Scopes": [
           "https://www.googleapis.com/auth/devstorage.read_only",
           "https://www.googleapis.com/auth/logging.write",

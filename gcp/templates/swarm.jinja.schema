@@ -6,6 +6,7 @@ imports:
 - path: swarm.jinja
 - path: infrakit/managers.json.template
 - path: infrakit/workers.json.template
+- path: startup/worker.sh
 - path: startup/manager.sh
 - path: startup/leader.sh
 
