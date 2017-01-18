@@ -48,7 +48,7 @@ First, please make sure to pull the latest version of `docker4x/create-sp-azure`
 
 Next, run the containerized script within `docker4x/create-sp-azure`:
 
-    docker run -ti docker4x/create-sp-azure sp-name rg-name rg-loc
+    docker run -ti docker4x/create-sp-azure sp-name rg-name rg-region
     ...
     Your access credentials =============================
     AD App ID:       <app-id>
@@ -61,9 +61,9 @@ If you have multiple Azure subscriptions, make sure you're creating the Service 
 
 `rg-name` is the name of the new resource group that will be created to deploy the resources (VMs, networks, storage accounts) associated with the swarm. The Service Principal will be scoped to this resource group. Example: `swarm1`, `prodswarm`.
 
-`rg-loc` is the name of a Azure location where the resource group will be created. This needs to be one of the location strings supported by Azure. A few examples: `westus`, `eastus`, `canadacentral`, `ukwest`, `northeurope`, `japanwest`, `australiaeast`.
+`rg-region` is the name of a Azure region where the resource group will be created. This needs to be one of the region/location strings supported by Azure. A few examples: `westus`, `eastus`, `canadacentral`, `ukwest`, `northeurope`, `japanwest`, `australiaeast`.
 
-While `rg-name` and `rg-loc` are optional, it's highly recommended that you create the resource group up front and scope the service principal to that specific resource group.
+While `rg-name` and `rg-region` are optional, it's highly recommended that you create the resource group up front and scope the service principal to that specific resource group.
 
 If the script fails, it's typically because your Azure user account doesn't have sufficient privileges. Contact your Azure administrator.
 
