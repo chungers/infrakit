@@ -64,19 +64,31 @@ if [[ "" == ${SP_OBJECT_ID} ]]; then
     exit 1
 fi
 
-echo "Waiting for account updates to complete before proceeding."
-sleep 20
-
 echo "Creating role assignment for ${SP_OBJECT_ID} for subscription ${SUBSCRIPTION_ID}"
+
+echo "Waiting for account updates to complete before proceeding ..."
+sleep 30
 azure role assignment create --objectId ${SP_OBJECT_ID} --roleName Contributor \
       --scope /subscriptions/${SUBSCRIPTION_ID}/ --json > /var/lib/azure/role_assignment.json
+
+status=$?
+while [[ ${status} != 0 ]];
+do
+    echo "Ignore previous failure and retry ..."
+    sleep 30
+    azure role assignment create --objectId ${SP_OBJECT_ID} --roleName Contributor \
+          --scope /subscriptions/${SUBSCRIPTION_ID}/ --json > /var/lib/azure/role_assignment.json
+    status=$?
+done
+
+echo "Successfully created role assignment for ${SP_OBJECT_ID} for subscription ${SUBSCRIPTION_ID}"
 
 echo "Test login..."
 azure login --service-principal --tenant ${TENANT_ID} --username ${APP_ID} --password ${PASSWORD} --json
 
-echo 
-echo 
-echo 
+echo
+echo
+echo
 
 echo "Your access credentials =================================================="
 echo "AD ServicePrincipal App ID:       ${APP_ID}"
