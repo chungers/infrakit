@@ -1,5 +1,5 @@
-FROM docker4x/shell-aws@sha256:976a48261805160a3bdd834847c44af6097cb3886f5fb80e1c0e459c0c82544e
-# Created from aws-v1.14.0-dev-nightly_12_19_2016 tag
+FROM docker4x/shell-aws@sha256:0bb4c4603891bd1128f5eed95467c096de24564a01911d5f53e9a49cc5a76a80
+# Created from aws-v1.13.0-1 tag
 
 RUN apk add --no-cache --update \
         sfdisk \
@@ -14,10 +14,10 @@ RUN apk add --no-cache --update \
         net-tools \
         ifupdown \
         python \
-        py-pip \
         util-linux \
         git \
-        py-setuptools
+        py-setuptools \
+        py2-pip
 
 # Windows Azure Linux agent section
 RUN pip install pyasn1
