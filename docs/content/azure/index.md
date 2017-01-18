@@ -48,7 +48,7 @@ First, please make sure to pull the latest version of `docker4x/create-sp-azure`
 
 Next, run the containerized script within `docker4x/create-sp-azure`:
 
-    docker run -ti docker4x/create-sp-azure sp-name
+    docker run -ti docker4x/create-sp-azure sp-name rg-name rg-loc
     ...
     Your access credentials =============================
     AD App ID:       <app-id>
@@ -57,11 +57,17 @@ Next, run the containerized script within `docker4x/create-sp-azure`:
 
 If you have multiple Azure subscriptions, make sure you're creating the Service Principal with subscription ID that you shared with Docker when signing up for the beta.
 
-`sp-name` is the name of the authentication app that the script creates with Azure. The name is not important, simply choose something you'll recognize in the Azure portal.
+`sp-name` is the name of the authentication app that the script creates with Azure. The name is not important, simply choose something you'll recognize in the Azure portal. Example: `sp1`.
+
+`rg-name` is the name of the new resource group that will be created to deploy the resources (VMs, networks, storage accounts) associated with the swarm. The Service Principal will be scoped to this resource group. Example: `swarm1`.
+
+`rg-loc` is the name of Azure's region/location where the resource group will be created. This needs to be one of the regions supported by Azure e.g. `westus`, `centralus`, `eastus`.
+
+While `rg-name` and `rg-loc` are optional, it's highly recommended that you create the resource group up front and scope the service principal to that specific resource group.
 
 If the script fails, it's typically because your Azure user account doesn't have sufficient privileges. Contact your Azure administrator.
 
-When setting up the ARM template, you will be prompted for the App ID (a UUID) and the app secret.
+When setting up the ARM template, you will be prompted for the App ID (a UUID) and the app secret. If you specified the resource group name and location parameters, please choose the option to deploy the template into an existing resource group and pass the same name and region/location that were passed above to create-sp-azure.
 
 ### SSH Key
 
