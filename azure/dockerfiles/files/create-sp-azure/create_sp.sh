@@ -86,8 +86,8 @@ echo "Successfully created role assignment for ${SP_OBJECT_ID} for subscription 
 echo "Test login..."
 azure login --service-principal --tenant ${TENANT_ID} --username ${APP_ID} --password ${PASSWORD} --json
 
-echo 
 echo
+echo 
 echo
 
 echo "Your access credentials =================================================="
