@@ -40,7 +40,13 @@ The number of workers you want in your swarm (1-100).
 
 ### Service Principal
 
-To set up Docker for Azure, a [Service Principal](https://azure.microsoft.com/en-us/documentation/articles/active-directory-application-objects/) is required. Docker for Azure uses the principal to operate Azure APIs as you scale up and down or deploy apps on your swarm. Docker provides a containerized helper-script to help create the Service Principal:
+To set up Docker for Azure, a [Service Principal](https://azure.microsoft.com/en-us/documentation/articles/active-directory-application-objects/) is required. Docker for Azure uses the principal to operate Azure APIs as you scale up and down or deploy apps on your swarm. Docker provides a containerized helper-script to help create the Service Principal - `docker4x/create-sp-azure`.
+
+First, please make sure to pull the latest version of `docker4x/create-sp-azure` (in case you already had it cached and the latest version fixes any known issues):
+
+    docker pull docker4x/create-sp-azure:latest
+
+Next, run the containerized script within `docker4x/create-sp-azure`:
 
     docker run -ti docker4x/create-sp-azure sp-name
     ...
