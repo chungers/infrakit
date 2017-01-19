@@ -4,7 +4,7 @@ usage() {
     echo "usage: ${PROG} app_name [resource_group_name resource_group_location]"
     echo "    app_name: Name of the new Azure AD Application used for authentication"
     echo "    resource_group_name: Name of the new Azure Resource Group where s"
-    echo "    location: Location of the new Azure Resource Group"
+    echo "    resource_group_location: Location of the new Azure Resource Group"
 }
 
 MAX_RETRIES=20
