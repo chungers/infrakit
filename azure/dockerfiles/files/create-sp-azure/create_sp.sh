@@ -21,8 +21,8 @@ fi
 azure login
 
 if [ -z "$SUBSCRIPTION_ID" ]; then
-    echo "The following subscriptions were retrieved from your account"
-    PS3='Please select the subscription to use: '
+    echo "The following subscriptions were retrieved from your Azure account"
+    PS3='Please select the subscription option number to use for Docker swarm resources: '
     options=($(azure account list --json | jq -r 'map(select(.state == "Enabled"))|.[]|.id + ":" + .name' | sed -e 's/ /_/g'))
     select opt in "${options[@]}"
     do
@@ -75,14 +75,14 @@ if [[ "" == ${SP_OBJECT_ID} ]]; then
 fi
 
 if [ ! -z ${RG_NAME} ]; then
-    echo "Create new Azure Resource Group ${RG_NAME} in ${RG_LOC}"
-    azure group create ${RG_NAME} ${RG_LOC}
+    echo "Create new Azure Resource Group "${RG_NAME}" in "${RG_LOC}""
+    azure group create "${RG_NAME}" "${RG_LOC}"
     if [[ $? -ne 0 ]]; then
         echo "Resource Group creation failed. Details:"
         cat /root/.azure/azure.err
         exit 1
     fi
-    echo "Resource Group ${RG_NAME} created "
+    echo "Resource Group "${RG_NAME}" created "
 fi
 
 echo "Waiting for account updates to complete before proceeding ..."
@@ -101,7 +101,7 @@ do
     else
         echo "Creating role assignment for ${SP_OBJECT_ID} scoped to ${RG_NAME}"
         azure role assignment create --objectId ${SP_OBJECT_ID} --roleName Contributor \
-            --resource-group ${RG_NAME}
+            --resource-group "${RG_NAME}"
         status=$?
     fi
 
@@ -111,7 +111,7 @@ do
         echo "Wait before retrying ..."
         sleep 30
     fi
-    retries=$[retries+1]
+    retries=$((retries+1))
 done
 
 if [ ${status} -ne 0 ]; then
@@ -139,7 +139,7 @@ do
         echo "Wait before retrying ..."
         sleep 30
     fi
-    retries=$[retries+1]
+    retries=$((retries+1))
 done
 
 if [ ${status} -ne 0 ]; then
@@ -162,6 +162,6 @@ if [[ "" == ${RG_NAME} ]]; then
     echo "WARNING: The above credentials provide full access to your Azure subscription."
     echo "Please use Service Principals scoped to individual resource groups."
 else
-    echo "Resource Group Name:              ${RG_NAME}"
-    echo "Resource Group Location:          ${RG_LOC}"
+    echo "Resource Group Name:              "${RG_NAME}""
+    echo "Resource Group Location:          "${RG_LOC}""
 fi
