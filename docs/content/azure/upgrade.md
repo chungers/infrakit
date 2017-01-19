@@ -34,7 +34,7 @@ If you submit your email address at [https://beta.docker.com/](beta.docker.com) 
 
 To initiate an upgrade, SSH into a manager node and issue the following command:
 
-    upgrade.sh https://docker-for-azure.s3.amazonaws.com/azure/beta/latest.json
+    upgrade.sh https://docker-for-azure.s3.amazonaws.com/azure/stable/latest.json
 
 This will initiate a rolling upgrade of the Docker swarm and service state will be maintained during and after the upgrade. Appropriately scaled services should not experience downtime during an upgrade. Note that single containers started (for example) with `docker run -d` are **not** preserved during an upgrade. This is because they are not Docker Swarm services but are known only to the individual Docker engines.
 

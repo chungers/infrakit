@@ -67,7 +67,9 @@ While `rg-name` and `rg-region` are optional, it's highly recommended that you c
 
 If the script fails, it's typically because your Azure user account doesn't have sufficient privileges. Contact your Azure administrator.
 
-When setting up the ARM template, you will be prompted for the App ID (a UUID) and the app secret. If you specified the resource group name and location parameters, please choose the option to deploy the template into an existing resource group and pass the same name and region/location that were passed above to create-sp-azure.
+When setting up the ARM template, you will be prompted for the App ID (a UUID) and the app secret. If you specified the resource group name and location parameters, please choose the option to deploy the template into an existing resource group and pass the same name and region/location that were passed above to create-sp-azure. The following screenshot illustrates where the different pieces of data from the output of create-sp-azure goes into the ARM template's parameters:
+
+<img src="/img/azure/AzParameters2.png">
 
 ### SSH Key
 
