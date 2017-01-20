@@ -4,9 +4,8 @@ info:
 
 imports:
 - path: swarm.jinja
-- path: infrakit/managers.json.template
-- path: infrakit/workers.json.template
-- path: startup/script.sh
+- path: infrakit.json.template
+- path: startup.sh
 
 outputs:
   externalIp:

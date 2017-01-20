@@ -9,7 +9,7 @@
   {%- filter replace('\n', '","') -%}
     {%- filter replace('"', '\\"') -%}
       {%- filter replace('\\', '\\\\') -%}
-        {%- include 'startup/script.sh' -%}
+        {%- include 'startup.sh' -%}
       {%- endfilter -%}
     {%- endfilter -%}
   {%- endfilter -%}
@@ -49,13 +49,7 @@ resources:
       items:
       - key: startup-script
         value: |
-          {% filter indent(10) %}{% set type='leader' %}{% include 'startup/script.sh' %}{% endfilter %}
-      - key: managersJson
-        value: |
-          {% filter indent(10) %}{% include 'infrakit/managers.json.template' %}{% endfilter %}
-      - key: workersJson
-        value: |
-          {% filter indent(10) %}{% include 'infrakit/workers.json.template' %}{% endfilter %}
+          {% filter indent(10) %}{% set type='leader' %}{% include 'startup.sh' %}{% endfilter %}
     scheduling:
       preemptible: false
       onHostMaintenance: TERMINATE
@@ -69,6 +63,20 @@ resources:
       - https://www.googleapis.com/auth/servicecontrol
       - https://www.googleapis.com/auth/trace.append
       - https://www.googleapis.com/auth/compute
+      - https://www.googleapis.com/auth/cloudruntimeconfig
+
+- name: {{ STACK }}-config
+  type: runtimeconfig.v1beta1.config
+  properties:
+    config: {{ STACK }}-config
+
+- name: {{ STACK }}-manager-infrakit
+  type: runtimeconfig.v1beta1.variable
+  properties:
+    parent: $(ref.{{ STACK }}-config.name)
+    variable: infrakit
+    text: |
+      {% filter indent(6) %}{% include 'infrakit.json.template' %}{% endfilter %}
 
 - name: {{ STACK }}-disk-image
   type: compute.v1.image

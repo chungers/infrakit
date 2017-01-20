@@ -1,0 +1,103 @@
+{
+  "managers": {
+    "ID": "managers",
+    "Properties": {
+      "Allocation": {
+        "LogicalIDS": [
+          {%- set comma = joiner(",") -%}
+          {%- for i in range(1,properties['managerCount'] + 1) -%}
+          {{ comma() }}"{{ STACK }}-manager-{{ i }}"
+          {%- endfor -%}
+        ]
+      },
+      "Instance": {
+        "Plugin": "instance-gcp",
+        "Properties": {
+          "MachineType": "{{ properties['managerMachineType'] }}",
+          "Network": "$(ref.{{ STACK }}-network.selfLink)",
+          "NamePrefix": "{{ STACK }}-manager",
+          "DiskSizeMb": 10,
+          "DiskImage": "$(ref.{{ STACK }}-disk-image.selfLink)",
+          "TargetPool": "{{ STACK }}-target-pool",
+          "Tags": ["swarm", "swarm-manager"],
+          "Scopes": [
+            "https://www.googleapis.com/auth/devstorage.read_only",
+            "https://www.googleapis.com/auth/logging.write",
+            "https://www.googleapis.com/auth/monitoring.write",
+            "https://www.googleapis.com/auth/service.management.readonly",
+            "https://www.googleapis.com/auth/servicecontrol",
+            "https://www.googleapis.com/auth/trace.append",
+            "https://www.googleapis.com/auth/compute",
+            "https://www.googleapis.com/auth/cloudruntimeconfig"
+          ]
+        }
+      },
+      "Flavor": {
+        "Plugin": "flavor-combo",
+        "Properties": {
+          "Flavors": [
+            {
+              "Plugin": "flavor-vanilla",
+              "Properties": {
+                "Init": [ "{{ StartupScript('manager') }}" ]
+              }
+            },
+            {
+              "Plugin": "flavor-swarm",
+              "Properties": {
+                "Type": "manager"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "workers": {
+    "ID": "workers",
+    "Properties": {
+      "Allocation": {
+        "Size": {{ properties['workerCount'] }}
+      },
+      "Instance": {
+        "Plugin": "instance-gcp",
+        "Properties": {
+          "MachineType": "{{ properties['workerMachineType'] }}",
+          "Network": "$(ref.{{ STACK }}-network.selfLink)",
+          "NamePrefix": "{{ STACK }}-worker",
+          "DiskSizeMb": 10,
+          "DiskImage": "$(ref.{{ STACK }}-disk-image.selfLink)",
+          "TargetPool": "{{ STACK }}-target-pool",
+          "Tags": ["swarm", "swarm-worker"],
+          "Scopes": [
+            "https://www.googleapis.com/auth/devstorage.read_only",
+            "https://www.googleapis.com/auth/logging.write",
+            "https://www.googleapis.com/auth/monitoring.write",
+            "https://www.googleapis.com/auth/service.management.readonly",
+            "https://www.googleapis.com/auth/servicecontrol",
+            "https://www.googleapis.com/auth/trace.append"
+          ]
+        }
+      },
+      "Flavor": {
+        "Plugin": "flavor-combo",
+        "Properties": {
+          "Flavors": [
+            {
+              "Plugin": "flavor-vanilla",
+              "Properties": {
+                "Init": [ "{{ StartupScript('worker') }}" ]
+              }
+            },
+            {
+              "Plugin": "flavor-swarm",
+              "Properties": {
+                "Type": "worker"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
