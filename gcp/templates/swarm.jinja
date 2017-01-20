@@ -1,7 +1,9 @@
 {#- Copyright 2016 Docker Inc. All rights reserved. -#}
 
-{%- set REGION = properties['zone'][:properties['zone'].rfind('-')] -%}
-{%- set VERSION = 'gcp-v1.13.0-rc2-beta12' -%}
+{%- set VERSION = properties['version'] -%}
+{%- set STACK = env['deployment'] -%}
+{%- set ZONE = properties['zone'] -%}
+{%- set REGION = ZONE[:ZONE.rfind('-')] -%}
 
 {%- macro StartupScript(type) -%}
   {%- filter replace('\n', '","') -%}
@@ -15,20 +17,20 @@
 
 outputs:
 - name: externalIp
-  value: $(ref.{{ env['deployment'] }}-external-ip.address)
+  value: $(ref.{{ STACK }}-external-ip.address)
 - name: leaderIp
-  value: $(ref.{{ env['deployment'] }}-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
+  value: $(ref.{{ STACK }}-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
 - name: zone
-  value: {{ properties['zone'] }}
+  value: {{ ZONE }}
 - name: ssh
-  value: "You can ssh into the Swarm with: gcloud compute ssh --zone {{ properties['zone'] }} {{ env['deployment'] }}-manager-1"
+  value: "You can ssh into the Swarm with: gcloud compute ssh --zone {{ ZONE }} {{ STACK }}-manager-1"
 
 resources:
-- name: {{ env['deployment'] }}-manager-1
+- name: {{ STACK }}-manager-1
   type: compute.v1.instance
   properties:
-    zone: {{ properties['zone'] }}
-    machineType: zones/{{ properties['zone']}}/machineTypes/{{ properties['managerMachineType'] }}
+    zone: {{ ZONE }}
+    machineType: zones/{{ ZONE }}/machineTypes/{{ properties['managerMachineType'] }}
     tags:
       items: [swarm, swarm-manager]
     disks:
@@ -36,10 +38,10 @@ resources:
       boot: true
       autoDelete: false
       initializeParams:
-        sourceImage: $(ref.{{ env['deployment'] }}-disk-image.selfLink)
+        sourceImage: $(ref.{{ STACK }}-disk-image.selfLink)
         diskSizeGb: 10
     networkInterfaces:
-    - network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    - network: $(ref.{{ STACK }}-network.selfLink)
       accessConfigs:
       - name: External NAT
         type: ONE_TO_ONE_NAT
@@ -68,43 +70,43 @@ resources:
       - https://www.googleapis.com/auth/trace.append
       - https://www.googleapis.com/auth/compute
 
-- name: {{ env['deployment'] }}-disk-image
+- name: {{ STACK }}-disk-image
   type: compute.v1.image
   properties:
     family: docker
     rawDisk:
       source: https://storage.googleapis.com/docker-for-gcp-images/{{ VERSION }}/gce.img.tar.gz
 
-- name: {{ env['deployment'] }}-external-ip
+- name: {{ STACK }}-external-ip
   type: compute.v1.address
   properties:
     region: {{ REGION }}
 
-- name: {{ env['deployment'] }}-target-pool
+- name: {{ STACK }}-target-pool
   type: compute.v1.targetPool
   properties:
     region: {{ REGION }}
     sessionAffinity: NONE
-    instances: [$(ref.{{ env['deployment'] }}-manager-1.selfLink)]
+    instances: [$(ref.{{ STACK }}-manager-1.selfLink)]
 
-- name: {{ env['deployment'] }}-lb-forward
+- name: {{ STACK }}-lb-forward
   type: compute.v1.forwardingRule
   properties:
     region: {{ REGION }}
     IPProtocol: TCP
     portRange: 80-65535
-    IPAddress: $(ref.{{ env['deployment'] }}-external-ip.address)
-    target: $(ref.{{ env['deployment'] }}-target-pool.selfLink)
+    IPAddress: $(ref.{{ STACK }}-external-ip.address)
+    target: $(ref.{{ STACK }}-target-pool.selfLink)
 
-- name: {{ env['deployment'] }}-network
+- name: {{ STACK }}-network
   type: compute.v1.network
   properties:
     autoCreateSubnetworks: true
 
-- name: {{ env['deployment'] }}-allow-ssh
+- name: {{ STACK }}-allow-ssh
   type: compute.v1.firewall
   properties:
-    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    network: $(ref.{{ STACK }}-network.selfLink)
     sourceRanges: [0.0.0.0/0]
     targetTags:
     - swarm-manager
@@ -112,19 +114,19 @@ resources:
     - IPProtocol: tcp
       ports: [22]
 
-- name: {{ env['deployment'] }}-allow-lb
+- name: {{ STACK }}-allow-lb
   type: compute.v1.firewall
   properties:
-    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    network: $(ref.{{ STACK }}-network.selfLink)
     sourceRanges: [0.0.0.0/0]
     allowed:
     - IPProtocol: tcp
       ports: [80]
 
-- name: {{ env['deployment'] }}-allow-internal
+- name: {{ STACK }}-allow-internal
   type: compute.v1.firewall
   properties:
-    network: $(ref.{{ env['deployment'] }}-network.selfLink)
+    network: $(ref.{{ STACK }}-network.selfLink)
     sourceRanges: [10.128.0.0/9]
     allowed:
     - IPProtocol: tcp

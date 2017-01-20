@@ -8,11 +8,11 @@
       "Plugin": "instance-gcp",
       "Properties": {
         "MachineType": "{{ properties['workerMachineType'] }}",
-        "Network": "$(ref.{{ env['deployment'] }}-network.selfLink)",
-        "NamePrefix": "{{ env['deployment'] }}-worker",
+        "Network": "$(ref.{{ STACK }}-network.selfLink)",
+        "NamePrefix": "{{ STACK }}-worker",
         "DiskSizeMb": 10,
-        "DiskImage": "$(ref.{{ env['deployment'] }}-disk-image.selfLink)",
-        "TargetPool": "{{ env['deployment'] }}-target-pool",
+        "DiskImage": "$(ref.{{ STACK }}-disk-image.selfLink)",
+        "TargetPool": "{{ STACK }}-target-pool",
         "Tags": ["swarm", "swarm-worker"],
         "Scopes": [
           "https://www.googleapis.com/auth/devstorage.read_only",

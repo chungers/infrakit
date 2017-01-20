@@ -5,7 +5,7 @@
       "LogicalIDS": [
         {%- set comma = joiner(",") -%}
         {%- for i in range(1,properties['managerCount'] + 1) -%}
-        {{ comma() }}"{{ env['deployment'] }}-manager-{{ i }}"
+        {{ comma() }}"{{ STACK }}-manager-{{ i }}"
         {%- endfor -%}
       ]
     },
@@ -13,11 +13,11 @@
       "Plugin": "instance-gcp",
       "Properties": {
         "MachineType": "{{ properties['managerMachineType'] }}",
-        "Network": "$(ref.{{ env['deployment'] }}-network.selfLink)",
-        "NamePrefix": "{{ env['deployment'] }}-manager",
+        "Network": "$(ref.{{ STACK }}-network.selfLink)",
+        "NamePrefix": "{{ STACK }}-manager",
         "DiskSizeMb": 10,
-        "DiskImage": "$(ref.{{ env['deployment'] }}-disk-image.selfLink)",
-        "TargetPool": "{{ env['deployment'] }}-target-pool",
+        "DiskImage": "$(ref.{{ STACK }}-disk-image.selfLink)",
+        "TargetPool": "{{ STACK }}-target-pool",
         "Tags": ["swarm", "swarm-manager"],
         "Scopes": [
           "https://www.googleapis.com/auth/devstorage.read_only",

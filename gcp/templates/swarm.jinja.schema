@@ -23,6 +23,11 @@ outputs:
     type: string
 
 properties:
+  version:
+    type: string
+    default: "gcp-v1.13.0-rc6-beta16"
+    description: Version of the templates
+
   managerCount:
     type: integer
     default: 3
