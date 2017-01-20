@@ -2,8 +2,7 @@ FROM alpine:3.5
 
 RUN apk add --update bash openssh ca-certificates sudo curl jq tar python py-setuptools shadow iproute2
 
-ENTRYPOINT ["/entry.sh"]
-CMD ["/usr/sbin/sshd", "-D", "-f", "/etc/ssh/sshd_config"]
+CMD ["/entry.sh", "/usr/sbin/sshd", "-D", "-f", "/etc/ssh/sshd_config"]
 EXPOSE 22
 
 RUN groupadd google-sudoers -g 50

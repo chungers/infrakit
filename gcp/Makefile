@@ -24,9 +24,11 @@ GSUTIL = docker run --rm -ti \
 	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 	gsutil
 FORCE_GSUTIL_AUTH ?= 1
+TESTS ?= all
 
-.PHONY: all auth revoke create describe delete release integration-tests dockerfiles export-templates
+.PHONY: all auth revoke create describe delete release test dockerfiles export-templates
 .DEFAULT: all
+
 all: auth create
 
 auth: revoke
@@ -50,11 +52,10 @@ delete:
 	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)
 
-release: dockerfiles export-templates
+release: dockerfiles test export-templates
 
-integration-tests:
-	@echo "+ $@"
-	@cd ${CURDIR}/integration; ./run.sh
+test:
+	@cd ${CURDIR}/tests; docker-compose build && docker-compose run test $(TESTS)
 
 dockerfiles:
 	DOCKER_TAG=$(EDITIONS_VERSION) make -C dockerfiles all

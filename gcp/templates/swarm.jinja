@@ -1,6 +1,7 @@
 {#- Copyright 2016 Docker Inc. All rights reserved. -#}
 
 {%- set VERSION = properties['version'] -%}
+{%- set PROJECT = env['project'] -%}
 {%- set STACK = env['deployment'] -%}
 {%- set ZONE = properties['zone'] -%}
 {%- set REGION = ZONE[:ZONE.rfind('-')] -%}
