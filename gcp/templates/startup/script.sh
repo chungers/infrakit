@@ -47,8 +47,7 @@ fi
 
 if [ ${regenerateSshKeys} -eq 1 ]; then
   dockerRm etc
-  $docker_run -it --name=etc \
-    --user root \
+  $docker_run --name=etc \
     -v /etc \
     --entrypoint ssh-keygen \
     $shell_image \
