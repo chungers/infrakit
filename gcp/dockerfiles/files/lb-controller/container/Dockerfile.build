@@ -1,8 +1,0 @@
-FROM golang:1.7.4-alpine
-
-RUN apk add --update bash ca-certificates jq git make
-
-WORKDIR /go/src/github.com/docker/editions
-ENTRYPOINT cd /go/src/github.com/docker/editions/gcp/dockerfiles/files/lb-controller/container && make -k build-in-container
-
-COPY . ./

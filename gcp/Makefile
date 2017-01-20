@@ -25,7 +25,7 @@ GSUTIL = docker run --rm -ti \
 	gsutil
 FORCE_GSUTIL_AUTH ?= 1
 
-.PHONY: all auth revoke create describe delete export-templates
+.PHONY: all auth revoke create describe delete release integration-tests dockerfiles export-templates
 .DEFAULT: all
 all: auth create
 
@@ -45,9 +45,14 @@ delete:
 	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)
 
+release: dockerfiles export-templates
+
 integration-tests:
 	@echo "+ $@"
 	@cd ${CURDIR}/integration; ./run.sh
+
+dockerfiles:
+	DOCKER_TAG=$(EDITIONS_VERSION) make -C dockerfiles all
 
 export-templates:
 ifeq "$(FORCE_GSUTIL_AUTH)" "1"
