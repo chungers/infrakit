@@ -66,7 +66,15 @@ $docker_daemon --name=accounts \
   -v /home:/home \
   --volumes-from=etc \
   $shell_image \
-  /usr/bin/google_accounts_daemon -d
+  /usr/bin/google_accounts_daemon
+
+dockerRm ipforwarding
+$docker_daemon --name=ipforwarding \
+  -v /dev/log:/dev/log \
+  --cap-add=NET_ADMIN \
+  --net=host \
+  $shell_image \
+  /usr/bin/google_ip_forwarding_daemon -d
 
 dockerRm shell
 $docker_daemon --name=shell -p 22:22 \
@@ -75,6 +83,7 @@ $docker_daemon --name=shell -p 22:22 \
   -v /var/log:/var/log \
   -v /home:/home \
   --volumes-from=etc \
+  --net=host \
   $shell_image
 
 echo Start guide
