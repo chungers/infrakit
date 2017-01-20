@@ -41,6 +41,11 @@ create:
 		--config /templates/swarm.jinja \
 		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE)
 
+update:
+	$(DEPLOYMENTS) update $(DEPLOYMENT_NAME) \
+		--config /templates/swarm.jinja \
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE)
+
 delete:
 	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
 	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)
