@@ -34,8 +34,10 @@ buoy:
 	$(MAKE) -C tools/buoy
 	mkdir -p aws/dockerfiles/files/bin || true
 	mkdir -p azure/dockerfiles/files/bin || true
+	mkdir -p gcp/dockerfiles/guide/bin || true
 	cp tools/buoy/bin/buoy aws/dockerfiles/files/bin/buoy
 	cp tools/buoy/bin/buoy azure/dockerfiles/files/bin/buoy
+	cp tools/buoy/bin/buoy gcp/dockerfiles/guide/bin/buoy
 
 moby/alpine/cloud/azure/vhd_blob_url.out: moby
 	$(MAKE) -C moby/alpine azure

@@ -8,7 +8,8 @@ DOCKER_FOR_IAAS_VERSION='{{ VERSION }}'
 
 docker_run='docker run --label com.docker.editions.system --log-driver=json-file'
 docker_daemon="$docker_run -d"
-docker_client='-v /var/run/docker.sock:/var/run/docker.sock'
+docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'
+docker_cli='-v /usr/bin/docker:/usr/bin/docker'
 
 function dockerPull {
   for i in $(seq 1 60); do docker pull $1 && break || sleep 1; done
@@ -69,12 +70,24 @@ $docker_daemon --name=accounts \
 
 dockerRm shell
 $docker_daemon --name=shell -p 22:22 \
-  $docker_client \
-  -v /usr/bin/docker:/usr/bin/docker \
+  $docker_socket \
+  $docker_cli \
   -v /var/log:/var/log \
   -v /home:/home \
   --volumes-from=etc \
   $shell_image
+
+echo Start guide
+
+guide_image="docker4x/guide-gcp:$DOCKER_FOR_IAAS_VERSION"
+dockerPull ${guide_image}
+
+dockerRm guide
+$docker_daemon --name=guide \
+  -e RUN_VACUUM="{{ properties['enableSystemPrune'] }}" \
+  $docker_socket \
+  $docker_cli \
+  $guide_image
 
 {% if (type in ['manager', 'leader']) %}
 echo Start infrakit
@@ -92,7 +105,7 @@ dockerRm flavor-combo
 $run_plugin --name=flavor-combo $infrakit_image infrakit-flavor-combo --log=5
 
 dockerRm flavor-swarm
-$run_plugin --name=flavor-swarm $docker_client $infrakit_image infrakit-flavor-swarm --log=5
+$run_plugin --name=flavor-swarm $docker_socket $infrakit_image infrakit-flavor-swarm --log=5
 
 dockerRm flavor-vanilla
 $run_plugin --name=flavor-vanilla $infrakit_image infrakit-flavor-vanilla --log=5
@@ -104,7 +117,7 @@ dockerRm instance-gcp
 $run_plugin --name=instance-gcp $infrakit_gcp_image infrakit-instance-gcp --log=5
 
 dockerRm manager
-$run_plugin --name=manager $docker_client $infrakit_image infrakit-manager swarm --proxy-for-group=group-stateless --name=group --log=5
+$run_plugin --name=manager $docker_socket $infrakit_image infrakit-manager swarm --proxy-for-group=group-stateless --name=group --log=5
 
 echo Start Load Balancer Listener
 
@@ -112,7 +125,7 @@ lb_image="docker4x/l4controller-gcp:$DOCKER_FOR_IAAS_VERSION"
 dockerPull ${lb_image}
 
 dockerRm lbcontroller
-$docker_daemon --name=lbcontroller $docker_client $lb_image run --log=5
+$docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5
 {% endif -%}
 
 {% if (type in ['leader']) %}

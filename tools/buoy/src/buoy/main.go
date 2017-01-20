@@ -26,7 +26,7 @@ func main() {
 	numWorkers := flag.Int("workers", 0, "Number of Workers")
 	numServices := flag.Int("services", 0, "Number of Services")
 	dockerVersion := flag.String("docker_version", "n/a", "Docker Version")
-	flavor := flag.String("flavor", "", "IAAS Flavor (aws, azure, etc)")
+	flavor := flag.String("flavor", "", "IAAS Flavor (aws, azure, gcp, etc)")
 	swarmID := flag.String("swarm_id", "n/a", "Swarm ID")
 	nodeID := flag.String("node_id", "", "Node ID")
 	event := flag.String("event", "n/a", "Event") // identify, init, ping, scale
@@ -44,6 +44,8 @@ func main() {
 		clientCode = "0Euz80odMWb07uI6cnhFENW3ohikKpb8"
 	} else if *flavor == "azure" {
 		clientCode = "1og3BGfY1Dt2aRBSf2SQrUL2VlGBoW5v"
+	} else if *flavor == "gcp" {
+		clientCode = "9ol2zcZN0p4mEy9nuWNGysg9mrFoCqZg"
 	} else {
 		err := errors.New("unknown flavor")
 		log.Fatal(err)
