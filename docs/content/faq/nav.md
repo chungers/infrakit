@@ -1,10 +1,10 @@
 <!--[metadata]>
 +++
-title = "Docker for AWS & Azure FAQ"
-description = "Docker for AWS & Azure FAQ"
-keywords = ["iaas, aws, azure, faq"]
+title = "Docker for GCP FAQ"
+description = "Docker for GCP FAQ"
+keywords = ["iaas, gcp, faq"]
 [menu.main]
-identifier="docs-aws-azure-faq"
+identifier="docs-gcp-faq"
 name = "FAQ"
 weight="100"
 +++

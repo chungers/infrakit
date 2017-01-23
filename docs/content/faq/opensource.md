@@ -1,11 +1,11 @@
 <!--[metadata]>
 +++
 title = "Open Source"
-description = "Docker for AWS Azure Open Source"
-keywords = ["iaas, aws, azure, oss"]
+description = "Docker for GCP Open Source"
+keywords = ["iaas, gcp, oss"]
 [menu.main]
 identifier="faq-oss"
-parent = "docs-aws-azure-faq"
+parent = "docs-gcp-faq"
 name = "Open Source"
 weight="150"
 +++

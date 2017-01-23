@@ -1,11 +1,11 @@
 <!--[metadata]>
 +++
-title = "FAQ"
-description = "Docker for AWS Azure FAQ"
-keywords = ["iaas, aws, azure"]
+title = "Feedback"
+description = "Docker for GCP Feedback"
+keywords = ["iaas, gcp"]
 [menu.main]
 identifier="faq-feedback"
-parent = "docs-aws-azure-faq"
+parent = "docs-gcp-faq"
 name = "Feedback"
 weight="120"
 +++
@@ -14,8 +14,8 @@ weight="120"
 # Feedback
 
 ## Survey
-Please take a moment to fill-out the following Google Survey and help us shape the product: [Docker for AWS and Azure survey](https://goo.gl/forms/odVRD5wOARG8PrFI2)
+Please take a moment to fill-out the following Google Survey and help us shape the product: [Docker for GCP survey](https://goo.gl/forms/odVRD5wOARG8PrFI2)
 
 ## I have a suggestion where do I send it?
-Send an email to <docker-for-iaas@docker.com> or use the [Docker for AWS Forum](https://forums.docker.com/c/docker-for-aws) or the [Docker for Azure Forum](https://forums.docker.com/c/docker-for-azure).
+Send an email to <docker-for-iaas@docker.com> or use the [Docker for GCP Forum](https://forums.docker.com/c/docker-for-gcp).
 
