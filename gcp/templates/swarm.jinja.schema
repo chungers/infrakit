@@ -11,9 +11,6 @@ outputs:
   externalIp:
     description: External IP to connect to published services
     type: string
-  leaderIp:
-    description: IP of the first manager
-    type: string
   zone:
     description: Zone
     type: string
