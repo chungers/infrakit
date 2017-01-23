@@ -107,30 +107,33 @@ infrakit="$docker_run --rm $local_store $infrakit_image infrakit"
 configs=/infrakit/configs
 mkdir -p $configs
 
-INFRAKIT_UPDATE="2000-01-01T00:00:00.000000000Z"
-
 set +e
-while true; do
-  echo Listening for changes in Infrakit configuration $(date)
 
-  ACCESS_TOKEN=$(metadata 'instance/service-accounts/default/token' | jq -r '.access_token')
-  INFRAKIT_JSON=$(curl -s -f -X POST -d "{\"newerThan\": \"${INFRAKIT_UPDATE}\"}" -H 'Content-Type: application/json' -H "Authorization":"Bearer ${ACCESS_TOKEN}" https://runtimeconfig.googleapis.com/v1beta1/projects/{{ PROJECT }}/configs/{{ STACK }}-config/variables/infrakit:watch)
-  if [ $? -ne 0 ]; then
-    sleep 1
-    continue
-  fi
+function watchInfrakitConfigurationChanges {
+  INFRAKIT_UPDATE="2000-01-01T00:00:00.000000000Z"
 
-  INFRAKIT_UPDATE=$(echo "${INFRAKIT_JSON}" | jq -r '.updateTime')
-  echo Updated infrakit configuration at ${INFRAKIT_UPDATE}
+  while true; do
+    echo Listening for changes in Infrakit configuration $(date)
 
-  IS_LEADER=$(docker node inspect self | jq -r '.[0].ManagerStatus.Leader')
-  if [ "${IS_LEADER}" == "true" ]; then
-    echo "${INFRAKIT_JSON}" | jq -r '.text'| jq -r '.workers' > $configs/workers.json
-    echo "${INFRAKIT_JSON}" | jq -r '.text'| jq -r '.managers' > $configs/managers.json
+    ACCESS_TOKEN=$(metadata 'instance/service-accounts/default/token' | jq -r '.access_token')
+    INFRAKIT_JSON=$(curl -s -f -X POST -d "{\"newerThan\": \"${INFRAKIT_UPDATE}\"}" -H 'Content-Type: application/json' -H "Authorization":"Bearer ${ACCESS_TOKEN}" https://runtimeconfig.googleapis.com/v1beta1/projects/{{ PROJECT }}/configs/{{ STACK }}-config/variables/infrakit:watch)
+    if [ $? -ne 0 ]; then
+      sleep 1
+      continue
+    fi
 
-    for i in $(seq 1 60); do $infrakit group commit /root/.infrakit/configs/workers.json && break || sleep 1; done
-    for i in $(seq 1 60); do $infrakit group commit /root/.infrakit/configs/managers.json && break || sleep 1; done
-  fi
-done
-set -e
+    INFRAKIT_UPDATE=$(echo "${INFRAKIT_JSON}" | jq -r '.updateTime')
+    echo Updated infrakit configuration at ${INFRAKIT_UPDATE}
+
+    IS_LEADER=$(docker node inspect self | jq -r '.[0].ManagerStatus.Leader')
+    if [ "${IS_LEADER}" == "true" ]; then
+      echo "${INFRAKIT_JSON}" | jq -r '.text'| jq -r '.workers' > $configs/workers.json
+      echo "${INFRAKIT_JSON}" | jq -r '.text'| jq -r '.managers' > $configs/managers.json
+
+      for i in $(seq 1 60); do $infrakit group commit /root/.infrakit/configs/workers.json && break || sleep 1; done
+      for i in $(seq 1 60); do $infrakit group commit /root/.infrakit/configs/managers.json && break || sleep 1; done
+    fi
+  done
+}
+watchInfrakitConfigurationChanges &
 {% endif -%}
