@@ -47,10 +47,30 @@ properties:
     default: "g1-small"
     description: Manager machine type
 
+  managerDiskSize:
+    type: integer
+    default: 100
+    description: Manager disk size (Mb)
+
+  managerDiskType:
+    type: string
+    default: "pd-standard"
+    description: Manager disk type
+
   workerMachineType:
     type: string
     default: "g1-small"
     description: Worker machine type
+
+  workerDiskSize:
+    type: integer
+    default: 100
+    description: Worker disk size (Mb)
+
+  workerDiskType:
+    type: string
+    default: "pd-standard"
+    description: Worker disk type
 
   preemptible:
     type: boolean

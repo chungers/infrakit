@@ -10,6 +10,10 @@ WORKER_COUNT ?= 1
 ZONE ?= europe-west1-d
 MANAGER_MACHINE_TYPE ?= g1-small
 WORKER_MACHINE_TYPE ?= g1-small
+MANAGER_DISK_TYPE ?= pd-standard
+WORKER_DISK_TYPE ?= pd-standard
+MANAGER_DISK_SIZE ?= 100
+WORKER_DISK_SIZE ?= 100
 
 GCLOUD_IMAGE_TAG ?= sha256:fb904276e8a902ccd9564989d9222bdfbe37ffcd7f9989ca7e24b4019a9b4b6b
 GCLOUD = docker run --rm -ti \
@@ -41,12 +45,12 @@ revoke:
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
 		--config /templates/swarm.jinja \
-		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE)
 
 update:
 	$(DEPLOYMENTS) update $(DEPLOYMENT_NAME) \
 		--config /templates/swarm.jinja \
-		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE)
 
 delete:
 	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
