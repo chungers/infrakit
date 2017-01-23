@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+OUTPUT="$(docker service create --mode=global --label=docker4x/service-exec --restart-condition none --mount type=bind,source=/usr/bin/docker,target=/usr/bin/docker --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock docker4x/swarm-exec:v0.1 $@)"
+echo "Your command : \"$@\" is successfully executed in the swarm cluster"
+echo "Note: your docker command is executed as a swarm global service. When a new node is added to the cluster or after an upgrade, your command will be automatically executed on the new node. If you want to clean up the service, pls remove it using : "
+echo "docker service rm $OUTPUT"
