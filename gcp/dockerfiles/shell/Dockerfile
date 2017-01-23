@@ -15,3 +15,4 @@ RUN mkdir -p /src \
 
 COPY etc /etc/
 COPY entry.sh /
+COPY bin/swarm-exec /usr/bin/swarm-exec
