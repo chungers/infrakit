@@ -43,7 +43,7 @@ def gen_template(in_template, out_template):
 		new_resouces = [launch_vm_from_stg_account(resource) for resource in arm_json['resources']]
 		arm_json['resources'] = new_resouces
 		with open(out_template, 'w') as generated_arm_template:
-			generated_arm_template.write(json.dumps(arm_json, indent=4))
+			generated_arm_template.write(json.dumps(arm_json, indent=4, sort_keys=True))
 		print('Generated {} for rapid development').format(out_template)
 
 
