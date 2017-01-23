@@ -1,8 +1,8 @@
 <!--[metadata]>
 +++
-title = "Deploying Apps on AWS/Azure"
-description = "Deploying Apps on AWS/Azure"
-keywords = ["iaas, aws, azure"]
+title = "Deploying Apps on GCP"
+description = "Deploying Apps on GCP"
+keywords = ["iaas, gcp"]
 [menu.main]
 name="Deploying Apps"
 identifier="docs-apps"
@@ -15,28 +15,34 @@ weight="3"
 ## Connecting to your manager nodes
 
 This section will walk you through connecting to your installation and deploying
-applications.  Instructions are included for both AWS and Azure, so be sure to
-follow the instructions for the cloud provider of your choice in each section.
+applications.
 
 First, you will obtain the public IP address for a manager node. Any manager
 node can be used for administrating the swarm.
 
 ##### Manager Public IP
 
+Once you've deployed Docker on GCP with the cli, you will see instructions on
+how to connect to a manager as well as the Public IP to use to reach your swarm-mode
+services.
+
+It will be something like:
+
+```
+OUTPUTS     VALUE
+externalIp  130.211.77.165
+ssh         You can ssh into the Swarm with: gcloud compute ssh --zone europe-west1-d docker-manager-1
+zone        europe-west1-d
+```
 
 ## Connecting via SSH
 
 #### Manager nodes
 
-Obtain the public IP and/or port for the manager node as instructed above and
-using the provided SSH key to begin administrating your swarm:
+Obtain the name of the manager node as instructed above and begin administrating
+your swarm:
 
-    $ ssh -i <path-to-ssh-key> docker@<ssh-host>
-    Welcome to Docker!
-
-In case of Azure, you also need to specify the unique port associated with a manager.
-
-    $ ssh -i <path-to-ssh-key> -p <ssh-port> docker@<ip>
+    $ gcloud compute ssh --zone [zone] [manager-name]
     Welcome to Docker!
 
 Once you are logged into the container you can run Docker commands on the swarm:
@@ -46,79 +52,14 @@ Once you are logged into the container you can run Docker commands on the swarm:
 
 You can also tunnel the Docker socket over SSH to remotely run commands on the cluster (requires [OpenSSH 6.7](https://lwn.net/Articles/609321/) or later):
 
-    $ ssh -NL localhost:2374:/var/run/docker.sock docker@<ssh-host> &
+    $ gcloud compute ssh --zone [zone] [manager-name] -- -NL localhost:2374:/var/run/docker.sock &
     $ docker -H localhost:2374 info
 
-If you don't want to pass `-H` when using the tunnel, you can set the `DOCKER_HOST` environment variable to point to the localhost tunnel opening.
+If you don't want to pass `-H`, you can set the `DOCKER_HOST` environment variable to point to the localhost tunnel opening.
 
 ### Worker nodes
 
-As of Beta 13, the worker nodes also have SSH enabled when connecting from
-manager nodes. SSH access is not possible to the worker nodes from the public
-Internet. To access the worker nodes, you will need to first connect to a
-manager node (see above).
-
-On the manager node you can then `ssh` to the worker node, over the private
-network. Make sure you have SSH agent forwarding enabled (see below). If you run
-the `docker node ls` command you can see the full list of nodes in your swarm.
-You can then `ssh docker@<worker-host>` to get access to that node.
-
-
-##### Using SSH agent forwarding
-
-SSH agent forwarding allows you to forward along your ssh keys when connecting from one node to another. This eliminates the need for installing your private key on all nodes you might want to connect from.
-
-You can use this feature to SSH into worker nodes from a manager node without
-installing keys directly on the manager.
-
-(Note: The following section will detail setting up agent forwarding via CLI,
-but if you are using PuTTY on Windows you will need to follow the instructions
-[here](https://the.earth.li/~sgtatham/putty/0.58/htmldoc/Chapter9.html#S9.4) to
-use Pageant for this).
-
-If your haven't added your ssh key to the `ssh-agent` you will also need to do this first.
-
-To see the keys in the agent already, run:
-
-```
-$ ssh-add -L
-```
-
-If you don't see your key, add it like this.
-
-```
-$ ssh-add ~/.ssh/your_key
-```
-
-On Mac OS X, the `ssh-agent` will forget this key, once it gets restarted. But you can import your SSH key into your Keychain like this. This will have your key survive restarts.
-
-```
-$ ssh-add -K ~/.ssh/your_key
-```
-
-You can then enable SSH forwarding per-session using the `-A` flag for the ssh command.
-
-Connecting to the Manager.
-```
-$ ssh -A docker@<manager ip>
-```
-
-To always have it turned on for a given host, you can edit your ssh config file
-(`/etc/ssh_config`, `~/.ssh/config`, etc) to add the `ForwardAgent yes` option.
-
-Example configuration:
-
-```
-Host manager0
-  HostName <manager ip>
-  ForwardAgent yes
-```
-
-To SSH in to the manager with the above settings:
-
-```
-$ ssh docker@manager0
-```
+To be done.
 
 ## Running apps
 
@@ -130,7 +71,7 @@ You can run websites too. Ports exposed with `-p` are automatically exposed thro
 
     $ docker service create --name nginx -p 80:80 nginx
 
-Once up, find the `DefaultDNSTarget` output in either the AWS or Azure portals to access the site.
+Once up, use the `externalIp` to access the site.
 
 ### Execute docker commands in all swarm nodes
 
