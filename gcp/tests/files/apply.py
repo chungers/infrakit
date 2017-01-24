@@ -11,7 +11,11 @@ print template.render({
         'workerCount': 1,
         'zone': 'europe-west1-d',
         'managerMachineType': 'g1-small',
+        'managerDiskType': 'pd-standard',
+        'managerDiskSize': 100,
         'workerMachineType': 'g1-small',
+        'workerDiskType': 'pd-standard',
+        'workerDiskSize': 100,
         'preemptible': False,
         'enableSystemPrune': 'yes'
     },
