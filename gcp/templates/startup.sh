@@ -74,7 +74,7 @@ dockerPull ${infrakit_gcp_image}
 $run_plugin --name=flavor-combo $infrakit_image infrakit-flavor-combo --log=5
 $run_plugin --name=flavor-swarm $docker_socket $infrakit_image infrakit-flavor-swarm --log=5
 $run_plugin --name=flavor-vanilla $infrakit_image infrakit-flavor-vanilla --log=5
-$run_plugin --name=group-stateless $infrakit_image infrakit-group-default --name=group-stateless --log=5
+$run_plugin --name=group-stateless $infrakit_image infrakit-group-default --name=group-stateless --poll-interval=30s --log=5
 $run_plugin --name=instance-gcp $infrakit_gcp_image infrakit-instance-gcp --log=5
 $run_plugin --name=manager $docker_socket $infrakit_image infrakit-manager swarm --proxy-for-group=group-stateless --name=group --log=5
 
