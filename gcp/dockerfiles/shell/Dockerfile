@@ -16,3 +16,4 @@ RUN mkdir -p /src \
 COPY etc /etc/
 COPY entry.sh /
 COPY bin/swarm-exec /usr/bin/swarm-exec
+COPY bin/ssh-keygen.sh /usr/bin/ssh-keygen.sh

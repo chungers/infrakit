@@ -27,18 +27,8 @@ echo Start sshd
 
 dockerPull ${shell_image}
 
-INSTANCE_ID=$(metadata 'instance/id')
-
-set +e
-instanceIdOnDisk=$($docker_run --volumes-from=etc $shell_image cat /etc/instance_id)
-EXIT_CODE=$?
-set -e
-
-if [ $EXIT_CODE -ne 0 ] || [ "${INSTANCE_ID}" != "${instanceIdOnDisk}" ]; then
-  docker rm -f etc >/dev/null 2>&1 | true
-  $docker_run --name=etc -v /etc $shell_image ssh-keygen -A
-  $docker_run --volumes-from=etc $shell_image /bin/sh -c "echo ${INSTANCE_ID} > /etc/instance_id"
-fi
+docker inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true
+$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh
 
 $docker_daemon --name=accounts \
   -v /dev/log:/dev/log \
