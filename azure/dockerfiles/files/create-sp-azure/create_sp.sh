@@ -33,6 +33,8 @@ fi
 
 echo "Using subscription ${SUBSCRIPTION_ID}"
 
+azure account set ${SUBSCRIPTION_ID}
+
 TENANT_ID=$(azure account list --json | jq "map(select(.isDefault == true)) | .[0].tenantId" | sed -e 's/\"//g')
 
 if [[ "" == ${TENANT_ID} ]]; then
