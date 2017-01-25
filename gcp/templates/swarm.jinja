@@ -49,6 +49,8 @@ resources:
         type: ONE_TO_ONE_NAT
     metadata:
       items:
+      - key: infrakit--group
+        value: managers
       - key: startup-script
         value: |
           {% filter indent(10) %}{% set type='leader' %}{% include 'startup.sh' %}{% endfilter %}
