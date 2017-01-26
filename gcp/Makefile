@@ -44,12 +44,12 @@ revoke:
 
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
-		--config /templates/swarm.jinja \
+		--config /templates/Docker.jinja \
 		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE)
 
 update:
 	$(DEPLOYMENTS) update $(DEPLOYMENT_NAME) \
-		--config /templates/swarm.jinja \
+		--config /templates/Docker.jinja \
 		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE)
 
 delete:

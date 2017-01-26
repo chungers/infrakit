@@ -19,7 +19,7 @@ weight="100"
   - [Google Cloud Deployment Manager V2 API](https://console.developers.google.com/apis/api/deploymentmanager-json.googleapis.com/overview?project=docker4x&duration=PT1H)
   - [Google Cloud RuntimeConfig API](https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview?project=docker4x)
 - Make sure that you have enough capacity for the swarm that you want to build, and won't go over any of your limits.
-- Install the [Cloud SDK](https://cloud.google.com/sdk/downloads) (`gcloud`). It's a hard prerequisite but makes interacting with your GCP project easier.
+- Install the [Cloud SDK](https://cloud.google.com/sdk/downloads) (`gcloud`). It's not a hard prerequisite but makes interacting with your GCP project easier.
 
 Once you have all of the above you are ready to move onto the next step.
 
@@ -35,7 +35,7 @@ with properties values suited to your needs.
 
 ```
 $ gcloud deployment-manager deployments create docker-stack \
-    --config https://storage.googleapis.com/docker-for-gcp-templates/gcp-v1.13.0-rc6-beta16/swarm.jinja \
+    --config https://docker-for-gcp-templates.storage.googleapis.com/v1/Docker.jinja \
     --properties managerCount:3,workerCount:1,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 
@@ -46,7 +46,7 @@ Here is an example of how to use the CLI:
 ```
 $ gcloud init --skip-diagnostics
 $ gcloud deployment-manager deployments create docker-stack \
-    --config https://storage.googleapis.com/docker-for-gcp-templates/gcp-v1.13.0-rc6-beta16/swarm.jinja \
+    --config https://docker-for-gcp-templates.storage.googleapis.com/v1/Docker.jinja \
     --properties managerCount:3,workerCount:1,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 

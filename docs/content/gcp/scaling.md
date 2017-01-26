@@ -24,7 +24,7 @@ Here is an example of how to use the CLI:
 
 ```
 $ gcloud deployment-manager deployments update docker-stack \
-    --config https://storage.googleapis.com/docker-for-gcp-templates/gcp-v1.13.0-rc6-beta16/swarm.jinja \
+    --config https://docker-for-gcp-templates.storage.googleapis.com/v1/Docker.jinja \
     --properties managerCount:3,workerCount:5,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 

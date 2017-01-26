@@ -25,7 +25,7 @@ create_swarm() {
   echo Create Swarm ${STACK}
 
   gcloud deployment-manager deployments create ${STACK} \
-    --config /templates/swarm.jinja \
+    --config /templates/Docker.jinja \
     --properties managerCount:3,workerCount:1,zone:${CLOUDSDK_COMPUTE_ZONE}
 }
 

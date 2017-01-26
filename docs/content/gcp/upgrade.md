@@ -34,7 +34,7 @@ To initiate an update, use `gcloud` cli to initiate a stack update. Use the temp
 
 ```
 $ gcloud deployment-manager deployments update docker-stack \
-    --config https://storage.googleapis.com/docker-for-gcp-templates/NEW-VERSION/swarm.jinja \
+    --config https://docker-for-gcp-templates.storage.googleapis.com/v[NEW-VERSION]/Docker.jinja \
     --properties managerCount:3,workerCount:5,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 

@@ -1,9 +1,9 @@
 info:
-  title: Swarm
+  title: Docker
   version: 1.0
 
 imports:
-- path: swarm.jinja
+- path: Docker.jinja
 - path: infrakit.json.template
 - path: startup.sh
 
@@ -21,7 +21,7 @@ outputs:
 properties:
   version:
     type: string
-    default: "gcp-v1.13.0-rc6-beta16"
+    default: "v1"
     description: Version of the templates
 
   managerCount:
