@@ -45,6 +45,11 @@ your swarm:
     $ gcloud compute ssh --zone [zone] [manager-name]
     Welcome to Docker!
 
+The first time you use `gcloud compute ssh` it will create an ssh key for you
+and propagate it to the swarm nodes. You can also connect to an instance [via the
+cloud console](https://cloud.google.com/compute/docs/instances/connecting-to-instance#sshinbrowser)
+or via a [standard ssh command](https://cloud.google.com/compute/docs/instances/connecting-to-instance#standardssh).
+
 Once you are logged into the container you can run Docker commands on the swarm:
 
     $ docker info

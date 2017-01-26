@@ -19,12 +19,25 @@ weight="100"
   - [Google Cloud Deployment Manager V2 API](https://console.developers.google.com/apis/api/deploymentmanager-json.googleapis.com/overview?project=docker4x&duration=PT1H)
   - [Google Cloud RuntimeConfig API](https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview?project=docker4x)
 - Make sure that you have enough capacity for the swarm that you want to build, and won't go over any of your limits.
+- Install the [Cloud SDK](https://cloud.google.com/sdk/downloads) (`gcloud`). It's a hard prerequisite but makes interacting with your GCP project easier.
 
 Once you have all of the above you are ready to move onto the next step.
 
 ## Configuration
 
-Docker for GCP is installed with a Deployment Manager template that configures Docker in swarm-mode, running on instances backed custom images. There are two ways you can deploy Docker for GCP. You can use the `gcloud` CLI from any machine or from Google Cloud Shell.
+Docker for GCP is installed with a Deployment Manager template that configures Docker in swarm-mode, running on instances backed custom images. There are two ways you can deploy Docker for GCP. You can use the `gcloud` CLI from any machine or from [Google Cloud Shell](https://cloud.google.com/shell/docs/quickstart).
+The later is easier since you won't need to install any tool on your machine.
+
+### Installing from Cloud Shell
+
+Open your browser, connect to the GCP console, [start the Cloud Shell](https://cloud.google.com/shell/docs/quickstart#start_cloud_shell) and type this command
+with properties values suited to your needs.
+
+```
+$ gcloud deployment-manager deployments create docker-stack \
+    --config https://storage.googleapis.com/docker-for-gcp-templates/gcp-v1.13.0-rc6-beta16/swarm.jinja \
+    --properties managerCount:3,workerCount:1,managerMachineType:g1-small,workerMachineType:g1-small
+```
 
 ### Installing with the CLI
 
@@ -34,22 +47,19 @@ Here is an example of how to use the CLI:
 $ gcloud init --skip-diagnostics
 $ gcloud deployment-manager deployments create docker-stack \
     --config https://storage.googleapis.com/docker-for-gcp-templates/gcp-v1.13.0-rc6-beta16/swarm.jinja \
-    --properties managerCount:3,workerCount:2,managerMachineType:g1-small,workerMachineType:g1-small
+    --properties managerCount:3,workerCount:1,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 
-If you run the second command from Google Cloud Shell, you don't need the `init` command since
-you are already authenticated to connect to Cloud Shell.
+### Stack name
+
+The name `docker-stack` can be replaced with another name that will uniquely identify
+your stack in a GCP project. The stack will have its own nodes, network and ip address, so
+that multiple stacks can co-exist in a single project.
 
 ### Configuration options
 
 This above example shows how to configure the number of Managers and Workers, as well as the type of machines to use.
 There are more options that you can provide to customized the swarm.
-
-#### managerMachineType
-The [machine type](https://cloud.google.com/compute/docs/machine-types) for your Manager nodes.
-
-#### workerMachineType
-The [machine type](https://cloud.google.com/compute/docs/machine-types) for your Worker nodes.
 
 #### managerCount
 The number of Managers in your swarm. You can pick either 1, 3 or 5 managers. We only recommend 1 manager for testing and dev setups. There are no failover guarantees with 1 manager — if the single manager fails the swarm will go down as well. Additionally, upgrading single-manager swarms is not currently guaranteed to succeed.
@@ -61,6 +71,24 @@ The number of Workers in your swarm
 
 ### zone
 The [zone](https://cloud.google.com/compute/docs/regions-zones/viewing-regions-zones) to which the nodes are attached.
+
+#### managerMachineType
+The [machine type](https://cloud.google.com/compute/docs/machine-types) for your Manager nodes. The default value is `g1-small`.
+
+#### workerMachineType
+The [machine type](https://cloud.google.com/compute/docs/machine-types) for your Worker nodes. The default value is `g1-small`.
+
+### managerDiskSize
+The size of the Manager boot disks in Mb. The default value is `100`.
+
+### workerDiskSize
+The size of the Worker boot disks in Mb. The default value is `100`.
+
+### managerDiskType
+The [type](https://cloud.google.com/compute/docs/disks/#pdspecs) of the Manager boot disks. The default value is `pd-standard`.
+
+### workerDiskType
+The [type](https://cloud.google.com/compute/docs/disks/#pdspecs) of the Worker boot disks. The default value is `pd-standard`.
 
 #### enableSystemPrune
 
@@ -78,9 +106,9 @@ Pruning removes the following:
 
 Docker for GCP starts with a Deployment Manager template that will create everything that you need from scratch. There are only a few prerequisites that are listed above.
 
-It first starts off by creating a new network along with subnets and firewall rules. Once the networking is set up, it will create one machine that will be the swarm's first manager. This manager starts [Infrakit](https://github.com/docker/infrakit) that will take care of spawning Managers and Workers nodes. At this point you will have x number of managers and y number of workers in your swarm, that are ready to handle your application deployments. See the [deployment](../deploy.md) docs for your next steps.
+It first starts off by creating a new network along with subnets and firewall rules. Once the networking is set up, it will create one machine that will be the swarm's first manager. This manager starts [Infrakit](https://github.com/docker/infrakit) that will take care of spawning Manager and Worker nodes. At this point you will have x number of managers and y number of workers in your swarm, that are ready to handle your application deployments. See the [deployment](../deploy.md) docs for your next steps.
 
-A load balancer is set up to help with routing traffic to your swarm.
+A load balancer is also set up to help with routing traffic to your swarm.
 
 ## System containers
 

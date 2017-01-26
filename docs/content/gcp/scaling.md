@@ -18,12 +18,16 @@ weight="200"
 You can scale the worker count using the deployment manager. Docker will automatically join or remove new instances to the Swarm.
 To achieve that, you need to "update" your stack, and change the number of workers in the Deployment Manager template.
 
-Changing manager count live is _not_ currently supported.
+Worker machine type can also be changed. But changing manager count live is _not_ currently supported.
 
 Here is an example of how to use the CLI:
 
 ```
-$ gcloud deployment-manager deployments create docker-stack \
+$ gcloud deployment-manager deployments update docker-stack \
     --config https://storage.googleapis.com/docker-for-gcp-templates/gcp-v1.13.0-rc6-beta16/swarm.jinja \
     --properties managerCount:3,workerCount:5,managerMachineType:g1-small,workerMachineType:g1-small
 ```
+
+_Warning_: If you created your deployment with non default settings, you must
+reuse the same settings in the `update` command that you used with the `create`
+command. Only the `workerCount` or `workerMachineType` properties should be changed.

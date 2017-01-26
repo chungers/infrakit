@@ -22,7 +22,7 @@ To deploy Docker for GCP, find the latest release in the [Release Notes](gcp/rel
 
 ## What to know before installing
 
-When setting up Docker for GCP, you'll have to select manager and worker counts and instance sizes. If you're testing, 1 manager and `g1-small` instances are fine. Both worker count and worker and manager instance size can be changed later, but manager count should not be modified after setup.
+When setting up Docker for GCP, you'll have to select manager and worker counts and instance sizes. If you're testing, 1 manager and `g1-small` instances are fine. Both worker count and worker instance size can be changed later, but manager count and manager instance type should not be modified after setup.
 
 When choosing manager count, consider the level of durability you need:
 
