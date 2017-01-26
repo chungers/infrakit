@@ -6,7 +6,8 @@ wrappedNode(label: "docker") {
     def cloudFormation = (ArrayList)(sh(script: 'find . -iname "*.json"', returnStdout: true).split("\r?\n"))
     for (i in cloudFormation) {
       try {
-        sh "jq . '${i}' >/dev/null"
+        sh("jq . '${i}' >/dev/null")
+        sh("docker run --rm -v `pwd`:/data docker4x/sanity:latest '${i}'")
       } catch (Exception exc) {
         currentBuild.result = 'UNSTABLE'
         echo "jq failed"
