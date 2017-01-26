@@ -6,18 +6,19 @@ function metadata {
   curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/${1}
 }
 
-infrakit-flavor-combo --log=5 &
-infrakit-flavor-swarm --log=5 &
-infrakit-flavor-vanilla --log=5 &
-infrakit-group-default --name=group-stateless --poll-interval=30s --log=5 &
-sleep 1
-infrakit-instance-gcp --log=5 &
-infrakit-manager swarm --proxy-for-group=group-stateless --name=group --log=5 &
-
 PROJECT=$(metadata 'project/project-id')
 NETWORK=$(metadata 'instance/network-interfaces/0/network' | cut -d "/" -f 4)
 STACK=${NETWORK/-network/}
 INFRAKIT_UPDATE="2000-01-01T00:00:00.000000000Z"
+
+infrakit-flavor-combo --log=5 &
+infrakit-flavor-swarm --log=5 &
+infrakit-flavor-vanilla --log=5 &
+infrakit-group-default --name=group-stateless --poll-interval=30s --log=5 &
+infrakit-instance-gcp --log=5 &
+infrakit-manager swarm --proxy-for-group=group-stateless --name=group --log=5 &
+
+sleep 5
 
 set +e
 while true; do

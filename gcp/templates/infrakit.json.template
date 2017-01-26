@@ -44,10 +44,8 @@
               }
             },
             {
-              "Plugin": "flavor-swarm",
-              "Properties": {
-                "Type": "manager"
-              }
+              "Plugin": "flavor-swarm/manager",
+              "Properties": {}
             }
           ]
         }
@@ -92,10 +90,8 @@
               }
             },
             {
-              "Plugin": "flavor-swarm",
-              "Properties": {
-                "Type": "worker"
-              }
+              "Plugin": "flavor-swarm/worker",
+              "Properties": {}
             }
           ]
         }

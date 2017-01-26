@@ -18,6 +18,20 @@ function dockerPull {
   for i in $(seq 1 60); do docker pull $1 && break || sleep 1; done
 }
 
+{% if (type in ['leader']) %}
+echo Initialize Swarm
+
+docker node inspect self || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
+docker node inspect self | jq -r '.[0].ManagerStatus.Leader'
+{% endif -%}
+
+{% if (type in ['manager', 'leader']) %}
+echo Start infrakit
+
+dockerPull ${infrakit_image}
+$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image /run.sh
+{% endif -%}
+
 echo Start sshd
 
 dockerPull ${shell_image}
@@ -58,20 +72,9 @@ $docker_daemon --name=guide \
   $docker_cli \
   $guide_image
 
-{% if (type in ['leader']) %}
-echo Initialize Swarm
-
-docker node inspect self || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
-{% endif -%}
-
 {% if (type in ['manager', 'leader']) %}
 echo Start Load Balancer Listener
 
 dockerPull ${lb_image}
 $docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5
-
-echo Start infrakit
-
-dockerPull ${infrakit_image}
-$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image /run.sh
 {% endif -%}
