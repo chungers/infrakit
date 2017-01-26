@@ -37,7 +37,7 @@ resources:
       boot: true
       autoDelete: false
       initializeParams:
-        sourceImage: $(ref.{{ STACK }}-disk-image.selfLink)
+        sourceImage: $(ref.{{ STACK }}-disk-image-{{ VERSION }}.selfLink)
         diskSizeGb: {{ properties['managerDiskSize'] }}
         diskType: projects/{{ PROJECT }}/zones/{{ ZONE }}/diskTypes/{{ properties['managerDiskType'] }}
     networkInterfaces:
@@ -80,7 +80,7 @@ resources:
     text: |
       {% filter indent(6) %}{% include 'infrakit.json.template' %}{% endfilter %}
 
-- name: {{ STACK }}-disk-image
+- name: {{ STACK }}-disk-image-{{ VERSION }}
   type: compute.v1.image
   properties:
     family: docker

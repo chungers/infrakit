@@ -1,0 +1,52 @@
+[
+  {
+    "Plugin": "flavor-combo",
+    "Launch": {
+      "Exec": "os",
+      "Properties": {
+        "Cmd": "infrakit-flavor-combo --log=5",
+        "SamePgID": true
+      }
+    }
+  },
+  {
+    "Plugin": "flavor-swarm",
+    "Launch": {
+      "Exec": "os",
+      "Properties": {
+        "Cmd": "infrakit-flavor-swarm --log=5 --init-template=file:///infrakit/swarm.sh",
+        "SamePgID": true
+      }
+    }
+  },
+  {
+    "Plugin": "flavor-vanilla",
+    "Launch": {
+      "Exec": "os",
+      "Properties": {
+        "Cmd": "infrakit-flavor-vanilla --log=5",
+        "SamePgID": true
+      }
+    }
+  },
+  {
+    "Plugin": "group-default",
+    "Launch": {
+      "Exec": "os",
+      "Properties": {
+        "Cmd": "infrakit-group-default --log=5 --name=group-stateless --poll-interval=30s",
+        "SamePgID": true
+      }
+    }
+  },
+  {
+    "Plugin": "instance-gcp",
+    "Launch": {
+      "Exec": "os",
+      "Properties": {
+        "Cmd": "infrakit-instance-gcp --log=5",
+        "SamePgID": true
+      }
+    }
+  }
+]

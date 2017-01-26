@@ -22,14 +22,14 @@ function dockerPull {
 echo Initialize Swarm
 
 docker node inspect self || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
-docker node inspect self | jq -r '.[0].ManagerStatus.Leader'
+docker node inspect self
 {% endif -%}
 
 {% if (type in ['manager', 'leader']) %}
 echo Start infrakit
 
 dockerPull ${infrakit_image}
-$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image /run.sh
+$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image
 {% endif -%}
 
 echo Start sshd
