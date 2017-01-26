@@ -1,8 +1,6 @@
 outputs:
 - name: externalIp
   value: $(ref.docker-external-ip.address)
-- name: leaderIp
-  value: $(ref.docker-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
 - name: zone
   value: europe-west1-d
 - name: ssh
@@ -152,7 +150,7 @@ resources:
                 "DiskSizeMb": 100,
                 "DiskType": "pd-standard",
                 "DiskImage": "$(ref.docker-disk-image.selfLink)",
-                "TargetPool": "docker-target-pool",
+                "TargetPool": "docker-lb-pool",
                 "Tags": ["swarm", "swarm-manager"],
                 "Scopes": [
                   "https://www.googleapis.com/auth/devstorage.read_only",
@@ -200,7 +198,7 @@ resources:
                 "DiskSizeMb": 100,
                 "DiskType": "pd-standard",
                 "DiskImage": "$(ref.docker-disk-image.selfLink)",
-                "TargetPool": "docker-target-pool",
+                "TargetPool": "docker-lb-pool",
                 "Tags": ["swarm", "swarm-worker"],
                 "Scopes": [
                   "https://www.googleapis.com/auth/devstorage.read_only",
@@ -245,7 +243,7 @@ resources:
   properties:
     region: europe-west1
 
-- name: docker-target-pool
+- name: docker-lb-pool
   type: compute.v1.targetPool
   properties:
     region: europe-west1
@@ -259,7 +257,7 @@ resources:
     IPProtocol: TCP
     portRange: 80-65535
     IPAddress: $(ref.docker-external-ip.address)
-    target: $(ref.docker-target-pool.selfLink)
+    target: $(ref.docker-lb-pool.selfLink)
 
 - name: docker-network
   type: compute.v1.network

@@ -19,8 +19,6 @@
 outputs:
 - name: externalIp
   value: $(ref.{{ STACK }}-external-ip.address)
-- name: leaderIp
-  value: $(ref.{{ STACK }}-manager-1.networkInterfaces[0].accessConfigs[0].natIP)
 - name: zone
   value: {{ ZONE }}
 - name: ssh
@@ -94,7 +92,7 @@ resources:
   properties:
     region: {{ REGION }}
 
-- name: {{ STACK }}-target-pool
+- name: {{ STACK }}-lb-pool
   type: compute.v1.targetPool
   properties:
     region: {{ REGION }}
@@ -108,7 +106,7 @@ resources:
     IPProtocol: TCP
     portRange: 80-65535
     IPAddress: $(ref.{{ STACK }}-external-ip.address)
-    target: $(ref.{{ STACK }}-target-pool.selfLink)
+    target: $(ref.{{ STACK }}-lb-pool.selfLink)
 
 - name: {{ STACK }}-network
   type: compute.v1.network

@@ -19,7 +19,7 @@
           "DiskSizeMb": {{ properties['managerDiskSize'] }},
           "DiskType": "{{ properties['managerDiskType'] }}",
           "DiskImage": "$(ref.{{ STACK }}-disk-image.selfLink)",
-          "TargetPool": "{{ STACK }}-target-pool",
+          "TargetPool": "{{ STACK }}-lb-pool",
           "Tags": ["swarm", "swarm-manager"],
           "Scopes": [
             "https://www.googleapis.com/auth/devstorage.read_only",
@@ -67,7 +67,7 @@
           "DiskSizeMb": {{ properties['workerDiskSize'] }},
           "DiskType": "{{ properties['workerDiskType'] }}",
           "DiskImage": "$(ref.{{ STACK }}-disk-image.selfLink)",
-          "TargetPool": "{{ STACK }}-target-pool",
+          "TargetPool": "{{ STACK }}-lb-pool",
           "Tags": ["swarm", "swarm-worker"],
           "Scopes": [
             "https://www.googleapis.com/auth/devstorage.read_only",
