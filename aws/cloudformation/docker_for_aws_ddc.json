@@ -98,7 +98,8 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.12.3-cs4",
-                "forAws": "aws-v1.12.3-cs4-beta12-ddc"
+                "forAws": "aws-v1.12.3-cs4-beta12-ddc",
+                "channel": "beta"
             }
         },
 
@@ -524,9 +525,11 @@
                       "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] },
                       "PropagateAtLaunch" : "true" },
                     { "Key": "DOCKER_VERSION",
-                     "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
-                     "PropagateAtLaunch" : "true"
-                    }
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "CHANNEL",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] },
+                      "PropagateAtLaunch" : "true" }
                 ]
             },
             "CreationPolicy": {
@@ -574,6 +577,7 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "export CHANNEL='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] }, "'\n",
                                 "export LOCAL_IP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)\n",
                                 "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
                                 { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
@@ -600,6 +604,7 @@
                                 "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                                "-e CHANNEL=$CHANNEL ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
@@ -618,6 +623,7 @@
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                                "-e CHANNEL=$CHANNEL ",
                                 "-e UCP_ELB_HOSTNAME='",{"Fn::GetAtt": ["UCPLoadBalancer","DNSName"]}, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
                                 "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPasswordSet" }, "' ",
@@ -704,8 +710,10 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key": "DOCKER_VERSION",
                       "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
-                      "PropagateAtLaunch" : "true"
-                    }
+                      "PropagateAtLaunch" : "true" },
+                    { "Key": "CHANNEL",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] },
+                      "PropagateAtLaunch" : "true" }
                 ]
             },
             "CreationPolicy": {
@@ -747,6 +755,7 @@
                             "", [
                                 "#!/bin/sh\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "export CHANNEL='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] }, "'\n",
                                 "echo '{\"log-driver\": \"awslogs\",\"log-opts\": {\"awslogs-group\":\"",
                                 { "Fn::Join": [ "-", [ { "Ref": "AWS::StackName"}, "lg" ] ] },
                                 "\" }}' > /etc/docker/daemon.json \n",
@@ -764,6 +773,7 @@
                                 "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='NodeAsg' ",
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                                "-e CHANNEL=$CHANNEL ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
@@ -782,6 +792,7 @@
                                 "-e SWARM_QUEUE='",{ "Ref" : "SwarmSQS" }, "' ",
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                                "-e CHANNEL=$CHANNEL ",
                                 "-e UCP_ELB_HOSTNAME='",{"Fn::GetAtt": ["UCPLoadBalancer","DNSName"]}, "' ",
                                 "-e UCP_ADMIN_USER='",{ "Ref" : "DDCUsernameSet" }, "' ",
                                 "-e UCP_ADMIN_PASSWORD='",{ "Ref" : "DDCPasswordSet" }, "' ",

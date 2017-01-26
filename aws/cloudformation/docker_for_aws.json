@@ -227,7 +227,8 @@
         "DockerForAWS" : {
             "version" : {
                 "docker": "1.13.0-rc6",
-                "forAws": "aws-v1.13.0-rc6-beta16"
+                "forAws": "aws-v1.13.0-rc6-beta16",
+                "channel": "beta"
             }
         },
 
@@ -717,8 +718,10 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key": "DOCKER_VERSION",
                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
-                     "PropagateAtLaunch" : "true"
-                    }
+                     "PropagateAtLaunch" : "true"},
+                     { "Key": "CHANNEL",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] },
+                      "PropagateAtLaunch" : "true" }
                 ]
             },
             "CreationPolicy": {
@@ -773,6 +776,7 @@
                                 "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
                                 "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
+                                "export CHANNEL='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] }, "'\n",
                                 "export LOCAL_IP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)\n",
                                 "export ENABLE_CLOUDWATCH_LOGS='", {"Ref": "EnableCloudWatchLogs"} , "'\n",
                                 "if [ $ENABLE_CLOUDWATCH_LOGS == 'yes' ] ; then \n",
@@ -803,6 +807,7 @@
                                 "-e ACCOUNT_ID='",{ "Ref" : "AWS::AccountId" }, "' ",
                                 "-e INSTANCE_NAME='ManagerAsg' ",
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                                "-e CHANNEL=$CHANNEL ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "-v /var/log:/var/log ",
@@ -821,6 +826,7 @@
                                 "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                                 "-e RUN_VACUUM='",{ "Ref" : "EnableSystemPrune" }, "' ",
                                 "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                                "-e CHANNEL=$CHANNEL ",
                                 "-v /var/run/docker.sock:/var/run/docker.sock ",
                                 "-v /usr/bin/docker:/usr/bin/docker ",
                                 "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n",
@@ -890,8 +896,10 @@
                       "PropagateAtLaunch" : "true" },
                     { "Key": "DOCKER_VERSION",
                       "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "docker" ] },
-                      "PropagateAtLaunch" : "true"
-                    }
+                      "PropagateAtLaunch" : "true"},
+                      { "Key": "CHANNEL",
+                      "Value": { "Fn::FindInMap" : [ "DockerForAWS", "version", "channel" ] },
+                      "PropagateAtLaunch" : "true" }
                 ]
             },
             "CreationPolicy": {

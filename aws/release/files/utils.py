@@ -255,7 +255,8 @@ def create_cfn_template(amis, release_channel, docker_version,
 
     data['Description'] = u"Docker for AWS {0} ({1})".format(docker_version, edition_version)
     data['Mappings']['DockerForAWS'] = {u'version': {u'docker': docker_version,
-                                                     u'forAws': docker_for_aws_version}}
+                                                     u'forAws': docker_for_aws_version,
+                                                     u'channel': release_channel}}
     data['Mappings']['AWSRegionArch2AMI'] = amis
 
     manager_launch_config_orig_key = 'ManagerLaunchConfig'
@@ -382,7 +383,8 @@ def create_ddc_dev_cfn_template(amis, release_channel, docker_version,
 
     data['Description'] = u"Docker for AWS {0} ({1}) DEV".format(docker_version, edition_version)
     data['Mappings']['DockerForAWS'] = {u'version': {u'docker': docker_version,
-                                                     u'forAws': docker_for_aws_version}}
+                                                     u'forAws': docker_for_aws_version,
+                                                     u'channel': release_channel}}
     data['Mappings']['AWSRegionArch2AMI'] = amis
 
     manager_launch_config_orig_key = 'ManagerLaunchConfig'

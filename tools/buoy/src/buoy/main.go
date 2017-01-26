@@ -8,6 +8,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/segmentio/analytics-go"
@@ -27,6 +28,7 @@ func main() {
 	numServices := flag.Int("services", 0, "Number of Services")
 	dockerVersion := flag.String("docker_version", "n/a", "Docker Version")
 	flavor := flag.String("flavor", "", "IAAS Flavor (aws, azure, gcp, etc)")
+	channel := flag.String("channel", "", "IAAS Channel (test, beta, stable, etc)")
 	swarmID := flag.String("swarm_id", "n/a", "Swarm ID")
 	nodeID := flag.String("node_id", "", "Node ID")
 	event := flag.String("event", "n/a", "Event") // identify, init, ping, scale
@@ -35,6 +37,10 @@ func main() {
 	region := os.Getenv("REGION")
 
 	flag.Parse()
+
+	if *channel == "" {
+		channel = getChannel(dockerForIAASVersion)
+	}
 
 	// Hash the accountId so we don't know what it is.
 	hashedAccountID := computeHmac256(accountID, "ZQM7q96ar8g1y7Id")
@@ -69,6 +75,8 @@ func main() {
 				"swarm_id": *swarmID,
 				"region":   region,
 				"node_id":  *nodeID,
+				"channel":  *channel,
+				"arch":     *flavor,
 			},
 		})
 	} else if *event == "swarm:init" {
@@ -79,6 +87,8 @@ func main() {
 				"swarm_id": *swarmID,
 				"region":   region,
 				"node_id":  *nodeID,
+				"channel":  *channel,
+				"arch":     *flavor,
 			},
 		})
 	} else if strings.HasPrefix(*event, "node:") {
@@ -89,6 +99,8 @@ func main() {
 				"swarm_id": *swarmID,
 				"node_id":  *nodeID,
 				"region":   region,
+				"channel":  *channel,
+				"arch":     *flavor,
 			},
 		})
 	} else if strings.HasPrefix(*event, "swarm:") {
@@ -103,8 +115,26 @@ func main() {
 				"worker_count":            *numWorkers,
 				"docker_version":          *dockerVersion,
 				"docker_for_iaas_version": dockerForIAASVersion,
+				"channel":                 *channel,
+				"arch":                    *flavor,
 			},
 		})
 	}
 	client.Close()
+}
+
+func getChannel(version string) *string {
+	r := regexp.MustCompile("^(?:azure|aws)-v\\d+.\\d+.\\d+-([0-9a-z-]+)")
+	matched := r.FindStringSubmatch(version)
+	channel := "test"
+	if len(matched) > 1 {
+		if strings.Contains(matched[1], "nightly") {
+			channel = "nightly"
+		} else if strings.Contains(matched[1], "beta") {
+			channel = "beta"
+		} else {
+			channel = "stable"
+		}
+	}
+	return &channel
 }

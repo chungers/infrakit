@@ -105,6 +105,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
+    data['variables']['channel'] = release_channel
 
     # Updated custom data for Managers and Workers
     custom_data = buildCustomData('custom-data.sh')
@@ -138,6 +139,7 @@ def create_rg_cloud_template(release_channel, docker_version,
     # Updated Manager custom data
     manager_data = buildCustomData('custom-data_manager_cloud.sh')
     data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
+    data['variables']['channel'] = release_channel
 
     parameters = data.get('parameters')
     if parameters:
@@ -215,6 +217,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
+    data['variables']['channel'] = release_channel
 
     # Use multiple steps to keep order
     parameters = data.get('parameters')

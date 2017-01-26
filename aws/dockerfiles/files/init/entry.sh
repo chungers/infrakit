@@ -17,6 +17,7 @@ echo "AWS_REGION=$REGION"
 echo "MANAGER_IP=$MANAGER_IP"
 echo "SWARM_STATE=$SWARM_STATE"
 echo "HAS_DDC=$HAS_DDC"
+echo "CHANNEL=$CHANNEL"
 echo "#================"
 
 get_swarm_id()
@@ -153,7 +154,7 @@ join_as_secondary_manager()
         fi
 
     done
-    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
+    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=aws -channel=$CHANNEL -node_id=$NODE_ID
     echo "   Secondary Manager complete"
 }
 
@@ -188,7 +189,7 @@ setup_manager()
 
             echo "   Primary Manager init complete"
             # send identify message
-            buoy -event=identify -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
+            buoy -event=identify -swarm_id=$SWARM_ID -flavor=aws -channel=$CHANNEL -node_id=$NODE_ID
         else
             echo " Error is normal, it is because we already have a primary node, lets setup a secondary manager instead."
             join_as_secondary_manager
@@ -244,7 +245,7 @@ setup_node()
         fi
 
     done
-    buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=aws -node_id=$NODE_ID
+    buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=aws -channel=$CHANNEL -node_id=$NODE_ID
 }
 
 # see if the primary manager IP is already set.
