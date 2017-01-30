@@ -6,6 +6,7 @@ imports:
 - path: Docker.jinja
 - path: infrakit.json.template
 - path: startup.sh
+- path: bootstrap.sh
 
 outputs:
   externalIp:
@@ -21,7 +22,7 @@ outputs:
 properties:
   version:
     type: string
-    default: "v1"
+    default: "v2"
     description: Version of the templates
 
   managerCount:

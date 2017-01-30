@@ -25,21 +25,22 @@ outputs:
   value: "You can ssh into the Swarm with: gcloud compute ssh --zone {{ ZONE }} {{ STACK }}-manager-1"
 
 resources:
-- name: {{ STACK }}-manager-1
+- name: {{ STACK }}-bootstrap
   type: compute.v1.instance
+  metadata:
+    dependsOn:
+    - {{ STACK }}-disk-image-{{ VERSION }}
+    - {{ STACK }}-lb-pool
   properties:
     zone: {{ ZONE }}
-    machineType: zones/{{ ZONE }}/machineTypes/{{ properties['managerMachineType'] }}
-    tags:
-      items: [swarm, swarm-manager]
+    machineType: zones/{{ ZONE }}/machineTypes/g1-small
     disks:
     - type: PERSISTENT
       boot: true
-      autoDelete: false
+      autoDelete: true
       initializeParams:
-        sourceImage: $(ref.{{ STACK }}-disk-image-{{ VERSION }}.selfLink)
-        diskSizeGb: {{ properties['managerDiskSize'] }}
-        diskType: projects/{{ PROJECT }}/zones/{{ ZONE }}/diskTypes/{{ properties['managerDiskType'] }}
+        sourceImage: projects/debian-cloud/global/images/family/debian-8
+        diskSizeGb: 200
     networkInterfaces:
     - network: $(ref.{{ STACK }}-network.selfLink)
       accessConfigs:
@@ -47,25 +48,19 @@ resources:
         type: ONE_TO_ONE_NAT
     metadata:
       items:
-      - key: infrakit--group
-        value: managers
-      - key: startup-script
+      - key: manager-script
         value: |
           {% filter indent(10) %}{% set type='leader' %}{% include 'startup.sh' %}{% endfilter %}
+      - key: startup-script
+        value: |
+          {% filter indent(10) %}{% include 'bootstrap.sh' %}{% endfilter %}
     scheduling:
       preemptible: false
       onHostMaintenance: TERMINATE
       automaticRestart: false
     serviceAccounts:
     - scopes:
-      - https://www.googleapis.com/auth/devstorage.read_only
-      - https://www.googleapis.com/auth/logging.write
-      - https://www.googleapis.com/auth/monitoring.write
-      - https://www.googleapis.com/auth/service.management.readonly
-      - https://www.googleapis.com/auth/servicecontrol
-      - https://www.googleapis.com/auth/trace.append
       - https://www.googleapis.com/auth/compute
-      - https://www.googleapis.com/auth/cloudruntimeconfig
 
 - name: {{ STACK }}-config
   type: runtimeconfig.v1beta1.config
@@ -97,7 +92,7 @@ resources:
   properties:
     region: {{ REGION }}
     sessionAffinity: NONE
-    instances: [$(ref.{{ STACK }}-manager-1.selfLink)]
+    instances: []
 
 - name: {{ STACK }}-lb-forward
   type: compute.v1.forwardingRule

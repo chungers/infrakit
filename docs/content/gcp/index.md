@@ -35,7 +35,7 @@ with properties values suited to your needs.
 
 ```
 $ gcloud deployment-manager deployments create docker-stack \
-    --config https://docker-for-gcp-templates.storage.googleapis.com/v1/Docker.jinja \
+    --config https://docker-for-gcp-templates.storage.googleapis.com/v2/Docker.jinja \
     --properties managerCount:3,workerCount:1,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 
@@ -46,7 +46,7 @@ Here is an example of how to use the CLI:
 ```
 $ gcloud init --skip-diagnostics
 $ gcloud deployment-manager deployments create docker-stack \
-    --config https://docker-for-gcp-templates.storage.googleapis.com/v1/Docker.jinja \
+    --config https://docker-for-gcp-templates.storage.googleapis.com/v2/Docker.jinja \
     --properties managerCount:3,workerCount:1,managerMachineType:g1-small,workerMachineType:g1-small
 ```
 

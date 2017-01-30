@@ -7,21 +7,22 @@ outputs:
   value: "You can ssh into the Swarm with: gcloud compute ssh --zone europe-west1-d docker-manager-1"
 
 resources:
-- name: docker-manager-1
+- name: docker-bootstrap
   type: compute.v1.instance
+  metadata:
+    dependsOn:
+    - docker-disk-image-latest
+    - docker-lb-pool
   properties:
     zone: europe-west1-d
     machineType: zones/europe-west1-d/machineTypes/g1-small
-    tags:
-      items: [swarm, swarm-manager]
     disks:
     - type: PERSISTENT
       boot: true
-      autoDelete: false
+      autoDelete: true
       initializeParams:
-        sourceImage: $(ref.docker-disk-image-latest.selfLink)
-        diskSizeGb: 100
-        diskType: projects/test-project/zones/europe-west1-d/diskTypes/pd-standard
+        sourceImage: projects/debian-cloud/global/images/family/debian-8
+        diskSizeGb: 200
     networkInterfaces:
     - network: $(ref.docker-network.selfLink)
       accessConfigs:
@@ -29,9 +30,7 @@ resources:
         type: ONE_TO_ONE_NAT
     metadata:
       items:
-      - key: infrakit--group
-        value: managers
-      - key: startup-script
+      - key: manager-script
         value: |
           #!/bin/sh
 
@@ -108,20 +107,51 @@ resources:
 
           dockerPull ${lb_image}
           $docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5
+      - key: startup-script
+        value: |
+          #!/bin/sh
+
+          export CLOUDSDK_CORE_PROJECT=test-project
+          export CLOUDSDK_COMPUTE_ZONE=europe-west1-d
+
+          curl -sfH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/attributes/manager-script > /start.sh
+
+          gcloud compute disks describe docker-manager-1
+          if [ $? -eq 0 ]; then
+            gcloud compute instances create docker-manager-1 \
+              --machine-type g1-small \
+              --network projects/test-project/global/networks/docker-network \
+              --tags swarm,swarm-manager \
+              --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
+              --metadata infrakit--group=managers \
+              --metadata-from-file startup-script=/start.sh \
+              --disk=boot=yes,device-name=docker-manager-1,name=docker-manager-1
+          else
+            gcloud compute instances create docker-manager-1 \
+              --machine-type g1-small \
+              --network projects/test-project/global/networks/docker-network \
+              --image projects/test-project/global/images/docker-disk-image-latest \
+              --tags swarm,swarm-manager \
+              --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
+              --metadata infrakit--group=managers \
+              --metadata-from-file startup-script=/start.sh \
+              --boot-disk-size 100GB \
+              --boot-disk-type pd-standard \
+              --boot-disk-device-name docker-manager-1 \
+              --no-boot-disk-auto-delete
+          fi
+
+          gcloud compute target-pools add-instances \
+            docker-lb-pool \
+            --instances=docker-manager-1 \
+            --instances-zone europe-west1-d
     scheduling:
       preemptible: false
       onHostMaintenance: TERMINATE
       automaticRestart: false
     serviceAccounts:
     - scopes:
-      - https://www.googleapis.com/auth/devstorage.read_only
-      - https://www.googleapis.com/auth/logging.write
-      - https://www.googleapis.com/auth/monitoring.write
-      - https://www.googleapis.com/auth/service.management.readonly
-      - https://www.googleapis.com/auth/servicecontrol
-      - https://www.googleapis.com/auth/trace.append
       - https://www.googleapis.com/auth/compute
-      - https://www.googleapis.com/auth/cloudruntimeconfig
 
 - name: docker-config
   type: runtimeconfig.v1beta1.config
@@ -152,7 +182,7 @@ resources:
                   "DiskSizeMb": 100,
                   "DiskType": "pd-standard",
                   "DiskImage": "$(ref.docker-disk-image-latest.selfLink)",
-                  "TargetPool": "docker-lb-pool",
+                  "TargetPools": ["docker-lb-pool"],
                   "Tags": [
                     "swarm",
                     "swarm-manager"
@@ -208,7 +238,7 @@ resources:
                   "DiskSizeMb": 100,
                   "DiskType": "pd-standard",
                   "DiskImage": "$(ref.docker-disk-image-latest.selfLink)",
-                  "TargetPool": "docker-lb-pool",
+                  "TargetPools": ["docker-lb-pool"],
                   "Tags": [
                     "swarm",
                     "swarm-worker"
@@ -264,7 +294,7 @@ resources:
   properties:
     region: europe-west1
     sessionAffinity: NONE
-    instances: [$(ref.docker-manager-1.selfLink)]
+    instances: []
 
 - name: docker-lb-forward
   type: compute.v1.forwardingRule
