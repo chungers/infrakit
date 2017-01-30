@@ -53,8 +53,8 @@ update:
 		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE)
 
 delete:
-	-$(GCLOUD) compute instances delete --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
-	$(DEPLOYMENTS) delete $(DEPLOYMENT_NAME)
+	-$(GCLOUD) compute instances delete -q --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
+	$(DEPLOYMENTS) delete -q $(DEPLOYMENT_NAME)
 
 release: dockerfiles test export-templates
 
