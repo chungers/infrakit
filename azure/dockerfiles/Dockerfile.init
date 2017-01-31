@@ -17,6 +17,6 @@ RUN mkdir -p /usr/bin/ /var/log/docker/
 COPY files/init/entry.sh /entry.sh
 COPY files/init/azureleader.py /usr/bin
 ADD files/bin/buoy /usr/bin
-RUN chmod 755 /entry.sh/usr/bin/azureleader.py /usr/bin/buoy
+RUN chmod 755 /entry.sh /usr/bin/azureleader.py /usr/bin/buoy
 
 CMD ["/entry.sh"]
