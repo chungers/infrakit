@@ -36,7 +36,7 @@ get_node_id()
 get_leader_ip()
 {
     echo "Get Leader IP from Azure Table"
-    export LEADER_IP=$(python azureleader.py get-ip)
+    export LEADER_IP=$(azureleader.py get-ip)
 }
 
 get_manager_token()
@@ -137,7 +137,7 @@ setup_manager()
         # try to create the azure table that will store tokens, if it succeeds then it is the first
         # and it is the leader. If it fails, then it isn't the leader .. so treat the record
         # that is there, as the leader, and join that swarm.
-        python azureleader.py create-table
+        azureleader.py create-table
         RESULT=$?
         echo "   Result of attempt to create swarminfo table: $RESULT"
 
@@ -150,7 +150,7 @@ setup_manager()
             get_node_id
 
             # update azure table with the ip
-            python azureleader.py insert-ip $PRIVATE_IP
+            azureleader.py insert-ip $PRIVATE_IP
 
             echo "   Leader init complete"
             # send identify message
