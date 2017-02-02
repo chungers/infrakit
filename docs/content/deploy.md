@@ -10,7 +10,7 @@ weight="3"
 +++
 <![end-metadata]-->
 
-# Deploying your app
+# Deploying your app on Docker for GCP
 
 ## Connecting to your manager nodes
 
@@ -21,8 +21,8 @@ applications.
 
 #### Manager nodes
 
-Once you've deployed Docker on GCP with the cli, you will see instructions on
-how to connect to a manager. It will be something like:
+Once you've deployed Docker on GCP with the CLI, instructions on how to connect
+to a manager will be printed. It will be something like:
 
 ```
 OUTPUTS     VALUE
@@ -37,8 +37,9 @@ Follow those instructions to connect to a manager node. Any manager can be used:
     Welcome to Docker!
 
 The first time you use `gcloud compute ssh` it will create an ssh key for you
-and propagate it to the Swarm nodes. You can also connect to an instance [via
-the cloud console] or via a [standard ssh command].
+in `~/.ssh/google_compute_engine` and propagate it to the Swarm nodes. You can
+also connect to an instance [via the cloud console] or via a
+[standard ssh command].
 
 Once you are logged into the manager, you can run Docker commands on the Swarm:
 
@@ -59,7 +60,65 @@ variable to point to the localhost tunnel opening.
 
 ### Worker nodes
 
-To be done.
+The worker nodes also have SSH enabled when connecting from manager nodes. SSH
+access is not possible to the worker nodes from the public Internet. To access
+the worker nodes, you will need to first connect to a manager node (see above).
+
+On the manager node you can then ssh to the worker node, over the private
+network. Make sure you have SSH agent forwarding enabled (see below). If you run
+the `docker node ls` command you can see the full list of nodes in your swarm.
+You can then `ssh <worker-host>` to get access to that node.
+
+#### Using SSH agent forwarding
+
+SSH agent forwarding allows you to forward along your ssh keys when connecting
+from one node to another.
+
+If your haven’t added your ssh key to the ssh-agent you will also need to do
+this first.
+
+To see the keys in the agent already, run:
+
+    $ ssh-add -L
+
+If you don’t see your key, add it like this:
+
+    $ ssh-add ~/.ssh/google_compute_engine
+
+On Mac OS X, the ssh-agent will forget this key, once it gets restarted. But you
+can import your SSH key into your Keychain like this. This will have your key
+survive restarts.
+
+    $ ssh-add -K ~/.ssh/google_compute_engine
+
+You can then enable SSH forwarding per-session using the `-A` flag for the ssh
+command.
+
+Connecting to the Manager:
+
+    $ gcloud compute ssh --zone [zone] [manager-name] -- -A
+
+To always have it turned on for a given host, you can edit your ssh config file
+(`/etc/ssh_config`, `~/.ssh/config`, etc) to add the `ForwardAgent yes` option,
+
+Example configuration:
+
+    Host manager1
+      HostName <manager ip>
+      ForwardAgent yes
+
+List the Workers:
+
+    $ docker node ls
+    ID                           HOSTNAME              STATUS  AVAILABILITY  MANAGER STATUS
+    2mjdd36swxfhocjbnei0pdud2    docker-manager-2      Ready   Active        Reachable
+    4rn84y60tkmo5dzcr6gnfyqw0    docker-worker-2pctu9  Ready   Active
+    c7y3q8vu9hmiozmgge8pgwi4u *  docker-manager-1      Ready   Active        Leader
+    spmc1yztini60svam0qda31hd    docker-manager-3      Ready   Active        Reachable
+
+Connecting to a Worker:
+
+    $ ssh docker-worker-2pctu9
 
 ## Running apps
 
