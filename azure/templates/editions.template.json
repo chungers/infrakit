@@ -2,12 +2,6 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "tagvalues": {
-      "type": "object",
-      "defaultValue": {
-        "channel": "[variables('channel')]"
-      }
-    },
     "swarmName": {
       "type": "string",
       "defaultValue": "dockerswarm",
@@ -191,7 +185,8 @@
     }
   },
   "variables": {
-    "Description": "Docker for Azure 1.13.0-rc2-beta12",
+    "Description": "Docker for Azure 1.13.0",
+    "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
     "storageLocation": "[resourceGroup().location]",
     "imagePublisher": "docker",
     "imageOffer": "docker4azure",
@@ -270,6 +265,10 @@
       },
       "properties": {
         "accountType": "Standard_LRS"
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -279,6 +278,10 @@
       "location": "[variables('storageLocation')]",
       "properties": {
         "accountType": "Standard_LRS"
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -301,6 +304,10 @@
             }
           }
         ]
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -381,6 +388,10 @@
             }
           }
         ]
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -478,6 +489,10 @@
         "name": "[variables('managerVMSize')]",
         "tier": "Standard"
       },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
+      },
       "type": "Microsoft.Compute/virtualMachineScaleSets"
     },
     {
@@ -570,6 +585,10 @@
             }
           }
         }
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -579,6 +598,10 @@
       "location": "[variables('storageLocation')]",
       "properties": {
         "publicIPAllocationMethod": "Static"
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -616,6 +639,10 @@
             }
           }
         ]
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       }
     },
     {
@@ -624,6 +651,10 @@
       "name": "[variables('lbSSHPublicIPAddressName')]",
       "properties": {
         "publicIPAllocationMethod": "Static"
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       },
       "type": "Microsoft.Network/publicIPAddresses"
     },
@@ -675,6 +706,10 @@
             }
           }
         ]
+      },
+      "tags": {
+          "provider": "[toUpper(variables('DockerProviderTag'))]",
+          "channel": "[variables('channel')]"
       },
       "type": "Microsoft.Network/loadBalancers"
     }
