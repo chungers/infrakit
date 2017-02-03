@@ -20,15 +20,13 @@ wrappedNode(label: "docker") {
     },
     'sanitize': { ->
       stage(name: "sanitize json files") {
-        withTool("docker") {
-          for (i in cloudFormation) {
-            try {
-              sh("docker run --rm -v `pwd`:/data docker4x/sanity:latest '${i}'")
-            } catch (Exception exc) {
-              currentBuild.result = 'UNSTABLE'
-              echo "sanity failed"
-              return
-            }
+        for (i in cloudFormation) {
+          try {
+            sh("docker run --rm -v `pwd`:/data docker4x/sanity:latest '${i}'")
+          } catch (Exception exc) {
+            currentBuild.result = 'UNSTABLE'
+            echo "sanity failed"
+            return
           }
         }
       }
