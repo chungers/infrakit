@@ -1,7 +1,7 @@
 <!--[metadata]>
 +++
-title = "Docker for GCP"
-description = "Docker for GCP"
+title = "Docker for GCP Setup"
+description = "Docker for GCP Setup"
 keywords = ["iaas, gcp"]
 [menu.main]
 identifier="docs-gcp-index"
