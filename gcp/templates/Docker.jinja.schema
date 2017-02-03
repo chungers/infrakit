@@ -37,7 +37,7 @@ properties:
 
   zone:
     type: string
-    default: "europe-west1-d"
+    default: "us-central1-f"
     description: Zone
 
   managerMachineType:

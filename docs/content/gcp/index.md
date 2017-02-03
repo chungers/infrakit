@@ -87,9 +87,9 @@ When choosing manager count, consider the level of durability you need:
 
 The number of [Workers] in your Swarm
 
-### zone
+#### zone
 
-The [Zone] to which the nodes are attached.
+The [Zone] to which the nodes are attached. The default value is `us-central1-f`.
 
 #### managerMachineType
 
@@ -101,19 +101,19 @@ If you're testing, `g1-small` instances are fine.
 The [machine type] for your Worker nodes. The default value is `g1-small`.
 If you're testing, `g1-small` instances are fine.
 
-### managerDiskSize
+#### managerDiskSize
 
 The size of the Manager boot disks in Mb. The default value is `100`.
 
-### workerDiskSize
+#### workerDiskSize
 
 The size of the Worker boot disks in Mb. The default value is `100`.
 
-### managerDiskType
+#### managerDiskType
 
 The [Disk Type] used by Managers. The default value is `pd-standard`.
 
-### workerDiskType
+#### workerDiskType
 
 The [Disk Type] used by Workers. The default value is `pd-standard`.
 
