@@ -27,10 +27,6 @@ outputs:
 resources:
 - name: {{ STACK }}-bootstrap
   type: compute.v1.instance
-  metadata:
-    dependsOn:
-    - {{ STACK }}-disk-image-{{ VERSION }}
-    - {{ STACK }}-lb-pool
   properties:
     zone: {{ ZONE }}
     machineType: zones/{{ ZONE }}/machineTypes/g1-small

@@ -21,7 +21,7 @@ function dockerPull {
 {% if (type in ['leader']) %}
 echo Initialize Swarm
 
-docker node inspect self || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
+docker node inspect self >/dev/null 2>&1 || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
 docker node inspect self
 # send identify message
 /usr/bin/buoy -event=identify -iaas_provider=gcp

@@ -5,6 +5,12 @@ export CLOUDSDK_COMPUTE_ZONE={{ ZONE }}
 
 curl -sfH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/attributes/manager-script > /start.sh
 
+echo Wait for the base disk image
+while :; do gcloud compute images describe {{ STACK }}-disk-image-{{ VERSION }} && break || sleep 1; done
+
+echo Wait for the network
+while :; do gcloud compute networks describe {{ STACK }}-network && break || sleep 1; done
+
 gcloud compute disks describe {{ STACK }}-manager-1
 if [ $? -eq 0 ]; then
   gcloud compute instances create {{ STACK }}-manager-1 \
@@ -29,6 +35,9 @@ else
     --boot-disk-device-name {{ STACK }}-manager-1 \
     --no-boot-disk-auto-delete
 fi
+
+echo Wait for the target pool
+while :; do gcloud compute target-pools describe --region={{REGION}} {{ STACK }}-lb-pool && break || sleep 1; done
 
 gcloud compute target-pools add-instances \
   {{ STACK }}-lb-pool \
