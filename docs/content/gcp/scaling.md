@@ -1,7 +1,7 @@
 <!--[metadata]>
 +++
-title = "Docker for GCP"
-description = "Docker for GCP"
+title = "Docker for GCP Scaling"
+description = "Docker for GCP Scaling"
 keywords = ["iaas, gcp"]
 [menu.main]
 identifier="docs-gcp-scaling"

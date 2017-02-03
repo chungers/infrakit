@@ -33,8 +33,5 @@ For more details, check out the rest of the documentation:
 ## Getting help
 
 Reach out to <docker-for-iaas@docker.com> with questions, comments and feedback.
-The forums are available for public discussions at [Docker for GCP Forum].
+The forums are available for public discussions at [Docker for GCP Forum](https://forums.docker.com/c/docker-for-gcp).
 
- [sign up]: https://beta.docker.com/gcp
- [Release Notes]: gcp/release-notes.md
- [Docker for GCP Forum]: https://forums.docker.com/c/docker-for-gcp

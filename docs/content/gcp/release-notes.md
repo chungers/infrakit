@@ -1,8 +1,5 @@
 <!--[metadata]>
 +++
-aliases = [
-"/aws-release-notes/"
-]
 title = "Docker for GCP Release notes"
 description = "Docker for GCP Release notes"
 keywords = ["iaas, gcp"]

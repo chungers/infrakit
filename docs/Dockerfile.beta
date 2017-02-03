@@ -6,3 +6,4 @@ ENV PROJECT=editions
 COPY . /src
 COPY ./layouts/ /docs/layouts/
 COPY ./content/ /docs/content/
+COPY ./config.toml /docs/
