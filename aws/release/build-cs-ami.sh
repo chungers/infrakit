@@ -51,7 +51,7 @@ git pull
 # clean mount before we start to make sure.
 make ami-clean-mount
 make clean
-make ami
+make ami DOCKER_BIN_URL=$DOCKER_BIN_URL
 make ami-clean-mount
 # clean up after ourselves
 

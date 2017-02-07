@@ -207,6 +207,6 @@ echo "== Build Docker images =="
 cd $BASE_DIR
 
 # run release, this will create CFN templates and push them to s3, push AMI to different regions and share with list of approved accounts.
-./run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SRC_REGION -c $CHANNEL -l $DOCKER_AWS_ACCOUNT_URL -u cloud-$CHANNEL -p $MAKE_AMI_PUBLIC
+./new_run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SRC_REGION -c $CHANNEL -l $DOCKER_AWS_ACCOUNT_URL -u cloud-$CHANNEL -p $MAKE_AMI_PUBLIC
 
 echo "===== Done ====="

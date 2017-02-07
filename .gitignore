@@ -10,9 +10,11 @@ azure/dockerfiles/files/bin/*
 azure/dockerfiles/files/alb-controller/container/bin/*
 tools/buoy/bin/buoy
 aws/release/tmp
+aws/release/cfn_gen/outputs
 azure/release/tmp
 tools/buoy/bin/buoy
 tools/metaserver/bin/metaserver
 *~
 *#
 .#*
+*.pyc
