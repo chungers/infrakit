@@ -43,7 +43,7 @@ Base64(Join('', [
     "-e MANAGER_SECURITY_GROUP_ID=$MANAGER_SECURITY_GROUP_ID ",
     "-e WORKER_SECURITY_GROUP_ID=$WORKER_SECURITY_GROUP_ID ",
     "-v /var/run/docker.sock:/var/run/docker.sock ",
-    "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=aws\n",
+    "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -iaas_provider=aws\n",
 
     "docker run --label com.docker.editions.system --log-driver=json-file --restart=no -d ",
     "-e DYNAMODB_TABLE=$DYNAMODB_TABLE ",

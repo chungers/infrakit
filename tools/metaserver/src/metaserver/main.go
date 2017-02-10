@@ -55,7 +55,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "404: Page not found")
 }
 
-func handleRequests(flavor string) {
+func handleRequests(iaas_provider string) {
 	r := mux.NewRouter()
 
 	// 404 catcher
@@ -67,15 +67,15 @@ func handleRequests(flavor string) {
 
 	// specific to the service
 	var w Web
-	if flavor == "aws" {
+	if iaas_provider == "aws" {
 		fmt.Println("AWS service")
 		w = AWSWeb{}
-	} else if flavor == "azure" {
+	} else if iaas_provider == "azure" {
 		fmt.Println("Azure service")
 		w = AzureWeb{}
 	} else {
-		fmt.Printf("%v service\n", flavor)
-		panic("-flavor was not a valid option.")
+		fmt.Printf("%v service\n", iaas_provider)
+		panic("-iaas_provider was not a valid option.")
 	}
 
 	// used to get the swarm tokens
@@ -97,21 +97,21 @@ func handleRequests(flavor string) {
 	log.Fatal(srv.ListenAndServe())
 }
 
-func validate(flavor string) {
+func validate(iaas_provider string) {
 	// validate that we have everything we need in order to start. If anything is missing.
 	// Then exit.
-	if flavor == "aws" {
+	if iaas_provider == "aws" {
 		// make sure our required ENV variables are available, if not fail.
 		if !checkEnvVars("WORKER_SECURITY_GROUP_ID", "MANAGER_SECURITY_GROUP_ID") {
 			os.Exit(1)
 		}
-	} else if flavor == "azure" {
+	} else if iaas_provider == "azure" {
 		// make sure our required ENV variables are available, if not fail.
 		if !checkEnvVars("APP_ID", "APP_SECRET", "ACCOUNT_ID", "TENANT_ID", "GROUP_NAME", "VMSS_MGR", "VMSS_WRK") {
 			os.Exit(1)
 		}
 	} else {
-		fmt.Printf("ERROR: -flavor %v was not a valid option. please pick either 'aws' or 'azure'", flavor)
+		fmt.Printf("ERROR: -iaas_provider %v was not a valid option. please pick either 'aws' or 'azure'", iaas_provider)
 		os.Exit(1)
 	}
 }
@@ -127,13 +127,13 @@ func checkEnvVars(envVars ...string) bool {
 }
 
 func main() {
-	// pass in the flavor to determine which IAAS provider we are on.
+	// pass in the iaas_provider to determine which IAAS provider we are on.
 	// currently defaults to AWS, since that is the only one implemnted
-	flavor := flag.String("flavor", "aws", "IAAS Flavor (aws, azure, etc)")
+	iaas_provider := flag.String("iaas_provider", "aws", "IAAS iaas_provider (aws, azure, etc)")
 	flag.Parse()
 
 	// make sure we are good to go, before we fully start up.
-	validate(*flavor)
+	validate(*iaas_provider)
 	// lets handle those requests
-	handleRequests(*flavor)
+	handleRequests(*iaas_provider)
 }

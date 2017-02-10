@@ -8,6 +8,7 @@ echo "DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION"
 echo "ACCOUNT_ID=$ACCOUNT_ID"
 echo "REGION=$REGION"
 echo "AZURE_HOSTNAME=$HOSTNAME"
+echo "CHANNEL=$CHANNEL"
 echo "#================"
 
 # these need to be kept in sync with the template file
@@ -122,7 +123,7 @@ join_as_manager()
             break
         fi
     done
-    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -flavor=azure -node_id=$NODE_ID
+    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
     echo "   Successfully joined as a Swarm Manager"
 }
 
@@ -154,7 +155,9 @@ setup_manager()
 
             echo "   Leader init complete"
             # send identify message
-            buoy -event=identify -swarm_id=$SWARM_ID -flavor=azure -node_id=$NODE_ID
+            buoy -event=identify -iaas_provider=azure
+            # send swarm init message
+            buoy -event="swarm:init" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
         else
             echo " Error is normal, it is because we already have a swarm leader, lets setup a regular manager instead."
             join_as_manager
@@ -202,7 +205,7 @@ setup_worker()
             break
         fi
     done
-    buoy -event="node:join" -swarm_id=$SWARM_ID -flavor=azure -node_id=$NODE_ID
+    buoy -event="node:join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
 }
 
 
@@ -270,7 +273,7 @@ run_system_containers()
             -e VMSS_MGR="$VMSS_MGR" \
             -e VMSS_WRK="$VMSS_WRK" \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=azure
+            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -iaas_provider=azure
 
         echo "kick off l4controller container"
         echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config

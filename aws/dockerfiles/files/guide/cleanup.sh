@@ -38,7 +38,7 @@ for((i=0;i<$COUNT;i++)); do
         aws sqs delete-message --region $REGION --queue-url $CLEANUP_QUEUE --receipt-handle $RECEIPT
         echo "message deleted"
         SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
-        buoy -event="node:remove" -swarm_id=$SWARM_ID -flavor=aws -channel=$CHANNEL -node_id=$BODY
+        buoy -event="node:remove" -swarm_id=$SWARM_ID -channel=$CHANNEL -node_id=$BODY
     else
         echo "We were not able to remove node from swarm, don't delete. RESULT=$RESULT"
     fi

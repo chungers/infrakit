@@ -20,6 +20,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
       CHANNEL="stable"
     fi
 
+    # send swarm ping message
     /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
-        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -flavor=gcp -channel=$CHANNEL
+        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -channel=$CHANNEL
 fi
