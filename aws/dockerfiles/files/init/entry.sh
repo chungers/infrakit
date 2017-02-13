@@ -6,6 +6,7 @@ echo "Start Swarm setup"
 export MYHOST=`wget -qO- http://169.254.169.254/latest/meta-data/hostname`
 SWARM_STATE=$(docker info | grep Swarm | cut -f2 -d: | sed -e 's/^[ \t]*//')
 HAS_DDC=${HAS_DDC:-"no"}
+FLAVOR=${FLAVOR:-vanilla}
 
 echo "PATH=$PATH"
 echo "NODE_TYPE=$NODE_TYPE"
@@ -18,7 +19,9 @@ echo "MANAGER_IP=$MANAGER_IP"
 echo "SWARM_STATE=$SWARM_STATE"
 echo "HAS_DDC=$HAS_DDC"
 echo "CHANNEL=$CHANNEL"
+echo "FLAVOR=$FLAVOR"
 echo "#================"
+
 
 get_swarm_id()
 {

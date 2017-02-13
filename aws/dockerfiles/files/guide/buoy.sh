@@ -19,6 +19,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     if [[ $DOCKER_VERSION =~ ^[0-9]+.[0-9]+.[0-9]+$ ]]; then
       CHANNEL="stable"
     fi
+    FLAVOR=${FLAVOR:-vanilla}
 
     /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
         -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -channel=$CHANNEL
