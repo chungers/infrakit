@@ -4,10 +4,11 @@ echo "127.0.0.1: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config
 echo "localhost: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config
 echo "default: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config
 
+echo '{"experimental": true, "labels"=["os=linux", "region='$NODE_REGION'", "availability_zone='$NODE_AZ'", "instance_type='$INSTANCE_TYPE'", "node_type='$NODE_TYPE'"] ' > /etc/docker/daemon.json
 if [ $ENABLE_CLOUDWATCH_LOGS == 'yes' ] ; then
-   echo '{"experimental": true, "log-driver": "awslogs", "log-opts": {"awslogs-group": "'$LOG_GROUP_NAME'", "tag": "{{.Name}}-{{.ID}}" }}' > /etc/docker/daemon.json
+   echo ', "log-driver": "awslogs", "log-opts": {"awslogs-group": "'$LOG_GROUP_NAME'", "tag": "{{.Name}}-{{.ID}}" }}' >> /etc/docker/daemon.json
 else
-   echo '{"experimental": true }' > /etc/docker/daemon.json
+   echo ' }' >> /etc/docker/daemon.json
 fi
 
 chown -R docker /home/docker/

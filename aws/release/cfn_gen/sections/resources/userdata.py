@@ -9,6 +9,9 @@ def common_userdata_head():
         "export EXTERNAL_LB='", Ref("ExternalLoadBalancer"), "'\n",
         "export DOCKER_FOR_IAAS_VERSION='", FindInMap("DockerForAWS", "version", "forAws"), "'\n",
         "export LOCAL_IP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)\n",
+        "export INSTANCE_TYPE=$(wget -qO- http://169.254.169.254/latest/meta-data/instance-type)\n",
+        "export NODE_AZ=$(wget -qO- http://169.254.169.254/latest/meta-data/placement/availability-zone/)\n",
+        "export NODE_REGION=$(echo $NODE_AZ | sed 's/.$//')\n",
         "export ENABLE_CLOUDWATCH_LOGS='", Ref("EnableCloudWatchLogs"), "'\n",
         "export AWS_REGION='", Ref("AWS::Region"), "'\n",
         "export MANAGER_SECURITY_GROUP_ID='", Ref("ManagerVpcSG"), "'\n",
@@ -39,11 +42,8 @@ def manager_node_userdata_head():
 def manager_node_userdata_body():
     """ This is the body of the userdata """
     script_dir = path.dirname(__file__)
-    print(script_dir)
     manager_rel_path = "../../data/base/manager_node_userdata.sh"
-    print(manager_rel_path)
     manager_path = path.join(script_dir, manager_rel_path)
-    print(manager_path)
     manager_data = userdata_from_file(manager_path)
 
     common_path = "../../data/base/common_userdata.sh"

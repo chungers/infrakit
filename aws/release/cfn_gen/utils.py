@@ -198,6 +198,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile,
 
     return s3_full_url
 
+
 def publish_cfn_template(release_channel, docker_for_aws_version):
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
@@ -216,6 +217,7 @@ def publish_cfn_template(release_channel, docker_for_aws_version):
     dstkey = bucket.new_key(s3_path_latest)
     srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
     return s3_full_url
+
 
 def upload_ami_list(ami_list_json, docker_version):
 
