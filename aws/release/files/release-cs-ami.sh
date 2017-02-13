@@ -13,4 +13,5 @@ export PYTHONUNBUFFERED=1
 python /home/docker/release-cs-ami.py --docker_version="$DOCKER_VERSION" \
     --ami_id="$AMI_ID" \
     --ami_src_region="$AMI_SRC_REGION" \
-    --account_list_url="$AWS_ACCOUNT_LIST_URL"
+    --account_list_url="$AWS_ACCOUNT_LIST_URL" \
+    --public="$MAKE_AMI_PUBLIC"

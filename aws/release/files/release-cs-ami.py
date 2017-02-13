@@ -26,6 +26,9 @@ def main():
     parser.add_argument('-l', '--account_list_url',
                         dest='account_list_url', default=DOCKER_AWS_ACCOUNT_URL,
                         help="The URL for the aws account list for ami approvals")
+    parser.add_argument('-p', '--public',
+                        dest='make_ami_public', default="no",
+                        help="Make the AMI public")
 
     args = parser.parse_args()
 
@@ -40,12 +43,23 @@ def main():
     print(u"ami_id={}".format(args.ami_id))
     print(u"ami_src_region={}".format(args.ami_src_region))
     print(u"account_list_url={}".format(args.account_list_url))
+    print(u"make_ami_public={}".format(args.make_ami_public))
     if not args.account_list_url:
         print("account_list_url parameter is None, defaulting")
         account_list_url = DOCKER_AWS_ACCOUNT_URL
     else:
         account_list_url = args.account_list_url
     print(u"account_list_url={}".format(account_list_url))
+
+    if not args.make_ami_public:
+        make_ami_public = False
+    else:
+        make_ami_public = args.make_ami_public
+        if make_ami_public.lower() == 'yes':
+            make_ami_public = True
+        else:
+            make_ami_public = False
+    print(u"make_ami_public={}".format(make_ami_public))
 
     print("Copy AMI to each region..")
     ami_list = copy_amis(args.ami_id, args.ami_src_region,

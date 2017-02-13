@@ -16,13 +16,17 @@ export PYTHONUNBUFFERED=1
 
 BIN_URL=$1
 echo "BIN_URL is $BIN_URL"
+MOBY_BRANCH=$2
+echo "MOBY_BRANCH is $MOBY_BRANCH"
 
-if [ -n "$2" ]
+if [ -n "$3" ]
 then
  UPDATE_LATEST="True"
+ MAKE_AMI_PUBLIC="yes"
  echo "UPDATE_LATEST is True"
 else
  UPDATE_LATEST="False"
+ MAKE_AMI_PUBLIC="no"
 fi
 
 
@@ -46,6 +50,7 @@ export DOCKER_BIN_URL=$BIN_URL
 MOBY_ROOT="/home/ubuntu/code/moby-master/alpine"
 
 cd $MOBY_ROOT
+git checkout $MOBY_BRANCH
 git pull
 
 # clean mount before we start to make sure.
@@ -115,6 +120,7 @@ docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e AMI_ID=$AMI_ID \
 -e AMI_SRC_REGION=$AMI_SRC_REGION \
 -e AWS_ACCOUNT_LIST_URL="$DOCKER_AWS_ACCOUNT_URL" \
+-e MAKE_AMI_PUBLIC="$MAKE_AMI_PUBLIC" \
 $SH_IMAGE_NAME /home/docker/release-cs-ami.sh
 
 echo "== cleanup the docker image =="
