@@ -16,22 +16,15 @@ PARAMETERS = [('ClusterSize', 2),
               ('ManagerInstanceType', 't2.micro'),
               ('ManagerSize', 3)]
 
-DDC_PARAMETERS = [('ClusterSize', 2),
-              ('InstanceType', 't2.micro'),
-              ('KeyName', 'ken_cochrane'),
-              ('ManagerInstanceType', 'm4.large'),
-              ('ManagerSize', 3),
-              ('DDCPasswordSet', 'password'),
-              ('License', '')]
-
-CLOUD_PARAMETERS = [('ClusterSize', 2),
-              ('InstanceType', 't2.micro'),
-              ('KeyName', 'ken_cochrane'),
-              ('ManagerInstanceType', 't2.medium'),
-              ('ManagerSize', 3),
-              ('DockerCloudClusterName', 'daodoo/swarm-{}'.format(NOW.strftime("%m-%d-%Y"))),
-              ('DockerCloudUsername', 'appaws'),
-              ('DockerCloudAPIKey', '01b6eb3a-f5aa-414a-bfb0-4273819299f4')]
+CLOUD_PARAMETERS = [
+    ('ClusterSize', 2),
+    ('InstanceType', 't2.micro'),
+    ('KeyName', 'ken_cochrane'),
+    ('ManagerInstanceType', 't2.medium'),
+    ('ManagerSize', 3),
+    ('DockerCloudClusterName', 'daodoo/swarm-{}'.format(NOW.strftime("%m-%d-%Y"))),
+    ('DockerCloudUsername', 'appaws'),
+    ('DockerCloudAPIKey', '01b6eb3a-f5aa-414a-bfb0-4273819299f4')]
 
 REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'eu-west-1', 'eu-west-2', 'eu-central-1', 'ap-southeast-1',
@@ -145,9 +138,8 @@ def main():
         channel = "cloud-nightly"
         name = u"Cloud-Nite-{}".format(NOW.strftime("%m%d%Y%f")[:12])
     else:
-        stack_params = DDC_PARAMETERS
-        channel = "ddc-nightly"
-        name = u"DDC-Nite-{}".format(NOW.strftime("%m%d%Y%f")[:12])
+        print(u"Channel {} is not Cloud or oss.".format(channel))
+        return
 
     print(u"Channel: {}".format(channel))
     print(u"Name: {}".format(name))

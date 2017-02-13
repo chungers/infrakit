@@ -14,6 +14,7 @@ payload = {
     "attachments": []
 }
 
+
 def results(title, results_file, s3_path):
 
     now = datetime.now()
@@ -24,14 +25,17 @@ def results(title, results_file, s3_path):
         "fallback": full_title,
         "text": full_title,
         "title": "{} {}".format(full_title, full_date),
-        "title_link": "https://docker-for-aws.s3.amazonaws.com/{}/index.html".format(s3_path),
+        "title_link":
+            u"https://docker-for-aws.s3.amazonaws.com/{}/index.html".format(
+            s3_path),
         "color": color,
         "fields": []
     }
 
     # test results
     file_date = now.strftime("%m_%d_%Y")
-    results_file = "/home/ubuntu/out/{}_{}.json".format(file_date, results_file)
+    results_file = "/home/ubuntu/out/{}_{}.json".format(
+        file_date, results_file)
     fields = []
     if os.path.exists(results_file):
         with open(results_file) as data_file:
@@ -52,10 +56,11 @@ def results(title, results_file, s3_path):
 
 
 attachment_oss = results("Docker AWS", "results", "aws/nightly")
-attachment_ddc = results("Docker AWS + DDC", "ddc_results", "aws/ddc-nightly")
-attachment_cloud = results("Docker AWS + Cloud Federation", "cloud_results", "aws/cloud-nightly")
-payload['attachments'] = [attachment_oss, attachment_ddc, attachment_cloud]
+attachment_cloud = results("Docker AWS + Cloud Federation",
+                           "cloud_results", "aws/cloud-nightly")
+payload['attachments'] = [attachment_oss, attachment_cloud]
 
 # send message
 requests.post(SLACK_INCOMING_WEB_HOOK,
-              json.dumps(payload), headers={'content-type': 'application/json'})
+              json.dumps(payload),
+              headers={'content-type': 'application/json'})

@@ -57,6 +57,7 @@ def results(title, running_stacks):
 
     return attachment
 
+
 # find the stacks that are running.
 running_stacks = find_stacks()
 print(running_stacks)
@@ -67,7 +68,8 @@ payload['attachments'] = [the_results]
 
 # send message
 response = requests.post(SLACK_INCOMING_WEB_HOOK,
-                         json.dumps(payload), headers={'content-type': 'application/json'})
+                         json.dumps(payload),
+                         headers={'content-type': 'application/json'})
 
 print(response)
 print(response.text)
