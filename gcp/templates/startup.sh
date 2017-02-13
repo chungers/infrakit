@@ -23,6 +23,8 @@ echo Initialize Swarm
 
 docker node inspect self || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
 docker node inspect self
+# send identify message
+/usr/bin/buoy -event=identify -iaas_provider=gcp
 {% endif -%}
 
 {% if (type in ['manager', 'leader']) %}

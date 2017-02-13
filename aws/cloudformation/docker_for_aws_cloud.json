@@ -1219,7 +1219,7 @@
                                 }, 
                                 "' ", 
                                 "-v /var/run/docker.sock:/var/run/docker.sock ", 
-                                "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=aws\n", 
+                                "docker4x/meta-aws:$DOCKER_FOR_IAAS_VERSION metaserver -iaas_provider=aws\n", 
                                 "docker run --label com.docker.editions.system --log-driver=json-file --restart=no -d ", 
                                 "-e DYNAMODB_TABLE='", 
                                 {

@@ -4,9 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"flag"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -27,10 +25,13 @@ func main() {
 	numWorkers := flag.Int("workers", 0, "Number of Workers")
 	numServices := flag.Int("services", 0, "Number of Services")
 	dockerVersion := flag.String("docker_version", "n/a", "Docker Version")
-	flavor := flag.String("flavor", "", "IAAS Flavor (aws, azure, gcp, etc)")
-	channel := flag.String("channel", "", "IAAS Channel (test, beta, stable, etc)")
+	iaas_provider := flag.String("iaas_provider", "n/a", "IAAS provider (aws, azure, gcp, etc)")
+	channel := flag.String("channel", "n/a", "IAAS Channel (test, beta, stable, etc)")
 	swarmID := flag.String("swarm_id", "n/a", "Swarm ID")
-	nodeID := flag.String("node_id", "", "Node ID")
+	nodeID := flag.String("node_id", "n/a", "Node ID")
+	edition := flag.String("edition", "n/a", "Edition (ce, ee)")
+	editionOS := flag.String("editionOS", "moby", "Edition OS (centos, oel, ubuntu, ws2016, rhel, sles)")
+	editionVersion := flag.String("editionVersion", "n/a", "Edition Version")
 	event := flag.String("event", "n/a", "Event") // identify, init, ping, scale
 	dockerForIAASVersion := os.Getenv("DOCKER_FOR_IAAS_VERSION")
 	accountID := os.Getenv("ACCOUNT_ID")
@@ -38,25 +39,21 @@ func main() {
 
 	flag.Parse()
 
-	if *channel == "" {
+	if *channel == "n/a" {
 		channel = getChannel(dockerForIAASVersion)
+	}
+
+	if *editionVersion == "n/a" {
+		editionVersion = dockerForIAASVersion
+	}
+
+	if *edition == "n/a" {
+		edition = os.Getenv("EDITION")
 	}
 
 	// Hash the accountId so we don't know what it is.
 	hashedAccountID := computeHmac256(accountID, "ZQM7q96ar8g1y7Id")
-	var clientCode string
-
-	if *flavor == "aws" {
-		clientCode = "0Euz80odMWb07uI6cnhFENW3ohikKpb8"
-	} else if *flavor == "azure" {
-		clientCode = "1og3BGfY1Dt2aRBSf2SQrUL2VlGBoW5v"
-	} else if *flavor == "gcp" {
-		clientCode = "9ol2zcZN0p4mEy9nuWNGysg9mrFoCqZg"
-	} else {
-		err := errors.New("unknown flavor")
-		log.Fatal(err)
-		os.Exit(1) // error
-	}
+	clientCode := "jLwurYoMosZliChljnSNq7mCAOOd8Vnn"
 
 	client := analytics.New(clientCode)
 	client.Size = 1 // We only send one message at a time, no need to cache
@@ -65,18 +62,10 @@ func main() {
 		client.Identify(&analytics.Identify{
 			UserId: hashedAccountID,
 			Traits: map[string]interface{}{
-				"region": region,
-			},
-		})
-		client.Track(&analytics.Track{
-			Event:  "swarm:init",
-			UserId: hashedAccountID,
-			Properties: map[string]interface{}{
-				"swarm_id": *swarmID,
-				"region":   region,
-				"node_id":  *nodeID,
-				"channel":  *channel,
-				"arch":     *flavor,
+				"region":           region,
+				"edition":          *edition,
+				"edition_os":       *editionOS,
+				"iaas_provider":    *iaas_provider,
 			},
 		})
 	} else if *event == "swarm:init" {
@@ -84,11 +73,11 @@ func main() {
 			Event:  "swarm:init",
 			UserId: hashedAccountID,
 			Properties: map[string]interface{}{
-				"swarm_id": *swarmID,
-				"region":   region,
-				"node_id":  *nodeID,
-				"channel":  *channel,
-				"arch":     *flavor,
+				"swarm_id":         *swarmID,
+				"node_id":          *nodeID,
+				"region":           region,
+				"edition_version":  *editionVersion,
+				"channel":          *channel,
 			},
 		})
 	} else if strings.HasPrefix(*event, "node:") {
@@ -96,11 +85,11 @@ func main() {
 			Event:  *event,
 			UserId: hashedAccountID,
 			Properties: map[string]interface{}{
-				"swarm_id": *swarmID,
-				"node_id":  *nodeID,
-				"region":   region,
-				"channel":  *channel,
-				"arch":     *flavor,
+				"swarm_id":         *swarmID,
+				"node_id":          *nodeID,
+				"region":           region,
+				"edition_version":  *editionVersion,
+				"channel":          *channel,
 			},
 		})
 	} else if strings.HasPrefix(*event, "swarm:") {
@@ -109,14 +98,14 @@ func main() {
 			UserId: hashedAccountID,
 			Properties: map[string]interface{}{
 				"swarm_id":                *swarmID,
+				"node_id":                 *nodeID,
 				"region":                  region,
 				"service_count":           *numServices,
 				"manager_count":           *numManagers,
 				"worker_count":            *numWorkers,
 				"docker_version":          *dockerVersion,
-				"docker_for_iaas_version": dockerForIAASVersion,
+				"edition_version":         *editionVersion,
 				"channel":                 *channel,
-				"arch":                    *flavor,
 			},
 		})
 	}
