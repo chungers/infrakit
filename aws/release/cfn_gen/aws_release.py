@@ -96,22 +96,27 @@ def main():
     print("Create CloudFormation template..")
     cfn_name = docker_for_aws_version
     s3_url = create_cfn_template(AWSBaseTemplate, ami_list, release_channel,
-                                 docker_version, edition_version, cfn_name)
+                                 docker_version, edition_version,
+                                 docker_for_aws_version, cfn_name)
 
     cfn_name = "{}-no-vpc".format(docker_for_aws_version)
     s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list, release_channel,
-                                        docker_version, edition_version, cfn_name,
+                                        docker_version, edition_version,
+                                        docker_for_aws_version, cfn_name,
                                         cfn_type="no-vpc")
 
     cfn_name = "{}-cloud".format(docker_for_aws_version)
     s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list, release_cloud_channel,
-                                       docker_version, edition_version, cfn_name)
+                                       docker_version, edition_version,
+                                       docker_for_aws_version, cfn_name)
 
     cfn_name = "{}-no-vpc-cloud".format(docker_for_aws_version)
     s3_cloud_url_no_vpc = create_cfn_template(CloudVPCExistingTemplate,
                                               ami_list, release_cloud_channel,
                                               docker_version, edition_version,
+                                              docker_for_aws_version,
                                               cfn_name, cfn_type="no-vpc")
+
 
     # TODO: git commit, tag release. requires github keys, etc.
 

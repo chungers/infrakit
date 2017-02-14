@@ -10,7 +10,8 @@ from sections import resources
 
 class AWSBaseTemplate(object):
 
-    def __init__(self, docker_version, edition_version, channel, amis,
+    def __init__(self, docker_version, edition_version,
+                 docker_for_aws_version, channel, amis,
                  create_vpc=True, template_description=None):
         self.template = Template()
         self.parameters = {}
@@ -26,8 +27,7 @@ class AWSBaseTemplate(object):
         self.flat_edition_version = flat_edition_version
         flat_edition_version_upper = flat_edition_version.capitalize()
         self.flat_edition_version_upper = flat_edition_version_upper
-        self.docker_for_aws_version = u"aws-v{}-{}".format(
-            self.docker_version, self.flat_edition_version)
+        self.docker_for_aws_version = docker_for_aws_version
 
     def build(self):
         self.add_template_version()

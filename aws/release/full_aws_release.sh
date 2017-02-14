@@ -165,6 +165,8 @@ echo "== Build AMI =="
 cd $MOBY_DIR
 git checkout $MOBY_BRANCH
 git pull
+git clean -f -d
+
 make ami-clean-mount || true
 make clean || true
 make ami DOCKER_BIN_URL=$DOCKER_BIN_URL

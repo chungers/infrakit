@@ -30,6 +30,7 @@ export DOCKER_BIN_URL="https://master.dockerproject.org/linux/amd64/docker-$MAST
 cd $BUILD_HOME/code/moby/alpine
 git checkout master
 git pull
+git clean -f -d
 
 make clean
 make ami-clean-mount

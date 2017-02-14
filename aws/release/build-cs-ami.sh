@@ -52,6 +52,7 @@ MOBY_ROOT="/home/ubuntu/code/moby-master/alpine"
 cd $MOBY_ROOT
 git checkout $MOBY_BRANCH
 git pull
+git clean -f -d
 
 # clean mount before we start to make sure.
 make ami-clean-mount
