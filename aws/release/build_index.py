@@ -12,6 +12,7 @@ s3_bucket_name = "docker-for-aws"
 conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 bucket = conn.get_bucket(s3_bucket_name)
 
+
 def build_index(bucket_path, results_file, title):
     files = list(bucket.list(bucket_path))
     files.reverse()
@@ -29,7 +30,6 @@ def build_index(bucket_path, results_file, title):
         cfn_name = key.name.split("/")[-1]
         url = key.generate_url(expires_in=0, query_auth=False)
         html += row.format(url, cfn_name, key.last_modified, button.format(url))
-
 
     now = datetime.now()
 
@@ -54,7 +54,6 @@ def build_index(bucket_path, results_file, title):
     else:
         html += "<tr><td>Not available</td></tr>"
 
-
     html += "</table><p>last updated: {}</p></div></body></html>".format(now)
 
     s3_path = "{}/index.html".format(bucket_path)
@@ -66,5 +65,5 @@ def build_index(bucket_path, results_file, title):
 
 # build for OSS and DDC
 build_index("aws/nightly/", "results", "Docker for AWS")
-build_index("aws/ddc-nightly/", "ddc_results", "Docker for AWS + DDC")
-build_index("aws/cloud-nightly/", "cloud_results", "Docker for AWS + Cloud Federation")
+build_index("aws/cloud-nightly/", "cloud_results",
+            "Docker for AWS + Cloud Federation")

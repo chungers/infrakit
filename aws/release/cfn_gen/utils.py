@@ -166,7 +166,8 @@ def set_ami_public(ami_list):
                                    groups='all')
 
 
-def upload_cfn_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
+def upload_cfn_template(release_channel, cloudformation_template_name,
+                        tempfile, cfn_type=None):
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
@@ -187,7 +188,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name, tempfile,
     key.set_contents_from_filename(tempfile)
     key.set_acl("public-read")
 
-    if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
+    if release_channel == 'nightly' or release_channel == 'cloud-nightly':
         print("This is a nightly build, update the latest.json file.")
         print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
             s3_path_latest, S3_BUCKET_NAME))
@@ -246,7 +247,8 @@ def upload_ami_list(ami_list_json, docker_version):
 
 
 def create_cfn_template(template_class, amis, release_channel,
-                        docker_version, edition_version, cfn_name):
+                        docker_version, edition_version, cfn_name,
+                        cfn_type=None):
 
     cloudformation_template_name = u"{}.json".format(cfn_name)
     curr_path = os.path.dirname(__file__)
@@ -261,4 +263,5 @@ def create_cfn_template(template_class, amis, release_channel,
         json.dump(new_template, newfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     print(u"Cloudformation template created in {}".format(out_path))
-    return upload_cfn_template(release_channel, cloudformation_template_name, out_path)
+    return upload_cfn_template(release_channel, cloudformation_template_name,
+                               out_path, cfn_type=cfn_type)
