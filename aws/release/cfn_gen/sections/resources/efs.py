@@ -20,7 +20,7 @@ def add_resource_mount_targets(template):
             template.add_resource(
                 MountTarget('MountTarget' + perfmode + az,
                     FileSystemId=Ref("FileSystem" + perfmode),
-                    SecurityGroups=Ref("SwarmWideSG"),
+                    SecurityGroups=[Ref("SwarmWideSG")],
                     SubnetId=Ref("PubSubnetAz" + az)
                 )
             )
