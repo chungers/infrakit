@@ -3,12 +3,13 @@ from troposphere.efs import FileSystem, MountTarget
 
 
 def add_resource_efs(template):
+    perfmode_strings = {'GP': 'generalPurpose', 'MaxIO': 'maxIO'}
     for perfmode in ["GP", "MaxIO"]:
         tags = Tags(Name=Join("-", [Ref("AWS::StackName"), "EFS-" + perfmode]))
         template.add_resource(
             FileSystem('FileSystem' + perfmode,
                 Condition="EFSSupported",
-                PerformanceMode=perfmode,
+                PerformanceMode=perfmode_strings[perfmode],
                 FileSystemTags=tags
             )
         )
