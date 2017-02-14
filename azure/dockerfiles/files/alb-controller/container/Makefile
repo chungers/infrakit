@@ -9,9 +9,9 @@ DOCKER_REPO?=${DOCKER_REPO_OWNER}/l4controller-azure
 DOCKER_TAG?=dev
 DOCKER_IMAGE?=${DOCKER_REPO}:${DOCKER_TAG}
 
-.PHONY: clean all container
+.PHONY: clean all
 .DEFAULT: all
-all: govendor container
+all: govendor bin/loadbalancer
 
 govendor:
 	@echo "+ getting govendor"
@@ -34,10 +34,10 @@ build-in-container: govendor
 		-o /go/build/loadbalancer cmd/*.go
 
 # This one runs outside
-container:
+bin/loadbalancer:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
 	-docker rm alb-controller-build
-	cd ../../../../../ && docker build --no-cache --pull -t alb-controller:build -f ${CURDIR}/Dockerfile.build .
+	cd ../../../../../ && docker build --pull -t alb-controller:build -f ${CURDIR}/Dockerfile.build .
 	docker run \
 		-ti \
 		-e EDITIONS_VERSION=$(EDITIONS_VERSION) \
@@ -49,7 +49,7 @@ container:
 		--name alb-controller-build alb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker cp alb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
-	docker build --no-cache --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
+	docker build --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
 ifeq (${DOCKER_PUSH},true)
 	docker push ${DOCKER_IMAGE}
 ifeq (${DOCKER_TAG_LATEST},true)

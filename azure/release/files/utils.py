@@ -41,11 +41,11 @@ def buildCustomData(data_file):
         customData += ['\'' + line + '\'']
   return customData
 
-def upload_rg_template(release_channel, cloudformation_template_name, tempfile, cfn_type=''):
+def upload_rg_template(release_channel, arm_template_name, tempfile, cfn_type=''):
 	
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = u"azure/{}/{}".format(release_channel, cloudformation_template_name)
+    s3_path = u"azure/{}/{}".format(release_channel, arm_template_name)
     latest_name = "latest.json"
     if cfn_type:
         latest_name = "{}-latest.json".format(cfn_type)
@@ -56,7 +56,7 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
     bucket = s3conn.get_bucket(S3_BUCKET_NAME)
 
-    print(u"Upload Cloudformation template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
+    print(u"Upload template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
     key = bucket.new_key(s3_path)
     key.set_metadata("Content-Type", "application/json")
     key.set_contents_from_filename(tempfile)
@@ -64,7 +64,7 @@ def upload_rg_template(release_channel, cloudformation_template_name, tempfile, 
 
     if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
         print("This is a nightly build, update the latest.json file.")
-        print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
+        print(u"Upload ARM template to {} in {} s3 bucket".format(
             s3_path_latest, S3_BUCKET_NAME))
         key = bucket.new_key(s3_path_latest)
         key.set_metadata("Content-Type", "application/json")
@@ -93,7 +93,7 @@ def publish_rg_template(release_channel, docker_for_azure_version):
     return s3_full_url
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
+                        docker_for_azure_version, edition_version, cfn_template, arm_template_name):
     # check if file exists before opening.
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
@@ -116,23 +116,23 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
+    outfile = u"{}/{}".format(outdir, arm_template_name)
 
     with open(outfile, 'w') as outf:
         json.dump(data, outf, indent=4, sort_keys=True)
 
     # TODO: json validate
     if is_json(outfile):
-      print(u"Cloudformation template created in {}".format(outfile))
+      print(u"ARM template created in {}".format(outfile))
     else:
-      print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+      print(u"ERROR: ARM template invalid in {}".format(outfile))
 
     return outfile
 
 # @TODO VERIFY CLOUD TEMPLATE
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
+                        docker_for_azure_version, edition_version, cfn_template, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
@@ -189,21 +189,21 @@ def create_rg_cloud_template(release_channel, docker_version,
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
+    outfile = u"{}/{}".format(outdir, arm_template_name)
 
     with open(outfile, 'w') as outf:
         json.dump(data, outf, indent=4, sort_keys=True)
 
     # TODO: json validate
     if is_json(outfile):
-      print(u"Cloudformation template created in {}".format(outfile))
+      print(u"ARM template created in {}".format(outfile))
     else:
-      print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+      print(u"ERROR: ARM template invalid in {}".format(outfile))
 
     return outfile
 
 def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, cloudformation_template_name):
+                        docker_for_azure_version, edition_version, cfn_template, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
@@ -373,15 +373,15 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
+    outfile = u"{}/{}".format(outdir, arm_template_name)
 
     with open(outfile, 'w') as outf:
         json.dump(data, outf, indent=4, sort_keys=True)
 
     # TODO: json validate
     if is_json(outfile):
-      print(u"Cloudformation template created in {}".format(outfile))
+      print(u"ARM template created in {}".format(outfile))
     else:
-      print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+      print(u"ERROR: ARM template invalid in {}".format(outfile))
 
     return outfile

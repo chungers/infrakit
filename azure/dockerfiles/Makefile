@@ -1,7 +1,8 @@
-default: alb-controller walinuxagent
+default: alb-controller agent
 	VERSION="azure-v$(EDITIONS_VERSION)" ./build_and_push_all.sh
 
-walinuxagent:
+agent:
+	make -C walinuxagent clean
 	make -C walinuxagent push TAG="azure-v$(EDITIONS_VERSION)"
 
 alb-controller:
@@ -10,5 +11,5 @@ alb-controller:
 	DOCKER_REPO="docker4x/l4controller-azure" \
 	DOCKER_TAG="azure-v$(EDITIONS_VERSION)" \
 	DOCKER_PUSH=true DOCKER_TAG_LATEST=true \
-	make -k container
+	make -k bin/loadbalancer
 
