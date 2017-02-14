@@ -7,3 +7,4 @@ from security import *
 from sqs import *
 from vpc import *
 from userdata import *
+from efs import *
