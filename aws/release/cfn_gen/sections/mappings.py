@@ -171,6 +171,7 @@ def add_mapping_aws2az(template):
     template.add_mapping('AWSRegion2AZ', {
         "ap-northeast-1": {
             "Name": "Tokyo",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -178,6 +179,7 @@ def add_mapping_aws2az(template):
         },
         "ap-northeast-2": {
             "Name": "Seoul",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -185,6 +187,7 @@ def add_mapping_aws2az(template):
         },
         "ap-south-1": {
             "Name": "Mumbai",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -192,6 +195,7 @@ def add_mapping_aws2az(template):
         },
         "ap-southeast-1": {
             "Name": "Singapore",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -199,6 +203,7 @@ def add_mapping_aws2az(template):
         },
         "ap-southeast-2": {
             "Name": "Sydney",
+            "EFSSupport": "no",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -206,6 +211,7 @@ def add_mapping_aws2az(template):
         },
         "ca-central-1": {
             "Name": "Central",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -213,6 +219,7 @@ def add_mapping_aws2az(template):
         },
         "eu-central-1": {
             "Name": "Frankfurt",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -220,6 +227,7 @@ def add_mapping_aws2az(template):
         },
         "eu-west-1": {
             "Name": "Ireland",
+            "EFSSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -227,6 +235,7 @@ def add_mapping_aws2az(template):
         },
         "eu-west-2": {
             "Name": "London",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -234,6 +243,7 @@ def add_mapping_aws2az(template):
         },
         "sa-east-1": {
             "Name": "Sao Paulo",
+            "EFSSupport": "no",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -241,6 +251,7 @@ def add_mapping_aws2az(template):
         },
         "us-east-1": {
             "Name": "N. Virgina",
+            "EFSSupport": "yes",
             "NumAZs": "4",
             "AZ0": "0",
             "AZ1": "1",
@@ -248,6 +259,7 @@ def add_mapping_aws2az(template):
         },
         "us-east-2": {
             "Name": "Ohio",
+            "EFSSupport": "no",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -255,6 +267,7 @@ def add_mapping_aws2az(template):
         },
         "us-west-1": {
             "Name": "N. California",
+            "EFSSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -262,6 +275,7 @@ def add_mapping_aws2az(template):
         },
         "us-west-2": {
             "Name": "Oregon",
+            "EFSSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",

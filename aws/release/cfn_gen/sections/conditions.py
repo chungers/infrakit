@@ -20,9 +20,7 @@ def add_condition_hasonly2AZs(template):
 def add_condition_EFSSupported(template):
     template.add_condition(
         "EFSSupported",
-        Or(
-            Equals("us-west-2", Ref("AWS::Region")),
-            Equals("us-east-1", Ref("AWS::Region")),
-            Equals("eu-west-1", Ref("AWS::Region"))
-        )
+        Equals(
+            FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"),
+            "yes")
     )

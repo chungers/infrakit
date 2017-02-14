@@ -19,6 +19,8 @@ def add_resource_mount_targets(template):
         for az in ["1", "2", "3"]:
             template.add_resource(
                 MountTarget('MountTarget' + perfmode + az,
+                    DependsOn=["FileSystem" + perfmode, "SwarmWideSG", "PubSubnetAz" + az],
+                    Condition="EFSSupported",
                     FileSystemId=Ref("FileSystem" + perfmode),
                     SecurityGroups=[Ref("SwarmWideSG")],
                     SubnetId=Ref("PubSubnetAz" + az)
