@@ -247,14 +247,18 @@ def upload_ami_list(ami_list_json, docker_version):
 
 
 def create_cfn_template(template_class, amis, release_channel,
-                        docker_version, edition_version, cfn_name,
+                        docker_version, edition_version,
+                        docker_for_aws_version, cfn_name,
                         cfn_type=None):
 
     cloudformation_template_name = u"{}.json".format(cfn_name)
     curr_path = os.path.dirname(__file__)
+    print(u"current path {}".format(curr_path))
     out_path = os.path.join(curr_path, u'outputs/{}'.format(cloudformation_template_name))
 
-    aws_template = template_class(docker_version, edition_version, release_channel, amis)
+    aws_template = template_class(
+        docker_version, edition_version,
+        docker_for_aws_version, release_channel, amis)
     aws_template.build()
 
     new_template = json.loads(aws_template.generate_template())
