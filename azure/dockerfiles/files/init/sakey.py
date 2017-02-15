@@ -33,7 +33,7 @@ def get_storage_key():
 
 def main():
     key = get_storage_key()
-    print('{}'.format(key))
+    print(u'{}'.format(key))
 
 if __name__ == "__main__":
     main()
