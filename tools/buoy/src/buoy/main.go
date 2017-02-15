@@ -27,18 +27,18 @@ func main() {
 	numWorkers := flag.Int("workers", 0, "Number of Workers")
 	numServices := flag.Int("services", 0, "Number of Services")
 	dockerVersion := flag.String("docker_version", NA, "Docker Version")
-	iaas_provider := flag.String("iaas_provider", NA, "IAAS provider (aws, azure, gcp, etc)")
+	iaasProvider := flag.String("iaas_provider", NA, "IAAS provider (aws, azure, gcp, etc)")
 	channel := flag.String("channel", NA, "IAAS Channel (test, beta, stable, etc)")
 	swarmID := flag.String("swarm_id", NA, "Swarm ID")
 	nodeID := flag.String("node_id", NA, "Node ID")
 	edition := flag.String("edition", NA, "Edition (ce, ee)")
-	editionOS := flag.String("editionOS", "moby", "Edition OS (centos, oel, ubuntu, ws2016, rhel, sles)")
-	editionVersion := flag.String("editionVersion", NA, "Edition Version")
+	editionOS := flag.String("edition_os", "moby", "Edition OS (centos, oel, ubuntu, ws2016, rhel, sles)")
+	editionVersion := flag.String("edition_version", NA, "Edition Version")
 	event := flag.String("event", NA, "Event") // identify, init, ping, scale
 	dockerForIAASVersion := os.Getenv("DOCKER_FOR_IAAS_VERSION")
 	accountID := os.Getenv("ACCOUNT_ID")
 	region := os.Getenv("REGION")
-	edition_env := os.Getenv("EDITION")
+	editionEnv := os.Getenv("EDITION")
 	flag.Parse()
 
 	if *channel == NA {
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	if *edition == NA {
-		edition = &edition_env
+		edition = &editionEnv
 	}
 
 	// Hash the accountId so we don't know what it is.
@@ -67,7 +67,7 @@ func main() {
 				"region":        region,
 				"edition":       *edition,
 				"edition_os":    *editionOS,
-				"iaas_provider": *iaas_provider,
+				"iaas_provider": *iaasProvider,
 			},
 		})
 	} else if *event == "swarm:init" {
