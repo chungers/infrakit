@@ -1,16 +1,16 @@
 package main
 
 import (
-	"os"
+  "os"
   "strconv"
 
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/go-plugins-helpers/volume"
+  log "github.com/Sirupsen/logrus"
+  "github.com/docker/go-plugins-helpers/volume"
 )
 
 const (
-	volumeDriverName = "cloudstor"
-	metadataRoot     = "/etc/docker/plugins/cloudstor/volumes"
+  volumeDriverName = "cloudstor"
+  metadataRoot     = "/etc/docker/plugins/cloudstor/volumes"
   socketAddress    = "/run/docker/plugins/cloudstor.sock"
 )
 
@@ -52,7 +52,7 @@ func main() {
       log.Fatal(err)
     }
     h := volume.NewHandler(driver)
-  	log.Fatal(h.ServeUnix(socketAddress, 0))
+    log.Fatal(h.ServeUnix(socketAddress, 0))
 
   } else {
     log.Fatal("Failed to initialize Cloudstor: unsupported cloud platform")
