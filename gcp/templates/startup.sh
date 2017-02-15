@@ -4,6 +4,12 @@ set -ex
 
 echo This is a {{type}} node
 
+export DOCKER_FOR_IAAS_VERSION="gcp-v1.13.1-{{ VERSION }}"
+export ACCOUNT_ID="$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)"
+export REGION="{{ REGION }}"
+export CHANNEL="beta"
+export NODE_TYPE="{{ type }}"
+
 shell_image="docker4x/shell-gcp:{{ VERSION }}"
 guide_image="docker4x/guide-gcp:{{ VERSION }}"
 lb_image="docker4x/l4controller-gcp:{{ VERSION }}"
@@ -23,8 +29,29 @@ echo Initialize Swarm
 
 docker node inspect self >/dev/null 2>&1 || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
 docker node inspect self
-# send identify message
-/usr/bin/buoy -event=identify -iaas_provider=gcp
+
+dockerPull ${guide_image}
+
+$docker_run --rm \
+  -e NODE_TYPE \
+  -e ACCOUNT_ID \
+  -e REGION \
+  $docker_socket \
+  $docker_cli \
+  $guide_image \
+  /usr/bin/buoy.sh "identify"
+
+$docker_run --rm \
+  -e NODE_TYPE \
+  -e DOCKER_FOR_IAAS_VERSION \
+  -e ACCOUNT_ID \
+  -e REGION \
+  -e CHANNEL \
+  $docker_socket \
+  $docker_cli \
+  $guide_image \
+  /usr/bin/buoy.sh "swarm:init"
+
 {% endif -%}
 
 {% if (type in ['manager', 'leader']) %}
@@ -69,7 +96,12 @@ echo Start guide
 
 dockerPull ${guide_image}
 $docker_daemon --name=guide \
+  -e NODE_TYPE \
   -e RUN_VACUUM="{{ properties['enableSystemPrune'] }}" \
+  -e DOCKER_FOR_IAAS_VERSION \
+  -e ACCOUNT_ID \
+  -e REGION \
+  -e CHANNEL \
   $docker_socket \
   $docker_cli \
   $guide_image

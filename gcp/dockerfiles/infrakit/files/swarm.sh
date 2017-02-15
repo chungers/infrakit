@@ -18,6 +18,17 @@ if [ $? -ne 0 ]; then
   do
     docker swarm join ${MANAGER} --token {{.JOIN_TOKEN}}
     if [ $? -eq 0 ]; then
+      $docker_run --rm \
+        -e NODE_TYPE \
+        -e DOCKER_FOR_IAAS_VERSION \
+        -e ACCOUNT_ID \
+        -e REGION \
+        -e CHANNEL \
+        $docker_socket \
+        $docker_cli \
+        $guide_image \
+        /usr/bin/buoy.sh "node:join"
+
       break
     fi
 

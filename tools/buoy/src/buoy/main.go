@@ -115,7 +115,7 @@ func main() {
 }
 
 func getChannel(version string) *string {
-	r := regexp.MustCompile("^(?:azure|aws)-v\\d+.\\d+.\\d+-([0-9a-z-]+)")
+	r := regexp.MustCompile("^(?:azure|aws|gcp)-v\\d+.\\d+.\\d+-([0-9a-z-]+)")
 	matched := r.FindStringSubmatch(version)
 	channel := "test"
 	if len(matched) > 1 {
