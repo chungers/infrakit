@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:3.5
 
 RUN apk add --update bash strace ca-certificates cifs-utils openssl openssl-dev
 

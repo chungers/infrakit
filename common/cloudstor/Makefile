@@ -9,11 +9,11 @@ clean:
 
 
 build:
-	docker build -q -t builder -f Dockerfile.dev .
-	docker create --name tmp builder
+	docker build -q -t cloudstor-builder -f Dockerfile.dev .
+	docker create --name tmp cloudstor-builder
 	docker cp tmp:/go/bin/cloudstor .
 	docker rm -vf tmp
-	docker rmi builder
+	docker rmi cloudstor-builder
 
 rootfs:
 	docker build -q -t ${PLUGIN_NAME}:rootfs .
