@@ -1,0 +1,53 @@
+{
+	"description": "cloud storage plugin for Docker",
+	"documentation": "https://docs.docker.com/engine/extend/plugins/",
+	"entrypoint": ["/cloudstor"],
+	"network": {
+		"type": "host"
+	},
+	"interface" : {
+		"types": ["docker.volumedriver/1.0"],
+		"socket": "cloudstor.sock"
+	},
+  "linux": {
+	  "capabilities": ["CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_DAC_READ_SEARCH"],
+	  "devices": [
+		  {
+		    "path":"/dev/fuse"
+		  }
+	  ]
+	},
+	"propagatedmount": "/mnt",
+	"env": [
+    {
+      "name":"CLOUD_PLATFORM",
+		  "settable":["value"],
+		  "value":""
+    },
+	  {
+      "name":"AZURE_STORAGE_ACCOUNT",
+		  "settable":["value"],
+		  "value":""
+	  },
+    {
+      "name":"AZURE_STORAGE_ACCOUNT_KEY",
+      "settable":["value"],
+      "value":""
+    },
+    {
+      "name":"EFS_ID_REGULAR",
+      "settable":["value"],
+      "value":""
+    },
+    {
+      "name":"EFS_ID_MAXIO",
+      "settable":["value"],
+      "value":""
+    },
+    {
+      "name":"DEBUG",
+      "settable":["value"],
+      "value":""
+    }
+	]
+}
