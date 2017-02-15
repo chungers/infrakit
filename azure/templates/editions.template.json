@@ -192,6 +192,7 @@
     "imageOffer": "docker-ce",
     "imageSku": "docker-ce",
     "channel": "stable",
+		"editionAddOn": "base",
     "imageVersion": "1.0.0",
     "imageReference": {
       "publisher": "[variables('imagePublisher')]",

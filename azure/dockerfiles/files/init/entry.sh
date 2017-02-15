@@ -9,6 +9,7 @@ echo "ACCOUNT_ID=$ACCOUNT_ID"
 echo "REGION=$REGION"
 echo "AZURE_HOSTNAME=$HOSTNAME"
 echo "CHANNEL=$CHANNEL"
+echo "EDITION_ADDON=$EDITION_ADDON"
 echo "#================"
 
 # these need to be kept in sync with the template file
@@ -123,7 +124,7 @@ join_as_manager()
             break
         fi
     done
-    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
+    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
     echo "   Successfully joined as a Swarm Manager"
 }
 
@@ -155,7 +156,7 @@ setup_manager()
 
             echo "   Leader init complete"
             # send identify message
-            buoy -event=identify -iaas_provider=azure
+            buoy -event=identify -iaas_provider=azure -addon=$EDITION_ADDON
             # send swarm init message
             buoy -event="swarm:init" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
         else
@@ -205,7 +206,7 @@ setup_worker()
             break
         fi
     done
-    buoy -event="node:join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
+    buoy -event="node:join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
 }
 
 
@@ -250,6 +251,7 @@ run_system_containers()
         -e GROUP_NAME \
         -e PRIVATE_IP \
         -e DOCKER_FOR_IAAS_VERSION \
+        -e EDITION_ADDON \
         -e SWARM_LOGS_STORAGE_ACCOUNT \
         -e SWARM_INFO_STORAGE_ACCOUNT \
         -v /var/run/docker.sock:/var/run/docker.sock \

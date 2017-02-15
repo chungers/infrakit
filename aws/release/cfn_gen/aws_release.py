@@ -38,6 +38,9 @@ def main():
     parser.add_argument('-p', '--public',
                         dest='make_ami_public', default="no",
                         help="Make the AMI public")
+    parser.add_argument('-o', '--edition_addon',
+                        dest='edition_addon', default="base",
+                        help="Edition Add-On (base, ddc, cloud, etc.)")
 
     args = parser.parse_args()
 
@@ -47,6 +50,7 @@ def main():
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
     edition_version = args.edition_version
+    edition_addon = args.edition_addon
     flat_edition_version = edition_version.replace(" ", "")
     docker_for_aws_version = u"aws-v{}-{}".format(docker_version, flat_edition_version)
     image_name = u"Moby Linux {}".format(docker_for_aws_version)
@@ -55,6 +59,7 @@ def main():
     print(u"release_channel={}".format(release_channel))
     print(u"docker_version={}".format(docker_version))
     print(u"edition_version={}".format(edition_version))
+    print(u"edition_addon={}".format(edition_addon))
     print(u"ami_id={}".format(args.ami_id))
     print(u"ami_src_region={}".format(args.ami_src_region))
     print(u"account_list_url={}".format(args.account_list_url))
@@ -98,13 +103,13 @@ def main():
     cfn_name = docker_for_aws_version
     s3_url = create_cfn_template(AWSBaseTemplate, ami_list, release_channel,
                                  docker_version, edition_version,
-                                 docker_for_aws_version, cfn_name)
+                                 docker_for_aws_version, edition_addon, cfn_name)
 
     cfn_name = "{}-no-vpc".format(docker_for_aws_version)
     s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list,
                                         release_channel,
                                         docker_version, edition_version,
-                                        docker_for_aws_version, cfn_name,
+                                        docker_for_aws_version, edition_addon, cfn_name,
                                         cfn_type="no-vpc")
 
     docker_ee_cfn_name = docker_for_aws_version
@@ -129,13 +134,13 @@ def main():
     s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
                                        release_cloud_channel,
                                        docker_version, edition_version,
-                                       docker_for_aws_version, cfn_name)
+                                       docker_for_aws_version, edition_addon, cfn_name)
 
     cfn_name = "{}-no-vpc-cloud".format(docker_for_aws_version)
     s3_cloud_url_no_vpc = create_cfn_template(CloudVPCExistingTemplate,
                                               ami_list, release_cloud_channel,
                                               docker_version, edition_version,
-                                              docker_for_aws_version,
+                                              docker_for_aws_version, edition_addon,
                                               cfn_name, cfn_type="no-vpc")
 
     # TODO: git commit, tag release. requires github keys, etc.

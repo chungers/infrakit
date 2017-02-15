@@ -193,12 +193,13 @@ def add_mapping_instance_type_2_arch(template):
     })
 
 
-def add_mapping_version(template, docker_version, d4a_version, channel):
+def add_mapping_version(template, docker_version, d4a_version, d4a_addon, channel):
     template.add_mapping("DockerForAWS", {
         "version": {
             "docker": docker_version,
             "forAws": d4a_version,
-            "channel": channel
+            "channel": channel,
+            "addOn": d4a_addon
         }
     })
 

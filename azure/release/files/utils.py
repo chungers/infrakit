@@ -93,7 +93,7 @@ def publish_rg_template(release_channel, docker_for_azure_version):
     return s3_full_url
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template,
+                        docker_for_azure_version, edition_version, edition_addon, cfn_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     # check if file exists before opening.
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
@@ -109,6 +109,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     data['variables']['channel'] = release_channel
     data['variables']['storageAccountDNSSuffix'] = storage_endpoint
     data['variables']['portalFQDN'] = portal_endpoint
+    data['variables']['editionAddOn'] = edition_addon
 
     # Updated custom data for Managers and Workers
     custom_data = buildCustomData('custom-data.sh')
@@ -135,7 +136,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
 # @TODO VERIFY CLOUD TEMPLATE
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template,
+                        docker_for_azure_version, edition_version, edition_addon, cfn_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
@@ -147,6 +148,7 @@ def create_rg_cloud_template(release_channel, docker_version,
     data['variables']['channel'] = release_channel
     data['variables']['storageAccountDNSSuffix'] = storage_endpoint
     data['variables']['portalFQDN'] = portal_endpoint
+    data['variables']['editionAddOn'] = edition_addon
 
     parameters = data.get('parameters')
     if parameters:
@@ -234,7 +236,7 @@ def create_rg_cloud_template(release_channel, docker_version,
     return outfile
 
 def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template,
+                        docker_for_azure_version, edition_version, edition_addon, cfn_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
@@ -250,6 +252,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     data['variables']['channel'] = release_channel
     data['variables']['storageAccountDNSSuffix'] = storage_endpoint
     data['variables']['portalFQDN'] = portal_endpoint
+    data['variables']['editionAddOn'] = edition_addon
 
     # Use multiple steps to keep order
     parameters = data.get('parameters')

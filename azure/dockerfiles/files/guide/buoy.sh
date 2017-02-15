@@ -27,5 +27,5 @@ if [[ "$IS_LEADER" == "true" ]]; then
     fi
 
     /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
-        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -channel=$CHANNEL
+        -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -channel=$CHANNEL -addon=$EDITION_ADDON
 fi

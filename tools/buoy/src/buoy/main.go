@@ -12,6 +12,7 @@ import (
 	"github.com/segmentio/analytics-go"
 )
 
+// NA represents the default for all non-passed flags
 const NA = "n/a"
 
 func computeHmac256(message string, secret string) string {
@@ -34,8 +35,9 @@ func main() {
 	edition := flag.String("edition", NA, "Edition (ce, ee)")
 	editionOS := flag.String("editionOS", "moby", "Edition OS (centos, oel, ubuntu, ws2016, rhel, sles)")
 	editionVersion := flag.String("editionVersion", NA, "Edition Version")
-	editionAddOn := flag.String("editionAddOn", "base", "Edition Add-On (base, ddc, cloud, etc.)")
+	editionAddOn := flag.String("addon", "base", "Edition Add-On (base, ddc, cloud, etc.)")
 	event := flag.String("event", NA, "Event") // identify, init, ping, scale
+	// Get Common env vars
 	dockerForIAASVersion := os.Getenv("DOCKER_FOR_IAAS_VERSION")
 	accountID := os.Getenv("ACCOUNT_ID")
 	region := os.Getenv("REGION")
