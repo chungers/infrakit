@@ -1,0 +1,33 @@
+#!/bin/sh
+
+set -e
+
+function metadata {
+  curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/${1}
+}
+
+DIAGNOSTICS_MAGIC_PORT=44554
+
+# Retrieve the internal IP addresses of all the nodes part of the same stack
+PROJECT=$(metadata project/project-id)
+ZONE=$(metadata instance/zone | awk -F/ '{print $NF}')
+NETWORK=$(metadata 'instance/network-interfaces/0/network' | cut -d "/" -f 4)
+STACK=${NETWORK/-network/}
+AUTH=$(metadata instance/service-accounts/default/token | jq -r ".access_token")
+NODES=$(curl -s "https://www.googleapis.com/compute/v1/projects/${PROJECT}/zones/${ZONE}/instances/?filter=name+eq+${STACK}-(manager%7Cworker)-%5Cw*" -H "Authorization: Bearer ${AUTH}" | jq -r '.items[].networkInterfaces[0].networkIP')
+
+# Session is set to a pseudo-random string combined with the current timestamp.
+# This should minimize the probability of collision while also providing
+# information about when the report was collected.
+SESSION="$(date +'%s')-$(dd if=/dev/urandom bs=128 count=1 2>/dev/null | base64 | tr -d "=+/" | dd bs=32 count=1 2>/dev/null)"
+
+for NODE in ${NODES}
+do
+	curl -X POST \
+		-F "session=${SESSION}" \
+		"http://${NODE}:${DIAGNOSTICS_MAGIC_PORT}/diagnose" || true
+done
+
+echo "Done requesting diagnostics."
+echo "Your diagnostics session ID is ${SESSION}"
+echo "Please provide this session ID to the maintainer debugging your issue."
