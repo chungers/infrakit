@@ -83,12 +83,24 @@ resources:
   properties:
     region: {{ REGION }}
 
+- name: {{ STACK }}-health-check
+  type: compute.v1.httpHealthCheck
+  properties:
+    port: 44554
+    requestPath: /
+    checkIntervalSec: 5
+    timeoutSec: 5
+    unhealthyThreshold: 2
+    healthyThreshold: 2
+
 - name: {{ STACK }}-lb-pool
   type: compute.v1.targetPool
   properties:
     region: {{ REGION }}
     sessionAffinity: NONE
     instances: []
+    healthChecks:
+    - $(ref.{{ STACK }}-health-check.selfLink)
 
 - name: {{ STACK }}-lb-forward
   type: compute.v1.forwardingRule
