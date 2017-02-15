@@ -26,7 +26,7 @@ _not_ currently supported.
 Here is an example that sets the number of workers to `5`:
 
     $ gcloud deployment-manager deployments update docker \
-        --config https://docker-for-gcp-templates.storage.googleapis.com/v2/Docker.jinja \
+        --config https://docker-for-gcp-templates.storage.googleapis.com/v3/Docker.jinja \
         --properties managerCount:3,workerCount:5
 
 _Warning_: If you created your deployment with non default settings (node count,
