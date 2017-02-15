@@ -63,6 +63,7 @@ class AWSBaseTemplate(object):
     def add_conditions(self):
         conditions.add_condition_create_log_resources(self.template)
         conditions.add_condition_hasonly2AZs(self.template)
+        conditions.add_condition_EFSSupported(self.template)
 
     def add_mappings(self):
         mappings.add_mapping_aws2az(self.template)
@@ -152,6 +153,9 @@ class AWSBaseTemplate(object):
         # sqs queues
         self.sqs()
 
+        # EFS
+        self.efs()
+
     def vpc(self):
         if self.create_vpc:
             resources.add_resource_vpc(self.template)
@@ -210,6 +214,11 @@ class AWSBaseTemplate(object):
         resources.add_resource_worker_autoscalegroup(self.template, worker_launch_config_name)
         resources.add_resource_worker_launch_config(self.template, self.worker_userdata(),
                                                     launch_config_name=worker_launch_config_name)
+
+    def efs(self):
+        # efs
+        resources.add_resource_efs(self.template)
+        resources.add_resource_mount_targets(self.template)
 
     def generate_template(self):
         return self.template.to_json()
