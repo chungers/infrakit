@@ -22,7 +22,7 @@ outputs:
 properties:
   version:
     type: string
-    default: "v2"
+    default: "v3"
     description: Version of the templates
 
   managerCount:
