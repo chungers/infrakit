@@ -156,9 +156,9 @@ setup_manager()
 
             echo "   Leader init complete"
             # send identify message
-            buoy -event=identify -iaas_provider=azure -addon=$EDITION_ADDON
+            buoy -event=identify -iaas_provider=azure -channel=$CHANNEL -addon=$EDITION_ADDON
             # send swarm init message
-            buoy -event="swarm:init" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL
+            buoy -event="swarm:init" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
         else
             echo " Error is normal, it is because we already have a swarm leader, lets setup a regular manager instead."
             join_as_manager
