@@ -19,6 +19,12 @@ const (
   mountPointRegular   = "/mnt/cloudstor/reg"
   mountPointMaxIO     = "/mnt/cloudstor/max"
   metaDataURL = "http://169.254.169.254/latest/dynamic/instance-identity/document"
+  nfs_version_option = "nfsvers=4.1"
+  nfs_rsize_option = "rsize=1048576"
+  nfs_wsize_option = "wsize=1048576"
+  nfs_timeout_option = "timeo=600"
+  nfs_retransmit_option = "retrans=2"
+  nfs_hardlink_option = "hard"
 )
 
 type efsDriver struct {
@@ -254,29 +260,20 @@ func (v *efsDriver) volumeEntry(name string) *volume.Volume {
     log.Error("could not fetch metadata: %v", err)
     return nil
   }
-
-  return &volume.Volume{Name: name,
-    Mountpoint: meta.VolPath}
+  return &volume.Volume{Name: name, Mountpoint: meta.VolPath}
 }
 
 
 func efsMount(mountURI, mountPath string) error {
   // Set defaults
-
   opts := []string{
-    "nfsvers=4.1",
-    "rsize=1048576",
-    "wsize=1048576",
-    "timeo=600",
-    "retrans=2",
-    "hard",
+    nfs_version_option,
+    nfs_rsize_option,
+    nfs_wsize_option,
+    nfs_timeout_option,
+    nfs_retransmit_option,
+    nfs_hardlink_option
   }
-
-  cmdline := "mount -t nfs4 " + mountURI + " " + mountPath + " -o " + strings.Join(opts, ",")
-  logctx := log.WithFields(log.Fields{
-    "operation": "mount",
-  })
-  logctx.Debug(fmt.Sprintf("mount cmdline=%s", cmdline))
 
   cmd := exec.Command("mount", "-t", "nfs4", "-o", strings.Join(opts, ","), mountURI, mountPath)
   out, err := cmd.CombinedOutput()
