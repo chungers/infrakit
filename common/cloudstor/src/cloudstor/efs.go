@@ -107,19 +107,19 @@ func (v *efsDriver) Create(req volume.Request) (resp volume.Response) {
 	}
 
 	mountpoint := mountPointRegular
-	perfmode := req.Options["maxio"]
+	perfmode := req.Options["perfmode"]
 	if perfmode == "maxio" {
 		mountpoint = mountPointMaxIO
 	}
 
-	path := filepath.Join(mountPointRegular, req.Name)
+	path := filepath.Join(mountpoint, req.Name)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		resp.Err = fmt.Sprintf("Could not create volume: %v", err)
 		logctx.Error(resp.Err)
 		return
 	}
 
-	volMeta.VolPath = mountpoint
+	volMeta.VolPath = path
 	volMeta.CreatedAt = time.Now().UTC()
 	// Save volume metadata
 	if err := v.meta.Set(req.Name, volMeta); err != nil {
@@ -202,7 +202,7 @@ func (v *efsDriver) Remove(req volume.Request) (resp volume.Response) {
 	}
 	path := meta.VolPath
 
-	if err := os.Remove(path); err != nil {
+	if err := os.RemoveAll(path); err != nil {
 		resp.Err = fmt.Sprintf("error removing path: %v", err)
 		logctx.Error(resp.Err)
 		return
