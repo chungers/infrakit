@@ -29,14 +29,14 @@ Once you have all of the above you are ready to move onto the next step.
 
 Docker for GCP is installed with a [Deployment Manager] template that configures
 Docker in Swarm-mode, running on instances backed by custom images. You can use
-the [gcloud] SDK either from your machine or from [Cloud Shell].
+the [gcloud] SDK either from your machine or from [Google Cloud Shell].
 The later is easier since it doesn't require installing any tool on your
 machine.
 
-### Installing from Cloud Shell
+### Installing from Google Cloud Shell
 
-Open your browser, connect to the GCP console, start [Cloud Shell] and type this
-command with property values suited to your needs. For example:
+Open your browser, connect to the [GCP Console], start [Google Cloud Shell] and
+type this command with property values suited to your needs. For example:
 
     $ gcloud deployment-manager deployments create docker \
         --config https://docker-for-gcp-templates.storage.googleapis.com/v4/Docker.jinja \
@@ -44,8 +44,8 @@ command with property values suited to your needs. For example:
 
 ### Installing with the CLI
 
-If you prefer to not use [Cloud Shell], you will need to install [gcloud], then
-run those commands:
+If you prefer to not use [Google Cloud Shell], you will need to install
+[gcloud], then run those commands:
 
     $ gcloud init --skip-diagnostics
     $ gcloud deployment-manager deployments create docker \
@@ -68,9 +68,9 @@ workers. There are more options that you can provide to customized the Swarm.
 
 The number of [Managers] in your Swarm. You can pick either 1, 3 or 5 managers.
 We only recommend 1 manager for testing and dev setups. There are no failover
-guarantees with 1 manager — if the single manager fails the swarm will go down
-as well. Additionally, upgrading single-manager swarms is not currently
-guaranteed to succeed.
+guarantees with 1 manager — if the manager fails the Swarm will go down as well.
+Additionally, upgrading single-manager Swarms is not currently guaranteed to
+succeed.
 
 We recommend at least 3 managers, and if you have a lot of workers, you should
 pick 5 managers.
@@ -78,10 +78,10 @@ pick 5 managers.
 When choosing manager count, consider the level of durability you need:
 
 | # of managers  | # of tolerated failures |
-| ------------- | ------------- |
-| 1  | 0  |
-| 3  | 1  |
-| 5  | 2  |
+| -------------- | ----------------------- |
+|             1  |                      0  |
+|             3  |                      1  |
+|             5  |                      2  |
 
 #### workerCount
 
@@ -160,7 +160,8 @@ will not work correctly.
  [Google Cloud RuntimeConfig API]: https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview
  [gcloud]: https://cloud.google.com/sdk/downloads
  [Deployment Manager]: https://cloud.google.com/deployment-manager/docs/
- [Cloud Shell]: https://cloud.google.com/shell/docs/quickstart#start_cloud_shell
+ [GCP Console]: https://console.cloud.google.com/home/dashboard
+ [Google Cloud Shell]: https://cloud.google.com/shell/docs/quickstart#start_cloud_shell
  [Managers]: https://docs.docker.com/engine/swarm/key-concepts/#/what-is-a-node
  [Workers]: https://docs.docker.com/engine/swarm/key-concepts/#/what-is-a-node
  [Zone]: https://cloud.google.com/compute/docs/regions-zones/viewing-regions-zones
