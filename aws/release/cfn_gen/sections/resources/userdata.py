@@ -25,6 +25,8 @@ def common_userdata_head():
         "export CLEANUP_QUEUE='", Ref("SwarmSQSCleanup"), "'\n",
         "export RUN_VACUUM='", Ref("EnableSystemPrune"), "'\n",
         "export LOG_GROUP_NAME='", Join("-", [Ref("AWS::StackName"), "lg"]), "'\n",
+        "export EFS_ID_REGULAR='", Ref("FileSystemGP"), "'\n",
+        "export EFS_ID_MAXIO='", Ref("FileSystemMaxIO"), "'\n",
     ]
     return data
 
