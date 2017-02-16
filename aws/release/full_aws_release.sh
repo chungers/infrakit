@@ -205,6 +205,12 @@ echo "= Build lb-container ="
 cd files/elb-controller/container
 DOCKER_TAG=$VERSION DOCKER_PUSH=true DOCKER_TAG_LATEST=false make -k container
 
+echo "= Build cloudstor ="
+cd $BASE_DIR
+cd ../../common/cloudstor
+
+PLUGIN_TAG=$VERSION make
+
 echo "== Build Docker images =="
 cd $BASE_DIR
 
