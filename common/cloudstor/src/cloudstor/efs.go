@@ -112,14 +112,14 @@ func (v *efsDriver) Create(req volume.Request) (resp volume.Response) {
 		mountpoint = mountPointMaxIO
 	}
 
-	path := filepath.Join(mountPointRegular, req.Name)
+	path := filepath.Join(mountpoint, req.Name)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		resp.Err = fmt.Sprintf("Could not create volume: %v", err)
 		logctx.Error(resp.Err)
 		return
 	}
 
-	volMeta.VolPath = mountpoint
+	volMeta.VolPath = path
 	volMeta.CreatedAt = time.Now().UTC()
 	// Save volume metadata
 	if err := v.meta.Set(req.Name, volMeta); err != nil {
