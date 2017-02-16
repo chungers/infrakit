@@ -18,6 +18,9 @@ outputs:
   ssh:
     description: How to ssh into the Swarm
     type: string
+  managers:
+    description: Link to the managers
+    type: string
 
 properties:
   version:
