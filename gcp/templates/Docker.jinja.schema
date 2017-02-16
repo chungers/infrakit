@@ -21,6 +21,9 @@ outputs:
   managers:
     description: Link to the managers
     type: string
+  deployment:
+    description: Link to the deployment page
+    type: string
 
 properties:
   version:

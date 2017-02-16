@@ -25,6 +25,8 @@ outputs:
   value: "You can ssh into the Swarm with: gcloud compute ssh --zone {{ ZONE }} {{ STACK }}-manager-1"
 - name: managers
   value: "You can list the Managers here: https://console.cloud.google.com/compute/instances?project={{ PROJECT }}&filter=name:{{ STACK }}-manager-*"
+- name: deployment
+  value: "You can inspect this deployment here: https://console.cloud.google.com/deployments/details/{{ STACK }}?project={{ PROJECT }}"
 
 resources:
 - name: {{ STACK }}-bootstrap
