@@ -14,19 +14,19 @@ weight="1"
 
 # Docker for GCP beta
 
-Docker for GCP let you quickly set up and configure a working Docker 1.13
+Docker for GCP lets you quickly set up and configure a working Docker 1.13
 swarm-mode install on Google Cloud Platform.
 
-Docker for GCP is private beta ([sign up] for access). It is free to use
-(GCP will charge for resource usage).
+Docker for GCP is private beta ([sign up](https://beta.docker.com/gcp) for access).
+It is free to use (GCP will charge for resource usage).
 
-To deploy Docker for GCP, find the latest release in the [Release Notes].
+To deploy Docker for GCP, find the latest release in the [Release Notes](gcp/release-notes.md).
 
 For more details, check out the rest of the documentation:
 
  * [Docker for GCP](gcp/index.md)
  * [Deploying your Apps](deploy.md)
- * [Docker for GCP release notes](gcp/release-notes.md)
+ * [Release notes](gcp/release-notes.md)
 
 <p style="margin-bottom:50px">&nbsp;</p>
 
@@ -34,4 +34,3 @@ For more details, check out the rest of the documentation:
 
 Reach out to <docker-for-iaas@docker.com> with questions, comments and feedback.
 The forums are available for public discussions at [Docker for GCP Forum](https://forums.docker.com/c/docker-for-gcp).
-

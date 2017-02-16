@@ -62,7 +62,7 @@ objects, but are known only to the individual Docker engines.
 
 In addition to upgrading Docker for GCP from one version to the next you can
 also change template parameters such as worker count and instance type.
-Changing manager count or instance type is **not** supported.
+Changing manager count is **not** supported.
 
  [https://beta.docker.com/]: https://beta.docker.com/
  [Release Notes]: https://beta.docker.com/docs/aws/release-notes/
