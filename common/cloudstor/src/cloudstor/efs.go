@@ -107,7 +107,7 @@ func (v *efsDriver) Create(req volume.Request) (resp volume.Response) {
 	}
 
 	mountpoint := mountPointRegular
-	perfmode := req.Options["maxio"]
+	perfmode := req.Options["perfmode"]
 	if perfmode == "maxio" {
 		mountpoint = mountPointMaxIO
 	}
@@ -202,7 +202,7 @@ func (v *efsDriver) Remove(req volume.Request) (resp volume.Response) {
 	}
 	path := meta.VolPath
 
-	if err := os.Remove(path); err != nil {
+	if err := os.RemoveAll(path); err != nil {
 		resp.Err = fmt.Sprintf("error removing path: %v", err)
 		logctx.Error(resp.Err)
 		return
