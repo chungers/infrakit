@@ -13,12 +13,10 @@ weight="300"
 
 # Docker for GCP Upgrades
 
-_Warning_: As of the private beta, upgrades still have issues to be fixed. they
-are NOT supported yet. Performing an upgrade with only upgrade some of the nodes
-and can leave the Swarm in a broken state. Also, upgrading from the private beta
-to a future version will involve recreating the Swarm from scratch.
+_Warning_: Upgrades are currently not supported. 
+Performing an upgrade on an existing cluster may leave some of the nodes in a broken state. 
 
-Docker for GCP has support upgrading from one beta version to the next. Upgrades
+Docker for GCP will support upgrading from one beta version to the next. Upgrades
 are done by applying a new version of the Deployment Manager template that
 powers Docker for GCP. Depending on changes in the next version, an upgrade
 involves:
