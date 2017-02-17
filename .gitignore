@@ -3,6 +3,7 @@ moby/
 
 # vendored sources -- these are synced by govendor
 vendor/*/
+common/cloudstor/src/cloudstor/vendor/*/
 
 aws/dockerfiles/files/bin/*
 aws/dockerfiles/files/elb-controller/container/bin/*
@@ -14,6 +15,8 @@ aws/release/cfn_gen/outputs
 azure/release/tmp
 tools/buoy/bin/buoy
 tools/metaserver/bin/metaserver
+# Don't checkin the binary generated
+common/cloudstor/cloudstor
 *~
 *#
 .#*

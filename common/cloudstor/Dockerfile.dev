@@ -4,14 +4,13 @@ RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
        gcc libc-dev go git
 
-RUN go get github.com/Azure/azure-sdk-for-go/storage
-RUN go get github.com/Sirupsen/logrus
-RUN go get github.com/docker/go-plugins-helpers/volume
+RUN go get github.com/LK4D4/vndr
 
 WORKDIR /go/
 COPY . ./
 RUN mkdir -p bin
 WORKDIR /go/src/cloudstor
+RUN vndr
 RUN go install --ldflags '-extldflags "-static"'
 
 CMD ["/go/bin/cloudstor"]
