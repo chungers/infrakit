@@ -2,7 +2,6 @@ DOCKER_REPO_OWNER ?= docker4x
 DOCKER_REPO ?= ${DOCKER_REPO_OWNER}/shell-gcp
 DOCKER_TAG ?= latest
 DOCKER_IMAGE ?= ${DOCKER_REPO}:${DOCKER_TAG}
-DOCKER_BUILD_FLAGS ?= --no-cache --pull
 DOCKER_PUSH ?= true
 
 .PHONY: all build push
@@ -10,7 +9,7 @@ DOCKER_PUSH ?= true
 all: build push
 
 build:
-	@docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_IMAGE) .
+	@docker build -t $(DOCKER_IMAGE) .
 
 push:
 ifeq ($(DOCKER_PUSH),true)

@@ -2,7 +2,6 @@ DOCKER_REPO_OWNER ?= docker4x
 DOCKER_REPO ?= ${DOCKER_REPO_OWNER}/l4controller-gcp
 DOCKER_TAG ?= latest
 DOCKER_IMAGE ?= ${DOCKER_REPO}:${DOCKER_TAG}
-DOCKER_BUILD_FLAGS ?= --no-cache --pull
 DOCKER_PUSH ?= true
 
 .PHONY: clean all container
@@ -28,7 +27,7 @@ build-in-container: govendor
 container:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
 	-docker rm lb-controller-build
-	cd ../../.. && docker build $(DOCKER_BUILD_FLAGS) -t lb-controller:build -f ${CURDIR}/Dockerfile.build .
+	cd ../../.. && docker build -t lb-controller:build -f ${CURDIR}/Dockerfile.build .
 	docker run \
 		-e DOCKER_REPO_OWNER=$(DOCKER_REPO_OWNER) \
 		-e DOCKER_REPO=$(DOCKER_REPO) \
@@ -37,7 +36,7 @@ container:
 		--name lb-controller-build lb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker cp lb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
-	docker build $(DOCKER_BUILD_FLAGS) -t $(DOCKER_IMAGE) .
+	docker build -t $(DOCKER_IMAGE) .
 ifeq ($(DOCKER_PUSH),true)
 	docker push $(DOCKER_IMAGE)
 endif
