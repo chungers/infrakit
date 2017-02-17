@@ -39,7 +39,7 @@ Open your browser, connect to the [GCP Console], start [Google Cloud Shell] and
 type this command with property values suited to your needs. For example:
 
     $ gcloud deployment-manager deployments create docker \
-        --config https://docker-for-gcp-templates.storage.googleapis.com/v4/Docker.jinja \
+        --config https://docker-for-gcp-templates.storage.googleapis.com/v5/Docker.jinja \
         --properties managerCount:3,workerCount:1
 
 ### Installing with the CLI
@@ -49,7 +49,7 @@ If you prefer to not use [Google Cloud Shell], you will need to install
 
     $ gcloud init --skip-diagnostics
     $ gcloud deployment-manager deployments create docker \
-        --config https://docker-for-gcp-templates.storage.googleapis.com/v4/Docker.jinja \
+        --config https://docker-for-gcp-templates.storage.googleapis.com/v5/Docker.jinja \
         --properties managerCount:3,workerCount:1
 
 ### Stack name
