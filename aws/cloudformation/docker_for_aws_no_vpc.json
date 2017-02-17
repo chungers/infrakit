@@ -409,6 +409,17 @@
                         "WorkerDiskSize",
                         "WorkerDiskType"
                     ]
+                },
+                {
+                    "Label": {
+                        "default": "VPC/Network"
+                    },
+                    "Parameters": [
+                        "Vpc",
+                        "PubSubnetAz1",
+                        "PubSubnetAz2",
+                        "PubSubnetAz3"
+                    ]
                 }
             ],
             "ParameterLabels": {
@@ -438,6 +449,18 @@
                 },
                 "ManagerSize": {
                     "default": "Number of Swarm managers?"
+                },
+                "PubSubnetAz1": {
+                    "default": "Public Subnet 1"
+                },
+                "PubSubnetAz2": {
+                    "default": "Public Subnet 2"
+                },
+                "PubSubnetAz3": {
+                    "default": "Public Subnet 3"
+                },
+                "Vpc": {
+                    "default": "VPC"
                 },
                 "WorkerDiskSize": {
                     "default": "Worker ephemeral storage volume size?"
@@ -633,6 +656,22 @@
             "Description": "Number of Swarm manager nodes (1, 3, 5)",
             "Type": "Number"
         },
+        "PubSubnetAz1": {
+            "Description": "Public Subnet 1",
+            "Type": "AWS::EC2::Subnet::Id"
+        },
+        "PubSubnetAz2": {
+            "Description": "Public Subnet 2",
+            "Type": "AWS::EC2::Subnet::Id"
+        },
+        "PubSubnetAz3": {
+            "Description": "Public Subnet 3",
+            "Type": "AWS::EC2::Subnet::Id"
+        },
+        "Vpc": {
+            "Description": "VPC must have internet access (with Internet Gateway or Virtual Private Gateway)",
+            "Type": "AWS::EC2::VPC::Id"
+        },
         "WorkerDiskSize": {
             "Default": "20",
             "Description": "Size of Workers's ephemeral storage volume in GiB",
@@ -651,21 +690,6 @@
         }
     },
     "Resources": {
-        "AttachGateway": {
-            "DependsOn": [
-                "Vpc",
-                "InternetGateway"
-            ],
-            "Properties": {
-                "InternetGatewayId": {
-                    "Ref": "InternetGateway"
-                },
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            },
-            "Type": "AWS::EC2::VPCGatewayAttachment"
-        },
         "DockerLogGroup": {
             "Condition": "CreateLogResources",
             "Properties": {
@@ -735,11 +759,7 @@
         },
         "ExternalLoadBalancer": {
             "DependsOn": [
-                "AttachGateway",
-                "ExternalLoadBalancerSG",
-                "PubSubnetAz1",
-                "PubSubnetAz2",
-                "PubSubnetAz3"
+                "ExternalLoadBalancerSG"
             ],
             "Properties": {
                 "ConnectionSettings": {
@@ -820,7 +840,6 @@
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer"
         },
         "ExternalLoadBalancerSG": {
-            "DependsOn": "Vpc",
             "Properties": {
                 "GroupDescription": "External Load Balancer SecurityGroup",
                 "SecurityGroupIngress": [
@@ -883,28 +902,6 @@
             },
             "Type": "AWS::EFS::FileSystem"
         },
-        "InternetGateway": {
-            "DependsOn": "Vpc",
-            "Properties": {
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "IGW"
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            },
-            "Type": "AWS::EC2::InternetGateway"
-        },
         "ManagerAsg": {
             "CreationPolicy": {
                 "ResourceSignal": {
@@ -916,9 +913,6 @@
             },
             "DependsOn": [
                 "SwarmDynDBTable",
-                "PubSubnetAz1",
-                "PubSubnetAz2",
-                "PubSubnetAz3",
                 "ExternalLoadBalancer"
             ],
             "Properties": {
@@ -1744,7 +1738,6 @@
             "Type": "AWS::AutoScaling::LaunchConfiguration"
         },
         "NodeVpcSG": {
-            "DependsOn": "Vpc",
             "Properties": {
                 "GroupDescription": "Node SecurityGroup",
                 "SecurityGroupEgress": [
@@ -1849,242 +1842,6 @@
                 "Path": "/"
             },
             "Type": "AWS::IAM::Role"
-        },
-        "PubSubnet1RouteTableAssociation": {
-            "DependsOn": [
-                "PubSubnetAz1",
-                "RouteViaIgw"
-            ],
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "RouteViaIgw"
-                },
-                "SubnetId": {
-                    "Ref": "PubSubnetAz1"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubSubnet2RouteTableAssociation": {
-            "DependsOn": [
-                "PubSubnetAz2",
-                "RouteViaIgw"
-            ],
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "RouteViaIgw"
-                },
-                "SubnetId": {
-                    "Ref": "PubSubnetAz2"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubSubnet3RouteTableAssociation": {
-            "DependsOn": [
-                "PubSubnetAz3",
-                "RouteViaIgw"
-            ],
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "RouteViaIgw"
-                },
-                "SubnetId": {
-                    "Ref": "PubSubnetAz3"
-                }
-            },
-            "Type": "AWS::EC2::SubnetRouteTableAssociation"
-        },
-        "PubSubnetAz1": {
-            "DependsOn": "Vpc",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": [
-                        {
-                            "Fn::FindInMap": [
-                                "AWSRegion2AZ",
-                                {
-                                    "Ref": "AWS::Region"
-                                },
-                                "AZ0"
-                            ]
-                        },
-                        {
-                            "Fn::GetAZs": {
-                                "Ref": "AWS::Region"
-                            }
-                        }
-                    ]
-                },
-                "CidrBlock": {
-                    "Fn::FindInMap": [
-                        "VpcCidrs",
-                        "pubsubnet1",
-                        "cidr"
-                    ]
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "Subnet1"
-                                ]
-                            ]
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "PubSubnetAz2": {
-            "DependsOn": "Vpc",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": [
-                        {
-                            "Fn::FindInMap": [
-                                "AWSRegion2AZ",
-                                {
-                                    "Ref": "AWS::Region"
-                                },
-                                "AZ1"
-                            ]
-                        },
-                        {
-                            "Fn::GetAZs": {
-                                "Ref": "AWS::Region"
-                            }
-                        }
-                    ]
-                },
-                "CidrBlock": {
-                    "Fn::FindInMap": [
-                        "VpcCidrs",
-                        "pubsubnet2",
-                        "cidr"
-                    ]
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "Subnet2"
-                                ]
-                            ]
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "PubSubnetAz3": {
-            "DependsOn": "Vpc",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Fn::Select": [
-                        {
-                            "Fn::FindInMap": [
-                                "AWSRegion2AZ",
-                                {
-                                    "Ref": "AWS::Region"
-                                },
-                                "AZ2"
-                            ]
-                        },
-                        {
-                            "Fn::GetAZs": {
-                                "Ref": "AWS::Region"
-                            }
-                        }
-                    ]
-                },
-                "CidrBlock": {
-                    "Fn::FindInMap": [
-                        "VpcCidrs",
-                        "pubsubnet3",
-                        "cidr"
-                    ]
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "Subnet3"
-                                ]
-                            ]
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            },
-            "Type": "AWS::EC2::Subnet"
-        },
-        "PublicRouteViaIgw": {
-            "DependsOn": [
-                "AttachGateway",
-                "RouteViaIgw"
-            ],
-            "Properties": {
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "GatewayId": {
-                    "Ref": "InternetGateway"
-                },
-                "RouteTableId": {
-                    "Ref": "RouteViaIgw"
-                }
-            },
-            "Type": "AWS::EC2::Route"
-        },
-        "RouteViaIgw": {
-            "DependsOn": "Vpc",
-            "Properties": {
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "RT"
-                                ]
-                            ]
-                        }
-                    }
-                ],
-                "VpcId": {
-                    "Ref": "Vpc"
-                }
-            },
-            "Type": "AWS::EC2::RouteTable"
         },
         "SwarmAPIPolicy": {
             "DependsOn": "ProxyRole",
@@ -2265,7 +2022,6 @@
             "Type": "AWS::IAM::Policy"
         },
         "SwarmWideSG": {
-            "DependsOn": "Vpc",
             "Properties": {
                 "GroupDescription": "Swarm wide access",
                 "SecurityGroupIngress": [
@@ -2309,36 +2065,6 @@
                 }
             },
             "Type": "AWS::AutoScaling::LifecycleHook"
-        },
-        "Vpc": {
-            "Properties": {
-                "CidrBlock": {
-                    "Fn::FindInMap": [
-                        "VpcCidrs",
-                        "vpc",
-                        "cidr"
-                    ]
-                },
-                "EnableDnsHostnames": "true",
-                "EnableDnsSupport": "true",
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "-",
-                                [
-                                    {
-                                        "Ref": "AWS::StackName"
-                                    },
-                                    "VPC"
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            },
-            "Type": "AWS::EC2::VPC"
         }
     }
 }
