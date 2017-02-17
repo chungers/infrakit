@@ -29,6 +29,16 @@ if [ $? -ne 0 ]; then
         $guide_image \
         /usr/bin/buoy.sh "node:join"
 
+      # TEMP: remove old managers with the same name
+      if [ "${NODE_TYPE}" != "worker" ]; then
+        MANAGERS_DOWN=$(docker node ls | grep $(hostname) | awk '/-manager-/ { if ($3 == "Down" || $4 == "Down") print $1}')
+        if [ -n "${MANAGERS_DOWN}" ]; then
+          echo "REMOVE"
+          docker node demote ${MANAGERS_DOWN} || true
+          docker node rm ${MANAGERS_DOWN} || true
+        fi
+      fi
+
       break
     fi
 
