@@ -18,7 +18,7 @@ if [ $? -eq 0 ]; then
     --network projects/{{ PROJECT }}/global/networks/{{ STACK }}-network \
     --tags swarm,swarm-manager \
     --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
-    --metadata infrakit--group=managers \
+    --metadata infrakit--group={{ STACK }}-managers \
     --metadata-from-file startup-script=/start.sh \
     --disk=boot=yes,device-name={{ STACK }}-manager-1,name={{ STACK }}-manager-1
 else
@@ -28,7 +28,7 @@ else
     --image projects/{{ PROJECT }}/global/images/{{ STACK }}-disk-image-{{ VERSION }} \
     --tags swarm,swarm-manager \
     --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
-    --metadata infrakit--group=managers \
+    --metadata infrakit--group={{ STACK }}-managers \
     --metadata-from-file startup-script=/start.sh \
     --boot-disk-size {{ properties['managerDiskSize'] }}GB \
     --boot-disk-type {{ properties['managerDiskType'] }} \
