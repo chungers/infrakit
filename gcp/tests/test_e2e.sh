@@ -8,12 +8,6 @@ STACK="ci-docker4gcp-${CIRCLE_BUILD_NUM:-local}"
 export CLOUDSDK_CORE_PROJECT="docker4x"
 export CLOUDSDK_COMPUTE_ZONE="us-central1-f"
 
-cleanup() {
-  echo Clean up
-
-  docker volume rm gcloud-config 2>/dev/null || true
-}
-
 auth_gcloud() {
   echo Authenticate GCloud
 
@@ -83,7 +77,6 @@ if [ -z "${GCLOUD_SERVICE_KEY}" ]; then
   echo "Needs GCLOUD_SERVICE_KEY env variable"
   exit 1
 fi
-cleanup
 auth_gcloud
 destroy_swarm
 create_swarm
