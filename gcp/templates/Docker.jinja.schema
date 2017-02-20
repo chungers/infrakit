@@ -111,3 +111,8 @@ properties:
     type: string
     default: "yes"
     description: Cleans up unused images, containers, networks and volumes
+
+  demoMode:
+    type: boolean
+    default: False
+    description: Activate (unsupported) demo mode

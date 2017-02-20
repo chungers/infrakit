@@ -112,3 +112,8 @@ echo Start Load Balancer Listener
 dockerPull ${lb_image}
 $docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5
 {% endif -%}
+
+{% if ((type in ['leader']) and (properties['demoMode'])) %}
+docker service create --name demo -p 8080:8080 ehazlett/docker-demo
+docker service salce demo=2
+{% endif -%}
