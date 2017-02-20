@@ -2,7 +2,7 @@
   {
     "Plugin": "group",
     "Properties": {
-      "ID": "managers",
+      "ID": "{{ STACK }}-managers",
       "Properties": {
         "Allocation": {
           "LogicalIDS": [
@@ -63,7 +63,7 @@
   {
     "Plugin": "group",
     "Properties": {
-      "ID": "workers",
+      "ID": "{{ STACK }}-workers",
       "Properties": {
         "Allocation": {
           "Size": {{ properties['workerCount'] }}

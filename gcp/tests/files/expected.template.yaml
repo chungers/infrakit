@@ -5,6 +5,10 @@ outputs:
   value: europe-west1-d
 - name: ssh
   value: "You can ssh into the Swarm with: gcloud compute ssh --zone europe-west1-d docker-manager-1"
+- name: managers
+  value: "You can list the Managers here: https://console.cloud.google.com/compute/instances?project=test-project&filter=name:docker-manager-*"
+- name: deployment
+  value: "You can inspect this deployment here: https://console.cloud.google.com/deployments/details/docker?project=test-project"
 
 resources:
 - name: docker-bootstrap
@@ -207,7 +211,7 @@ resources:
         {
           "Plugin": "group",
           "Properties": {
-            "ID": "managers",
+            "ID": "docker-managers",
             "Properties": {
               "Allocation": {
                 "LogicalIDS": ["docker-manager-1","docker-manager-2","docker-manager-3"]
@@ -263,7 +267,7 @@ resources:
         {
           "Plugin": "group",
           "Properties": {
-            "ID": "workers",
+            "ID": "docker-workers",
             "Properties": {
               "Allocation": {
                 "Size": 1
@@ -328,12 +332,24 @@ resources:
   properties:
     region: europe-west1
 
+- name: docker-health-check
+  type: compute.v1.httpHealthCheck
+  properties:
+    port: 44554
+    requestPath: /
+    checkIntervalSec: 5
+    timeoutSec: 5
+    unhealthyThreshold: 2
+    healthyThreshold: 2
+
 - name: docker-lb-pool
   type: compute.v1.targetPool
   properties:
     region: europe-west1
     sessionAffinity: NONE
     instances: []
+    healthChecks:
+    - $(ref.docker-health-check.selfLink)
 
 - name: docker-lb-forward
   type: compute.v1.forwardingRule
@@ -379,3 +395,4 @@ resources:
       ports: [0-65535]
     - IPProtocol: udp
       ports: [0-65535]
+    - IPProtocol: esp
