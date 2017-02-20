@@ -6,14 +6,21 @@ function metadata {
   curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/${1}
 }
 
+rm -Rf ~/.infrakit
+infrakit plugin start --config-url file:///infrakit/plugins.json --exec os \
+  manager \
+  flavor-combo \
+  flavor-swarm \
+  flavor-vanilla \
+  group-default \
+  instance-gcp &
+
 PROJECT=$(metadata 'project/project-id')
 NETWORK=$(metadata 'instance/network-interfaces/0/network' | cut -d "/" -f 4)
 STACK=${NETWORK/-network/}
 INFRAKIT_UPDATE="2000-01-01T00:00:00.000000000Z"
 
-infrakit-manager --name=group --proxy-for-group=group-stateless swarm --log=5 &
-infrakit plugin start --wait --config-url file:///infrakit/plugins.json --os flavor-combo flavor-swarm flavor-vanilla group-default instance-gcp &
-sleep 5  # manager needs to detect leadership
+echo "Plugins started."
 
 set +e
 while :
@@ -30,10 +37,10 @@ do
   INFRAKIT_UPDATE=$(echo "${INFRAKIT_JSON}" | jq -r '.updateTime')
   echo Updated infrakit configuration at ${INFRAKIT_UPDATE}
 
+  echo "${INFRAKIT_JSON}" | jq -r '.text' > /infrakit/groups.json
+
   IS_LEADER=$(docker node inspect self | jq -r '.[0].ManagerStatus.Leader')
   if [ "${IS_LEADER}" == "true" ]; then
-    echo "${INFRAKIT_JSON}" | jq -r '.text' > /infrakit/groups.json
-
     for i in $(seq 1 60); do infrakit manager commit file:///infrakit/groups.json && infrakit group ls && break || sleep 1; done
   fi
 done

@@ -1,23 +1,25 @@
 #!/bin/sh
 
 if [ "$1" == "node:join" ]; then
-  if [ "$NODE_TYPE" == "worker" ] ; then
-    NODE_ID=$(docker system info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
-    SWARM_ID='n/a' #TODO:FIX add this for workers.
+  NODE_ID=$(docker system info | grep NodeID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+  SWARM_ID='n/a' #TODO:FIX add this for workers.
 
-    /usr/bin/buoy -event="node:join" \
-      -swarm_id=$SWARM_ID \
-      -node_id=$NODE_ID \
-      -channel=$CHANNEL
-  else
-    NODE_ID=$(docker node inspect self | jq -r '.[].ID')
-    SWARM_ID=$(docker system info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+  /usr/bin/buoy -event="node:join" \
+    -swarm_id=$SWARM_ID \
+    -node_id=$NODE_ID \
+    -channel=$CHANNEL
 
-    /usr/bin/buoy -event="node:manager_join" \
-      -swarm_id=$SWARM_ID \
-      -node_id=$NODE_ID \
-      -channel=$CHANNEL
-  fi
+  exit 0
+fi
+
+if [ "$1" == "node:manager_join" ]; then
+  NODE_ID=$(docker node inspect self | jq -r '.[].ID')
+  SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
+
+  /usr/bin/buoy -event="node:manager_join" \
+    -swarm_id=$SWARM_ID \
+    -node_id=$NODE_ID \
+    -channel=$CHANNEL
 
   exit 0
 fi

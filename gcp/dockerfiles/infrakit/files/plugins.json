@@ -1,51 +1,49 @@
 [
   {
+    "Plugin": "manager",
+    "Launch": {
+      "os": {
+        "Cmd": "infrakit-manager --name=group --proxy-for-group=group-stateless swarm --log=5 > /infrakit/manager.log 2>&1"
+      }
+    }
+  },
+  {
     "Plugin": "flavor-combo",
     "Launch": {
-      "Exec": "os",
-      "Properties": {
-        "Cmd": "infrakit-flavor-combo --log=5",
-        "SamePgID": true
+      "os": {
+        "Cmd": "infrakit-flavor-combo --log=5 > /infrakit/flavor-combo.log 2>&1"
       }
     }
   },
   {
     "Plugin": "flavor-swarm",
     "Launch": {
-      "Exec": "os",
-      "Properties": {
-        "Cmd": "infrakit-flavor-swarm --log=5 --init-template=file:///infrakit/swarm.sh",
-        "SamePgID": true
+      "os": {
+        "Cmd": "infrakit-flavor-swarm --log=5 --manager-init-template=file:///infrakit/manager-join.sh --worker-init-template=file:///infrakit/worker-join.sh > /infrakit/flavor-swarm.log 2>&1"
       }
     }
   },
   {
     "Plugin": "flavor-vanilla",
     "Launch": {
-      "Exec": "os",
-      "Properties": {
-        "Cmd": "infrakit-flavor-vanilla --log=5",
-        "SamePgID": true
+      "os": {
+        "Cmd": "infrakit-flavor-vanilla --log=5 > /infrakit/flavor-vanilla.log 2>&1"
       }
     }
   },
   {
     "Plugin": "group-default",
     "Launch": {
-      "Exec": "os",
-      "Properties": {
-        "Cmd": "infrakit-group-default --log=5 --name=group-stateless --poll-interval=30s",
-        "SamePgID": true
+      "os": {
+        "Cmd": "infrakit-group-default --log=5 --name=group-stateless --poll-interval=30s > /infrakit/group.log 2>&1"
       }
     }
   },
   {
     "Plugin": "instance-gcp",
     "Launch": {
-      "Exec": "os",
-      "Properties": {
-        "Cmd": "infrakit-instance-gcp --log=5",
-        "SamePgID": true
+      "os": {
+        "Cmd": "infrakit-instance-gcp --log=5 > /infrakit/instance-gcp.log 2>&1"
       }
     }
   }

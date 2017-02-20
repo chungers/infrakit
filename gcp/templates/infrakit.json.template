@@ -52,7 +52,12 @@
               },
               {
                 "Plugin": "flavor-swarm/manager",
-                "Properties": {}
+                "Properties": {
+                  "SwarmJoinIP": "{{ STACK }}-manager-1",
+                  "Docker" : {
+                    "Host" : "unix:///var/run/docker.sock"
+                  }
+                }
               }
             ]
           }
@@ -106,7 +111,12 @@
               },
               {
                 "Plugin": "flavor-swarm/worker",
-                "Properties": {}
+                "Properties": {
+                  "SwarmJoinIP": "{{ STACK }}-manager-1",
+                  "Docker" : {
+                    "Host" : "unix:///var/run/docker.sock"
+                  }
+                }
               }
             ]
           }
