@@ -17,13 +17,13 @@ WORKER_DISK_SIZE ?= 100
 DEMO_MODE ?= true
 
 GCLOUD_IMAGE_TAG ?= sha256:fb904276e8a902ccd9564989d9222bdfbe37ffcd7f9989ca7e24b4019a9b4b6b
-GCLOUD = docker run --rm -ti \
+GCLOUD = docker container run --rm -ti \
 	-v $(CURDIR)/templates:/templates \
 	--volumes-from gcloud-config \
 	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 	gcloud
 DEPLOYMENTS = $(GCLOUD) deployment-manager deployments
-GSUTIL = docker run --rm -ti \
+GSUTIL = docker container run --rm -ti \
   -v $(CURDIR)/templates:/templates \
 	--volumes-from gsutil-config \
 	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
@@ -37,11 +37,11 @@ TESTS ?= all
 all: auth create
 
 auth: revoke
-	docker run -it --name gcloud-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) true
+	docker container run -it --name gcloud-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) true
 	$(GCLOUD) init --skip-diagnostics
 
 revoke:
-	-docker rm gcloud-config 2>/dev/null
+	-docker container rm gcloud-config 2>/dev/null
 
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
@@ -67,8 +67,8 @@ dockerfiles:
 
 export-templates:
 ifeq "$(FORCE_GSUTIL_AUTH)" "1"
-	-docker rm gsutil-config 2>/dev/null
-	docker run -it --name gsutil-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) gcloud auth login --brief --project=$(CLOUDSDK_CORE_PROJECT)
+	-docker container rm gsutil-config 2>/dev/null
+	docker container run -it --name gsutil-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) gcloud auth login --brief --project=$(CLOUDSDK_CORE_PROJECT)
 endif
 	$(GSUTIL) ls -b $(BUCKET) || gsutil mb $(BUCKET)
 	$(GSUTIL) -m rsync -r /templates $(BUCKET)/$(EDITIONS_VERSION)

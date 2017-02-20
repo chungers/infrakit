@@ -14,5 +14,5 @@ build:
 
 push:
 ifeq ($(DOCKER_PUSH),true)
-	@docker push $(DOCKER_IMAGE)
+	@docker image push $(DOCKER_IMAGE)
 endif

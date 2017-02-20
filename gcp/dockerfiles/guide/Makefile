@@ -12,7 +12,7 @@ build:
 	@docker build -t $(DOCKER_IMAGE) .
 
 test:
-	@docker run --rm \
+	@docker container run --rm \
 		-v ${CURDIR}/tests:/tests \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v /usr/bin/docker:/usr/bin/docker \
@@ -20,5 +20,5 @@ test:
 
 push:
 ifeq ($(DOCKER_PUSH),true)
-	@docker push $(DOCKER_IMAGE)
+	@docker image push $(DOCKER_IMAGE)
 endif

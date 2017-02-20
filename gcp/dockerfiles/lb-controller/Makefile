@@ -26,17 +26,17 @@ build-in-container: govendor
 # This one runs outside
 container:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
-	-docker rm lb-controller-build
+	-docker container rm lb-controller-build
 	cd ../../.. && docker build -t lb-controller:build -f ${CURDIR}/Dockerfile.build .
-	docker run \
+	docker container run \
 		-e DOCKER_REPO_OWNER=$(DOCKER_REPO_OWNER) \
 		-e DOCKER_REPO=$(DOCKER_REPO) \
 		-e DOCKER_TAG=$(DOCKER_TAG) \
 		-e DOCKER_IMAGE=$(DOCKER_IMAGE) \
 		--name lb-controller-build lb-controller:build
 	mkdir -p ${CURDIR}/bin
-	docker cp lb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
+	docker container cp lb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
 	docker build -t $(DOCKER_IMAGE) .
 ifeq ($(DOCKER_PUSH),true)
-	docker push $(DOCKER_IMAGE)
+	docker image push $(DOCKER_IMAGE)
 endif

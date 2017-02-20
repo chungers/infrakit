@@ -15,13 +15,13 @@ guide_image="docker4x/guide-gcp:{{ VERSION }}"
 lb_image="docker4x/l4controller-gcp:{{ VERSION }}"
 infrakit_image="docker4x/infrakit-gcp:{{ VERSION }}"
 
-docker_run='docker run --label com.docker.editions.system --log-driver=json-file'
+docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'
 docker_daemon="$docker_run --rm -d"
 docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'
 docker_cli='-v /usr/bin/docker:/usr/bin/docker'
 
 function dockerPull {
-  for i in $(seq 1 60); do docker pull $1 && break || sleep 1; done
+  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done
 }
 
 {% if (type in ['leader']) %}
@@ -65,7 +65,7 @@ echo Start sshd
 
 dockerPull ${shell_image}
 
-docker inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true
+docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true
 $docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh
 
 $docker_daemon --name=accounts \
