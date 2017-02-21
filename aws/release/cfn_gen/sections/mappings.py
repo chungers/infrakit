@@ -259,7 +259,7 @@ def add_mapping_aws2az(template):
         },
         "us-east-2": {
             "Name": "Ohio",
-            "EFSSupport": "no",
+            "EFSSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
