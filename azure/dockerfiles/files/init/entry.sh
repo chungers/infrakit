@@ -273,7 +273,7 @@ run_system_containers()
             -e VMSS_MGR="$VMSS_MGR" \
             -e VMSS_WRK="$VMSS_WRK" \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -iaas_provider=azure
+            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=azure
 
         echo "kick off l4controller container"
         echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config
@@ -323,8 +323,14 @@ else
     setup_worker
 fi
 
-#install and configure cloudstor plugin for Azure
-install_cloudstor_plugin
+# install and configure cloudstor plugin for Azure only if deploying Beta channel for now.
+CHANNEL_TAG=$(aztags.py channel)
+if [ "$CHANNEL_TAG" == "beta" ] ; then
+    echo " Beta channel. Install cloudstor ..."
+    install_cloudstor_plugin
+else
+    echo " Not Beta channel. Skip cloudstor installation"
+fi
 
 # show the results.
 echo "#================ docker info    ==="
