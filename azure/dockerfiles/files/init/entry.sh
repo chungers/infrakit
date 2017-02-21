@@ -273,7 +273,7 @@ run_system_containers()
             -e VMSS_MGR="$VMSS_MGR" \
             -e VMSS_WRK="$VMSS_WRK" \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -flavor=azure
+            docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -iaas_provider=azure
 
         echo "kick off l4controller container"
         echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config
