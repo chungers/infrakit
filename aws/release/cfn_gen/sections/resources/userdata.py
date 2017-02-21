@@ -1,5 +1,5 @@
 from os import path
-from troposphere import Join, Ref, FindInMap
+from troposphere import If, Join, Ref, FindInMap
 
 
 def common_userdata_head():
@@ -25,8 +25,9 @@ def common_userdata_head():
         "export CLEANUP_QUEUE='", Ref("SwarmSQSCleanup"), "'\n",
         "export RUN_VACUUM='", Ref("EnableSystemPrune"), "'\n",
         "export LOG_GROUP_NAME='", Join("-", [Ref("AWS::StackName"), "lg"]), "'\n",
-        "export EFS_ID_REGULAR='", Ref("FileSystemGP"), "'\n",
-        "export EFS_ID_MAXIO='", Ref("FileSystemMaxIO"), "'\n",
+        "export ENABLE_EFS='", FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"), "'\n",
+        "export EFS_ID_REGULAR='", If("EFSSupported", Ref("FileSystemGP"), ''), "'\n",
+        "export EFS_ID_MAXIO='", If("EFSSupported", Ref("FileSystemMaxIO"), ''), "'\n",
     ]
     return data
 
