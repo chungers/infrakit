@@ -1,5 +1,9 @@
 dist/
-moby/
+moby/build/
+moby/tmp/
+moby/cloud/aws/ami_id.out
+moby/cloud/azure/vhd_blob_url.out
+moby/cloud/mobylinux.vhd
 
 # vendored sources -- these are synced by govendor
 vendor/*/

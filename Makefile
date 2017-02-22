@@ -1,3 +1,5 @@
+.PHONY: moby
+
 EDITIONS_TAG := ga-2
 EDITIONS_DOCKER_VERSION := 1.13.1
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
@@ -26,9 +28,9 @@ export
 
 AZURE_TARGET_TEMPLATE := dist/azure/$(CHANNEL)/azure-v$(EDITIONS_VERSION).json
 
-release: moby/alpine/cloud/aws/ami_id.out moby/alpine/cloud/azure/vhd_blob_url.out dockerimages
-	$(MAKE) -C aws/release AMI=$(shell cat moby/alpine/cloud/aws/ami_id.out)
-	# VHD=$(shell cat moby/alpine/cloud/azure/vhd_blob_url.out)
+release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimages
+	$(MAKE) -C aws/release AMI=$(shell cat moby/cloud/aws/ami_id.out)
+	# VHD=$(shell cat moby/cloud/azure/vhd_blob_url.out)
 
 dockerimages: tools/buoy
 	dockerimages-aws
@@ -58,25 +60,24 @@ tools/buoy:
 tools/metaserver:
 	$(call build_cp_tool,metaserver)
 
-moby/alpine/cloud/azure/vhd_blob_url.out: moby
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/alpine/packages/azure/etc/init.d/azure 
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/alpine/packages/azure/etc/init.d/azure 
-	git -C moby commit -asm "Bump Azure version to $(EDITIONS_VERSION)"
-	$(MAKE) -C moby/alpine uploadvhd
+moby/cloud/azure/vhd_blob_url.out: moby
+	# @TODO: EDITION TAG BUMP NEEDS TO BE FIXED
+	# sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/alpine/packages/azure/etc/init.d/azure 
+	# sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/alpine/packages/azure/etc/init.d/azure 
+	$(MAKE) -C moby uploadvhd
 
-moby/alpine/cloud/aws/ami_id.out: moby
-	TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby/alpine ami
+moby/cloud/aws/ami_id.out: moby
+	TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
 
 moby:
-	git clone $(MOBY_GIT_REMOTE) moby
-	git -C moby checkout $(MOBY_GIT_REVISION)
+	$(MAKE) -C moby all
 
 clean:
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
-	rm -rf moby
+	$(MAKE) -C moby clean
 
-azure-dev: dockerimages-azure azure/editions.json moby/alpine/cloud/azure/vhd_blob_url.out
+azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
 	# Temporarily going to continue to use azure/editions.json until the
 	# development workflow gets refactored to use only top-level Makefile
 	# for "running" in addition to "compiling".
