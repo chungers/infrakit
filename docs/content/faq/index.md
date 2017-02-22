@@ -47,5 +47,13 @@ Please provide this session ID to the maintainer debugging your issue.
 Docker for GCP sends anonymized minimal metrics to Docker (heartbeat). These
 metrics are used to monitor adoption and are critical to improve Docker for GCP.
 
+## Can I have multiple stacks per Google Cloud Project?
+
+Yes, it's supported but not recommended.
+`gcloud deployment-manager deployments create stack ...` creates resources that
+are prefixed with `stack-`. Each stack must have a unique name in the project.
+It is not recommended to do that in production though. A bug in Docker for GCP
+would allow one stack to delete instances of another stack for example. The only
+way to securely isolate two stacks is to create them in two different projects.
 
  [Docker for GCP] https://forums.docker.com/c/docker-for-gcp
