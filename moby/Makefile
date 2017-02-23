@@ -27,22 +27,18 @@ src/initrd.img:
 	@echo "+ $@"
 	MOBY_IMG_COMMIT=$(MOBY_IMG_COMMIT) ./get.sh
 
-gcp: gcp.img.tar.gz
-
-gcp.img.tar.gz: build/gcp/initrd.img
-	tar cf - -C build/gcp/ initrd.img -C ../ vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
-
 gcp-upload:
 	@echo "+ $@"
+	build/gcp/gce.img.tar.gz
 ifeq ($(FORCE_GSUTIL_AUTH),1)
 	-docker rm gsutil-moby-config 2>/dev/null
 	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
 endif
 	docker run --rm -ti \
 		--volumes-from gsutil-moby-config \
-		-v $(CURDIR)/gcp.img.tar.gz:/gcp.img.tar.gz \
+		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
-		gsutil cp -a public-read /gcp.img.tar.gz gs://docker-for-gcp-images/latest/gcp.img.tar.gz
+		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
 
 ami: 
 	@echo "+ $@"
@@ -166,19 +162,22 @@ build/azure/initrd.img: src/initrd.img azure.img
 	cat $^ > $@
 	rm azure.img
 
-gcp.img:
+gce.img:
 	@echo "+ $@"
 	tar cf - -C packages/gcp etc -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
-build/gcp/initrd.img: src/initrd.img gcp.img
+build/gcp/initrd.img: src/initrd.img gce.img
 	cat $^ > $@
-	rm gcp.img
+	rm gce.img
+
+build/gcp/gce.img.tar.gz: build/gcp/initrd.img
+	tar cf - -C build/gcp/ initrd.img -C ../ vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 clean:
 	@echo "+ $@"
 	rm -rf build src packages/aws/dockerimages/ || true
-	rm -f *.img *.vhd *.iso *.tag mobylinux.efi gcp.img.tar.gz || true
+	rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz || true
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true

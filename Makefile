@@ -81,6 +81,10 @@ moby/cloud/aws/ami_id_ee.out: moby
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
 
+
+moby/build/gcp/gce.img.tar.gz: moby
+	$(MAKE) -C moby gcp-upload
+
 moby/build/aws/initrd.img:
 	$(MAKE) -C moby build/aws/initrd.img
 
