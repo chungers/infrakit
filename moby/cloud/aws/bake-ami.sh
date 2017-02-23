@@ -81,6 +81,7 @@ bake_image()
 		echo "${IMAGE_ID}" >"${MOBY_OUTPUT}/ami_id_ee.out"
 	else
 		echo "${IMAGE_ID}" >"${MOBY_OUTPUT}/ami_id.out"
+	fi
 }
 
 clean_volume_mount()
