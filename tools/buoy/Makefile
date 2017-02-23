@@ -4,4 +4,4 @@ build:
 	./build_buoy.sh
 
 clean:
-	rm bin/buoy
+	rm bin/buoy || true

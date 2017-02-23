@@ -77,14 +77,14 @@ def main():
     print(u"cs_vhd_version={}".format(cs_vhd_version))
 
     print("Create ARM template..")
-    template_name = u"{}.json".format(docker_for_azure_version)
+    template_name = u"{}/Docker.tmpl".format(docker_for_azure_version)
     base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_version, CFN_TEMPLATE, template_name)
-    cloud_template_name = u"{}-cloud.json".format(docker_for_azure_version)
+    cloud_template_name = u"{}/Docker-cloud.tmpl".format(docker_for_azure_version)
     cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url, cloud_template_name)
     
-    ddc_template_name = u"{}-ddc.json".format(docker_for_azure_version)
+    ddc_template_name = u"{}/Docker-ddc.tmpl".format(docker_for_azure_version)
     ddc_url = create_rg_ddc_template(cs_vhd_sku, cs_vhd_version, cs_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url, ddc_template_name)
 

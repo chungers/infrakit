@@ -1,13 +1,13 @@
-.PHONY: moby
+.PHONY: moby tools tools/buoy tools/metaserver
 
-EDITIONS_TAG := ga-2
-EDITIONS_DOCKER_VERSION := 1.13.1
+EDITIONS_TAG := beta19
+EDITIONS_DOCKER_VERSION := 17.03.0-ce-rc1
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
-REGION := us-west-1
-CHANNEL := stable
+REGION := us-west-2
+CHANNEL ?= beta
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
-DOCKER_EXPERIMENTAL := 1
+DOCKER_EXPERIMENTAL ?= 1
 VHD_SKU := docker4azure
 VHD_VERSION := 1.13.7
 # stage offer will have the -preview 
@@ -16,9 +16,10 @@ CS_VHD_SKU := docker4azure-cs-1_12
 CS_VHD_VERSION := 1.0.4
 # stage offer will have the -preview 
 CS_OFFER_ID := docker4azure-cs-preview
-RELEASE := 0
+RELEASE ?= 0
 MOBY_GIT_REMOTE := git@github.com:docker/moby
 MOBY_GIT_REVISION := 1.13.x
+LOAD_IMAGES := true
 
 ifeq ($(RELEASE),0)
 EDITIONS_VERSION := $(EDITIONS_VERSION)-$(shell whoami)-dev
@@ -26,13 +27,18 @@ endif
 
 export
 
-AZURE_TARGET_TEMPLATE := dist/azure/$(CHANNEL)/azure-v$(EDITIONS_VERSION).json
+ROOTDIR := $(shell pwd)
+
+AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(EDITIONS_VERSION)
+AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
+AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(EDITIONS_VERSION)
+AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
 
 release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimages
 	$(MAKE) -C aws/release AMI=$(shell cat moby/cloud/aws/ami_id.out)
 	# VHD=$(shell cat moby/cloud/azure/vhd_blob_url.out)
 
-dockerimages: tools/buoy
+dockerimages: tools
 	dockerimages-aws
 	dockerimages-azure
 	
@@ -52,22 +58,29 @@ define build_cp_tool
 	cp tools/$(1)/bin/$(1) gcp/dockerfiles/guide/bin/$(1)
 endef
 
-tools: tools/buoy tools/metaserver
+tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver
 
-tools/buoy:
+tools/buoy/bin/buoy:
+	@echo "+ $@"
 	$(call build_cp_tool,buoy)
 
-tools/metaserver:
+tools/metaserver/bin/metaserver:
 	$(call build_cp_tool,metaserver)
 
 moby/cloud/azure/vhd_blob_url.out: moby
-	# @TODO: EDITION TAG BUMP NEEDS TO BE FIXED
-	# sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/alpine/packages/azure/etc/init.d/azure 
-	# sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/alpine/packages/azure/etc/init.d/azure 
-	$(MAKE) -C moby uploadvhd
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/packages/azure/etc/init.d/azure 
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
+	LOAD_IMAGES=false $(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
+
+moby/build/aws/initrd.img:
+	$(MAKE) -C moby build/aws/initrd.img
+
+moby/build/azure/initrd.img:
+	$(MAKE) -C moby build/azure/initrd.img
 
 moby:
 	$(MAKE) -C moby all
@@ -76,6 +89,10 @@ clean:
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C moby clean
+	rm -f $(AWS_TARGET_PATH)/*.tar
+	rm -f $(AZURE_TARGET_PATH)/*.tar
+	rm -f moby/cloud/azure/vhd_blob_url.out
+	rm -f moby/cloud/aws/ami_id.out
 
 azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
 	# Temporarily going to continue to use azure/editions.json until the
