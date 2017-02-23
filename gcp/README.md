@@ -21,3 +21,21 @@ It can also tear down created stack(s):
 
     $ make delete
     $ make revoke
+
+## Release
+
+To build the artifacts:
+
+    $ make clean build
+
+To save those artifacts (not needed if releasing from local build):
+
+  $ BUILD_NUMBER=X make save
+
+To retrieve artifacts (not needed if releasing from local build):
+
+  $ BUILD_NUMBER=X make clean retrieve
+
+To release:
+
+  $ BUILD_NUMBER=X EDITIONS_VERSION=17.XX.Y-ce-gcpZZ make release

@@ -26,11 +26,6 @@ outputs:
     type: string
 
 properties:
-  version:
-    type: string
-    default: "v7"
-    description: Version of the templates
-
   managerCount:
     type: integer
     default: 3

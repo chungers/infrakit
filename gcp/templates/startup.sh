@@ -12,7 +12,7 @@ export NODE_TYPE="{{ type }}"
 
 shell_image="docker4x/shell-gcp:{{ VERSION }}"
 guide_image="docker4x/guide-gcp:{{ VERSION }}"
-lb_image="docker4x/l4controller-gcp:{{ VERSION }}"
+lb_image="docker4x/lb-controller-gcp:{{ VERSION }}"
 infrakit_image="docker4x/infrakit-gcp:{{ VERSION }}"
 
 docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'

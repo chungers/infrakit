@@ -1,18 +1,9 @@
-DOCKER_REPO_OWNER ?= docker4x
-DOCKER_REPO ?= ${DOCKER_REPO_OWNER}/infrakit-gcp
-DOCKER_TAG ?= latest
-DOCKER_IMAGE ?= ${DOCKER_REPO}:${DOCKER_TAG}
-DOCKER_PUSH ?= true
+DOCKER_IMAGE ?= docker4x/infrakit-gcp
 
-.PHONY: all build push
+.PHONY: all build
 .DEFAULT: all
-all: build push
+all: build
 
 build:
 	@./extract_binaries.sh
 	@docker build -t $(DOCKER_IMAGE) .
-
-push:
-ifeq ($(DOCKER_PUSH),true)
-	@docker image push $(DOCKER_IMAGE)
-endif

@@ -1,17 +1,8 @@
-DOCKER_REPO_OWNER ?= docker4x
-DOCKER_REPO ?= ${DOCKER_REPO_OWNER}/shell-gcp
-DOCKER_TAG ?= latest
-DOCKER_IMAGE ?= ${DOCKER_REPO}:${DOCKER_TAG}
-DOCKER_PUSH ?= true
+DOCKER_IMAGE ?= docker4x/shell-gcp
 
-.PHONY: all build push
+.PHONY: all build
 .DEFAULT: all
-all: build push
+all: build
 
 build:
 	@docker build -t $(DOCKER_IMAGE) .
-
-push:
-ifeq ($(DOCKER_PUSH),true)
-	@docker image push $(DOCKER_IMAGE)
-endif

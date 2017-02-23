@@ -3,6 +3,7 @@ HASH := $(shell curl -f -s https://master.dockerproject.org/commit)
 DAY := $(shell date +"%m_%d_%Y")
 TAG_KEY ?= aws-nightly-$(DAY)-$(HASH)
 CHANNEL ?= dev
+FORCE_GSUTIL_AUTH ?= 1
 
 
 ## Moby specific commit
@@ -18,18 +19,17 @@ TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa60
 all: src/initrd.img
 
 # interactive versions need to use volume mounts
-boot-qemu: 
+boot-qemu:
 	@echo "+ $@"
 	$(MAKE) src/initrd.img
 	docker run -it --rm -v $(CURDIR)/src/initrd.img:/tmp/initrd.img -v $(CURDIR)/build/vmlinuz64:/tmp/vmlinuz64 $(QEMU_IMAGE)
 
-src/initrd.img: 
+src/initrd.img:
 	@echo "+ $@"
 	MOBY_IMG_COMMIT=$(MOBY_IMG_COMMIT) ./get.sh
 
-gcp-upload:
+gcp-upload: build/gcp/gce.img.tar.gz
 	@echo "+ $@"
-	build/gcp/gce.img.tar.gz
 ifeq ($(FORCE_GSUTIL_AUTH),1)
 	-docker rm gsutil-moby-config 2>/dev/null
 	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
@@ -40,7 +40,7 @@ endif
 		google/cloud-sdk \
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
 
-ami: 
+ami:
 	@echo "+ $@"
 	$(MAKE) build/aws/initrd.img
 	tar cf - \
@@ -87,7 +87,7 @@ ami-clean-mount:
 		-e DOCKER_BIN_URL \
 		moby-ami:build clean-mount
 
-uploadvhd: 
+uploadvhd:
 	@echo "+ $@"
 	$(MAKE) azure
 	docker run \
@@ -102,7 +102,7 @@ uploadvhd:
 		moby-azure:build \
 		uploadvhd >./cloud/azure/vhd_blob_url.out
 
-azure: 
+azure:
 	@echo "+ $@"
 	$(MAKE) build/azure/initrd.img vhdartifact
 	tar cf - \

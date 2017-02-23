@@ -1,12 +1,8 @@
-DOCKER_REPO_OWNER ?= docker4x
-DOCKER_REPO ?= ${DOCKER_REPO_OWNER}/guide-gcp
-DOCKER_TAG ?= latest
-DOCKER_IMAGE ?= ${DOCKER_REPO}:${DOCKER_TAG}
-DOCKER_PUSH ?= true
+DOCKER_IMAGE ?= docker4x/guide-gcp
 
-.PHONY: all build push test
+.PHONY: all build test
 .DEFAULT: all
-all: build test push
+all: build test
 
 build:
 	@docker build -t $(DOCKER_IMAGE) .
@@ -17,8 +13,3 @@ test:
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v /usr/bin/docker:/usr/bin/docker \
 		$(DOCKER_IMAGE) /tests/run.sh
-
-push:
-ifeq ($(DOCKER_PUSH),true)
-	@docker image push $(DOCKER_IMAGE)
-endif

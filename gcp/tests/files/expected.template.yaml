@@ -38,16 +38,16 @@ resources:
 
           echo This is a leader node
 
-          export DOCKER_FOR_IAAS_VERSION="gcp-v1.13.1-latest"
+          export DOCKER_FOR_IAAS_VERSION="gcp-v1.13.1-dev"
           export ACCOUNT_ID="$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)"
           export REGION="europe-west1"
           export CHANNEL="beta"
           export NODE_TYPE="leader"
 
-          shell_image="docker4x/shell-gcp:latest"
-          guide_image="docker4x/guide-gcp:latest"
-          lb_image="docker4x/l4controller-gcp:latest"
-          infrakit_image="docker4x/infrakit-gcp:latest"
+          shell_image="docker4x/shell-gcp:dev"
+          guide_image="docker4x/guide-gcp:dev"
+          lb_image="docker4x/lb-controller-gcp:dev"
+          infrakit_image="docker4x/infrakit-gcp:dev"
 
           docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'
           docker_daemon="$docker_run --rm -d"
@@ -151,7 +151,7 @@ resources:
           curl -sfH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/attributes/manager-script > /start.sh
 
           echo Wait for the base disk image
-          while :; do gcloud compute images describe docker-disk-image-latest && break || sleep 1; done
+          while :; do gcloud compute images describe docker-disk-image-dev && break || sleep 1; done
 
           echo Wait for the network
           while :; do gcloud compute networks describe docker-network && break || sleep 1; done
@@ -163,17 +163,17 @@ resources:
               --network projects/test-project/global/networks/docker-network \
               --tags swarm,swarm-manager \
               --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
-              --metadata infrakit--group=managers \
+              --metadata infrakit--group=docker-managers,infrakit--config_sha=bootstrap \
               --metadata-from-file startup-script=/start.sh \
               --disk=boot=yes,device-name=docker-manager-1,name=docker-manager-1
           else
             gcloud compute instances create docker-manager-1 \
               --machine-type g1-small \
               --network projects/test-project/global/networks/docker-network \
-              --image projects/test-project/global/images/docker-disk-image-latest \
+              --image projects/test-project/global/images/docker-disk-image-dev \
               --tags swarm,swarm-manager \
               --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
-              --metadata infrakit--group=managers \
+              --metadata infrakit--group=docker-managers,infrakit--config_sha=bootstrap \
               --metadata-from-file startup-script=/start.sh \
               --boot-disk-size 100GB \
               --boot-disk-type pd-standard \
@@ -224,7 +224,7 @@ resources:
                   "NamePrefix": "docker-manager",
                   "DiskSizeMb": 100,
                   "DiskType": "pd-standard",
-                  "DiskImage": "$(ref.docker-disk-image-latest.selfLink)",
+                  "DiskImage": "$(ref.docker-disk-image-dev.selfLink)",
                   "TargetPools": ["docker-lb-pool"],
                   "Tags": [
                     "swarm",
@@ -250,13 +250,18 @@ resources:
                       "Plugin": "flavor-vanilla",
                       "Properties": {
                         "Init": [
-                          "#!/bin/sh","","set -ex","","echo This is a manager node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-v1.13.1-latest\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"manager\"","","shell_image=\"docker4x/shell-gcp:latest\"","guide_image=\"docker4x/guide-gcp:latest\"","lb_image=\"docker4x/l4controller-gcp:latest\"","infrakit_image=\"docker4x/infrakit-gcp:latest\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","function dockerPull {","  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done","}","","","echo Start infrakit","","dockerPull ${infrakit_image}","$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image","echo Start sshd","","dockerPull ${shell_image}","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","dockerPull ${guide_image}","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"yes\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","","","echo Start Load Balancer Listener","","dockerPull ${lb_image}","$docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5",""
+                          "#!/bin/sh","","set -ex","","echo This is a manager node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-v1.13.1-dev\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"manager\"","","shell_image=\"docker4x/shell-gcp:dev\"","guide_image=\"docker4x/guide-gcp:dev\"","lb_image=\"docker4x/lb-controller-gcp:dev\"","infrakit_image=\"docker4x/infrakit-gcp:dev\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","function dockerPull {","  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done","}","","","echo Start infrakit","","dockerPull ${infrakit_image}","$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image","echo Start sshd","","dockerPull ${shell_image}","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","dockerPull ${guide_image}","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"yes\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","","","echo Start Load Balancer Listener","","dockerPull ${lb_image}","$docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5",""
                         ]
                       }
                     },
                     {
                       "Plugin": "flavor-swarm/manager",
-                      "Properties": {}
+                      "Properties": {
+                        "SwarmJoinIP": "docker-manager-1",
+                        "Docker" : {
+                          "Host" : "unix:///var/run/docker.sock"
+                        }
+                      }
                     }
                   ]
                 }
@@ -280,7 +285,7 @@ resources:
                   "NamePrefix": "docker-worker",
                   "DiskSizeMb": 100,
                   "DiskType": "pd-standard",
-                  "DiskImage": "$(ref.docker-disk-image-latest.selfLink)",
+                  "DiskImage": "$(ref.docker-disk-image-dev.selfLink)",
                   "TargetPools": ["docker-lb-pool"],
                   "Tags": [
                     "swarm",
@@ -304,13 +309,18 @@ resources:
                       "Plugin": "flavor-vanilla",
                       "Properties": {
                         "Init": [
-                          "#!/bin/sh","","set -ex","","echo This is a worker node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-v1.13.1-latest\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"worker\"","","shell_image=\"docker4x/shell-gcp:latest\"","guide_image=\"docker4x/guide-gcp:latest\"","lb_image=\"docker4x/l4controller-gcp:latest\"","infrakit_image=\"docker4x/infrakit-gcp:latest\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","function dockerPull {","  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done","}","","echo Start sshd","","dockerPull ${shell_image}","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","dockerPull ${guide_image}","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"yes\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","",""
+                          "#!/bin/sh","","set -ex","","echo This is a worker node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-v1.13.1-dev\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"worker\"","","shell_image=\"docker4x/shell-gcp:dev\"","guide_image=\"docker4x/guide-gcp:dev\"","lb_image=\"docker4x/lb-controller-gcp:dev\"","infrakit_image=\"docker4x/infrakit-gcp:dev\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","function dockerPull {","  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done","}","","echo Start sshd","","dockerPull ${shell_image}","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","dockerPull ${guide_image}","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"yes\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","",""
                         ]
                       }
                     },
                     {
                       "Plugin": "flavor-swarm/worker",
-                      "Properties": {}
+                      "Properties": {
+                        "SwarmJoinIP": "docker-manager-1",
+                        "Docker" : {
+                          "Host" : "unix:///var/run/docker.sock"
+                        }
+                      }
                     }
                   ]
                 }
@@ -320,12 +330,12 @@ resources:
         }
       ]
 
-- name: docker-disk-image-latest
+- name: docker-disk-image-dev
   type: compute.v1.image
   properties:
     family: docker
     rawDisk:
-      source: https://storage.googleapis.com/docker-for-gcp-images/latest/gce.img.tar.gz
+      source: https://storage.googleapis.com/docker-for-gcp-images/dev/gce.img.tar.gz
 
 - name: docker-external-ip
   type: compute.v1.address
