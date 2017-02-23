@@ -73,6 +73,7 @@ ami:
 		-e TAG_KEY_PREV \
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
+		-e LOAD_IMAGES \
 		moby-ami:build bake > ./cloud/aws/ami_id.out
 
 ami-clean-mount:

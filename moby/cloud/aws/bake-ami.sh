@@ -77,7 +77,10 @@ bake_image()
 	# Boom, now you (should) have a Moby AMI.
 	arrowecho "Created AMI: ${IMAGE_ID}"
 
-	echo "${IMAGE_ID}" >"${MOBY_OUTPUT}/ami_id.out"
+	if [ $LOAD_IMAGES == 'true' ]; then
+		echo "${IMAGE_ID}" >"${MOBY_OUTPUT}/ami_id_ee.out"
+	else
+		echo "${IMAGE_ID}" >"${MOBY_OUTPUT}/ami_id.out"
 }
 
 clean_volume_mount()

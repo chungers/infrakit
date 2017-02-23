@@ -63,12 +63,16 @@ start()
 		sh /tmp/user-data
 	fi
 
-	export DOCKER_FOR_IAAS_VERSION="aws-v1.13.1-ga-2"
+	export DOCKER_FOR_IAAS_VERSION="#EDITION_VERSION#"
 
 	for img in $( ls /dockerimages/*.tar ); do
 			echo "Loading image $img"
 			docker load --input /dockerimages/$img
 	done
+
+	docker volume create --name sshkey
+	docker run --label com.docker.editions.system --log-driver=json-file -ti --rm --user root -v sshkey:/etc/ssh --entrypoint ssh-keygen docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION -A
+	docker run --label com.docker.editions.system --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 -v /home/docker/:/home/docker/ -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro -v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config -v /usr/bin/docker:/usr/bin/docker -v /var/log:/var/log -v sshkey:/etc/ssh -v /etc/passwd:/etc/passwd:ro -v /etc/shadow:/etc/shadow:ro -v /etc/group:/etc/group:ro docker4x/shell-aws:$DOCKER_FOR_IAAS_VERSION
 
 	eend 0
 }

@@ -19,7 +19,8 @@ CS_OFFER_ID := docker4azure-cs-preview
 RELEASE ?= 0
 MOBY_GIT_REMOTE := git@github.com:docker/moby
 MOBY_GIT_REVISION := 1.13.x
-LOAD_IMAGES := true
+# By default don't load Docker Images into the AMI
+LOAD_IMAGES := false
 
 ifeq ($(RELEASE),0)
 EDITIONS_VERSION := $(EDITIONS_VERSION)-$(shell whoami)-dev
@@ -68,13 +69,17 @@ tools/metaserver/bin/metaserver:
 	$(call build_cp_tool,metaserver)
 
 moby/cloud/azure/vhd_blob_url.out: moby
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/packages/azure/etc/init.d/azure 
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(EDITIONS_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
-	LOAD_IMAGES=false $(MAKE) -C moby uploadvhd
+	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
+
+moby/cloud/aws/ami_id_ee.out: moby
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
+	LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
 
 moby/build/aws/initrd.img:
 	$(MAKE) -C moby build/aws/initrd.img

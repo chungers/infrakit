@@ -34,8 +34,8 @@ start()
 
 	einfo "Running Windows Azure Linux Agent container"
 
-	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.1-ga-3"
-	export DOCKER_FOR_IAAS_VERSION_DIGEST="badffbf8fff6fb1bdf05ec485b52ae15d80f6e23c6b3ba0e89abd80fb932bd84"
+	export DOCKER_FOR_IAAS_VERSION="#EDITION_VERSION#"
+	export DOCKER_FOR_IAAS_VERSION_DIGEST="#WAAGENT_DIGEST#"
 
 	# "Fake" /etc/hostname setup for persistence across reboots
 	#
