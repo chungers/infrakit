@@ -3,7 +3,7 @@
 set -e 
 
 rm -rf build src packages/aws/dockerimages/
-mkdir -p build/aws build/azure src packages/aws/dockerimages/
+mkdir -p build/aws build/azure build/gcp src packages/aws/dockerimages/
 
 docker rm moby || true
 docker create --name moby mobylinux/media:aufs-$MOBY_IMG_COMMIT ls
