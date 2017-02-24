@@ -300,7 +300,7 @@ install_cloudstor_plugin()
 {
     echo "Install storage plugin"
     SA_KEY=$(sakey.py)
-    docker plugin install --grant-all-permissions docker4x/cloudstor:$DOCKER_FOR_IAAS_VERSION  \
+    docker plugin install --alias cloudstor:azure --grant-all-permissions docker4x/cloudstor:$DOCKER_FOR_IAAS_VERSION  \
         CLOUD_PLATFORM=AZURE \
         AZURE_STORAGE_ACCOUNT_KEY="$SA_KEY" \
         AZURE_STORAGE_ACCOUNT="$SWARM_INFO_STORAGE_ACCOUNT" \
