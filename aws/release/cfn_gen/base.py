@@ -12,7 +12,8 @@ class AWSBaseTemplate(object):
 
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, channel, amis,
-                 create_vpc=True, template_description=None):
+                 create_vpc=True, template_description=None,
+                 use_ssh_cidr=False):
         self.template = Template()
         self.parameters = {}
         self.parameter_labels = {}
@@ -22,6 +23,7 @@ class AWSBaseTemplate(object):
         self.amis = amis
         self.create_vpc = create_vpc
         self.template_description = template_description
+        self.use_ssh_cidr = use_ssh_cidr
 
         flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
         self.flat_edition_version = flat_edition_version
@@ -190,7 +192,7 @@ class AWSBaseTemplate(object):
     def security_groups(self):
         # security groups
         resources.add_resource_swarm_wide_security_group(self.template, self.create_vpc)
-        resources.add_resource_manager_security_group(self.template)
+        resources.add_resource_manager_security_group(self.template, use_ssh_cidr=self.use_ssh_cidr)
         resources.add_resource_worker_security_group(self.template, self.create_vpc)
         resources.add_resource_external_lb_sg(self.template, self.create_vpc)
 

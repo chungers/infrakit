@@ -76,7 +76,7 @@ def add_resource_external_lb_sg(template, create_vpc):
     template.add_resource(sg)
 
 
-def add_resource_manager_security_group(template):
+def add_resource_manager_security_group(template, use_ssh_cidr=False):
     """
     "ManagerVpcSG": {
         "DependsOn": "NodeVpcSG",
@@ -100,6 +100,10 @@ def add_resource_manager_security_group(template):
         }
     },
     """
+    if use_ssh_cidr:
+        ssh_cidr = Ref("RemoteSSH")
+    else:
+        ssh_cidr = "0.0.0.0/0"
     template.add_resource(SecurityGroup(
         "ManagerVpcSG",
         DependsOn="NodeVpcSG",
@@ -110,7 +114,7 @@ def add_resource_manager_security_group(template):
                 IpProtocol='tcp',
                 FromPort='22',
                 ToPort='22',
-                CidrIp="0.0.0.0/0"),
+                CidrIp=ssh_cidr),
             SecurityGroupRule(
                 IpProtocol='tcp',
                 FromPort='2377',

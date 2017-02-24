@@ -11,6 +11,6 @@ RUN mkdir -p /home/docker
 ADD requirements.txt /home/docker/
 RUN pip install -r /home/docker/requirements.txt
 ADD . /home/docker/
-RUN chmod 755 /home/docker/release.sh
+RUN chmod 755 /home/docker/release.sh /home/docker/run.py
 
 CMD ["/home/docker/release.sh"]

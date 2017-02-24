@@ -4,4 +4,4 @@
 
 docker build -t docker4x/cfnbuild -f Dockerfile .
 
-docker run -v `pwd`/outputs:/home/docker/outputs docker4x/cfnbuild
+docker run -v `pwd`/outputs:/home/docker/outputs docker4x/cfnbuild /home/docker/run.py

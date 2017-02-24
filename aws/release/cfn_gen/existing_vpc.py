@@ -7,13 +7,15 @@ class ExistingVPCTemplate(AWSBaseTemplate):
 
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, channel, amis,
-                 create_vpc=False, template_description=None):
+                 create_vpc=False, template_description=None,
+                 use_ssh_cidr=False):
         super(ExistingVPCTemplate, self).__init__(
             docker_version, edition_version,
             docker_for_aws_version,
             channel, amis,
             create_vpc=create_vpc,
-            template_description=template_description
+            template_description=template_description,
+            use_ssh_cidr=use_ssh_cidr
             )
 
     def add_paramaters(self):

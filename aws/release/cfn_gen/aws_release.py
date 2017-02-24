@@ -9,6 +9,7 @@ from utils import (
 from base import AWSBaseTemplate
 from cloud import CloudVPCTemplate, CloudVPCExistingTemplate
 from existing_vpc import ExistingVPCTemplate
+from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
 
 
 def main():
@@ -100,13 +101,33 @@ def main():
                                  docker_for_aws_version, cfn_name)
 
     cfn_name = "{}-no-vpc".format(docker_for_aws_version)
-    s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list, release_channel,
+    s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list,
+                                        release_channel,
                                         docker_version, edition_version,
                                         docker_for_aws_version, cfn_name,
                                         cfn_type="no-vpc")
 
+    docker_ee_cfn_name = docker_for_aws_version
+    docker_ee_release_channel = u"{}-ee".format(release_channel)
+    docker_ee_s3_url = create_cfn_template(DockerEEVPCTemplate, ami_list,
+                                           docker_ee_release_channel,
+                                           docker_version, edition_version,
+                                           docker_for_aws_version,
+                                           docker_ee_cfn_name)
+
+    docker_ee_cfn_name = "{}-no-vpc".format(docker_ee_cfn_name)
+    docker_ee_s3_url_no_vpc = create_cfn_template(DockerEEVPCExistingTemplate,
+                                                  ami_list,
+                                                  docker_ee_release_channel,
+                                                  docker_version,
+                                                  edition_version,
+                                                  docker_for_aws_version,
+                                                  docker_ee_cfn_name,
+                                                  cfn_type="no-vpc")
+
     cfn_name = "{}-cloud".format(docker_for_aws_version)
-    s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list, release_cloud_channel,
+    s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
+                                       release_cloud_channel,
                                        docker_version, edition_version,
                                        docker_for_aws_version, cfn_name)
 
@@ -117,12 +138,13 @@ def main():
                                               docker_for_aws_version,
                                               cfn_name, cfn_type="no-vpc")
 
-
     # TODO: git commit, tag release. requires github keys, etc.
 
     print("------------------")
-    print(u"Finshed.. CloudFormation Base URL={}".format(s3_url))
-    print(u"Finshed.. CloudFormation Base No VPC URL={}".format(s3_url_no_vpc))
+    print(u"Finshed.. Docker CE Base URL={}".format(s3_url))
+    print(u"Finshed.. Docker CE Base No VPC URL={}".format(s3_url_no_vpc))
+    print(u"Finshed.. Docker EE Base URL={}".format(docker_ee_s3_url))
+    print(u"Finshed.. Docker EE Base No VPC URL={}".format(docker_ee_s3_url_no_vpc))
     print(u"Finshed.. CloudFormation Cloud URL={}".format(s3_cloud_url))
     print(u"Finshed.. CloudFormation Cloud No VPC URL={}".format(s3_cloud_url_no_vpc))
     print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
