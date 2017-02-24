@@ -118,6 +118,24 @@ def add_mapping_instance_type_2_arch(template):
         "r3.8xlarge": {
             "Arch": "HVM64"
         },
+        "r4.large": {
+            "Arch": "HVM64"
+        },
+        "r4.xlarge": {
+            "Arch": "HVM64"
+        },
+        "r4.2xlarge": {
+            "Arch": "HVM64"
+        },
+        "r4.4xlarge": {
+            "Arch": "HVM64"
+        },
+        "r4.8xlarge": {
+            "Arch": "HVM64"
+        },
+        "r4.16xlarge": {
+            "Arch": "HVM64"
+        },
         "i2.xlarge": {
             "Arch": "HVM64"
         },
