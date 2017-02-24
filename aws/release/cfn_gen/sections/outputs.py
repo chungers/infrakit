@@ -50,6 +50,20 @@ def add_output_dns_target(template):
     ))
 
 
+def add_output_elb_zone_id(template):
+    """
+    "ELBDNSZoneID": {
+        "Description": "Use this zone ID to update your DNS records",
+        "Value": { "Fn::GetAtt": [ "ExternalLoadBalancer", "CanonicalHostedZoneNameID" ] }
+    }
+    """
+    template.add_output(Output(
+        "ELBDNSZoneID",
+        Description="Use this zone ID to update your DNS records",
+        Value=GetAtt("ExternalLoadBalancer", "CanonicalHostedZoneNameID")
+    ))
+
+
 def add_output_az_warning(template):
     """
     "ZoneAvailabilityComment" : {

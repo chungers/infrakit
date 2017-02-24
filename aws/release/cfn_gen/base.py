@@ -97,6 +97,7 @@ class AWSBaseTemplate(object):
         outputs.add_output_managers(self.template)
         outputs.add_output_dns_target(self.template)
         outputs.add_output_az_warning(self.template)
+        outputs.add_output_elb_zone_id(self.template)
 
     def dynamodb(self):
         # dynamodb table
