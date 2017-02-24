@@ -5,15 +5,19 @@ TAG_KEY ?= aws-nightly-$(DAY)-$(HASH)
 CHANNEL ?= dev
 FORCE_GSUTIL_AUTH ?= 1
 
-
 ## Moby specific commit
-MOBY_IMG_COMMIT := b080a71704e707385e819747b0f2f4d66098292d
+MOBY_IMG_COMMIT ?= b080a71704e707385e819747b0f2f4d66098292d
 REGEXTRACT_IMAGE=docker4x/regextract@sha256:a843d793ba6b83d4bb7d68102ca2c7dba0f985330581224e9afeacdbbf76b8db
 GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63
 QEMU_IMAGE=mobylinux/qemu:0fb8c648e8ed9ef6b1ec449587aeab6c53872744@sha256:606f30d815102e73bc01c07915dc0d5f153b0252c63f5f0ed1e39621ec656eb5
 TAR2INITRD_IMAGE=mobylinux/tar2initrd:d5711601eb5b89de0f052d87365e18388ff3f1b5@sha256:58d377e65845f91400e173ce9fca93462f2f237947eef2b0d2c17bb4f2da5ee8
 TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa601811@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
 
+ifeq ($(LOAD_IMAGES),true)
+AMI_OUT=ami_id_ee.out
+else
+AMI_OUT=ami_id.out
+endif
 
 
 all: src/initrd.img
@@ -70,7 +74,7 @@ ami:
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
-		moby-ami:build bake > ./cloud/aws/ami_id.out
+		moby-ami:build bake >  ./cloud/aws/$(AMI_OUT)
 
 ami-clean-mount:
 	@echo "+ $@"

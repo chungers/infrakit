@@ -20,7 +20,7 @@ RELEASE ?= 0
 MOBY_GIT_REMOTE := git@github.com:docker/moby
 MOBY_GIT_REVISION := 1.13.x
 # By default don't load Docker Images into the AMI
-LOAD_IMAGES := false
+LOAD_IMAGES ?= false
 
 ifeq ($(RELEASE),0)
 EDITIONS_VERSION := $(EDITIONS_VERSION)-$(shell whoami)-dev
@@ -77,9 +77,11 @@ moby/cloud/aws/ami_id.out: moby
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
 
-moby/cloud/aws/ami_id_ee.out: moby
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
-	LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
+moby/cloud/aws/ami_id_ee.out: 
+	@echo "+ $@"
+	LOAD_IMAGES=true $(MAKE) moby
+	#sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(EDITIONS_VERSION)"/' moby/packages/aws/etc/init.d/aws
+	#LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
 
 
 moby/build/gcp/gce.img.tar.gz: moby
@@ -102,6 +104,7 @@ clean:
 	rm -f $(AZURE_TARGET_PATH)/*.tar
 	rm -f moby/cloud/azure/vhd_blob_url.out
 	rm -f moby/cloud/aws/ami_id.out
+	rm -f moby/cloud/aws/ami_id_ee.out
 
 azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
 	# Temporarily going to continue to use azure/editions.json until the
