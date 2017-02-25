@@ -18,6 +18,7 @@ export AWS_ACCESS_KEY_ID=$(cat ~/.aws/credentials | grep aws_access_key_id | cut
 export AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/credentials | grep aws_secret_access_key | cut -f2 -d= | sed -e 's/^[ \t]*//')
 export PYTHONUNBUFFERED=1
 export CHANNEL="nightly"
+export ROOTDIR=`pwd`
 BUILD_HOME="/home/ubuntu"
 AMI_OUT_DIR="$BUILD_HOME/out"
 AMI_OUT_FILE="ami_id_${DAY}.out"
@@ -75,6 +76,8 @@ git pull
 export DOCKER_VERSION=$MASTER_DOCKER_VERSION
 export EDITION_VERSION=nightly_$DAY
 export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
+export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
+export RELEASE=1
 
 # build binaries
 cd $BUILD_HOME/code/editions/tools/buoy/

@@ -92,10 +92,13 @@ then
      exit 1
 fi
 
+export ROOTDIR=`pwd`
 export EDITIONS_VERSION=$DOCKER_VERSION-$EDITION_VERSION
 export TAG_KEY=$EDITIONS_VERSION
 export AMI_SRC_REGION=$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
 export HUB_LOGIN_ID=$(docker info | grep Username)
+export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
+export RELEASE=1
 
 echo "------"
 echo "Getting started with the release...."
