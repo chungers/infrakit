@@ -2,7 +2,7 @@ from os import path
 from troposphere import If, Join, Ref, FindInMap
 
 
-def common_userdata_head():
+def common_userdata_head(experimental_flag=True):
     """ The Head of the userdata script, this is where
     you would declare all of your shell variables"""
     data = [
@@ -29,17 +29,21 @@ def common_userdata_head():
         "export EFS_ID_REGULAR='", If("EFSSupported", Ref("FileSystemGP"), ''), "'\n",
         "export EFS_ID_MAXIO='", If("EFSSupported", Ref("FileSystemMaxIO"), ''), "'\n",
     ]
+    if experimental_flag:
+        data.append("export DOCKER_EXPERIMENTAL='true' \n")
+    else:
+        data.append("export DOCKER_EXPERIMENTAL='false' \n")
     return data
 
 
-def manager_node_userdata_head():
+def manager_node_userdata_head(experimental_flag=True):
     """ The Head of the userdata script, this is where
     you would declare all of your shell variables"""
     data = [
         "export NODE_TYPE='manager'\n",
         "export INSTANCE_NAME='ManagerAsg'\n"
     ]
-    return common_userdata_head() + data
+    return common_userdata_head(experimental_flag=experimental_flag) + data
 
 
 def manager_node_userdata_body():
@@ -56,14 +60,14 @@ def manager_node_userdata_body():
     return common_data + manager_data
 
 
-def worker_node_userdata_head():
+def worker_node_userdata_head(experimental_flag=True):
     """ The Head of the userdata script, this is where
     you would declare all of your shell variables"""
     data = [
         "export NODE_TYPE='worker'\n",
         "export INSTANCE_NAME='NodeAsg'\n"
     ]
-    return common_userdata_head() + data
+    return common_userdata_head(experimental_flag=experimental_flag) + data
 
 
 def worker_node_userdata_body():

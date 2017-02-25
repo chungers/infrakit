@@ -185,8 +185,8 @@ def add_mapping_version(template, docker_version, d4a_version, channel):
     })
 
 
-def add_mapping_aws2az(template):
-    template.add_mapping('AWSRegion2AZ', {
+def aws2az_data():
+    return {
         "ap-northeast-1": {
             "Name": "Tokyo",
             "EFSSupport": "no",
@@ -299,4 +299,4 @@ def add_mapping_aws2az(template):
             "AZ1": "1",
             "AZ2": "2"
         }
-    })
+    }

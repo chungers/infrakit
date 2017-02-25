@@ -35,8 +35,8 @@ if __name__ == '__main__':
     channel = "beta"
     docker_for_aws_version = 'aws-v17.03.0-ce-rc1-beta19'
 
-    AMI = "ami-2b93403d"
-    amis = {"us-east-1": {
+    AMI = "ami-e1e06381"
+    amis = {"us-west-2": {
             "HVM64": AMI,
             "HVMG2": "NOT_SUPPORTED"}}
 

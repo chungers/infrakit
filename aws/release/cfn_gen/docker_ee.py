@@ -1,7 +1,7 @@
 from troposphere import Parameter
 
 from base import AWSBaseTemplate
-
+from sections import mappings
 from existing_vpc import ExistingVPCTemplate
 
 
@@ -10,7 +10,8 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, channel, amis,
                  create_vpc=True, template_description=None,
-                 use_ssh_cidr=True):
+                 use_ssh_cidr=True,
+                 experimental_flag=False):
         if not template_description:
             template_description = u"Docker EE for AWS {} ({})".format(
                 docker_version, edition_version)
@@ -19,7 +20,8 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
             docker_for_aws_version, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
-            use_ssh_cidr=use_ssh_cidr)
+            use_ssh_cidr=use_ssh_cidr,
+            experimental_flag=experimental_flag)
 
     def add_paramaters(self):
         super(DockerEEVPCTemplate, self).add_paramaters()
@@ -46,6 +48,17 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
                 new_groups.append(group)
         return new_groups
 
+    def add_aws2az_mapping(self):
+        """ TODO: Remove this method when when EFS goes live on EE
+        We are overriding to disable in EE templates."""
+        data = mappings.aws2az_data()
+        data['eu-west-1']['EFSSupport'] = 'no'
+        data['us-east-1']['EFSSupport'] = 'no'
+        data['us-east-2']['EFSSupport'] = 'no'
+        data['us-west-2']['EFSSupport'] = 'no'
+
+        self.template.add_mapping('AWSRegion2AZ', data)
+
     def add_parameter_ssh_cidr(self):
         self.template.add_parameter(Parameter(
             'RemoteSSH',
@@ -64,12 +77,14 @@ class DockerEEVPCExistingTemplate(DockerEEVPCTemplate, ExistingVPCTemplate):
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, channel, amis,
                  create_vpc=False, template_description=None,
-                 use_ssh_cidr=True):
+                 use_ssh_cidr=True,
+                 experimental_flag=False):
         super(DockerEEVPCExistingTemplate, self).__init__(
             docker_version, edition_version,
             docker_for_aws_version,
             channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
-            use_ssh_cidr=use_ssh_cidr
+            use_ssh_cidr=use_ssh_cidr,
+            experimental_flag=experimental_flag
             )

@@ -13,7 +13,8 @@ class AWSBaseTemplate(object):
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, channel, amis,
                  create_vpc=True, template_description=None,
-                 use_ssh_cidr=False):
+                 use_ssh_cidr=False,
+                 experimental_flag=True):
         self.template = Template()
         self.parameters = {}
         self.parameter_labels = {}
@@ -24,6 +25,7 @@ class AWSBaseTemplate(object):
         self.create_vpc = create_vpc
         self.template_description = template_description
         self.use_ssh_cidr = use_ssh_cidr
+        self.experimental_flag = experimental_flag
 
         flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
         self.flat_edition_version = flat_edition_version
@@ -68,12 +70,17 @@ class AWSBaseTemplate(object):
         conditions.add_condition_EFSSupported(self.template)
 
     def add_mappings(self):
-        mappings.add_mapping_aws2az(self.template)
+        self.add_aws2az_mapping()
         mappings.add_mapping_version(
             self.template, self.docker_version, self.docker_for_aws_version, self.channel)
         mappings.add_mapping_vpc_cidrs(self.template)
         mappings.add_mapping_instance_type_2_arch(self.template)
         mappings.add_mapping_amis(self.template, self.amis)
+
+    def add_aws2az_mapping(self):
+        """ Add the aws2az mapping to the template.
+        Override this method to change"""
+        self.template.add_mapping('AWSRegion2AZ', mappings.aws2az_data())
 
     def add_to_parameters(self, result):
         key, value = result
@@ -106,7 +113,8 @@ class AWSBaseTemplate(object):
         resources.add_resource_dyn_table(self.template)
 
     def worker_userdata_head(self):
-        return resources.worker_node_userdata_head()
+        return resources.worker_node_userdata_head(
+            experimental_flag=self.experimental_flag)
 
     def workder_userdata_body(self):
         return resources.worker_node_userdata_body()
@@ -119,7 +127,8 @@ class AWSBaseTemplate(object):
         return Base64(Join("", data))
 
     def manager_userdata_head(self):
-        return resources.manager_node_userdata_head()
+        return resources.manager_node_userdata_head(
+            experimental_flag=self.experimental_flag)
 
     def manager_userdata_body(self):
         return resources.manager_node_userdata_body()
