@@ -15,8 +15,8 @@ DEPLOYMENT_NAME ?= docker
 MANAGER_COUNT ?= 3
 WORKER_COUNT ?= 1
 ZONE ?= europe-west1-d
-MANAGER_MACHINE_TYPE ?= g1-small
-WORKER_MACHINE_TYPE ?= g1-small
+MANAGER_MACHINE_TYPE ?= n1-standard-1
+WORKER_MACHINE_TYPE ?= n1-standard-1
 MANAGER_DISK_TYPE ?= pd-standard
 WORKER_DISK_TYPE ?= pd-standard
 MANAGER_DISK_SIZE ?= 100
@@ -26,7 +26,7 @@ DEMO_MODE ?= true
 # GCloud
 GCLOUD_IMAGE_TAG ?= sha256:fb904276e8a902ccd9564989d9222bdfbe37ffcd7f9989ca7e24b4019a9b4b6b
 GCLOUD = docker container run --rm -ti \
-	-v $(CURDIR)/templates:/templates \
+	-v $(CURDIR)/build:/build \
 	--volumes-from gcloud-config \
 	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 	gcloud
@@ -36,7 +36,7 @@ GSUTIL = docker container run --rm -ti \
 	--volumes-from gsutil-config \
 	google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 	gsutil
-FORCE_GSUTIL_AUTH ?= 1
+FORCE_GSUTIL_AUTH ?= 0
 
 define last
 $(lastword $(subst /, ,$1))
@@ -56,12 +56,12 @@ revoke:
 
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
-		--config /templates/Docker.jinja \
+		--config /build/templates/Docker.jinja \
 		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),demoMode:$(DEMO_MODE)
 
 update:
 	$(DEPLOYMENTS) update $(DEPLOYMENT_NAME) \
-		--config /templates/Docker.jinja \
+		--config /build/templates/Docker.jinja \
 		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),demoMode:$(DEMO_MODE)
 
 delete:
@@ -149,7 +149,7 @@ release-images: gcloud-auth
 	echo Release Images build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
 	docker load -i ./build/images.tar
 	for IMAGE in $(foreach DIR,$(DOCKERFILE_DIRS),$(call basename,$(call last,$(DIR)))); do \
-		docker tag $(DOCKER_REPO_OWNER)/$$IMAGE-gcp $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
+		docker tag $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(BUILD_NUMBER) $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
 		docker push $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
 	done
 
