@@ -21,6 +21,7 @@ MANAGER_DISK_TYPE ?= pd-standard
 WORKER_DISK_TYPE ?= pd-standard
 MANAGER_DISK_SIZE ?= 100
 WORKER_DISK_SIZE ?= 100
+ENABLE_SYSTEM_PRUNE ?= yes
 DEMO_MODE ?= true
 
 # GCloud
@@ -57,12 +58,12 @@ revoke:
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
 		--config /build/templates/Docker.jinja \
-		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),demoMode:$(DEMO_MODE)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),enableSystemPrune:${ENABLE_SYSTEM_PRUNE}:demoMode:$(DEMO_MODE)
 
 update:
 	$(DEPLOYMENTS) update $(DEPLOYMENT_NAME) \
 		--config /build/templates/Docker.jinja \
-		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),demoMode:$(DEMO_MODE)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),enableSystemPrune:${ENABLE_SYSTEM_PRUNE}:demoMode:$(DEMO_MODE)
 
 delete:
 	-$(GCLOUD) compute instances delete -q --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)
