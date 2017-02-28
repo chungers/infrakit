@@ -1,4 +1,3 @@
-# crontab
 42 1 * * * /usr/bin/vacuum.sh >> /var/log/docker/vacuum.log
 */5 * * * * /usr/bin/cleanup.sh >> /var/log/docker/cleanup.log
 24 * * * * /usr/bin/buoy.sh >> /var/log/docker/buoy.log

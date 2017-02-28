@@ -2,6 +2,8 @@
 
 set -e
 
+echo "Cleaning up nodes..."
+
 # this script cleans up and nodes that have been upgraded and no longer need to be in the swarm.
 if [ "$NODE_TYPE" == "worker" ] ; then
   # this doesn't run on workers, only leader

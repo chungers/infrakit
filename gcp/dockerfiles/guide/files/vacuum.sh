@@ -1,9 +1,13 @@
 #!/bin/sh
 
-[ "${RUN_VACUUM}" == "yes" ] || exit 0
+shopt -s nocasematch
+case "${RUN_VACUUM}" in
+ "True") ;;
+ *) exit 0;;
+esac
 
 DELAY=$(($RANDOM % 240))
 echo Sleep for ${DELAY}s, so that we don\'t run this at the same time on all nodes.
-[ "${SLEEP}" == "no" ] || sleep $(($RANDOM % 240))
+sleep ${DELAY}
 
 docker system prune --force

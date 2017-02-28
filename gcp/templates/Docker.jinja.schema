@@ -103,8 +103,8 @@ properties:
     description: Are workers preemptible?
 
   enableSystemPrune:
-    type: string
-    default: "yes"
+    type: boolean
+    default: True
     description: Cleans up unused images, containers, networks and volumes
 
   remoteSshOrigin:
