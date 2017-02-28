@@ -4,7 +4,7 @@ outputs:
 - name: zone
   value: europe-west1-d
 - name: ssh
-  value: "You can ssh into the Swarm with: gcloud compute ssh --zone europe-west1-d docker-manager-1"
+  value: "You can ssh into the Swarm with: gcloud compute ssh --project test-project --zone europe-west1-d docker-manager-1"
 - name: managers
   value: "You can list the Managers here: https://console.cloud.google.com/compute/instances?project=test-project&filter=name:docker-manager-*"
 - name: deployment

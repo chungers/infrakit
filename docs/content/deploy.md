@@ -27,13 +27,15 @@ to a manager will be printed. It will be something like:
 ```
 OUTPUTS     VALUE
 externalIp  130.211.77.165
-ssh         You can ssh into the Swarm with: gcloud compute ssh --zone europe-west1-d docker-manager-1
+ssh         You can ssh into the Swarm with: gcloud compute ssh --project test-project --zone europe-west1-d docker-manager-1
 zone        europe-west1-d
+managers   You can list the Managers here: https://console.cloud.google.com/compute/instances?project=test-project&filter=name:docker-manager-*
+deployment You can inspect this deployment here: https://console.cloud.google.com/deployments/details/docker?project=test-project
 ```
 
 Follow those instructions to connect to a manager node. Any manager can be used:
 
-    $ gcloud compute ssh --zone [zone] [manager-name]
+    $ gcloud compute ssh --project [project] --zone [zone] [manager-name]
     Welcome to Docker!
 
 The first time you use `gcloud compute ssh` it will create an ssh key for you
@@ -49,7 +51,7 @@ Once you are logged into the manager, you can run Docker commands on the Swarm:
 You can also tunnel the Docker socket over SSH to remotely run commands on the
 Swarm (requires [OpenSSH 6.7](https://lwn.net/Articles/609321/) or later):
 
-    $ gcloud compute ssh --zone [zone] [manager-name] -- -NL localhost:2374:/var/run/docker.sock &
+    $ gcloud compute ssh --project [project] --zone [zone] [manager-name] -- -NL localhost:2374:/var/run/docker.sock &
     $ docker -H localhost:2374 info
 
 If you don't want to pass `-H`, you can set the `DOCKER_HOST` environment
@@ -96,7 +98,7 @@ command.
 
 Connecting to the Manager:
 
-    $ gcloud compute ssh --zone [zone] [manager-name] -- -A
+    $ gcloud compute ssh --project [project] --zone [zone] [manager-name] -- -A
 
 To always have it turned on for a given host, you can edit your ssh config file
 (`/etc/ssh_config`, `~/.ssh/config`, etc) to add the `ForwardAgent yes` option,
