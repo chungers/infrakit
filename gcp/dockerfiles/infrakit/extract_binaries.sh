@@ -2,8 +2,8 @@
 
 set -ex
 
-INFRAKIT_IMAGE="infrakit/devbundle:master-1250"
-INFRAKIT_GCP_IMAGE="infrakit/gcp:master-80"
+INFRAKIT_IMAGE="infrakit/devbundle:master-1300"
+INFRAKIT_GCP_IMAGE="infrakit/gcp:master-86"
 
 mkdir -p bin
 
@@ -11,7 +11,7 @@ mkdir -p bin
 docker container rm -f infrakit-build | true
 docker container run --name=infrakit-build ${INFRAKIT_IMAGE} true
 
-BINARIES="infrakit-flavor-combo infrakit-flavor-swarm infrakit-flavor-vanilla infrakit-group-default infrakit-manager infrakit"
+BINARIES="infrakit-flavor-swarm infrakit-flavor-vanilla infrakit-group-default infrakit-manager infrakit"
 for BINARY in $BINARIES; do
   docker container cp infrakit-build:/usr/local/bin/${BINARY} bin
 done
@@ -20,7 +20,7 @@ done
 docker container rm -f infrakit-build | true
 docker container run --name=infrakit-build ${INFRAKIT_GCP_IMAGE} true
 
-BINARIES="infrakit-instance-gcp"
+BINARIES="infrakit-instance-gcp infrakit-flavor-combo"
 for BINARY in $BINARIES; do
   docker container cp infrakit-build:/usr/local/bin/${BINARY} bin
 done
