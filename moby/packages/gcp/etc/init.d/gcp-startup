@@ -1,6 +1,6 @@
 #!/sbin/openrc-run
 
-description="Run startup/shudown scripts on Docker GCP edition"
+description="Run startup/shutdown scripts on Docker GCP edition"
 
 depend()
 {
