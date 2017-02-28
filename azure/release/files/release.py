@@ -17,7 +17,7 @@ def main():
                         help="Edition version (i.e. Beta 4)")
     parser.add_argument('-s', '--vhd_sku',
                         dest='vhd_sku', required=True,
-                        help="The Azure VHD SKU (i.e. docker4azure)")
+                        help="The Azure VHD SKU (i.e. docker-ce)")
     parser.add_argument('-v', '--vhd_version',
                         dest='vhd_version', required=True,
                         help="The Azure VHD version (i.e. 1.0.0)")
@@ -31,16 +31,16 @@ def main():
                         dest='channel_ddc', default="alpha",
                         help="DDC release channel (beta, alpha, rc, nightly)")
     parser.add_argument('--offer_id',
-                        dest='offer_id', default="docker4azure",
+                        dest='offer_id', default="docker-ce",
                         help="The Azure VHD Offer ID")
     parser.add_argument('--cs_vhd_sku',
                         dest='cs_vhd_sku',
-                        help="The Azure CS VHD SKU (i.e. docker4azure)")
+                        help="The Azure CS VHD SKU (i.e. docker-ce)")
     parser.add_argument('--cs_vhd_version',
                         dest='cs_vhd_version',
                         help="The Azure CS VHD version (i.e. 1.0.0)")
     parser.add_argument('--cs_offer_id',
-                        dest='cs_offer_id',
+                        dest='cs_offer_id', default="docker-ee",
                         help="The Azure CS VHD Offer ID")
     parser.add_argument("--upload", action="store_true",
                         help="Upload the Azure template once generated")
@@ -80,11 +80,11 @@ def main():
     template_name = u"Docker.tmpl"
     base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_version, CFN_TEMPLATE, template_name)
-    cloud_template_name = u"Docker-cloud.tmpl"
+    cloud_template_name = u"Docker-Cloud.tmpl"
     cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url, cloud_template_name)
     
-    ddc_template_name = u"Docker-ddc.tmpl"
+    ddc_template_name = u"Docker-DDC.tmpl"
     ddc_url = create_rg_ddc_template(cs_vhd_sku, cs_vhd_version, cs_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url, ddc_template_name)
 
@@ -99,7 +99,7 @@ def main():
         print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
 
     # TODO: git commit, tag release. requires github keys, etc.
-    print("Don't forget to tag the code (git tag -a v{0} -m {0}; git push --tags)".format(
+    print("Don't forget to tag the code (git tag -a v{0} -m {1}; git push --tags)".format(
         edition_version, docker_for_azure_version))
     print("------------------")
 
