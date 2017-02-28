@@ -115,5 +115,4 @@ $docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5
 
 {% if ((type in ['leader']) and (properties['demoMode'])) %}
 docker service create --name demo -p 8080:8080 ehazlett/docker-demo
-docker service scale demo=2
 {% endif -%}
