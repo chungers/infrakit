@@ -77,14 +77,14 @@ def main():
     print(u"cs_vhd_version={}".format(cs_vhd_version))
 
     print("Create ARM template..")
-    template_name = u"{}/Docker.tmpl".format(docker_for_azure_version)
+    template_name = u"Docker.tmpl"
     base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_version, CFN_TEMPLATE, template_name)
-    cloud_template_name = u"{}/Docker-cloud.tmpl".format(docker_for_azure_version)
+    cloud_template_name = u"Docker-cloud.tmpl"
     cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url, cloud_template_name)
     
-    ddc_template_name = u"{}/Docker-ddc.tmpl".format(docker_for_azure_version)
+    ddc_template_name = u"Docker-ddc.tmpl"
     ddc_url = create_rg_ddc_template(cs_vhd_sku, cs_vhd_version, cs_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url, ddc_template_name)
 
@@ -99,8 +99,8 @@ def main():
         print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
 
     # TODO: git commit, tag release. requires github keys, etc.
-    print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
-        docker_version, flat_edition_version))
+    print("Don't forget to tag the code (git tag -a v{0} -m {0}; git push --tags)".format(
+        edition_version, docker_for_azure_version))
     print("------------------")
 
 

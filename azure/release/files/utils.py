@@ -111,7 +111,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     custom_data = buildCustomData('custom-data.sh')
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ')]'
 
-    outdir = u"dist/azure/{}".format(release_channel)
+    outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -184,7 +184,7 @@ def create_rg_cloud_template(release_channel, docker_version,
         }
         outputs.update(new_outputs)
     
-    outdir = u"dist/azure/{}".format(release_channel)
+    outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -368,7 +368,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
         }
         outputs.update(new_outputs)
 
-    outdir = u"dist/azure/{}".format(release_channel)
+    outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
