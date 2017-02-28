@@ -5,6 +5,7 @@ description="Run startup/shutdown scripts on Docker GCP edition"
 depend()
 {
   need net
+  need docker
 }
 
 metadata() {
@@ -13,7 +14,11 @@ metadata() {
 
 start()
 {
-  [ "$(mobyplatform)" != "gcp" ] && exit 0
+  ebegin "Pre-load docker images"
+
+  for IMAGE in /dockerimages/*.tar; do
+    docker load --input ${IMAGE}
+  done
 
   ebegin "Run startup script"
 
@@ -27,8 +32,6 @@ start()
 
 stop()
 {
-  [ "$(mobyplatform)" != "gcp" ] && exit 0
-
   ebegin "Run shutdown script"
 
   temp_file=$(mktemp)

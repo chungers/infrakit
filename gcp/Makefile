@@ -79,7 +79,9 @@ build-dir:
 build-buoy:
 	make -C ../tools/buoy build
 
-build-moby: build-dir
+build-moby: build-images
+	mkdir -p ../moby/packages/gcp/dockerimages
+	cp ./build/images.tar ../moby/packages/gcp/dockerimages/
 	make -C ../moby build/gcp/gce.img.tar.gz
 	cp ../moby/build/gcp/gce.img.tar.gz ./build
 

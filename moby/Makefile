@@ -168,7 +168,7 @@ build/azure/initrd.img: src/initrd.img azure.img
 
 gce.img:
 	@echo "+ $@"
-	tar cf - -C packages/gcp etc -C ../.. | \
+	tar cf - -C packages/gcp etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/gcp/initrd.img: src/initrd.img gce.img
@@ -180,7 +180,7 @@ build/gcp/gce.img.tar.gz: build/gcp/initrd.img
 
 clean:
 	@echo "+ $@"
-	rm -rf build src packages/aws/dockerimages/ || true
+	rm -rf build src packages/aws/dockerimages/ packages/gcp/dockerimages/ || true
 	rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz || true
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true

@@ -5,6 +5,7 @@ moby/cloud/aws/ami_id.out
 moby/cloud/azure/vhd_blob_url.out
 moby/cloud/mobylinux.vhd
 moby/packages/aws/dockerimages/
+moby/packages/gcp/dockerimages/
 
 # vendored sources -- these are synced by govendor
 vendor/*/
