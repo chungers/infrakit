@@ -107,6 +107,11 @@ properties:
     default: "yes"
     description: Cleans up unused images, containers, networks and volumes
 
+  remoteSshOrigin:
+    type: string
+    default: "0.0.0.0/0"
+    description: Traffic is only allowed from sources within these IP address ranges. Use CIDR notation when entering ranges
+
   demoMode:
     type: boolean
     default: False

@@ -17,7 +17,8 @@ print template.render({
         'workerDiskType': 'pd-standard',
         'workerDiskSize': 100,
         'preemptible': False,
-        'enableSystemPrune': 'yes'
+        'enableSystemPrune': 'yes',
+        'remoteSshOrigin': '0.0.0.0/0'
     },
     'env': {
         'project': 'test-project',
