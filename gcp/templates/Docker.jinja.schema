@@ -43,24 +43,24 @@ properties:
     default: "us-central1-f"
     description: Zone
     enum:
-    - "asia-east1-c"
-    - "asia-east1-b"
     - "asia-east1-a"
-    - "asia-northeast1-c"
-    - "asia-northeast1-b"
+    - "asia-east1-b"
+    - "asia-east1-c"
     - "asia-northeast1-a"
-    - "europe-west1-c"
+    - "asia-northeast1-b"
+    - "asia-northeast1-c"
     - "europe-west1-b"
+    - "europe-west1-c"
     - "europe-west1-d"
-    - "us-central1-b"
     - "us-central1-a"
-    - "us-central1-f"
+    - "us-central1-b"
     - "us-central1-c"
+    - "us-central1-f"
     - "us-east1-b"
     - "us-east1-c"
     - "us-east1-d"
-    - "us-west1-b"
     - "us-west1-a"
+    - "us-west1-b"
 
   managerMachineType:
     type: string
