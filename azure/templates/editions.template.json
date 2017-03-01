@@ -189,10 +189,10 @@
     "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
     "storageLocation": "[resourceGroup().location]",
     "imagePublisher": "docker",
-    "imageOffer": "docker4azure",
-    "imageSku": "docker4azure",
+    "imageOffer": "docker-ce",
+    "imageSku": "docker-ce",
     "channel": "stable",
-    "imageVersion": "1.13.1",
+    "imageVersion": "1.0.0",
     "imageReference": {
       "publisher": "[variables('imagePublisher')]",
       "offer": "[variables('imageOffer')]",
@@ -234,8 +234,6 @@
     "subnetRef": "[concat(variables('vnetID'),'/subnets/', variables('subnetName'))]",
     "managerAddressPrefix": "172.16.0.0/24",
     "subnetPrefix": "10.0.0.0/8",
-    "managerNSGName": "[concat(variables('basePrefix'), '-manager-nsg')]",
-    "managerNSGID": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('managerNSGName'))]",
     "managerVMNamePrefix": "swarm-manager",
     "vmssManagersName": "swarm-manager-vmss",
     "managerFirstAddr": 5,
@@ -312,93 +310,8 @@
     },
     {
       "apiVersion": "[variables('apiVersion')]",
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "name": "[variables('managerNSGName')]",
-      "location": "[variables('storageLocation')]",
-      "properties": {
-        "securityRules": [
-          {
-            "name": "ssh",
-            "properties": {
-              "description": "Allow SSH",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "22",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
-              "access": "Allow",
-              "priority": 201,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "swarm-listen-port",
-            "properties": {
-              "description": "Allow 'swarm join' ingress to manager node",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "2377",
-              "sourceAddressPrefix": "[variables('subnetPrefix')]",
-              "destinationAddressPrefix": "[variables('subnetPrefix')]",
-              "access": "Allow",
-              "priority": 202,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "vxlan",
-            "properties": {
-              "description": "Allow VXLan connection between nodes",
-              "protocol": "Udp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "4789",
-              "sourceAddressPrefix": "[variables('subnetPrefix')]",
-              "destinationAddressPrefix": "[variables('subnetPrefix')]",
-              "access": "Allow",
-              "priority": 203,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "gossip",
-            "properties": {
-              "description": "Serf communication to gossip between nodes",
-              "protocol": "*",
-              "sourcePortRange": "*",
-              "destinationPortRange": "7946",
-              "sourceAddressPrefix": "[variables('subnetPrefix')]",
-              "destinationAddressPrefix": "[variables('subnetPrefix')]",
-              "access": "Allow",
-              "priority": 204,
-              "direction": "Inbound"
-            }
-          },
-          {
-            "name": "diagnostics",
-            "properties": {
-              "description": "Allow communication for the diagnostics server",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "44554",
-              "sourceAddressPrefix": "[variables('subnetPrefix')]",
-              "destinationAddressPrefix": "[variables('subnetPrefix')]",
-              "access": "Allow",
-              "priority": 205,
-              "direction": "Inbound"
-            }
-          }
-        ]
-      },
-      "tags": {
-          "provider": "[toUpper(variables('DockerProviderTag'))]",
-          "channel": "[variables('channel')]"
-      }
-    },
-    {
-      "apiVersion": "[variables('apiVersion')]",
       "dependsOn": [
         "[variables('vnetID')]",
-        "[variables('managerNSGID')]",
         "[variables('lbSSHID')]",
         "storageLoop"
       ],
@@ -447,9 +360,6 @@
                       }
                     }
                   ],
-                  "networkSecurityGroup": {
-                    "id": "[variables('managerNSGID')]"
-                  },
                   "primary": true
                 }
               }
