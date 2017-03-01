@@ -325,11 +325,11 @@ fi
 
 # install and configure cloudstor plugin for Azure only if deploying Beta channel for now.
 CHANNEL_TAG=$(aztags.py channel)
-if [ "$CHANNEL_TAG" == "beta" ] ; then
-    echo " Beta channel. Install cloudstor ..."
+if [ "$CHANNEL_TAG" == "edge" ] ; then
+    echo " $CHANNEL_TAG channel. Install cloudstor ..."
     install_cloudstor_plugin
 else
-    echo " Not Beta channel. Skip cloudstor installation"
+    echo " Skip cloudstor installation"
 fi
 
 # show the results.
