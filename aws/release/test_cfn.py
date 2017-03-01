@@ -5,6 +5,7 @@ from boto import cloudformation
 import time
 import json
 from datetime import datetime
+from boto.exception import BotoServerError
 
 NOW = datetime.now()
 NOW_STRING = NOW.strftime("%m_%d_%Y")
@@ -43,17 +44,24 @@ STACK_COMPLETE_STATUSES = ['CREATE_COMPLETE', 'CREATE_FAILED',
 
 def check_stack_statuses(stacks):
     running_queue = copy.deepcopy(stacks)
-    timeout = 90  # max runtime is 45 minutes total
+    timeout = 60  # max runtime is 60 minutes total
     count = 0
     while len(running_queue) > 0:
-        print("Sleeping for 30 seconds.")
-        time.sleep(30)
+        print("Sleeping for 60 seconds.")
+        time.sleep(60)
         for key in running_queue.keys():
             region = key
             value = running_queue.get(key)
-            connection = cloudformation.connect_to_region(region)
-            stack_id = value.get('stack_id')
-            stack = connection.describe_stacks(stack_id)[0]
+            try:
+                connection = cloudformation.connect_to_region(region)
+                stack_id = value.get('stack_id')
+                stack = connection.describe_stacks(stack_id)[0]
+            except BotoServerError as error:
+                print(u"describe_stacks Error = {}".format(error))
+                # usually caused by API throttling, so add a sleep to help
+                # future calls
+                time.sleep(30)
+                continue
             status = stack.stack_status
             print(u"{}:{}".format(region, status))
             if status in STACK_COMPLETE_STATUSES:
@@ -66,19 +74,34 @@ def check_stack_statuses(stacks):
                 value['status'] = status
                 stacks[region] = value
 
-                # remove from running queue
-                running_queue.pop(region)
                 for output in stack.outputs:
                     print('%s=%s (%s)' % (output.key, output.value, output.description))
 
                 # if the stack failed, print the events to see what happened.
                 if status in ['ROLLBACK_COMPLETE', 'ROLLBACK_FAILED']:
                     print("Stack failed, print events")
-                    events = connection.describe_stack_events(stack_id)
+                    try:
+                        events = connection.describe_stack_events(stack_id)
+                    except BotoServerError as error:
+                        print(u"describe_stack_events Error = {}".format(error))
+                        # usually caused by API throttling, so add a sleep to help
+                        # future calls
+                        time.sleep(30)
+                        continue
                     for event in events:
                         print(u"  {} : {}".format(event, event.resource_status_reason))
                 print("Deleting stack..")
-                connection.delete_stack(stack_id)
+
+                try:
+                    connection.delete_stack(stack_id)
+                except BotoServerError as error:
+                    print(u"delete_stack Error = {}".format(error))
+                    # usually caused by API throttling, so add a sleep to help
+                    # future calls
+                    time.sleep(30)
+                    continue
+                # remove from running queue, only remove after it was deleted.
+                running_queue.pop(region)
 
         count += 1
         if count > timeout:
