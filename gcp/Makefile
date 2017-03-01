@@ -138,7 +138,6 @@ retrieve: retrieve-images retrieve-moby retrieve-templates
 release-moby: gcloud-auth
 	echo Release Moby build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
 	$(GSUTIL) cp ./build/gce.img.tar.gz $(MOBY_BUCKET)/$(EDITIONS_VERSION)/
-	$(GSUTIL) -m acl -r set public-read $(MOBY_BUCKET)/$(EDITIONS_VERSION)
 	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(MOBY_BUCKET)/$(EDITIONS_VERSION)
 
 release-templates: gcloud-auth
@@ -146,7 +145,6 @@ release-templates: gcloud-auth
 	$(GSUTIL) cp -r ./build/templates/* $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
 	sed -i.bak "s/VERSION = '.*'/VERSION = '$(EDITIONS_VERSION)'/" ./build/templates/Docker.jinja
 	rm -f ./build/templates/Docker.jinja.bak
-	$(GSUTIL) -m acl -r set public-read $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 
 release-images: gcloud-auth
