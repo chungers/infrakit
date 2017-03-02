@@ -4,7 +4,7 @@ set -ex
 
 echo This is a {{type}} node
 
-export DOCKER_FOR_IAAS_VERSION="gcp-v1.13.1-{{ VERSION }}"
+export DOCKER_FOR_IAAS_VERSION="gcp-{{ VERSION }}"
 export ACCOUNT_ID="$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)"
 export REGION="{{ REGION }}"
 export CHANNEL="beta"
