@@ -6,9 +6,8 @@ rm -rf build src packages/aws/dockerimages/
 mkdir -p build/aws build/azure build/gcp src packages/aws/dockerimages/
 
 docker rm moby || true
-docker create --name moby mobylinux/media:aufs-$MOBY_IMG_COMMIT ls
-docker cp moby:/initrd.img src/initrd.img.gz
-# gzip -d src/initrd.img.gz || true
+docker create --name moby mobylinux/media:$MOBY_IMG_COMMIT ls
+docker cp moby:/initrd.img src/initrd.img
 docker cp moby:/vmlinuz64 build/
 docker rm moby
 
