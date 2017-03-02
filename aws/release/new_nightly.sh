@@ -110,8 +110,14 @@ python cleanup.py
 # run s3_cleanup, remove buckets left over from DDC testing.
 python s3_cleanup.py
 
+# sleep to help with API throttle limits
+sleep 60
+
 # run tests
 python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json -f results -t oss
+
+# sleep to help with API throttle limits
+sleep 60
 python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/cloud-nightly/latest.json -f cloud_results -t cloud
 
 # Rebuild the nightly index page.

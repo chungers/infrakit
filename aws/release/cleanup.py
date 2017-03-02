@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import time
 import os
 from boto import ec2
 from boto import cloudformation
 from boto.s3.connection import S3Connection
 from datetime import datetime, timedelta
+from boto.exception import BotoServerError
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
@@ -41,6 +43,8 @@ for region in REGIONS:
             print("Still good, keep it around.")
     print("----------")
 
+# rest for 60 seconds, so we don't go over API limits
+time.sleep(60)
 print("Clean up CloudFormation Files")
 
 conn = S3Connection(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -69,19 +73,32 @@ for key in files:
         print(u"{} is {}, which is too old (< {}), remove it.".format(key.name, key.last_modified, EXPIRE_DATE))
         key.delete()
 
+# rest for 60 seconds, so we don't go over API limits
+time.sleep(60)
+
 print("Clean up any left over CFN stacks")
 for region in REGIONS:
     print(u"region={}".format(region))
     connection = cloudformation.connect_to_region(region)
-    stacks = connection.describe_stacks()
+    try:
+        stacks = connection.describe_stacks()
+    except BotoServerError as error:
+        print(u"describe_stacks Error = {}".format(error))
+        time.sleep(60)
+        continue
     for stack in stacks:
         print(stack.stack_name)
-        if stack.tags.get('channel') in ['nightly', 'ddc-nightly'] :
+        if stack.tags.get('channel') in ['nightly', 'ddc-nightly']:
             cfn_date_tag = stack.tags.get('date')
             cfn_date = datetime.strptime(image_date_tag, "%m_%d_%Y")
             if cfn_date < CFN_EXPIRE_DATE:
                 print("Too old, cleanup")
-                connection.delete_stack(stack.stack_id)
+                try:
+                    connection.delete_stack(stack.stack_id)
+                except BotoServerError as error:
+                    print(u"delete_stack Error = {}".format(error))
+                    time.sleep(60)
+                    continue
                 print("cfn stack is cleaned up")
             else:
                 print("Still good, keep it around.")
