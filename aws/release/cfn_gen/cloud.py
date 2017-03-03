@@ -38,7 +38,7 @@ class CloudVPCTemplate(AWSBaseTemplate):
             "export DOCKERCLOUD_API_KEY='", Ref("DockerCloudAPIKey"), "'\n",
             "export SWARM_NAME='", Ref("DockerCloudClusterName"), "'\n",
             "export INTERNAL_ENDPOINT='", GetAtt("ExternalLoadBalancer", "DNSName"), "'\n",
-            "export DOCKERCLOUD_REST_HOST='", Ref("SwarmSQS"), "'\n",
+            "export DOCKERCLOUD_REST_HOST='", Ref("DockerCloudRestHost"), "'\n",
         ]
         return orig_data + data
 
