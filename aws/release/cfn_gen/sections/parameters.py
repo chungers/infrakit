@@ -25,7 +25,8 @@ def add_parameter_instancetype(template):
             "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge",
             "c3.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge",
             "r4.large", "r4.xlarge", "r4.2xlarge", "r4.4xlarge", "r4.8xlarge", "r4.16xlarge",
-            "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge"
+            "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+            "i3.large", "i3.xlarge", "i3.2xlarge", "i3.4xlarge", "i3.8xlarge", "i3.16xlarge",
         ],
         ConstraintDescription='Must be a valid EC2 HVM instance type.',
     ))
@@ -45,7 +46,8 @@ def add_parameter_manager_instancetype(template):
             "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge",
             "c3.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge",
             "r4.large", "r4.xlarge", "r4.2xlarge", "r4.4xlarge", "r4.8xlarge", "r4.16xlarge",
-            "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge"
+            "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
+            "i3.large", "i3.xlarge", "i3.2xlarge", "i3.4xlarge", "i3.8xlarge", "i3.16xlarge",
         ],
         ConstraintDescription='Must be a valid EC2 HVM instance type.',
     ))
