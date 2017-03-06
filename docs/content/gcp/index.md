@@ -134,6 +134,11 @@ Pruning removes the following:
  - All dangling images
  - All unused networks
 
+#### remoteSshOrigin
+
+Traffic is only allowed from sources within these IP address ranges. Use CIDR
+notation when entering ranges. The defauls value is `0.0.0.0/0` (any).
+
 ## How it works
 
 Docker for GCP starts with a [Deployment Manager] template that will create
