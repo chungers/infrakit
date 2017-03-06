@@ -80,9 +80,10 @@ build-buoy:
 	make -C ../tools/buoy build
 
 build-moby: build-images
+	make -C ../moby clean
 	mkdir -p ../moby/packages/gcp/dockerimages
 	cp ./build/images.tar ../moby/packages/gcp/dockerimages/
-	make -C ../moby clean build/gcp/gce.img.tar.gz
+	make -C ../moby build/gcp/gce.img.tar.gz
 	cp ../moby/build/gcp/gce.img.tar.gz ./build
 
 build-templates: build-dir test
