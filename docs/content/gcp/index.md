@@ -156,6 +156,15 @@ Swarm. In order for everything to run smoothly, please keep those containers
 running, and don't make any changes. If you make any changes, Docker for GCP
 will not work correctly.
 
+## Delete a stack
+
+Deleting a stack requires two commands. First, the instances must be deleted,
+then the deployment. For example, to delete a stack named `docker`:
+
+    $ gcloud compute instances delete --delete-disks=boot $(gcloud compute instances list --filter='networkInterfaces[0].network ~ docker-network' --uri)
+    $ gcloud deployment-manager deployments delete docker
+
+
  [Google Cloud Deployment Manager V2 API]: https://console.developers.google.com/apis/api/deploymentmanager-json.googleapis.com/overview
  [Google Cloud RuntimeConfig API]: https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview
  [gcloud]: https://cloud.google.com/sdk/downloads
