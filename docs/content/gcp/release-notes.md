@@ -15,7 +15,8 @@ weight="400"
 
 ## v7
 
-+ First version opened to choosen Beta testers
++ First version opened to chosen Beta testers
++ Docker 17.03.0-ce-rc1
 
 ## v8
 
@@ -27,3 +28,4 @@ project. eg, `gcloud compute ssh --project [project] --zone [zone] [manager-name
 + Access to ssh can be restricted to a class of source addresses.
 + Improve stack scaling/upgrade.
 + Base disk images are not anymore public.
++ Docker 17.03.0-ce
