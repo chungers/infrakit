@@ -145,6 +145,7 @@ release-templates: gcloud-auth
 	$(GSUTIL) cp -r ./build/templates/* $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
 	sed -i.bak "s/VERSION = '.*'/VERSION = '$(EDITIONS_VERSION)'/" ./build/templates/Docker.jinja
 	rm -f ./build/templates/Docker.jinja.bak
+	$(GSUTIL) -m acl -r set public-read $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 
 release-images: gcloud-auth
