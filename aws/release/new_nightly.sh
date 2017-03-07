@@ -28,16 +28,22 @@ MASTER_DOCKER_VERSION=$(curl -s https://master.dockerproject.org/version)
 
 export DOCKER_BIN_URL="https://master.dockerproject.org/linux/amd64/docker-$MASTER_DOCKER_VERSION.tgz"
 
-cd $BUILD_HOME/code/moby/alpine
-git checkout master
+# git update
+cd $BUILD_HOME/code/editions/
 git pull
-git clean -f -d
+
+# get docker version
+export DOCKER_VERSION=$MASTER_DOCKER_VERSION
+export EDITION_VERSION=nightly_$DAY
+export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
+export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
+export RELEASE=1
 
 make clean
-make ami-clean-mount
-make ami DOCKER_BIN_URL=$DOCKER_BIN_URL
-make ami-clean-mount
-mv -f ./cloud/aws/ami_id.out $AMI_OUT_DIR/$AMI_OUT_FILE
+make moby clean
+make moby/cloud/aws/ami_id.out
+
+mv -f moby/cloud/aws/ami_id.out $AMI_OUT_DIR/$AMI_OUT_FILE
 
 echo "Finished AMI build, lets move onto next part."
 
@@ -68,16 +74,6 @@ echo $AMI_ID
 AMI_SOURCE_REGION=us-east-1
 DOCKER_AWS_ACCOUNT_URL=https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt
 
-# git update
-cd $BUILD_HOME/code/editions/
-git pull
-
-# get docker version
-export DOCKER_VERSION=$MASTER_DOCKER_VERSION
-export EDITION_VERSION=nightly_$DAY
-export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
-export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
-export RELEASE=1
 
 # build binaries
 cd $BUILD_HOME/code/editions/tools/buoy/

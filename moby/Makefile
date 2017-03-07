@@ -20,7 +20,9 @@ AMI_OUT=ami_id.out
 endif
 
 
-all: src/initrd.img
+all: 
+	@echo "+ $@"
+	src/initrd.img
 
 # interactive versions need to use volume mounts
 boot-qemu:
