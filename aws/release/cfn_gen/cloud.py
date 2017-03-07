@@ -28,6 +28,7 @@ class CloudVPCTemplate(AWSBaseTemplate):
         self.add_cloud_username()
         self.add_cloud_apikey()
         self.add_cloud_rest_host()
+        self.add_cloud_id_host()
 
     def manager_userdata_head(self):
         """ The Head of the userdata script, this is where
@@ -39,6 +40,7 @@ class CloudVPCTemplate(AWSBaseTemplate):
             "export SWARM_NAME='", Ref("DockerCloudClusterName"), "'\n",
             "export INTERNAL_ENDPOINT='", GetAtt("ExternalLoadBalancer", "DNSName"), "'\n",
             "export DOCKERCLOUD_REST_HOST='", Ref("DockerCloudRestHost"), "'\n",
+            "export DOCKERCLOUD_ID_HOST='", Ref("DockerCloudIDHost"), "'\n",
         ]
         return orig_data + data
 
@@ -142,6 +144,15 @@ class CloudVPCTemplate(AWSBaseTemplate):
             Default="https://cloud.docker.com"
         ))
         self.add_to_parameters(('DockerCloudRestHost', {"default": "Docker Cloud environment?"}))
+
+    def add_cloud_id_host(self):
+        self.template.add_parameter(Parameter(
+            "DockerCloudIDHost",
+            Description="ID service environment",
+            Type='String',
+            Default="https://id.docker.com"
+        ))
+        self.add_to_parameters(('DockerCloudIDHost', {"default": "ID service environment?"}))
 
 
 class CloudVPCExistingTemplate(CloudVPCTemplate, ExistingVPCTemplate):

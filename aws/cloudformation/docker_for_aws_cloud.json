@@ -1358,7 +1358,7 @@
                                 "docker run --label com.docker.editions.system --log-driver=json-file --name=l4controller-aws --restart=always -d -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker/swarm:/var/lib/docker/swarm docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n",
                                 "IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')\n",
                                 "if [ \"$IS_LEADER\" == \"true\" ]; then\n",
-                                "  docker run --label com.docker.editions.system --log-driver=json-file --name=cloud-aws --rm --name=cloud_registration -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_USER=$DOCKERCLOUD_USER -e DOCKER_PASS=$DOCKERCLOUD_API_KEY -e SWARM_NAME=$SWARM_NAME -e INTERNAL_ENDPOINT=$INTERNAL_ENDPOINT -e DOCKERCLOUD_REST_HOST=$DOCKERCLOUD_REST_HOST docker4x/cloud-aws:$DOCKER_FOR_IAAS_VERSION\n",
+                                "  docker run --label com.docker.editions.system --log-driver=json-file --name=cloud-aws --rm --name=cloud_registration -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_USER=$DOCKERCLOUD_USER -e DOCKER_PASS=$DOCKERCLOUD_API_KEY -e SWARM_NAME=$SWARM_NAME -e INTERNAL_ENDPOINT=$INTERNAL_ENDPOINT -e DOCKERCLOUD_REST_HOST=$DOCKERCLOUD_REST_HOST -e DOCKERCLOUD_ID_HOST=$DOCKERCLOUD_ID_HOST docker4x/cloud-aws:$DOCKER_FOR_IAAS_VERSION\n",
                                 "fi\n"
                             ]
                         ]
