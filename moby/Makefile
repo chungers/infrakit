@@ -22,7 +22,7 @@ endif
 
 all: 
 	@echo "+ $@"
-	src/initrd.img
+	$(MAKE) src/initrd.img
 
 # interactive versions need to use volume mounts
 boot-qemu:
