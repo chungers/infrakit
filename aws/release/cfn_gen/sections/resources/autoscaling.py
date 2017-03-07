@@ -37,7 +37,7 @@ def add_resource_worker_upgrade_hook(template):
             "AutoScalingGroupName": { "Ref": "NodeAsg" },
             "LifecycleTransition": "autoscaling:EC2_INSTANCE_TERMINATING",
             "NotificationTargetARN": { "Fn::GetAtt": [ "SwarmSQS", "Arn" ] },
-            "RoleARN": { "Fn::GetAtt": [ "ProxyRole", "Arn" ] }
+            "RoleARN": { "Fn::GetAtt": [ "WorkerRole", "Arn" ] }
         }
     },
     """
@@ -47,7 +47,7 @@ def add_resource_worker_upgrade_hook(template):
         AutoScalingGroupName=Ref("NodeAsg"),
         LifecycleTransition="autoscaling:EC2_INSTANCE_TERMINATING",
         NotificationTargetARN=GetAtt("SwarmSQS", "Arn"),
-        RoleARN=GetAtt("ProxyRole", "Arn")
+        RoleARN=GetAtt("WorkerRole", "Arn")
     ))
 
 
@@ -270,8 +270,7 @@ def add_resource_worker_autoscalegroup(template, launch_config_name):
     ))
 
 
-def add_resource_manager_launch_config(
-    template, user_data, launch_config_name="ManagerLaunchConfig"):
+def add_resource_manager_launch_config(template, user_data, launch_config_name="ManagerLaunchConfig"):
     """
     "ManagerLaunchConfigBeta3": {
         "DependsOn": "ExternalLoadBalancer",
@@ -434,7 +433,7 @@ def add_resource_worker_launch_config(template, user_data, launch_config_name="N
                     "VolumeType" : { "Ref" : "WorkerDiskType" }
                 }
              }],
-            "IamInstanceProfile" : { "Ref" : "ProxyInstanceProfile" },
+            "IamInstanceProfile" : { "Ref" : "WorkerInstanceProfile" },
             "KeyName": {
                 "Ref": "KeyName"
             },
@@ -544,5 +543,5 @@ def add_resource_worker_launch_config(template, user_data, launch_config_name="N
         SecurityGroups=[Ref("NodeVpcSG")],
         InstanceType=Ref("InstanceType"),
         AssociatePublicIpAddress=True,
-        IamInstanceProfile=Ref("ProxyInstanceProfile"),
+        IamInstanceProfile=Ref("WorkerInstanceProfile"),
     ))

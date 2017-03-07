@@ -198,6 +198,12 @@ class AWSBaseTemplate(object):
         resources.add_resource_iam_elb_policy(self.template)
         resources.add_resource_iam_instance_profile(self.template)
 
+        # worker
+        resources.add_resource_worker_iam_role(self.template)
+        resources.add_resource_iam_worker_dyn_policy(self.template)
+        resources.add_resource_iam_log_policy(self.template)
+        resources.add_resource_iam_worker_instance_profile(self.template)
+
     def security_groups(self):
         # security groups
         resources.add_resource_swarm_wide_security_group(self.template, self.create_vpc)
