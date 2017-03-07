@@ -28,7 +28,8 @@ class CloudVPCTemplate(AWSBaseTemplate):
         self.add_cloud_username()
         self.add_cloud_apikey()
         self.add_cloud_rest_host()
-        self.add_cloud_id_host()
+        self.add_id_jwt_url()
+        self.add_id_jwk_url()
 
     def manager_userdata_head(self):
         """ The Head of the userdata script, this is where
@@ -40,7 +41,8 @@ class CloudVPCTemplate(AWSBaseTemplate):
             "export SWARM_NAME='", Ref("DockerCloudClusterName"), "'\n",
             "export INTERNAL_ENDPOINT='", GetAtt("ExternalLoadBalancer", "DNSName"), "'\n",
             "export DOCKERCLOUD_REST_HOST='", Ref("DockerCloudRestHost"), "'\n",
-            "export DOCKERCLOUD_ID_HOST='", Ref("DockerCloudIDHost"), "'\n",
+            "export JWT_URL='", Ref("DockerIDJWTURL"), "'\n",
+            "export JWK_URL='", Ref("DockerIDJWKURL"), "'\n",
         ]
         return orig_data + data
 
@@ -100,8 +102,8 @@ class CloudVPCTemplate(AWSBaseTemplate):
         parameter_groups = super(CloudVPCTemplate, self).parameter_groups()
         parameter_groups.append(
             {"Label": {"default": "Docker Cloud registration (optional)"},
-             "Parameters": ["DockerCloudClusterName", "DockerCloudUsername",
-                            "DockerCloudAPIKey", "DockerCloudRestHost"]}
+             "Parameters": ["DockerCloudClusterName", "DockerCloudUsername", "DockerCloudAPIKey",
+                            "DockerCloudRestHost", "DockerIDJWTURL", "DockerIDJWKURL"]}
         )
         return parameter_groups
 
@@ -145,14 +147,23 @@ class CloudVPCTemplate(AWSBaseTemplate):
         ))
         self.add_to_parameters(('DockerCloudRestHost', {"default": "Docker Cloud environment?"}))
 
-    def add_cloud_id_host(self):
+    def add_id_jwt_url(self):
         self.template.add_parameter(Parameter(
-            "DockerCloudIDHost",
-            Description="ID service environment",
+            "DockerIDJWTURL",
+            Description="ID JWT token service URL",
             Type='String',
-            Default="https://id.docker.com"
+            Default="https://id.docker.com/api/id/v1/authz/token"
         ))
-        self.add_to_parameters(('DockerCloudIDHost', {"default": "ID service environment?"}))
+        self.add_to_parameters(('DockerIDJWTURL', {"default": "ID service token URL?"}))
+
+    def add_id_jwk_url(self):
+        self.template.add_parameter(Parameter(
+            "DockerIDJWKURL",
+            Description="ID JWK certificate URL",
+            Type='String',
+            Default="https://id.docker.com/api/id/v1/authz/certs"
+        ))
+        self.add_to_parameters(('DockerIDJWKURL', {"default": "ID service certificate URL?"}))
 
 
 class CloudVPCExistingTemplate(CloudVPCTemplate, ExistingVPCTemplate):
