@@ -48,6 +48,7 @@ endif
 
 ami:
 	@echo "+ $@"
+	$(MAKE) ami-clean-mount
 	$(MAKE) build/aws/initrd.img
 	tar cf - \
 	  cloud -C build/aws/ initrd.img -C ../ vmlinuz64 \
