@@ -161,6 +161,27 @@ def create_rg_cloud_template(release_channel, docker_version,
                 "metadata": {
                     "description": "Docker ID API key to use during registration"
                 }
+            },
+            "DockerCloudRestHost" : {
+                "type": "string",
+                "defaultValue": "https://cloud.docker.com",
+                "metadata": {
+                    "description": "Docker Cloud environment"
+                }
+            },
+            "DockerIDJWTURL" : {
+                "type": "string",
+                "defaultValue": "https://id.docker.com/api/id/v1/authz/token",
+                "metadata": {
+                    "description": "ID JWT token service URL"
+                }
+            },
+            "DockerIDJWKURL" : {
+                "type": "string",
+                "defaultValue": "https://id.docker.com/api/id/v1/authz/certs",
+                "metadata": {
+                    "description": "ID JWK certificate URL"
+                }
             }
         }
         parameters.update(new_parameters)
@@ -171,6 +192,9 @@ def create_rg_cloud_template(release_channel, docker_version,
             "dockerCloudClusterName" : "[parameters('DockerCloudClusterName')]",
             "dockerCloudUsername" : "[parameters('DockerCloudUsername')]",
             "dockerCloudAPIKey" : "[parameters('DockerCloudAPIKey')]",
+            "dockerCloudRestHost": "[parameters('DockerCloudRestHost')]",
+            "dockerIDJWTURL": "[parameters('DockerIDJWTURL')]",
+            "dockerIDJWKURL": "[parameters('DockerIDJWKURL')]",
         }
         variables.update(new_variables)
 

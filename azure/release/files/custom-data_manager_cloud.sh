@@ -18,7 +18,10 @@ export VMSS_WRK="dockerswarm-worker-vmss"
 export SWARM_NAME="variables('dockerCloudClusterName')"
 export CLOUD_USER="variables('dockerCloudUsername')"
 export CLOUD_KEY="variables('dockerCloudAPIKey')"
- 
+export CLOUD_REST_HOST="variables('dockerCloudRestHost')"
+export ID_JWT_URL="variables('dockerIDJWTURL')"
+export ID_JWK_URL="variables('dockerIDJWKURL')"
+
 # create daemon config with custom tag
 echo "{\"log-driver\": \"syslog\",\"log-opts\": {\"syslog-address\": \"udp://localhost:514\", \"tag\": \"{{.Name}}-{{.ID}}\" }}" > /etc/docker/daemon.json
 service docker restart
@@ -41,5 +44,5 @@ docker run -d -v /var/run/docker.sock:/var/run/docker.sock  -v /var/lib/docker/s
 # cloud registration container
 export IS_LEADER=$(docker node inspect self -f "{{ .ManagerStatus.Leader }}") 
 if [ "$IS_LEADER" == "true" ]; then
-docker run --rm --name=cloud_registration -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_USER="$CLOUD_USER" -e DOCKER_PASS="$CLOUD_KEY" -e SWARM_NAME="$SWARM_NAME" -e INTERNAL_ENDPOINT="$LB_SSH_IP" docker4x/cloud-azure:$DOCKER_FOR_IAAS_VERSION
+docker run --rm --name=cloud_registration -v /var/run/docker.sock:/var/run/docker.sock -e DOCKER_USER="$CLOUD_USER" -e DOCKER_PASS="$CLOUD_KEY" -e SWARM_NAME="$SWARM_NAME" -e INTERNAL_ENDPOINT="$LB_SSH_IP" -e DOCKERCLOUD_REST_HOST="$CLOUD_REST_HOST" -e JWT_URL="$ID_JWT_URL" -e JWK_URL="$ID_JWK_URL" docker4x/cloud-azure:$DOCKER_FOR_IAAS_VERSION
 fi
