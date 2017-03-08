@@ -24,8 +24,7 @@ No, at this time we only support the default Docker Disk Image.
 
 ## Where do I report problems or bugs?
 
-Send an email to <docker-for-iaas@docker.com> or post to the [Docker for GCP]
-forums.
+Send an email to <docker-for-iaas@docker.com> or post to the #docker-for-gcp channel in the [Docker Community Slack](dockr.ly/2geAjfo).
 
 If your stack is misbehaving, please run the following diagnostic tool from one
 of the managers - this will collect your docker logs and send them to Docker:
@@ -55,5 +54,3 @@ are prefixed with `stack-`. Each stack must have a unique name in the project.
 It is not recommended to do that in production though. A bug in Docker for GCP
 would allow one stack to delete instances of another stack for example. The only
 way to securely isolate two stacks is to create them in two different projects.
-
- [Docker for GCP] https://forums.docker.com/c/docker-for-gcp

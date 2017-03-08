@@ -25,7 +25,7 @@ _not_ currently supported.
 
 Here is an example that changes the number of workers to `5`:
 
-    $ gcloud deployment-manager deployments update docker \
+    $ gcloud deployment-manager deployments update <deployment-name> \
         --config https://docker-for-gcp-templates.storage.googleapis.com/v3/Docker.jinja \
         --properties managerCount:3,workerCount:5
 

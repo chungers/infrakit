@@ -38,7 +38,7 @@ machine.
 Open your browser, connect to the [GCP Console], start [Google Cloud Shell] and
 type this command with property values suited to your needs. For example:
 
-    $ gcloud deployment-manager deployments create docker \
+    $ gcloud deployment-manager deployments create docker-deployment \
         --config https://docker-for-gcp-templates.storage.googleapis.com/v8/Docker.jinja \
         --properties managerCount:3,workerCount:1
 
@@ -48,7 +48,7 @@ If you prefer to not use [Google Cloud Shell], you will need to install
 [gcloud], then run those commands:
 
     $ gcloud init --skip-diagnostics
-    $ gcloud deployment-manager deployments create docker \
+    $ gcloud deployment-manager deployments create docker-deployment \
         --config https://docker-for-gcp-templates.storage.googleapis.com/v8/Docker.jinja \
         --properties managerCount:3,workerCount:1
 
@@ -103,11 +103,11 @@ If you're testing, `g1-small` instances are fine.
 
 #### managerDiskSize
 
-The size of the Manager boot disks in Mb. The default value is `100`.
+The size of the Manager boot disks in Gb. The default value is `100`.
 
 #### workerDiskSize
 
-The size of the Worker boot disks in Mb. The default value is `100`.
+The size of the Worker boot disks in Gb. The default value is `100`.
 
 #### managerDiskType
 

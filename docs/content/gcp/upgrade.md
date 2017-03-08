@@ -49,7 +49,7 @@ template URL for the new release. This will initiate a rolling upgrade of the
 Docker Swarm, and service state will be maintained during and after the upgrade.
 Appropriately scaled services should not experience downtime during an upgrade.
 
-    $ gcloud deployment-manager deployments update docker \
+    $ gcloud deployment-manager deployments update <deployment-name> \
         --config https://docker-for-gcp-templates.storage.googleapis.com/v[NEW-VERSION]/Docker.jinja \
         --properties managerCount:3,workerCount:5
 
@@ -68,5 +68,5 @@ also change template parameters such as worker count and instance type.
 Changing manager count is **not** supported.
 
  [https://beta.docker.com/]: https://beta.docker.com/
- [Release Notes]: https://beta.docker.com/docs/aws/release-notes/
+ [Release Notes]: https://beta.docker.com/docs/gcp/release-notes/
  [gcloud]: https://cloud.google.com/sdk/downloads

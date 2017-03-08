@@ -45,20 +45,27 @@ also connect to an instance [via the cloud console] or via a
 
 Once you are logged into the manager, you can run Docker commands on the Swarm:
 
-    $ docker info
-    $ docker node ls
+```
+$ docker info
+$ docker node ls
+```
 
 You can also tunnel the Docker socket over SSH to remotely run commands on the
 Swarm (requires [OpenSSH 6.7](https://lwn.net/Articles/609321/) or later):
 
-    $ gcloud compute ssh --project [project] --zone [zone] [manager-name] -- -NL localhost:2374:/var/run/docker.sock &
-    $ docker -H localhost:2374 info
+```
+$ gcloud compute ssh --project [project] --zone [zone] [manager-name] -- -NL localhost:2374:/var/run/docker.sock &
+$ docker -H localhost:2374 info
+```
+> **Note**: Tunneling is currently unavailable in windows
 
 If you don't want to pass `-H`, you can set the `DOCKER_HOST` environment
 variable to point to the localhost tunnel opening.
 
-    $ export DOCKER_HOST=localhost:2374
-    $ docker info
+```
+$ export DOCKER_HOST=localhost:2374
+$ docker info
+```
 
 ### Worker nodes
 
@@ -105,18 +112,22 @@ To always have it turned on for a given host, you can edit your ssh config file
 
 Example configuration:
 
-    Host manager1
-      HostName <manager ip>
-      ForwardAgent yes
+```
+Host manager1
+  HostName <manager ip>
+  ForwardAgent yes
+```
 
 List the Workers:
 
-    $ docker node ls
-    ID                           HOSTNAME              STATUS  AVAILABILITY  MANAGER STATUS
-    2mjdd36swxfhocjbnei0pdud2    docker-manager-2      Ready   Active        Reachable
-    4rn84y60tkmo5dzcr6gnfyqw0    docker-worker-2pctu9  Ready   Active
-    c7y3q8vu9hmiozmgge8pgwi4u *  docker-manager-1      Ready   Active        Leader
-    spmc1yztini60svam0qda31hd    docker-manager-3      Ready   Active        Reachable
+```
+$ docker node ls
+ID                           HOSTNAME              STATUS  AVAILABILITY  MANAGER STATUS
+2mjdd36swxfhocjbnei0pdud2    docker-manager-2      Ready   Active        Reachable
+4rn84y60tkmo5dzcr6gnfyqw0    docker-worker-2pctu9  Ready   Active
+c7y3q8vu9hmiozmgge8pgwi4u *  docker-manager-1      Ready   Active        Leader
+spmc1yztini60svam0qda31hd    docker-manager-3      Ready   Active        Reachable
+```
 
 Connecting to a Worker:
 
@@ -182,10 +193,12 @@ authenticated and have access to the private repo, then create the service with
 the `--with-registry-auth` flag (the example below assumes you're using Docker
 Hub):
 
-    $  docker login
-    ...
-    $  docker service create --with-registry-auth user/private-repo
-    ...
+```
+$  docker login
+...
+$  docker service create --with-registry-auth user/private-repo
+...
+```
 
 This will cause swarm to cache and use the cached registry credentials when
 creating containers for the service.
