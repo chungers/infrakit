@@ -15,4 +15,4 @@ weight="120"
 
 ## I have a suggestion where do I send it?
 
-Send an email to <docker-for-iaas@docker.com> or join the public discussions by signing up for [Docker Community Slack](dockr.ly/2geAjfo) and joining the #docker-for-gcp channel.
+Send an email to <docker-for-iaas@docker.com> or join the public discussions by signing up for [Docker Community Slack](https://dockr.ly/2geAjfo) and joining the #docker-for-gcp channel.

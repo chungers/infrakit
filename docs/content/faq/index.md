@@ -24,7 +24,7 @@ No, at this time we only support the default Docker Disk Image.
 
 ## Where do I report problems or bugs?
 
-Send an email to <docker-for-iaas@docker.com> or post to the #docker-for-gcp channel in the [Docker Community Slack](dockr.ly/2geAjfo).
+Send an email to <docker-for-iaas@docker.com> or post to the #docker-for-gcp channel in the [Docker Community Slack](https://dockr.ly/2geAjfo).
 
 If your stack is misbehaving, please run the following diagnostic tool from one
 of the managers - this will collect your docker logs and send them to Docker:

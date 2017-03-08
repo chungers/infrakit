@@ -33,4 +33,4 @@ For more details, check out the rest of the documentation:
 ## Getting help
 
 Reach out to <docker-for-iaas@docker.com> with questions, comments and feedback.
-Public discussions are available by signing up for the [Docker Community Slack](dockr.ly/2geAjfo) and joining the #docker-for-gcp channel.
+Public discussions are available by signing up for the [Docker Community Slack](https://dockr.ly/2geAjfo) and joining the #docker-for-gcp channel.
