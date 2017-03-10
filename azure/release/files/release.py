@@ -112,15 +112,16 @@ def main():
                                  platform_config['PORTAL_ENDPOINT'],
                                  ddc_template_name)
 
-    print("------------------")
-    print(u"Finshed.. \n")
+        print("------------------")
 
-    if args.upload:
-        print(u"Uploading templates.. \n")
-        s3_url = upload_rg_template(release_channel, template_name, base_url)
-        s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
-        s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
-        print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
+        if args.upload:
+            print(u"Uploading templates.. \n")
+            s3_url = upload_rg_template(release_channel, template_name, base_url)
+            s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
+            s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
+            print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
+
+    print(u"Finshed.. \n")
 
     # TODO: git commit, tag release. requires github keys, etc.
     print("Don't forget to tag the code (git tag -a v{0} -m {1}; git push --tags)".format(

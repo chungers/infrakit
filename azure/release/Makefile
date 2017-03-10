@@ -3,13 +3,13 @@
 default: release
 
 build:
-	mkdir -p tmp/ || true 
+	mkdir -p tmp/ || true
 	mkdir -p ../../dist/ || true
 	cp ../templates/editions.template.json tmp/editions.template
 	docker build -t azure-release .
 
 template: build
-	docker run -ti --rm -u $(shell id -u) -v $(PWD)/dist:/home/docker/dist/ azure-release --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)" --channel_ddc="$(CHANNEL_DDC)" --cs_vhd_sku="$(CS_VHD_SKU)" --cs_vhd_version="$(CS_VHD_VERSION)" --cs_offer_id="$(CS_OFFER_ID)"
+	docker run -ti --rm -u $(shell id -u) -v $(PWD)/dist:/home/docker/dist/ azure-release --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --offer_id="$(VHD_OFFER_ID)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)" --channel_ddc="$(CHANNEL_DDC)" --cs_vhd_sku="$(CS_VHD_SKU)" --cs_vhd_version="$(CS_VHD_VERSION)" --cs_offer_id="$(CS_OFFER_ID)"
 
 release: clean build
 	docker run -ti --rm -u $(shell id -u) -v $(PWD)/dist:/home/docker/dist/ -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY azure-release --upload --docker_version="$(EDITIONS_DOCKER_VERSION)" --edition_version="$(EDITIONS_VERSION)" --vhd_sku="$(VHD_SKU)" --vhd_version="$(VHD_VERSION)" --channel="$(CHANNEL)" --channel_cloud="$(CHANNEL_CLOUD)" --channel_ddc="$(CHANNEL_DDC)" --cs_vhd_sku="$(CS_VHD_SKU)" --cs_vhd_version="$(CS_VHD_VERSION)"  --cs_offer_id="$(CS_OFFER_ID)"
