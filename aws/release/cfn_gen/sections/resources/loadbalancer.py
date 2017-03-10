@@ -1,5 +1,6 @@
 from troposphere import Ref, If, Join
-from troposphere.elasticloadbalancing import LoadBalancer, HealthCheck, ConnectionSettings, Listener
+from troposphere.elasticloadbalancing import (
+    LoadBalancer, HealthCheck, ConnectionSettings, Listener)
 
 
 def add_resource_external_lb(template, create_vpc):
@@ -64,7 +65,8 @@ def add_resource_external_lb(template, create_vpc):
         ConnectionSettings=ConnectionSettings(IdleTimeout=600),
         Subnets=If("HasOnly2AZs",
                    [Ref("PubSubnetAz1"), Ref("PubSubnetAz2")],
-                   [Ref("PubSubnetAz1"), Ref("PubSubnetAz2"), Ref("PubSubnetAz3")]),
+                   [Ref("PubSubnetAz1"), Ref("PubSubnetAz2"),
+                    Ref("PubSubnetAz3")]),
         HealthCheck=HealthCheck(
             Target="HTTP:44554/",
             HealthyThreshold="2",
@@ -81,7 +83,6 @@ def add_resource_external_lb(template, create_vpc):
         ],
         CrossZone=True,
         SecurityGroups=[Ref("ExternalLoadBalancerSG")],
-        LoadBalancerName=Join("-", [Ref("AWS::StackName"), "ELB"]),
         Tags=[
             {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "ELB"])}
         ]
