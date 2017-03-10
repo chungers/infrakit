@@ -238,6 +238,7 @@
     "vmssManagersName": "swarm-manager-vmss",
     "managerFirstAddr": 5,
     "storageAccountSuffix": "docker",
+    "storageAccountDNSSuffix": "",
     "vhdContainerName": "dockervhd",
     "uniqueStringArray": [
       "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'), '0')))]",
@@ -249,6 +250,7 @@
     "swarmInfoStorageAccount": "[concat(variables('uniqueStringArray')[0], variables('storageAccountSuffix'))]",
     "swarmInfoTable": "swarminfo",
     "swarmLogsStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'logs')]",
+    "portalFQDN": "",
     "customData": ""
   },
   "resources": [
@@ -331,7 +333,7 @@
           "diagnosticsProfile": {
             "bootDiagnostics": {
               "enabled": true,
-              "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
+              "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'))]"
             }
           },
           "networkProfile": {
@@ -388,7 +390,7 @@
               "createOption": "FromImage",
               "name": "[concat(variables('managerVMNamePrefix'), 'vmssosdisk')]",
               "vhdContainers": [
-                "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
+                "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'), '/', variables('vhdContainerName'))]"
               ]
             }
           }
@@ -435,11 +437,11 @@
             "imageReference": "[variables('imageReference')]",
             "osDisk": {
               "vhdContainers": [
-                "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
-                "[concat('https://', variables('uniqueStringArray')[1], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
-                "[concat('https://', variables('uniqueStringArray')[2], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
-                "[concat('https://', variables('uniqueStringArray')[3], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]",
-                "[concat('https://', variables('uniqueStringArray')[4], variables('storageAccountSuffix'), '.blob.core.windows.net/', variables('vhdContainerName'))]"
+                "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'), '/', variables('vhdContainerName'))]",
+                "[concat('https://', variables('uniqueStringArray')[1], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'), '/', variables('vhdContainerName'))]",
+                "[concat('https://', variables('uniqueStringArray')[2], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'), '/', variables('vhdContainerName'))]",
+                "[concat('https://', variables('uniqueStringArray')[3], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'), '/', variables('vhdContainerName'))]",
+                "[concat('https://', variables('uniqueStringArray')[4], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'), '/', variables('vhdContainerName'))]"
               ],
               "name": "[concat(variables('workerVMNamePrefix'), 'vmssosdisk', 0)]",
               "caching": "ReadWrite",
@@ -491,7 +493,7 @@
           "diagnosticsProfile": {
             "bootDiagnostics": {
               "enabled": true,
-              "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), '.blob.core.windows.net')]"
+              "storageUri": "[concat('https://', variables('uniqueStringArray')[0], variables('storageAccountSuffix'), variables('storageAccountDNSSuffix'))]"
             }
           }
         }
@@ -631,7 +633,7 @@
     },
     "SSH Targets": {
       "type": "string",
-      "value": "[concat('https://portal.azure.com/#resource/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('lbSSHName'), '/inboundNatRules')]"
+      "value": "[concat('https://', variables('portalFQDN'), '/#resource/subscriptions/', subscription().subscriptionId, '/resourceGroups/', resourceGroup().name, '/providers/Microsoft.Network/loadBalancers/', variables('lbSSHName'), '/inboundNatRules')]"
     }
   }
 }

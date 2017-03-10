@@ -7,6 +7,20 @@ from utils import (create_rg_template, create_rg_cloud_template, create_rg_ddc_t
 
 CFN_TEMPLATE = '/home/docker/editions.template'
 
+TEMPLATE_EXTENSION = u".tmpl"
+AZURE_PLATFORMS = {
+    "PUBLIC" : {
+        "STORAGE_ENDPOINT" : u".blob.core.windows.net",
+        "PORTAL_ENDPOINT"  : u"portal.azure.com",
+        "TEMPLATE_SUFFIX"  : ""
+    },
+    "GOV" : {
+        "STORAGE_ENDPOINT" : u".blob.core.usgovcloudapi.net",
+        "PORTAL_ENDPOINT"  : u"portal.azure.us",
+        "TEMPLATE_SUFFIX"  : u"-gov"
+    }
+}
+
 def main():
     parser = argparse.ArgumentParser(description='Release Docker for AWS')
     parser.add_argument('-d', '--docker_version',
@@ -76,27 +90,38 @@ def main():
     print(u"cs_vhd_sku={}".format(cs_vhd_sku))
     print(u"cs_vhd_version={}".format(cs_vhd_version))
 
-    print("Create ARM template..")
-    template_name = u"Docker.tmpl"
-    base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                                 docker_for_azure_version, edition_version, CFN_TEMPLATE, template_name)
-    cloud_template_name = u"Docker-Cloud.tmpl"
-    cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
-                                 docker_for_azure_version, edition_version, base_url, cloud_template_name)
-    
-    ddc_template_name = u"Docker-DDC.tmpl"
-    ddc_url = create_rg_ddc_template(cs_vhd_sku, cs_vhd_version, cs_offer_id, release_ddc_channel, docker_version,
-                                 docker_for_azure_version, edition_version, base_url, ddc_template_name)
+    print("Create ARM templates..")
+    for platform, platform_config in AZURE_PLATFORMS.items():
+        template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
+                                 docker_for_azure_version, edition_version, CFN_TEMPLATE,
+                                 platform_config['STORAGE_ENDPOINT'],
+                                 platform_config['PORTAL_ENDPOINT'],
+                                 template_name)
+        cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
+                                 docker_for_azure_version, edition_version, base_url,
+                                 platform_config['STORAGE_ENDPOINT'],
+                                 platform_config['PORTAL_ENDPOINT'],
+                                 cloud_template_name)
 
-    print("------------------")
+        ddc_template_name = u"Docker-DDC" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        ddc_url = create_rg_ddc_template(cs_vhd_sku, cs_vhd_version, cs_offer_id, release_ddc_channel, docker_version,
+                                 docker_for_azure_version, edition_version, base_url,
+                                 platform_config['STORAGE_ENDPOINT'],
+                                 platform_config['PORTAL_ENDPOINT'],
+                                 ddc_template_name)
+
+        print("------------------")
+
+        if args.upload:
+            print(u"Uploading templates.. \n")
+            s3_url = upload_rg_template(release_channel, template_name, base_url)
+            s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
+            s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
+            print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
+
     print(u"Finshed.. \n")
-    
-    if args.upload:
-        print(u"Uploading templates.. \n")
-        s3_url = upload_rg_template(release_channel, template_name, base_url)
-        s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
-        s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
-        print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
 
     # TODO: git commit, tag release. requires github keys, etc.
     print("Don't forget to tag the code (git tag -a v{0} -m {1}; git push --tags)".format(
