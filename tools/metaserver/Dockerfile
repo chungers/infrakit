@@ -1,5 +1,6 @@
-FROM golang:1.7
+FROM golang:1.7-alpine
 
+RUN apk add --update bash git
 RUN go get github.com/docker/docker/client
 RUN go get github.com/aws/aws-sdk-go
 RUN go get github.com/docker/docker/api/types
