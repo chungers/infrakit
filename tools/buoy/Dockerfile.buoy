@@ -1,5 +1,6 @@
-FROM golang:1.7
+FROM golang:1.7-alpine
 
+RUN apk add --update git bash
 RUN go get github.com/segmentio/analytics-go
 
 ENV USER root

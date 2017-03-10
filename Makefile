@@ -106,6 +106,7 @@ clean:
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C moby clean
+	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
 	rm -f $(AZURE_TARGET_PATH)/*.tar
 	rm -f moby/cloud/azure/vhd_blob_url.out
