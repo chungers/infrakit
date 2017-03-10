@@ -42,7 +42,7 @@ def buildCustomData(data_file):
   return customData
 
 def upload_rg_template(release_channel, arm_template_name, tempfile, cfn_type=''):
-	
+
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
     s3_path = u"azure/{}/{}".format(release_channel, arm_template_name)
@@ -77,7 +77,7 @@ def publish_rg_template(release_channel, docker_for_azure_version):
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
     s3_path = u"azure/{}/{}.json".format(release_channel, docker_for_azure_version)
-    
+
     print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_azure_version, release_channel))
     latest_name = "latest.json"
     s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
@@ -93,19 +93,22 @@ def publish_rg_template(release_channel, docker_for_azure_version):
     return s3_full_url
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, arm_template_name):
+                        docker_for_azure_version, edition_version, cfn_template,
+                        storage_endpoint, portal_endpoint, arm_template_name):
     # check if file exists before opening.
     flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
 
     with open(cfn_template) as data_file:
         data = json.load(data_file)
-    
+
     data['variables']['Description'] = u"Docker for Azure {0} ({1})".format(docker_version, edition_version)
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
     data['variables']['channel'] = release_channel
+    data['variables']['storageAccountDNSSuffix'] = storage_endpoint
+    data['variables']['portalFQDN'] = portal_endpoint
 
     # Updated custom data for Managers and Workers
     custom_data = buildCustomData('custom-data.sh')
@@ -132,7 +135,8 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
 # @TODO VERIFY CLOUD TEMPLATE
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, arm_template_name):
+                        docker_for_azure_version, edition_version, cfn_template,
+                        storage_endpoint, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
@@ -140,6 +144,8 @@ def create_rg_cloud_template(release_channel, docker_version,
     manager_data = buildCustomData('custom-data_manager_cloud.sh')
     data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
     data['variables']['channel'] = release_channel
+    data['variables']['storageAccountDNSSuffix'] = storage_endpoint
+    data['variables']['portalFQDN'] = portal_endpoint
 
     parameters = data.get('parameters')
     if parameters:
@@ -164,7 +170,7 @@ def create_rg_cloud_template(release_channel, docker_version,
             }
         }
         parameters.update(new_parameters)
-    
+
     variables = data.get('variables')
     if variables:
         new_variables = {
@@ -183,7 +189,7 @@ def create_rg_cloud_template(release_channel, docker_version,
             }
         }
         outputs.update(new_outputs)
-    
+
     outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
@@ -203,7 +209,8 @@ def create_rg_cloud_template(release_channel, docker_version,
     return outfile
 
 def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, cfn_template, arm_template_name):
+                        docker_for_azure_version, edition_version, cfn_template,
+                        storage_endpoint, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
@@ -218,6 +225,8 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
     data['variables']['channel'] = release_channel
+    data['variables']['storageAccountDNSSuffix'] = storage_endpoint
+    data['variables']['portalFQDN'] = portal_endpoint
 
     # Use multiple steps to keep order
     parameters = data.get('parameters')
@@ -243,7 +252,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             }
         }
         parameters.update(new_parameters)
-    
+
     variables = data.get('variables')
     if variables:
         new_variables = {
@@ -251,7 +260,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             "ddcPass": "[parameters('DDCPassword')]"
         }
         variables.update(new_variables)
-    
+
     for key, val in enumerate(data.get('resources')):
         if val['name'] == "[variables('managerNSGName')]":
             security_rules = val['properties']['securityRules']
@@ -335,20 +344,20 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             probes = val['properties']['probes']
             new_probe = [
                 {
-                    "name": "ucp", 
+                    "name": "ucp",
                     "properties": {
-                        "intervalInSeconds": 10, 
-                        "numberOfProbes": 2, 
-                        "port": 443, 
+                        "intervalInSeconds": 10,
+                        "numberOfProbes": 2,
+                        "port": 443,
                         "protocol": "Tcp"
                     }
                 },
                 {
-                    "name": "dtr", 
+                    "name": "dtr",
                     "properties": {
-                        "intervalInSeconds": 10, 
-                        "numberOfProbes": 2, 
-                        "port": 8443, 
+                        "intervalInSeconds": 10,
+                        "numberOfProbes": 2,
+                        "port": 8443,
                         "protocol": "Tcp"
                     }
                 }
