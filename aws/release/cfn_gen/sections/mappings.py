@@ -208,6 +208,7 @@ def aws2az_data():
         "ap-northeast-1": {
             "Name": "Tokyo",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -216,6 +217,7 @@ def aws2az_data():
         "ap-northeast-2": {
             "Name": "Seoul",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -224,6 +226,7 @@ def aws2az_data():
         "ap-south-1": {
             "Name": "Mumbai",
             "EFSSupport": "no",
+            "LambdaSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -232,6 +235,7 @@ def aws2az_data():
         "ap-southeast-1": {
             "Name": "Singapore",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -240,6 +244,7 @@ def aws2az_data():
         "ap-southeast-2": {
             "Name": "Sydney",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -248,6 +253,7 @@ def aws2az_data():
         "ca-central-1": {
             "Name": "Central",
             "EFSSupport": "no",
+            "LambdaSupport": "no",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -256,6 +262,7 @@ def aws2az_data():
         "eu-central-1": {
             "Name": "Frankfurt",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -264,6 +271,7 @@ def aws2az_data():
         "eu-west-1": {
             "Name": "Ireland",
             "EFSSupport": "yes",
+            "LambdaSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -272,6 +280,7 @@ def aws2az_data():
         "eu-west-2": {
             "Name": "London",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -280,14 +289,16 @@ def aws2az_data():
         "sa-east-1": {
             "Name": "Sao Paulo",
             "EFSSupport": "no",
-            "NumAZs": "3",
+            "LambdaSupport": "no",
+            "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
-            "AZ2": "2"
+            "AZ2": "0"
         },
         "us-east-1": {
             "Name": "N. Virgina",
             "EFSSupport": "yes",
+            "LambdaSupport": "yes",
             "NumAZs": "4",
             "AZ0": "0",
             "AZ1": "1",
@@ -296,6 +307,7 @@ def aws2az_data():
         "us-east-2": {
             "Name": "Ohio",
             "EFSSupport": "yes",
+            "LambdaSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
@@ -304,6 +316,7 @@ def aws2az_data():
         "us-west-1": {
             "Name": "N. California",
             "EFSSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
@@ -312,9 +325,19 @@ def aws2az_data():
         "us-west-2": {
             "Name": "Oregon",
             "EFSSupport": "yes",
+            "LambdaSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
             "AZ1": "1",
             "AZ2": "2"
+        },
+        "us-gov-west-1": {
+            "Name": "GovCloud",
+            "EFSSupport": "no",
+            "LambdaSupport": "no",
+            "NumAZs": "2",
+            "AZ0": "0",
+            "AZ1": "1",
+            "AZ2": "0"
         }
     }

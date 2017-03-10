@@ -30,15 +30,69 @@ def generate_template(template_class, docker_version,
 
 
 if __name__ == '__main__':
-    docker_version = "17.03.0-ce-rc1"
-    edition_version = "beta19"
-    channel = "beta"
-    docker_for_aws_version = 'aws-v17.03.0-ce-rc1-beta19'
+    docker_version = "17.03.0-ce"
+    edition_version = "aws1"
+    channel = "stable"
+    docker_for_aws_version = 'aws-v17.03.0-ce-aws1'
 
-    AMI = "ami-e1e06381"
-    amis = {"us-west-2": {
-            "HVM64": AMI,
-            "HVMG2": "NOT_SUPPORTED"}}
+    AMI = "ami-57cc1341"
+    amis = {"ap-northeast-1": {
+                "HVM64": "ami-b37e2bd4",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-northeast-2": {
+                "HVM64": "ami-923dedfc",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-south-1": {
+                "HVM64": "ami-d21b6bbd",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-southeast-1": {
+                "HVM64": "ami-ab1baac8",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ap-southeast-2": {
+                "HVM64": "ami-253c3f46",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "ca-central-1": {
+                "HVM64": "ami-ad72cfc9",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "eu-central-1": {
+                "HVM64": "ami-2acd1845",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "eu-west-1": {
+                "HVM64": "ami-a5ad82c3",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "eu-west-2": {
+                "HVM64": "ami-7cc5d018",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "sa-east-1": {
+                "HVM64": "ami-3babcd57",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-east-1": {
+                "HVM64": "ami-57cc1341",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-east-2": {
+                "HVM64": "ami-feb89d9b",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-west-1": {
+                "HVM64": "ami-0e67396e",
+                "HVMG2": "NOT_SUPPORTED"
+            },
+            "us-west-2": {
+                "HVM64": "ami-21c94b41",
+                "HVMG2": "NOT_SUPPORTED"
+            }
+    }
 
     # Docker CE
     generate_template(ExistingVPCTemplate, docker_version, edition_version,

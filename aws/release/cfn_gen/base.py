@@ -62,17 +62,21 @@ class AWSBaseTemplate(object):
         return self.get_parameter_groups()
 
     def add_metadata(self):
-        metadata.metadata(self.template, self.parameter_groups(), self.parameter_labels)
+        metadata.metadata(self.template,
+                          self.parameter_groups(),
+                          self.parameter_labels)
 
     def add_conditions(self):
         conditions.add_condition_create_log_resources(self.template)
         conditions.add_condition_hasonly2AZs(self.template)
         conditions.add_condition_EFSSupported(self.template)
+        conditions.add_condition_LambdaSupported(self.template)
 
     def add_mappings(self):
         self.add_aws2az_mapping()
         mappings.add_mapping_version(
-            self.template, self.docker_version, self.docker_for_aws_version, self.channel)
+            self.template, self.docker_version,
+            self.docker_for_aws_version, self.channel)
         mappings.add_mapping_vpc_cidrs(self.template)
         mappings.add_mapping_instance_type_2_arch(self.template)
         mappings.add_mapping_amis(self.template, self.amis)
@@ -168,6 +172,12 @@ class AWSBaseTemplate(object):
         # EFS
         self.efs()
 
+        # Custom resources
+        self.custom()
+
+        # lambda functions
+        self.awslambda()
+
     def vpc(self):
         if self.create_vpc:
             resources.add_resource_vpc(self.template)
@@ -204,6 +214,9 @@ class AWSBaseTemplate(object):
         resources.add_resource_iam_log_policy(self.template)
         resources.add_resource_iam_worker_instance_profile(self.template)
 
+        # lambda
+        resources.add_resource_iam_lambda_execution_role(self.template)
+
     def security_groups(self):
         # security groups
         resources.add_resource_swarm_wide_security_group(self.template, self.create_vpc)
@@ -222,7 +235,8 @@ class AWSBaseTemplate(object):
         resources.add_resource_worker_upgrade_hook(self.template)
 
         # manager
-        manager_launch_config_name = u'ManagerLaunchConfig{}'.format(self.flat_edition_version_upper)
+        manager_launch_config_name = u'ManagerLaunchConfig{}'.format(
+            self.flat_edition_version_upper)
         resources.add_resource_manager_autoscalegroup(
             self.template, self.create_vpc, manager_launch_config_name)
         resources.add_resource_manager_launch_config(self.template, self.manager_userdata(),
@@ -237,6 +251,13 @@ class AWSBaseTemplate(object):
         # efs
         resources.add_resource_efs(self.template)
         resources.add_resource_mount_targets(self.template)
+
+    def custom(self):
+        # custom resources
+        resources.add_resource_custom_az_info(self.template)
+
+    def awslambda(self):
+        resources.add_resource_az_info_function(self.template)
 
     def generate_template(self):
         return self.template.to_json()

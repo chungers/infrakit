@@ -1,5 +1,6 @@
 from troposphere import GetAtt, Ref, Join
 from troposphere.iam import Role, InstanceProfile, PolicyType
+from troposphere.iam import Policy as TroposherePolicy
 
 from awacs.aws import Allow, Statement, Principal, Policy
 from awacs.sts import AssumeRole
@@ -506,4 +507,72 @@ def add_resource_iam_worker_instance_profile(template):
         DependsOn="WorkerRole",
         Path="/",
         Roles=[Ref("WorkerRole")],
+    ))
+
+
+def add_resource_iam_lambda_execution_role(template):
+    """
+        "LambdaExecutionRole": {
+          "Type": "AWS::IAM::Role",
+          "Properties": {
+            "AssumeRolePolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": {"Service": ["lambda.amazonaws.com"]},
+                  "Action": ["sts:AssumeRole"]
+              }]
+            },
+            "Path": "/",
+            "Policies": [{
+              "PolicyName": "root",
+              "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Effect": "Allow",
+                    "Action": ["logs:CreateLogGroup",
+                               "logs:CreateLogStream",
+                               "logs:PutLogEvents"],
+                    "Resource": "arn:aws:logs:*:*:*"
+                },{
+                    "Effect": "Allow",
+                    "Action": ["ec2:DescribeAvailabilityZones"],
+                    "Resource": "*"
+                }]
+              }
+            }]
+          }
+        }
+    """
+    template.add_resource(Role(
+        "LambdaExecutionRole",
+        Condition="LambdaSupported",
+        Path="/",
+        Policies=[TroposherePolicy(
+            PolicyName="root",
+            PolicyDocument={
+                "Version": "2012-10-17",
+                "Statement": [{
+                    "Action": ["logs:CreateLogGroup",
+                               "logs:CreateLogStream",
+                               "logs:PutLogEvents"],
+                    "Effect": "Allow",
+                    "Resource": "arn:aws:logs:*:*:*"
+                }, {
+                    "Action": ["ec2:DescribeAvailabilityZones"],
+                    "Resource": "*",
+                    "Effect": "Allow"
+                }]
+            }
+        )],
+        AssumeRolePolicyDocument={
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Action": ["sts:AssumeRole"],
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": ["lambda.amazonaws.com"]
+                }
+            }]
+        },
     ))

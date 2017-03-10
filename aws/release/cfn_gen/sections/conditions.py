@@ -24,3 +24,12 @@ def add_condition_EFSSupported(template):
             FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"),
             "yes")
     )
+
+
+def add_condition_LambdaSupported(template):
+    template.add_condition(
+        "LambdaSupported",
+        Equals(
+            FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "LambdaSupport"),
+            "yes")
+    )

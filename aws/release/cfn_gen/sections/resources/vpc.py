@@ -1,4 +1,4 @@
-from troposphere import FindInMap, Ref, Join, Select, GetAZs
+from troposphere import FindInMap, Ref, Join, Select, GetAZs, If, GetAtt
 from troposphere.ec2 import (
     VPC, Subnet, VPCGatewayAttachment, RouteTable, Route, SubnetRouteTableAssociation,
     InternetGateway)
@@ -26,12 +26,18 @@ def add_resource_subnet_az_1(template):
                DependsOn="Vpc",
                CidrBlock=FindInMap("VpcCidrs", "pubsubnet1", "cidr"),
                VpcId=Ref('Vpc'),
-               AvailabilityZone=Select(
-                   FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "AZ0"),
-                   GetAZs(Ref("AWS::Region"))
+               AvailabilityZone=(
+                   If("LambdaSupported",
+                      GetAtt("AZInfo", "AZ0"),
+                      Select(
+                          FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "AZ0"),
+                          GetAZs(Ref("AWS::Region"))
+                      )
+                      )
                ),
                Tags=[
-                   {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "Subnet1"])}
+                   {'Key': "Name", 'Value': Join(
+                    "-", [Ref("AWS::StackName"), "Subnet1"])}
                ]))
 
 
@@ -41,28 +47,40 @@ def add_resource_subnet_az_2(template):
                DependsOn="Vpc",
                CidrBlock=FindInMap("VpcCidrs", "pubsubnet2", "cidr"),
                VpcId=Ref('Vpc'),
-               AvailabilityZone=Select(
-                   FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "AZ1"),
-                   GetAZs(Ref("AWS::Region"))
+               AvailabilityZone=(
+                   If("LambdaSupported",
+                      GetAtt("AZInfo", "AZ1"),
+                      Select(
+                          FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "AZ1"),
+                          GetAZs(Ref("AWS::Region"))
+                      )
+                      )
                ),
                Tags=[
-                   {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "Subnet2"])}
+                   {'Key': "Name", 'Value': Join(
+                    "-", [Ref("AWS::StackName"), "Subnet2"])}
                ]))
 
 
 def add_resource_subnet_az_3(template):
-    template.add_resource(Subnet(
-        'PubSubnetAz3',
-        DependsOn="Vpc",
-        CidrBlock=FindInMap("VpcCidrs", "pubsubnet3", "cidr"),
-        VpcId=Ref('Vpc'),
-        AvailabilityZone=Select(
-            FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "AZ2"),
-            GetAZs(Ref("AWS::Region"))
-        ),
-        Tags=[
-            {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "Subnet3"])}
-        ]))
+    template.add_resource(
+        Subnet('PubSubnetAz3',
+               DependsOn="Vpc",
+               CidrBlock=FindInMap("VpcCidrs", "pubsubnet3", "cidr"),
+               VpcId=Ref('Vpc'),
+               AvailabilityZone=(
+                   If("LambdaSupported",
+                      GetAtt("AZInfo", "AZ2"),
+                      Select(
+                          FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "AZ2"),
+                          GetAZs(Ref("AWS::Region"))
+                      )
+                      )
+               ),
+               Tags=[
+                   {'Key': "Name", 'Value': Join(
+                    "-", [Ref("AWS::StackName"), "Subnet3"])}
+               ]))
 
 
 def add_resource_internet_gateway(template):
