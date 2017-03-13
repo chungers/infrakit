@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+BASE_DIR=../../
+
 # if there is an ENV with this name, use it, if not, default to these values.
 NAMESPACE="${NAMESPACE:-docker4x}"
 VERSION="${VERSION:-latest}"
@@ -16,3 +18,7 @@ done
 # as well as a specific one
 docker tag "${NAMESPACE}/create-sp-azure:${VERSION}" "${NAMESPACE}/create-sp-azure:latest"
 docker push "${NAMESPACE}/create-sp-azure:latest"
+
+pushd $BASE_DIR/common/cloudstor
+PLUGIN_TAG=${VERSION} make
+popd
