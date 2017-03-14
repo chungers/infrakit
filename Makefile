@@ -2,16 +2,16 @@
 
 EDITIONS_TAG := ce-dev
 EDITIONS_DOCKER_VERSION := 17.03.0
-EDITIONS_VERSION ?= $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
+EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 BUILD := 1
 AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
 AZURE_EDITION := $(EDITIONS_VERSION)-azure$(BUILD)
 GCP_EDITION := $(EDITIONS_VERSION)-gcp$(BUILD)
 REGION := us-west-2
-CHANNEL ?= edge
+CHANNEL := edge
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
-DOCKER_EXPERIMENTAL ?= 1
+DOCKER_EXPERIMENTAL := 1
 VHD_SKU := docker-ce
 VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
@@ -20,11 +20,11 @@ CS_VHD_SKU := docker-ee
 CS_VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
 CS_OFFER_ID := docker-ee
-RELEASE ?= 0
+RELEASE := 0
 MOBY_GIT_REMOTE := git@github.com:docker/moby
 MOBY_GIT_REVISION := 1.13.x
 # By default don't load Docker Images into the AMI
-LOAD_IMAGES ?= false
+LOAD_IMAGES := false
 
 ifeq ($(RELEASE),0)
 EDITIONS_VERSION := $(EDITIONS_VERSION)-$(shell whoami)-dev
