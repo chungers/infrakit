@@ -1,7 +1,11 @@
 .PHONY: moby tools tools/buoy tools/metaserver
 
-EDITIONS_TAG := ce-dev
+EDITIONS_TAG := ce
 EDITIONS_DOCKER_VERSION := 17.03.0
+RELEASE := 0
+ifeq ($(RELEASE),0)
+EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
+endif
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 BUILD := 1
 AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
@@ -20,15 +24,10 @@ CS_VHD_SKU := docker-ee
 CS_VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
 CS_OFFER_ID := docker-ee
-RELEASE := 0
 MOBY_GIT_REMOTE := git@github.com:docker/moby
 MOBY_GIT_REVISION := 1.13.x
 # By default don't load Docker Images into the AMI
 LOAD_IMAGES := false
-
-ifeq ($(RELEASE),0)
-EDITIONS_VERSION := $(EDITIONS_VERSION)-$(shell whoami)-dev
-endif
 
 export
 
@@ -122,10 +121,10 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# way to boot the Azure template.
 
 azure-release:
-	EDITIONS_VERSION=$(AZURE_EDITION) $(MAKE) -C azure/release
+	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_EDITION)
 
 $(AZURE_TARGET_TEMPLATE):
-	EDITIONS_VERSION=$(AZURE_EDITION) $(MAKE) -C azure/release template
+	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_EDITION)
 
 azure-template:
 	# "easy use" alias to generate latest version of template.
