@@ -7,6 +7,7 @@ import sys
 import subprocess
 import pytz
 import urllib2
+import ssl
 import logging
 import logging.config
 from datetime import datetime
@@ -37,10 +38,231 @@ APP_SECRET = os.environ['APP_SECRET']
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
 
+#DDC params
+HAS_DDC = False
+DTR_TBL_NAME = 'dtrtable'
+DTR_PARTITION_NAME = 'dtrreplicas'
+LAST_MANAGER_NODE_ID = ''
+PRODUCTION_HUB_NAMESPACE = 'docker'
+HUB_NAMESPACE = 'docker'
+UCP_HUB_TAG = '2.0.2'
+DTR_HUB_TAG = '2.1.0'
+UCP_IMAGE = '%s/ucp:%s' % (HUB_NAMESPACE,UCP_HUB_TAG)
+DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
+DTR_PORT = 443
+UCP_PORT = 8443
+
+try:
+    SA_DTR_NAME = os.environ['DTR_STORAGE_ACCOUNT']
+    UCP_ADMIN_USER = os.environ['UCP_ADMIN_USER']
+    UCP_ADMIN_PASSWORD = os.environ['UCP_ADMIN_PASSWORD']
+    UCP_ELB_HOSTNAME = os.environ['UCP_ELB_HOSTNAME']
+    HAS_DDC = True
+except:
+    pass
+
 VMSS_ROLE_MAPPING = {
     MGR_VMSS_NAME: 'manager',
     WRK_VMSS_NAME: 'worker'
 }
+
+# update description on DTR table storage
+def set_upgrade_desc(sa_key, desc):
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    if not tbl_svc.exists(DTR_TBL_NAME):
+        return False
+    try:
+        replicaids = tbl_svc.query_entities(DTR_TBL_NAME, filter="PartitionKey eq 'dtrreplicas'")
+        for replicaid in replicaids:
+                upgrade_desc = {'PartitionKey': 'dtrreplicas', 'RowKey': replicaid.replica_id, 'replica_id': replicaid.replica_id, 'node_name': replicaid.node_name, 'description': desc}
+                tbl_svc.insert_or_replace_entity(DTR_TBL_NAME, upgrade_desc)
+    except:
+        LOG.error( "exception while updating replica-id description")
+        return False
+
+# get all replica ids from DTR Table
+def get_ids(sa_key):
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    if not tbl_svc.exists(DTR_TBL_NAME):
+        return False
+    try:
+        replicaids = tbl_svc.query_entities(DTR_TBL_NAME, filter="PartitionKey eq 'dtrreplicas'")
+        for replicaid in replicaids:
+                LOG.info("{}".format(replicaid.replica_id))
+        return replicaids
+    except:
+        return False
+
+# get replica id that matches swarm node from DTR Table
+def get_id(sa_key, nodename):
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    if not tbl_svc.exists(DTR_TBL_NAME):
+        return False
+    try:
+        replicaids = tbl_svc.query_entities(DTR_TBL_NAME, filter="PartitionKey eq 'dtrreplicas'")
+        if nodename is None:
+                return replicaids
+        for replicaid in replicaids:
+                if replicaid.node_name == nodename:
+                        LOG.info("{}".format(replicaid.replica_id))
+                        return replicaid.replica_id
+    except:
+        return False
+
+#delete replicaid from the DTR Table
+def delete_id(sa_key, replica_id):
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    try:
+        # this upsert operation should always succeed
+        tbl_svc.delete_entity(DTR_TBL_NAME, DTR_PARTITION_NAME, replica_id)
+        LOG.info("successfully deleted replica-id")
+        return True
+    except:
+        LOG.error("exception while deleting replica-id")
+        return False
+
+# Checking if UCP is up and running
+def checkUCP(client):
+    LOG.info("Checking to see if UCP is up and healthy")
+    n = 0
+    while n < 20:
+        LOG.info("Checking managers. Try #{}".format(n))
+        nodes = client.nodes(filters={'role': 'manager'})
+        # Find first node that's not myself
+        ALLGOOD = 'yes'
+        for node in nodes:
+            Manager_IP = node['Status']['Addr']
+            LOG.info("Manager IP: {}".format(Manager_IP))
+            # Checking if UCP is up and running
+            UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_PORT)
+            LOG.info("{}".format(UCP_URL))
+            ssl._create_default_https_context = ssl._create_unverified_context
+            try:
+                resp = urllib2.urlopen(UCP_URL)
+            except urllib2.URLError, e:
+                LOG.info("URLError {}".format(str(e.reason)))
+                ALLGOOD = 'no'
+            except urllib2.HTTPError, e:
+                LOG.info("HTTPError {}".format(str(e.code)))
+                ALLGOOD = 'no'
+            else:
+                LOG.info("UCP on %s is healthy" % Manager_IP)
+        if  ALLGOOD == 'yes':
+            LOG.info("UCP is all healthy, good to move on!")
+            break
+        else:
+            LOG.info("Not all healthy, rest and try again..")
+            if n == 20:
+                # this will cause the Autoscale group to timeout, and leave this node in the swarm
+                # it will eventually be killed once the timeout it his. TODO: Do something about this.
+                LOG.error("UCP failed status check after $n tries. Aborting...")
+                exit(0)
+            sleep(30)
+            n = n + 1
+
+
+# check if DDC is installed, if so, make sure it is in a stable state before we continue.
+def checkDDC(client, node_name):
+
+    cred = ServicePrincipalCredentials(
+        client_id=APP_ID,
+        secret=APP_SECRET,
+        tenant=TENANT_ID
+    )
+    storage_client = StorageManagementClient(cred, SUB_ID)
+    storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, SA_DTR_NAME)
+    storage_keys = {v.key_name: v.value for v in storage_keys.keys}
+    key = storage_keys['key1']
+    LOG.info("HostName: {}".format(node_name))
+    LOG.info("UCP is installed, make sure it is ready, before we continue.")
+    checkUCP(client)
+    LOG.info("Remove DTR ")
+    local_dtr_id = get_id(key, node_name)
+    if local_dtr_id is None or local_dtr_id == False:
+        LOG.info("DTR not installed on this node")
+        return
+    LOG.info("LOCAL DTR ID: {}".format(local_dtr_id))
+    LOG.info("remove from Azure DTR Table")
+    delete_id(key, local_dtr_id)
+    num_replicas = 0
+    replicas = get_ids(key)
+    for replica in replicas:
+        num_replicas = num_replicas + 1
+        existing_replica_id = replica.replica_id
+        LOG.info("Existing Replica ID {}".format(existing_replica_id))
+    LOG.info("Num of replicas: {}".format(num_replicas))
+    last_manager = 0
+    if replicas is None or num_replicas == 0:
+        existing_replica_id = local_dtr_id
+        last_manager = 1
+        LOG.info("Last Existing Replica ID: {}".format(existing_replica_id))
+    LOG.info("Remove DTR node.")
+    # set response to 1, so we guarantee it goes into until loop at least once.
+    response = 1
+    count = 1
+    # try to remove node, keep trying until we have a good removal status 0
+    while response != 0:
+        LOG.info("removing DTR node... try#{}".format(count))
+        if (last_manager != 1) or (existing_replica_id != local_dtr_id):
+                cont = client.create_container(
+                image=DTR_IMAGE,
+                command='remove --debug --ucp-url https://{elb_host} --ucp-username {user}'
+                    ' --ucp-password {password} --ucp-insecure-tls --existing-replica-id {existing_replica}'
+                    ' --replica-id {local_dtr_id}'.format(
+                        elb_host=UCP_ELB_HOSTNAME,
+                        user=UCP_ADMIN_USER,
+                        password=UCP_ADMIN_PASSWORD,
+                        existing_replica=existing_replica_id,
+                        local_dtr_id=local_dtr_id
+                        )
+                )
+        else:
+                LOG.info("deleting last DTR node")
+                cont = client.create_container(
+                image=DTR_IMAGE,
+                command='remove --debug --force-remove --ucp-url https://{elb_host} --ucp-username {user}'
+                    ' --ucp-password {password} --ucp-insecure-tls --existing-replica-id {existing_replica}'
+                    ' --replica-id {local_dtr_id}'.format(
+                        elb_host=UCP_ELB_HOSTNAME,
+                        user=UCP_ADMIN_USER,
+                        password=UCP_ADMIN_PASSWORD,
+                        existing_replica=existing_replica_id,
+                        local_dtr_id=local_dtr_id
+                        )
+                )
+        LOG.info("{}".format(cont))
+        client.start(cont)
+        response = client.wait(cont)
+        LOG.info("DTR Remove Command Response:{}".format(response))
+        if response != 0:
+            if count == 20:
+                LOG.error("Tried to remove node $count times. We are over limit, aborting...")
+                exit(1)
+            LOG.info("We failed for a reason, lets retry again after a brief delay.")
+            sleep(30)
+            count = count + 1
+        else:
+            LOG.info("Node removal complete")
+
+    LOG.info("Final cleanup check..")
+    LOG.info("DTR remove is complete.")
+    checkUCP(client)
+    LOG.info("UCP is good to go, continue.")
+    sleep(10)
+
+def update_lastmanager(client):
+    global LAST_MANAGER_NODE_ID
+    
+    if LAST_MANAGER_NODE_ID is not None:
+        try:
+            LOG.info("update last manager in try LAST MANAGER Node ID: {}".format(LAST_MANAGER_NODE_ID))
+            node_info = client.inspect_node(LAST_MANAGER_NODE_ID)
+            node_hostname = node_info['Description']['Hostname']
+            LOG.info("Last Manager Hostname: {}".format(node_hostname))
+            checkDDC(client, node_hostname)
+            sleep(5)
+        except:
+            LOG.error("Failed to remove last DTR node")
 
 def validate_template(template_url):
    response = urllib2.urlopen(template_url)
@@ -118,6 +340,8 @@ def update_deployment_template(template_url, resource_client):
 
 def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_svc):
 
+    global LAST_MANAGER_NODE_ID
+
     nic_id_table = {}
     vm_ip_table = {}
     vm_id_table = {}
@@ -159,6 +383,8 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
         # skip the node we are invoking from for now
         if docker_client.info()['Swarm']['NodeID'] == node_id:
             LOG.info("Skip upgrading of manager node where upgrade is initiated from for now")
+            LAST_MANAGER_NODE_ID = docker_client.info()['Swarm']['NodeID']
+            LOG.info("LAST MANAGER Node ID: {}".format(LAST_MANAGER_NODE_ID))
             continue
 
         # demote managers and keep track of new leader
@@ -170,8 +396,11 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
             except KeyError:
                 leader = False
 
+        if HAS_DDC:
+                checkDDC(docker_client, node_hostname)
+
             subprocess.check_output(["docker", "node", "demote", node_id])
-            sleep(5)
+            sleep(10)
 
             # If node was a leader, update IP of new leader
             # (after demotion of previous leader) in table
@@ -279,6 +508,11 @@ def main():
         LOG.info("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
                 SUB_ID, RG_NAME, WRK_VMSS_NAME))
         update_vmss(WRK_VMSS_NAME, docker_client, compute_client, network_client, tbl_svc)
+
+    # remove DTR from last manager node before upgrade
+        if HAS_DDC:
+            LOG.info("Remove DTR and update last manager")
+            update_lastmanager(docker_client)
 
         LOG.info("The current VM will be rebooted soon for an upgrade. You can follow the status of the upgrade from the Azure console using the URL below:")
         LOG.info("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Compute/virtualMachineScaleSets/{}/overview".format(
