@@ -86,7 +86,6 @@ def add_resource_external_lb(template, create_vpc, extra_listeners=None):
         Listeners=listener_list,
         CrossZone=True,
         SecurityGroups=[Ref("ExternalLoadBalancerSG")],
-        LoadBalancerName=Join("-", [Ref("AWS::StackName"), "ELB"]),
         Tags=[
             {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "ELB"])}
         ]
