@@ -73,8 +73,8 @@ define build_cp_plugin
 	cp tools/$(1)/$(1)-rootfs.tar.gz gcp/dockerfiles/
 endef
 
+## General tools targets
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
-
 
 tools/buoy/bin/buoy:
 	@echo "+ $@"
@@ -83,10 +83,10 @@ tools/buoy/bin/buoy:
 tools/metaserver/bin/metaserver:
 	$(call build_cp_tool,metaserver)
 
-
 tools/cloudstor/cloudstor-rootfs.tar.gz:
 	$(call build_cp_plugin,cloudstor)
 
+## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(AZURE_EDITION)"/' moby/packages/azure/etc/init.d/azure 
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
