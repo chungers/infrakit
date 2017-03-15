@@ -58,19 +58,12 @@ dockerimages-walinuxagent:
 
 define build_cp_tool
 	$(MAKE) -C tools/$(1)
-	mkdir -p aws/dockerfiles/files/bin || true
-	mkdir -p azure/dockerfiles/files/bin || true
-	mkdir -p gcp/dockerfiles/guide/bin || true
-	cp tools/$(1)/bin/$(1) aws/dockerfiles/files/bin/$(1)
-	cp tools/$(1)/bin/$(1) azure/dockerfiles/files/bin/$(1)
-	cp tools/$(1)/bin/$(1) gcp/dockerfiles/guide/bin/$(1)
-endef
-
-define build_cp_plugin
-	$(MAKE) -C tools/$(1)
-	cp tools/$(1)/$(1)-rootfs.tar.gz aws/dockerfiles/
-	cp tools/$(1)/$(1)-rootfs.tar.gz azure/dockerfiles/
-	cp tools/$(1)/$(1)-rootfs.tar.gz gcp/dockerfiles/
+	mkdir -p aws/dockerfiles/files/$(3)
+	mkdir -p azure/dockerfiles/files/$(3)
+	mkdir -p gcp/dockerfiles/files/$(3)
+	cp tools/$(1)/$(2) aws/dockerfiles/files/$(3)
+	cp tools/$(1)/$(2) azure/dockerfiles/files/$(3)
+	cp tools/$(1)/$(2) gcp/dockerfiles/files/$(3)
 endef
 
 ## General tools targets
@@ -78,13 +71,13 @@ tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloud
 
 tools/buoy/bin/buoy:
 	@echo "+ $@"
-	$(call build_cp_tool,buoy)
+	$(call build_cp_tool,buoy,bin/buoy,bin)
 
 tools/metaserver/bin/metaserver:
-	$(call build_cp_tool,metaserver)
+	$(call build_cp_tool,metaserver,bin/metaserver,bin)
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
-	$(call build_cp_plugin,cloudstor)
+	$(call build_cp_tool,cloudstor,cloudstor-rootfs.tar.gz,.)
 
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
