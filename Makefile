@@ -21,7 +21,7 @@ DOCKER_EXPERIMENTAL := 1
 VHD_SKU := docker-ce
 VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
-OFFER_ID := docker-ce
+VHD_OFFER_ID := docker-ce
 EE_VHD_SKU := docker-ee
 EE_VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
