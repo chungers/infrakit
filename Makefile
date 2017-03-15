@@ -1,34 +1,33 @@
 .PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
-EDITIONS_TAG := ce-dev
+EDITIONS_TAG := ce
 EDITIONS_DOCKER_VERSION := 17.03.0
-EDITIONS_VERSION ?= $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
+RELEASE := 0
+ifeq ($(RELEASE),0)
+EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
+endif
+EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 BUILD := 1
 AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
 AZURE_EDITION := $(EDITIONS_VERSION)-azure$(BUILD)
 GCP_EDITION := $(EDITIONS_VERSION)-gcp$(BUILD)
 REGION := us-west-2
-CHANNEL ?= edge
+CHANNEL := edge
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
-DOCKER_EXPERIMENTAL ?= 1
+DOCKER_EXPERIMENTAL := 1
+
+#### Azure Specific VARS
 VHD_SKU := docker-ce
 VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
 OFFER_ID := docker-ce
-CS_VHD_SKU := docker-ee
-CS_VHD_VERSION := 1.0.0
+EE_VHD_SKU := docker-ee
+EE_VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
-CS_OFFER_ID := docker-ee
-RELEASE ?= 0
-MOBY_GIT_REMOTE := git@github.com:docker/moby
-MOBY_GIT_REVISION := 1.13.x
+EE_OFFER_ID := docker-ee
 # By default don't load Docker Images into the AMI
-LOAD_IMAGES ?= false
-
-ifeq ($(RELEASE),0)
-EDITIONS_VERSION := $(EDITIONS_VERSION)-$(shell whoami)-dev
-endif
+LOAD_IMAGES := false
 
 export
 
@@ -43,6 +42,7 @@ release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimage
 	$(MAKE) -C aws/release AMI=$(shell cat moby/cloud/aws/ami_id.out)
 	# VHD=$(shell cat moby/cloud/azure/vhd_blob_url.out)
 
+## Container images targets
 dockerimages: tools
 	dockerimages-aws
 	dockerimages-azure
@@ -75,12 +75,14 @@ endef
 
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
 
+
 tools/buoy/bin/buoy:
 	@echo "+ $@"
 	$(call build_cp_tool,buoy)
 
 tools/metaserver/bin/metaserver:
 	$(call build_cp_tool,metaserver)
+
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
 	$(call build_cp_plugin,cloudstor)
@@ -98,7 +100,6 @@ moby/cloud/aws/ami_id_ee.out:
 	@echo "+ $@"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
 	LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
-
 
 moby/build/gcp/gce.img.tar.gz: moby
 	$(MAKE) -C moby gcp-upload
@@ -124,6 +125,7 @@ clean:
 	rm -f moby/cloud/aws/ami_id.out
 	rm -f moby/cloud/aws/ami_id_ee.out
 
+## Azure targets 
 azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
 	# Temporarily going to continue to use azure/editions.json until the
 	# development workflow gets refactored to use only top-level Makefile
@@ -133,10 +135,10 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# way to boot the Azure template.
 
 azure-release:
-	EDITIONS_VERSION=$(AZURE_EDITION) $(MAKE) -C azure/release
+	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_EDITION)
 
 $(AZURE_TARGET_TEMPLATE):
-	EDITIONS_VERSION=$(AZURE_EDITION) $(MAKE) -C azure/release template
+	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_EDITION)
 
 azure-template:
 	# "easy use" alias to generate latest version of template.
@@ -145,6 +147,8 @@ azure-template:
 azure/editions.json: azure-template
 	cp $(AZURE_TARGET_TEMPLATE) azure/editions.json
 
+
+## Golang targets
 # Package list
 PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
 PKGS := $(shell echo $(PKGS_AND_MOCKS) | tr ' ' '\n' | grep -v /mock$)

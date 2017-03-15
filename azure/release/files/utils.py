@@ -140,9 +140,10 @@ def create_rg_cloud_template(release_channel, docker_version,
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
-    # Updated Manager custom data
-    manager_data = buildCustomData('custom-data_manager_cloud.sh')
-    data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
+    # Updated custom data for Managers and Workers
+    custom_data = buildCustomData('custom-data.sh')
+    custom_data_cloud = buildCustomData('custom-data_cloud.sh')
+    data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ", '\n', " + ', '.join(custom_data_cloud) + ')]'
     data['variables']['channel'] = release_channel
     data['variables']['storageAccountDNSSuffix'] = storage_endpoint
     data['variables']['portalFQDN'] = portal_endpoint
@@ -172,7 +173,7 @@ def create_rg_cloud_template(release_channel, docker_version,
                 "type": "string",
                 "defaultValue": "https://cloud.docker.com",
                 "metadata": {
-                    "description": "Docker Cloud environment"
+                    "description": "Docker Cloud rest API endpoint"
                 }
             },
             "DockerIDJWTURL" : {
@@ -238,12 +239,10 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
-    # Updated Manager custom data
-    manager_data = buildCustomData('custom-data_manager_ddc.sh')
-    data['variables']['customDataManager'] = '[concat(' + ', '.join(manager_data) + ')]'
-    # Updated Worker custom data
-    worker_data = buildCustomData('custom-data_worker_ddc.sh')
-    data['variables']['customDataWorker'] = '[concat(' + ', '.join(worker_data) + ')]'
+    # Updated custom data for Managers and Workers
+    custom_data = buildCustomData('custom-data.sh')
+    custom_data_ddc = buildCustomData('custom-data_ddc.sh')
+    data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ", '\n', " +  ', '.join(custom_data_ddc) + ')]'
 
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
@@ -262,16 +261,19 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                 "metadata": {
                     "description": "Please enter the username you want to use for Docker Datacenter."
                 }
-            }
-        }
-        parameters.update(new_parameters)
-        new_parameters = {
+            },
             "DDCPassword": {
                 "minLength": 8,
                 "maxLength": 40,
                 "type": "SecureString",
                 "metadata": {
                     "description": "Please enter the password you want to use for Docker Datacenter."
+                }
+            },
+            "DDCLicense": {
+                "type": "SecureObject",
+                "metadata": {
+                    "description": "Upload your Docker Datacenter License Key"
                 }
             }
         }
@@ -281,99 +283,181 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     if variables:
         new_variables = {
             "ddcUser": "[parameters('DDCUsername')]",
-            "ddcPass": "[parameters('DDCPassword')]"
+            "ddcPass": "[parameters('DDCPassword')]",
+            "ddcLicense": "[base64(string(parameters('DDCLicense')))]",
+            "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
+            "lbDTRFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/dtrlbfrontend')]",
+            "lbDTRName": "dtrLoadBalancer",
+            "lbDTRPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbDTRName'),  '-public-ip')]",
+            "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
+            "ucpLbPublicIpDnsName": "[concat('ucplb-', variables('groupName'))]",
+            "dtrLbPublicIpDnsName": "[concat('dtrlb-', variables('groupName'))]",
+            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '.cloudapp.azure.com')]",
+            "ucplbname": "[concat(variables('ucpLbPublicIpDnsName'), '.', variables('storageLocation'), '.cloudapp.azure.com')]",
+            "dtrlbname": "[concat(variables('dtrLbPublicIpDnsName'), '.', variables('storageLocation'), '.cloudapp.azure.com')]",
+            "lbpublicIPAddress1": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbSSHPublicIPAddressName'))]",
+            "lbpublicIPAddress2": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbDTRPublicIPAddressName'))]",
+            "dtrStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'dtr')]"
         }
         variables.update(new_variables)
-
-    for key, val in enumerate(data.get('resources')):
+        variables["lbSSHFrontEndIPConfigID"] = "[concat(variables('lbSSHID'),'/frontendIPConfigurations/default')]"
+    resources = data.get('resources')
+    # Add DTR Storage Account
+    dtr_resources = [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('dtrStorageAccount')]",
+            "apiVersion": "2015-06-15",
+            "location": "[variables('storageLocation')]",
+            "tags": {
+                "provider": "[toUpper(variables('DockerProviderTag'))]"
+            },
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('lbDTRPublicIPAddressName')]",
+            "apiVersion": "[variables('apiVersion')]",
+            "location": "[variables('storageLocation')]",
+            "tags": {
+                "provider": "[toUpper(variables('DockerProviderTag'))]"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('dtrLbPublicIpDnsName')]"
+                }
+            }
+        }
+    ]
+    resources.extend(dtr_resources)
+    for key, val in enumerate(resources):
+        #  Add Docker Provider tag to all resources
+        tag_rule = {
+            "tags": {
+                "provider": "[toUpper(variables('DockerProviderTag'))]"
+            }
+        }
+        val.update(tag_rule)
+        properties = val['properties']
         if val['name'] == "[variables('managerNSGName')]":
-            security_rules = val['properties']['securityRules']
             new_security_rule = [
                 {
                     "name": "ucp",
                     "properties": {
-                        "description": "Allow UCP",
-                        "protocol": "Tcp",
-                        "sourcePortRange": "*",
-                        "destinationPortRange": "443",
-                        "sourceAddressPrefix": "*",
-                        "destinationAddressPrefix": "*",
                         "access": "Allow",
-                        "priority": 206,
-                        "direction": "Inbound"
+                        "description": "Allow UCP",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "8443",
+                        "direction": "Inbound",
+                        "priority": 207,
+                        "protocol": "Tcp",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*"
                     }
                 },
                 {
                     "name": "dtr",
                     "properties": {
-                        "description": "Allow DTR",
-                        "protocol": "Tcp",
-                        "sourcePortRange": "*",
-                        "destinationPortRange": "8443",
-                        "sourceAddressPrefix": "*",
-                        "destinationAddressPrefix": "*",
                         "access": "Allow",
-                        "priority": 207,
-                        "direction": "Inbound"
+                        "description": "Allow DTR",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "443",
+                        "direction": "Inbound",
+                        "priority": 208,
+                        "protocol": "Tcp",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*"
                     }
                 }
             ]
-            security_rules.extend(new_security_rule)
+            properties['securityRules'].extend(new_security_rule)
+        if val['name'] == "[variables('lbPublicIPAddressName')]":
+            new_dns_property = {
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('lbPublicIpDnsName')]"
+                }
+            }
+            properties.update(new_dns_property)
+        if val['name'] == "[variables('lbSSHPublicIPAddressName')]":
+            new_dns_property = {
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('ucpLbPublicIpDnsName')]"
+                }
+            }
+            properties.update(new_dns_property)
         if val['name'] == "[variables('lbSSHName')]":
-            properties = val['properties']
-
+            properties["frontendIPConfigurations"] = [
+                    {
+                        "name": "ucplbfrontend",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[variables('lbpublicIPAddress1')]"
+                            }
+                        }
+                    },
+                    {
+                        "name": "dtrlbfrontend",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[variables('lbpublicIPAddress2')]"
+                            }
+                        }
+                    }
+                ]
             loadbalancing_rules = {
                 "loadBalancingRules": [
                     {
                         "name": "ucpLbRule",
                         "properties": {
+                            "backendPort": 8443,
+                            "enableFloatingIP": False,
                             "frontendIPConfiguration": {
-                                    "id": "[variables('lbSSHFrontEndIPConfigID')]"
+                                "id": "[variables('lbSSHFrontEndIPConfigID')]"
                             },
                             "backendAddressPool": {
                                 "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
                             },
-                            "protocol": "tcp",
                             "frontendPort": 443,
-                            "backendPort": 443,
-                            "enableFloatingIP": False,
                             "idleTimeoutInMinutes": 5,
                             "probe": {
                                 "id": "[concat(variables('lbSSHID'),'/probes/ucp')]"
-                            }
+                            },
+                            "protocol": "tcp"
                         }
                     },
                     {
                         "name": "dtrLbRule",
                         "properties": {
+                            "backendPort": 443,
+                            "enableFloatingIP": False,
                             "frontendIPConfiguration": {
-                                    "id": "[variables('lbSSHFrontEndIPConfigID')]"
+                                "id": "[variables('lbDTRFrontEndIPConfigID')]"
                             },
                             "backendAddressPool": {
                                 "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
                             },
-                            "protocol": "tcp",
-                            "frontendPort": 8443,
-                            "backendPort": 8443,
-                            "enableFloatingIP": False,
+                            "frontendPort": 443,
                             "idleTimeoutInMinutes": 5,
                             "probe": {
                                 "id": "[concat(variables('lbSSHID'),'/probes/dtr')]"
-                            }
+                            },
+                            "protocol": "tcp"
                         }
-                    },
+                    }
                 ]
             }
             properties.update(loadbalancing_rules)
-            probes = val['properties']['probes']
             new_probe = [
                 {
                     "name": "ucp",
                     "properties": {
                         "intervalInSeconds": 10,
                         "numberOfProbes": 2,
-                        "port": 443,
-                        "protocol": "Tcp"
+                        "port": 8443,
+                        "protocol": "tcp"
                     }
                 },
                 {
@@ -381,22 +465,26 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                     "properties": {
                         "intervalInSeconds": 10,
                         "numberOfProbes": 2,
-                        "port": 8443,
-                        "protocol": "Tcp"
+                        "port": 443,
+                        "protocol": "tcp"
                     }
                 }
             ]
-            probes.extend(new_probe)
+            properties['probes'].extend(new_probe)
+            new_depends = [
+                "[concat('Microsoft.Network/publicIPAddresses/', variables('lbDTRPublicIPAddressName'))]"
+            ]
+            val['dependsOn'].extend(new_depends)
     outputs = data.get('outputs')
     if outputs:
         new_outputs = {
-            "DDCLoginURL": {
+            "UCPLoginURL": {
                 "type": "String",
-                "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).ipAddress)]"
+                "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbSSHPublicIPAddressName'))).dnsSettings.fqdn)]"
             },
-            "DDCUsername": {
+            "DTRLoginURL": {
                 "type": "String",
-                "value": "[variables('ddcUser')]"
+                "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbDTRPublicIPAddressName'))).dnsSettings.fqdn)]"
             }
         }
         outputs.update(new_outputs)

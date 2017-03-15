@@ -1,6 +1,7 @@
 from os import path
 
 from troposphere import Parameter, And, Not, Equals, Ref, Output, Join, GetAtt
+from troposphere.elasticloadbalancing import Listener
 
 from base import AWSBaseTemplate
 
@@ -164,6 +165,18 @@ class CloudVPCTemplate(AWSBaseTemplate):
             Default="https://id.docker.com/api/id/v1/authz/certs"
         ))
         self.add_to_parameters(('DockerIDJWKURL', {"default": "ID service certificate URL?"}))
+
+    def load_balancer(self):
+        listener_list = []
+        listener_list.append(Listener(
+            LoadBalancerPort="2376",
+            InstancePort="2376",
+            Protocol="TCP"
+        ),)
+        resources.add_resource_external_lb(
+            self.template,
+            self.create_vpc,
+            extra_listeners=listener_list)
 
 
 class CloudVPCExistingTemplate(CloudVPCTemplate, ExistingVPCTemplate):

@@ -1,8 +1,9 @@
 from troposphere import Ref, If, Join
-from troposphere.elasticloadbalancing import LoadBalancer, HealthCheck, ConnectionSettings, Listener
+from troposphere.elasticloadbalancing import (
+    LoadBalancer, HealthCheck, ConnectionSettings, Listener)
 
 
-def add_resource_external_lb(template, create_vpc):
+def add_resource_external_lb(template, create_vpc, extra_listeners=None):
     """
     "ExternalLoadBalancer" : {
         "DependsOn" : ["AttachGateway", "ExternalLoadBalancerSG",
@@ -58,13 +59,23 @@ def add_resource_external_lb(template, create_vpc):
     else:
         depends = ["ExternalLoadBalancerSG"]
 
+    listener_list = []
+    listener_list.append(Listener(
+        LoadBalancerPort="7",
+        InstancePort="7",
+        Protocol="TCP"
+    ),)
+    if extra_listeners:
+        listener_list.extend(extra_listeners)
+
     template.add_resource(LoadBalancer(
         "ExternalLoadBalancer",
         DependsOn=depends,
         ConnectionSettings=ConnectionSettings(IdleTimeout=600),
         Subnets=If("HasOnly2AZs",
                    [Ref("PubSubnetAz1"), Ref("PubSubnetAz2")],
-                   [Ref("PubSubnetAz1"), Ref("PubSubnetAz2"), Ref("PubSubnetAz3")]),
+                   [Ref("PubSubnetAz1"), Ref("PubSubnetAz2"),
+                    Ref("PubSubnetAz3")]),
         HealthCheck=HealthCheck(
             Target="HTTP:44554/",
             HealthyThreshold="2",
@@ -72,16 +83,9 @@ def add_resource_external_lb(template, create_vpc):
             Interval="10",
             Timeout="2",
         ),
-        Listeners=[
-            Listener(
-                LoadBalancerPort="7",
-                InstancePort="7",
-                Protocol="TCP"
-            ),
-        ],
+        Listeners=listener_list,
         CrossZone=True,
         SecurityGroups=[Ref("ExternalLoadBalancerSG")],
-        LoadBalancerName=Join("-", [Ref("AWS::StackName"), "ELB"]),
         Tags=[
             {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "ELB"])}
         ]
