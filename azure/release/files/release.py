@@ -22,19 +22,13 @@ AZURE_PLATFORMS = {
 }
 
 def main():
-    parser = argparse.ArgumentParser(description='Release Docker for AWS')
+    parser = argparse.ArgumentParser(description='Release Docker for Azure')
     parser.add_argument('-d', '--docker_version',
                         dest='docker_version', required=True,
-                        help="Docker version (i.e. 1.12.0-rc4)")
+                        help="Docker version (i.e. 17.03)")
     parser.add_argument('-e', '--edition_version',
                         dest='edition_version', required=True,
                         help="Edition version (i.e. Beta 4)")
-    parser.add_argument('-s', '--vhd_sku',
-                        dest='vhd_sku', required=True,
-                        help="The Azure VHD SKU (i.e. docker-ce)")
-    parser.add_argument('-v', '--vhd_version',
-                        dest='vhd_version', required=True,
-                        help="The Azure VHD version (i.e. 1.0.0)")
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
@@ -44,18 +38,24 @@ def main():
     parser.add_argument('--channel_ddc',
                         dest='channel_ddc', default="alpha",
                         help="DDC release channel (beta, alpha, rc, nightly)")
+    parser.add_argument('--vhd_sku',
+                        dest='vhd_sku', default="docker-ce",
+                        help="The Azure VHD SKU (i.e. docker-ce)")
+    parser.add_argument('--vhd_version',
+                        dest='vhd_version', required=True,
+                        help="The Azure VHD version (i.e. 1.0.0)")
     parser.add_argument('--offer_id',
                         dest='offer_id', default="docker-ce",
                         help="The Azure VHD Offer ID")
-    parser.add_argument('--cs_vhd_sku',
-                        dest='cs_vhd_sku',
-                        help="The Azure CS VHD SKU (i.e. docker-ce)")
-    parser.add_argument('--cs_vhd_version',
-                        dest='cs_vhd_version',
-                        help="The Azure CS VHD version (i.e. 1.0.0)")
-    parser.add_argument('--cs_offer_id',
-                        dest='cs_offer_id', default="docker-ee",
-                        help="The Azure CS VHD Offer ID")
+    parser.add_argument('--ee_vhd_sku',
+                        dest='ee_vhd_sku', default="docker-ee",
+                        help="The Azure EE VHD SKU (i.e. docker-ee)")
+    parser.add_argument('--ee_vhd_version',
+                        dest='ee_vhd_version',
+                        help="The Azure EE VHD version (i.e. 1.0.0)")
+    parser.add_argument('--ee_offer_id',
+                        dest='ee_offer_id', default="docker-ee",
+                        help="The Azure EE VHD Offer ID")
     parser.add_argument("--upload", action="store_true",
                         help="Upload the Azure template once generated")
 
@@ -72,9 +72,9 @@ def main():
     vhd_sku = args.vhd_sku
     vhd_version = args.vhd_version
     offer_id = args.offer_id
-    cs_vhd_sku = args.cs_vhd_sku
-    cs_vhd_version = args.cs_vhd_version
-    cs_offer_id = args.cs_offer_id
+    ee_vhd_sku = args.ee_vhd_sku
+    ee_vhd_version = args.ee_vhd_version
+    ee_offer_id = args.ee_offer_id
 
     docker_for_azure_version = u"azure-v{}".format(flat_edition_version)
     image_name = u"Moby Linux {}".format(docker_for_azure_version)
@@ -87,8 +87,8 @@ def main():
     print(u"edition_version={}".format(edition_version))
     print(u"vhd_sku={}".format(vhd_sku))
     print(u"vhd_version={}".format(vhd_version))
-    print(u"cs_vhd_sku={}".format(cs_vhd_sku))
-    print(u"cs_vhd_version={}".format(cs_vhd_version))
+    print(u"ee_vhd_sku={}".format(ee_vhd_sku))
+    print(u"ee_vhd_version={}".format(ee_vhd_version))
 
     print("Create ARM templates..")
     for platform, platform_config in AZURE_PLATFORMS.items():
@@ -106,7 +106,7 @@ def main():
                                  cloud_template_name)
 
         ddc_template_name = u"Docker-DDC" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
-        ddc_url = create_rg_ddc_template(cs_vhd_sku, cs_vhd_version, cs_offer_id, release_ddc_channel, docker_version,
+        ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url,
                                  platform_config['STORAGE_ENDPOINT'],
                                  platform_config['PORTAL_ENDPOINT'],

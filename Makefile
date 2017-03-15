@@ -16,16 +16,16 @@ CHANNEL := edge
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
+
+#### Azure Specific VARS
 VHD_SKU := docker-ce
 VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
 OFFER_ID := docker-ce
-CS_VHD_SKU := docker-ee
-CS_VHD_VERSION := 1.0.0
+EE_VHD_SKU := docker-ee
+EE_VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
-CS_OFFER_ID := docker-ee
-MOBY_GIT_REMOTE := git@github.com:docker/moby
-MOBY_GIT_REVISION := 1.13.x
+EE_OFFER_ID := docker-ee
 # By default don't load Docker Images into the AMI
 LOAD_IMAGES := false
 
@@ -42,6 +42,7 @@ release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimage
 	$(MAKE) -C aws/release AMI=$(shell cat moby/cloud/aws/ami_id.out)
 	# VHD=$(shell cat moby/cloud/azure/vhd_blob_url.out)
 
+## Container images targets
 dockerimages: tools
 	dockerimages-aws
 	dockerimages-azure
@@ -65,6 +66,7 @@ define build_cp_tool
 	cp tools/$(1)/bin/$(1) gcp/dockerfiles/guide/bin/$(1)
 endef
 
+## General tools targets
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver
 
 tools/buoy/bin/buoy:
@@ -74,6 +76,7 @@ tools/buoy/bin/buoy:
 tools/metaserver/bin/metaserver:
 	$(call build_cp_tool,metaserver)
 
+## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(AZURE_EDITION)"/' moby/packages/azure/etc/init.d/azure 
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
@@ -87,7 +90,6 @@ moby/cloud/aws/ami_id_ee.out:
 	@echo "+ $@"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
 	LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
-
 
 moby/build/gcp/gce.img.tar.gz: moby
 	$(MAKE) -C moby gcp-upload
@@ -112,6 +114,7 @@ clean:
 	rm -f moby/cloud/aws/ami_id.out
 	rm -f moby/cloud/aws/ami_id_ee.out
 
+## Azure targets 
 azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
 	# Temporarily going to continue to use azure/editions.json until the
 	# development workflow gets refactored to use only top-level Makefile
@@ -133,6 +136,8 @@ azure-template:
 azure/editions.json: azure-template
 	cp $(AZURE_TARGET_TEMPLATE) azure/editions.json
 
+
+## Golang targets
 # Package list
 PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
 PKGS := $(shell echo $(PKGS_AND_MOCKS) | tr ' ' '\n' | grep -v /mock$)
