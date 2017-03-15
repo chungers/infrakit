@@ -19,6 +19,8 @@ done
 docker tag "${NAMESPACE}/create-sp-azure:${VERSION}" "${NAMESPACE}/create-sp-azure:latest"
 docker push "${NAMESPACE}/create-sp-azure:latest"
 
-pushd $BASE_DIR/common/cloudstor
-PLUGIN_TAG=${VERSION} make
-popd
+# build and push cloudstor plugin
+tar zxvf cloudstor-rootfs.tar.gz
+docker plugin rm -f "${NAMESPACE}/cloudstor:${VERSION}" || true
+docker plugin create "${NAMESPACE}/cloudstor:${VERSION}" ./plugin
+docker plugin push "${NAMESPACE}/cloudstor:${VERSION}"

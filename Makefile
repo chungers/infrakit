@@ -1,4 +1,4 @@
-.PHONY: moby tools tools/buoy tools/metaserver
+.PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
 EDITIONS_TAG := ce-dev
 EDITIONS_DOCKER_VERSION := 17.03.0
@@ -46,7 +46,7 @@ release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimage
 dockerimages: tools
 	dockerimages-aws
 	dockerimages-azure
-	
+
 dockerimages-aws: tools
 	$(MAKE) -C aws/dockerfiles
 
@@ -66,7 +66,14 @@ define build_cp_tool
 	cp tools/$(1)/bin/$(1) gcp/dockerfiles/guide/bin/$(1)
 endef
 
-tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver
+define build_cp_plugin
+	$(MAKE) -C tools/$(1)
+	cp tools/$(1)/$(1)-rootfs.tar.gz aws/dockerfiles/
+	cp tools/$(1)/$(1)-rootfs.tar.gz azure/dockerfiles/
+	cp tools/$(1)/$(1)-rootfs.tar.gz gcp/dockerfiles/
+endef
+
+tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
 
 tools/buoy/bin/buoy:
 	@echo "+ $@"
@@ -74,6 +81,9 @@ tools/buoy/bin/buoy:
 
 tools/metaserver/bin/metaserver:
 	$(call build_cp_tool,metaserver)
+
+tools/cloudstor/cloudstor-rootfs.tar.gz:
+	$(call build_cp_plugin,cloudstor)
 
 moby/cloud/azure/vhd_blob_url.out: moby
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(AZURE_EDITION)"/' moby/packages/azure/etc/init.d/azure 
@@ -105,6 +115,7 @@ moby:
 clean:
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
+	$(MAKE) -C tools/cloudstor clean
 	$(MAKE) -C moby clean
 	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
