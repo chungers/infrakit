@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-BASE_DIR=../../
 
 # if there is an ENV with this name, use it, if not, default to these values.
 NAMESPACE="${NAMESPACE:-docker4x}"
