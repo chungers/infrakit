@@ -1,6 +1,7 @@
 from troposphere import Parameter
 
 from base import AWSBaseTemplate
+from sections import mappings
 
 
 class ExistingVPCTemplate(AWSBaseTemplate):
@@ -67,3 +68,11 @@ class ExistingVPCTemplate(AWSBaseTemplate):
             Type='AWS::EC2::Subnet::Id'
         ))
         self.add_to_parameters(('PubSubnetAz3', {"default": "Public Subnet 3"}))
+
+    def add_aws2az_mapping(self):
+        """ No need to have Lambda support when VPC is existing. """
+        data = mappings.aws2az_data()
+        for region in data.keys():
+            data[region]['LambdaSupport'] = 'no'
+
+        self.template.add_mapping('AWSRegion2AZ', data)
