@@ -1,7 +1,7 @@
 .PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
 EDITIONS_TAG := ce
-EDITIONS_DOCKER_VERSION := 17.03.0
+EDITIONS_DOCKER_VERSION := 17.03.1
 RELEASE := 0
 ifeq ($(RELEASE),0)
 EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
