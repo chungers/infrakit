@@ -5,6 +5,7 @@ default: push
 
 clean:
 	rm -rf ./plugin
+	rm cloudstor-rootfs.tar.gz || true
 	docker rm -vf tmp || true
 
 
@@ -15,15 +16,16 @@ build:
 	docker rm -vf tmp
 	docker rmi cloudstor-builder
 
-rootfs:
+rootfs:  clean build
 	docker build -q -t ${PLUGIN_NAME}:rootfs .
 	mkdir -p ./plugin/rootfs
 	docker create --name tmp ${PLUGIN_NAME}:rootfs
 	docker export tmp | tar -x -C ./plugin/rootfs
 	cp config.json ./plugin/
 	docker rm -vf tmp
+	tar zcvf cloudstor-rootfs.tar.gz ./plugin/
 
-create:
+create:  clean build rootfs
 	docker plugin rm -f ${PLUGIN_NAME}:${PLUGIN_TAG} || true
 	docker plugin create ${PLUGIN_NAME}:${PLUGIN_TAG} ./plugin
 

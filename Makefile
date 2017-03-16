@@ -1,4 +1,4 @@
-.PHONY: moby tools tools/buoy tools/metaserver
+.PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
 EDITIONS_TAG := ce
 EDITIONS_DOCKER_VERSION := 17.03.0
@@ -46,7 +46,7 @@ release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimage
 dockerimages: tools
 	dockerimages-aws
 	dockerimages-azure
-	
+
 dockerimages-aws: tools
 	$(MAKE) -C aws/dockerfiles
 
@@ -58,23 +58,26 @@ dockerimages-walinuxagent:
 
 define build_cp_tool
 	$(MAKE) -C tools/$(1)
-	mkdir -p aws/dockerfiles/files/bin || true
-	mkdir -p azure/dockerfiles/files/bin || true
-	mkdir -p gcp/dockerfiles/guide/bin || true
-	cp tools/$(1)/bin/$(1) aws/dockerfiles/files/bin/$(1)
-	cp tools/$(1)/bin/$(1) azure/dockerfiles/files/bin/$(1)
-	cp tools/$(1)/bin/$(1) gcp/dockerfiles/guide/bin/$(1)
+	mkdir -p aws/dockerfiles/files/$(3)
+	mkdir -p azure/dockerfiles/files/$(3)
+	mkdir -p gcp/dockerfiles/files/$(3)
+	cp tools/$(1)/$(2) aws/dockerfiles/files/$(3)
+	cp tools/$(1)/$(2) azure/dockerfiles/files/$(3)
+	cp tools/$(1)/$(2) gcp/dockerfiles/files/$(3)
 endef
 
 ## General tools targets
-tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver
+tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
 
 tools/buoy/bin/buoy:
 	@echo "+ $@"
-	$(call build_cp_tool,buoy)
+	$(call build_cp_tool,buoy,bin/buoy,bin)
 
 tools/metaserver/bin/metaserver:
-	$(call build_cp_tool,metaserver)
+	$(call build_cp_tool,metaserver,bin/metaserver,bin)
+
+tools/cloudstor/cloudstor-rootfs.tar.gz:
+	$(call build_cp_tool,cloudstor,cloudstor-rootfs.tar.gz,.)
 
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
@@ -106,6 +109,7 @@ moby:
 clean:
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
+	$(MAKE) -C tools/cloudstor clean
 	$(MAKE) -C moby clean
 	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
