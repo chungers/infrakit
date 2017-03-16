@@ -86,7 +86,7 @@ bake_image()
 
 clean_volume_mount()
 {
-	VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=tag-key,Values=$1" | jq -r .Volumes[0].VolumeId)
+	VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=tag-key,Values=editions_version" "Name=tag-value,Values=$1" | jq -r .Volumes[0].VolumeId)
 	if [ ${VOLUME_ID} = "null" ]
 	then
 		arrowecho "No volume found, skipping"
@@ -103,7 +103,7 @@ clean_tagged_resources()
 {
 	clean_volume_mount $1
 
-	IMAGE_ID=$(aws ec2 describe-images --filters "Name=tag-key,Values=$1" | jq -r .Images[0].ImageId)
+	IMAGE_ID=$(aws ec2 describe-images --filters "Name=tag-key,Values=editions_version" "Name=tag-value,Values=$1" | jq -r .Images[0].ImageId)
 	if [ ${IMAGE_ID} = "null" ]
 	then
 		arrowecho "No image found, skipping"
@@ -117,7 +117,7 @@ clean_tagged_resources()
 		aws ec2 deregister-image --image-id ${IMAGE_ID} >/dev/null || errecho "WARN: Issue deregistering previously tagged image!"
 	fi
 
-	SNAPSHOT_ID=$(aws ec2 describe-snapshots --filters "Name=tag-key,Values=$1" | jq -r .Snapshots[0].SnapshotId)
+	SNAPSHOT_ID=$(aws ec2 describe-snapshots --filters "Name=tag-key,Values=editions_version" "Name=tag-value,Values=$1" | jq -r .Snapshots[0].SnapshotId)
 	if [ ${SNAPSHOT_ID} = "null" ]
 	then
 		arrowecho "No snapshot found, skipping"
