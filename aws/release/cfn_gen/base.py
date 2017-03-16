@@ -70,7 +70,8 @@ class AWSBaseTemplate(object):
         conditions.add_condition_create_log_resources(self.template)
         conditions.add_condition_hasonly2AZs(self.template)
         conditions.add_condition_EFSSupported(self.template)
-        conditions.add_condition_LambdaSupported(self.template)
+        if self.create_vpc:
+            conditions.add_condition_LambdaSupported(self.template)
 
     def add_mappings(self):
         self.add_aws2az_mapping()
@@ -215,7 +216,8 @@ class AWSBaseTemplate(object):
         resources.add_resource_iam_worker_instance_profile(self.template)
 
         # lambda
-        resources.add_resource_iam_lambda_execution_role(self.template)
+        if self.create_vpc:
+            resources.add_resource_iam_lambda_execution_role(self.template)
 
     def security_groups(self):
         # security groups
@@ -254,10 +256,12 @@ class AWSBaseTemplate(object):
 
     def custom(self):
         # custom resources
-        resources.add_resource_custom_az_info(self.template)
+        if self.create_vpc:
+            resources.add_resource_custom_az_info(self.template)
 
     def awslambda(self):
-        resources.add_resource_az_info_function(self.template)
+        if self.create_vpc:
+            resources.add_resource_az_info_function(self.template)
 
     def generate_template(self):
         return self.template.to_json()
