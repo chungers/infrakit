@@ -48,12 +48,12 @@ endif
 
 ami:
 	@echo "+ $@"
-	$(MAKE) ami-clean-mount
 	$(MAKE) build/aws/initrd.img
 	tar cf - \
 	  cloud -C build/aws/ initrd.img -C ../ vmlinuz64 \
 	  | \
 	  docker build -t moby-ami:build -f cloud/Dockerfile.ami -
+	$(MAKE) ami-clean-mount
 	# The EBS device seems not to show up without mounting in /dev, even
 	# with --privileged enabled.
 	docker run \
