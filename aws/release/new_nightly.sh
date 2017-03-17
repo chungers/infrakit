@@ -42,7 +42,7 @@ export RELEASE=1
 make clean
 make moby clean
 git checkout -- moby/packages/aws/etc/init.d/aws
-make moby/cloud/aws/ami_id.out
+make moby/cloud/aws/ami_id.out EDITIONS_VERSION=$EDITION_VERSION
 
 mv -f moby/cloud/aws/ami_id.out $AMI_OUT_DIR/$AMI_OUT_FILE
 

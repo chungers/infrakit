@@ -4,7 +4,12 @@ EDITIONS_TAG := ce
 EDITIONS_DOCKER_VERSION := 17.03.1
 RELEASE := 0
 ifeq ($(RELEASE),0)
+ifdef JENKINS_BUILD
+DAY := $(shell date +"%m_%d_%Y")
+EDITIONS_TAG := $(EDITIONS_TAG)-$(DAY)
+else
 EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
+endif
 endif
 EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 BUILD := 1
@@ -54,6 +59,7 @@ dockerimages-azure: tools
 	$(MAKE) -C azure/dockerfiles
 
 dockerimages-walinuxagent:
+	@echo "+ $@"
 	$(MAKE) -C azure walinuxagent TAG="azure-v$(EDITIONS_VERSION)"
 
 define build_cp_tool
@@ -67,46 +73,59 @@ define build_cp_tool
 endef
 
 ## General tools targets
-tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
+tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz tools/awscli/image
 
 tools/buoy/bin/buoy:
 	@echo "+ $@"
 	$(call build_cp_tool,buoy,bin/buoy,bin)
 
 tools/metaserver/bin/metaserver:
+	@echo "+ $@"
 	$(call build_cp_tool,metaserver,bin/metaserver,bin)
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
+	@echo "+ $@"
 	$(call build_cp_tool,cloudstor,cloudstor-rootfs.tar.gz,.)
+
+tools/awscli/image:
+	@echo "+ $@"
+	$(MAKE) -C tools/awscli
 
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
+	@echo "+ $@"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(AZURE_EDITION)"/' moby/packages/azure/etc/init.d/azure 
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
+	@echo "+ $@"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
-	TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
+	$(MAKE) -C moby ami
 
 moby/cloud/aws/ami_id_ee.out: 
 	@echo "+ $@"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
-	LOAD_IMAGES=true TAG_KEY=$(EDITIONS_VERSION) $(MAKE) -C moby ami
+	$(MAKE) -C moby ami LOAD_IMAGES=true
 
 moby/build/gcp/gce.img.tar.gz: moby
+	@echo "+ $@"
 	$(MAKE) -C moby gcp-upload
 
 moby/build/aws/initrd.img:
+	@echo "+ $@"
 	$(MAKE) -C moby build/aws/initrd.img
 
 moby/build/azure/initrd.img:
+	@echo "+ $@"
 	$(MAKE) -C moby build/azure/initrd.img
 
 moby:
+	@echo "+ $@"
 	$(MAKE) -C moby all
 
 clean:
+	@echo "+ $@"
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C tools/cloudstor clean
@@ -128,12 +147,14 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# way to boot the Azure template.
 
 azure-release:
+	@echo "+ $@"
 	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_EDITION)
 
 $(AZURE_TARGET_TEMPLATE):
 	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_EDITION)
 
 azure-template:
+	@echo "+ $@"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AZURE_TARGET_TEMPLATE)
 

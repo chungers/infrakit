@@ -86,7 +86,7 @@ bake_image()
 
 clean_volume_mount()
 {
-	VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=tag-key,Values=editions_version" "Name=tag-value,Values=$1" | jq -r .Volumes[0].VolumeId)
+	VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=tag-key,Values=editions_version" | jq -r .Volumes[0].VolumeId)
 	if [ ${VOLUME_ID} = "null" ]
 	then
 		arrowecho "No volume found, skipping"
@@ -101,7 +101,7 @@ clean_volume_mount()
 
 clean_tagged_resources()
 {
-	clean_volume_mount $1
+	clean_volume_mount
 
 	IMAGE_ID=$(aws ec2 describe-images --filters "Name=tag-key,Values=editions_version" "Name=tag-value,Values=$1" | jq -r .Images[0].ImageId)
 	if [ ${IMAGE_ID} = "null" ]
@@ -138,13 +138,11 @@ case "$1" in
 		bake_image
 		;;
 	clean)
-		arrowecho "Cleaning resources from previous build tag (${TAG_KEY_PREV}) if applicable..."
-		clean_tagged_resources "${TAG_KEY_PREV}"
-		arrowecho "Cleaning resources from current build tag (${TAG_KEY}) if applicable..."
-		clean_tagged_resources "${TAG_KEY}"
+		arrowecho "Cleaning resources from current/previous build tag (${EDITIONS_VERSION}) if applicable..."
+		clean_tagged_resources "${EDITIONS_VERSION}"
 		;;
 	clean-mount)
-		clean_volume_mount "${TAG_KEY}"
+		clean_volume_mount
 		;;
 	*)
 		errecho "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean|clean-mount]"

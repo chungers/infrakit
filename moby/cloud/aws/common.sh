@@ -2,13 +2,12 @@
 
 set -e
 
-TAG_KEY=${TAG_KEY:-editionsdev}
-TAG_KEY_PREV=${TAG_KEY_PREV:-editionsdev}
+EDITIONS_VERSION=${EDITIONS_VERSION:-editionsdev}
 
 INSTANCE_ENDPOINT="http://169.254.169.254/latest"
 INSTANCE_METADATA_API_ENDPOINT="${INSTANCE_ENDPOINT}/meta-data/"
-IMAGE_NAME=${IMAGE_NAME:-"Moby Linux ${TAG_KEY}"}
-IMAGE_DESCRIPTION=${IMAGE_DESCRIPTION:-"The best OS for running Docker, version ${TAG_KEY}"}
+IMAGE_NAME=${IMAGE_NAME:-"Moby Linux ${EDITIONS_VERSION}"}
+IMAGE_DESCRIPTION=${IMAGE_DESCRIPTION:-"The best OS for running Docker, version ${EDITIONS_VERSION}"}
 
 current_instance_region()
 {
@@ -30,7 +29,7 @@ current_instance_id()
 tag()
 {
     arrowecho "Tagging $1 with ${TAG_KEY}, $2, and $3"
-    aws ec2 create-tags --resources "$1" --tags "Key=editions_version,Value=${TAG_KEY}" >/dev/null
+    aws ec2 create-tags --resources "$1" --tags "Key=editions_version,Value=${EDITIONS_VERSION}" >/dev/null
     aws ec2 create-tags --resources "$1" --tags "Key=date,Value=$2" >/dev/null
     aws ec2 create-tags --resources "$1" --tags "Key=channel,Value=$3" >/dev/null
 }

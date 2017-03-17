@@ -1,17 +1,18 @@
 ## Env vars
-HASH := $(shell curl -f -s https://master.dockerproject.org/commit)
-DAY := $(shell date +"%m_%d_%Y")
-TAG_KEY ?= aws-nightly-$(DAY)-$(HASH)
 CHANNEL ?= dev
 FORCE_GSUTIL_AUTH ?= 1
 
 ## Moby specific commit
-MOBY_IMG_COMMIT ?= 8dce12e433e6327e5175206ab1784610da0d141b
+MOBY_COMMIT := a53d1c5c4453654174b8a8d7468e276ed704ee20
+MOBY_IMG_NAME := mobylinux-ce.tgz
+MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
 REGEXTRACT_IMAGE=docker4x/regextract@sha256:a843d793ba6b83d4bb7d68102ca2c7dba0f985330581224e9afeacdbbf76b8db
 GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63
 QEMU_IMAGE=mobylinux/qemu:0fb8c648e8ed9ef6b1ec449587aeab6c53872744@sha256:606f30d815102e73bc01c07915dc0d5f153b0252c63f5f0ed1e39621ec656eb5
 TAR2INITRD_IMAGE=mobylinux/tar2initrd:d5711601eb5b89de0f052d87365e18388ff3f1b5@sha256:58d377e65845f91400e173ce9fca93462f2f237947eef2b0d2c17bb4f2da5ee8
 TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa601811@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
+
+export
 
 ifeq ($(LOAD_IMAGES),true)
 AMI_OUT=ami_id_ee.out
@@ -32,7 +33,7 @@ boot-qemu:
 
 src/initrd.img:
 	@echo "+ $@"
-	MOBY_IMG_COMMIT=$(MOBY_IMG_COMMIT) ./get.sh
+	bash get.sh
 
 gcp-upload: build/gcp/gce.img.tar.gz
 	@echo "+ $@"
@@ -53,6 +54,7 @@ ami:
 	  cloud -C build/aws/ initrd.img -C ../ vmlinuz64 \
 	  | \
 	  docker build -t moby-ami:build -f cloud/Dockerfile.ami -
+	# Clean previous AMI volume mounts
 	$(MAKE) ami-clean-mount
 	# The EBS device seems not to show up without mounting in /dev, even
 	# with --privileged enabled.
@@ -62,8 +64,7 @@ ami:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
-		-e TAG_KEY \
-		-e TAG_KEY_PREV \
+		-e EDITIONS_VERSION \
 		-e CHANNEL \
 		moby-ami:build clean
 	docker run \
@@ -72,8 +73,7 @@ ami:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
-		-e TAG_KEY \
-		-e TAG_KEY_PREV \
+		-e EDITIONS_VERSION \
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
@@ -87,8 +87,7 @@ ami-clean-mount:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
-		-e TAG_KEY \
-		-e TAG_KEY_PREV \
+		-e EDITIONS_VERSION \
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
 		-e DOCKER_BIN_URL \
