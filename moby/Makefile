@@ -3,7 +3,9 @@ CHANNEL ?= dev
 FORCE_GSUTIL_AUTH ?= 1
 
 ## Moby specific commit
-MOBY_COMMIT := a53d1c5c4453654174b8a8d7468e276ed704ee20
+ifeq (${MOBY_COMMIT},)
+	MOBY_COMMIT := a53d1c5c4453654174b8a8d7468e276ed704ee20
+endif
 MOBY_IMG_NAME := mobylinux-ce.tgz
 MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
 REGEXTRACT_IMAGE=docker4x/regextract@sha256:a843d793ba6b83d4bb7d68102ca2c7dba0f985330581224e9afeacdbbf76b8db

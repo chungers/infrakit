@@ -1,17 +1,30 @@
 .PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
-EDITIONS_TAG := ce
-EDITIONS_DOCKER_VERSION := 17.03.1
-RELEASE := 0
+ifeq (${EDITIONS_TAG},)
+	EDITIONS_TAG := ce
+endif
+
+ifeq (${EDITIONS_DOCKER_VERSION},)
+	EDITIONS_DOCKER_VERSION := 17.03.1-rc1
+endif
+
+ifeq (${RELEASE},)
+	RELEASE := 0
+endif
+
 ifeq ($(RELEASE),0)
-ifdef JENKINS_BUILD
-DAY := $(shell date +"%m_%d_%Y")
-EDITIONS_TAG := $(EDITIONS_TAG)-$(DAY)
-else
-EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
+	ifdef JENKINS_BUILD
+		DAY := $(shell date +"%m_%d_%Y")
+		EDITIONS_TAG := $(EDITIONS_TAG)-$(DAY)
+	else
+		EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
+	endif
 endif
+
+ifeq (${EDITIONS_VERSION},)
+	EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 endif
-EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
+
 BUILD := 1
 AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
 AZURE_EDITION := $(EDITIONS_VERSION)-azure$(BUILD)
