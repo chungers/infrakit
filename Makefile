@@ -25,6 +25,10 @@ ifeq (${EDITIONS_VERSION},)
 	EDITIONS_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 endif
 
+ifeq (${DOCKER_PUSH},)
+	DOCKER_PUSH := 1
+endif
+
 BUILD := 1
 AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
 AZURE_EDITION := $(EDITIONS_VERSION)-azure$(BUILD)
@@ -72,7 +76,7 @@ dockerimages-azure: tools
 	$(MAKE) -C azure/dockerfiles
 
 dockerimages-walinuxagent:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C azure walinuxagent TAG="azure-v$(EDITIONS_VERSION)"
 
 define build_cp_tool
@@ -89,56 +93,56 @@ endef
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz tools/awscli/image
 
 tools/buoy/bin/buoy:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(call build_cp_tool,buoy,bin/buoy,bin)
 
 tools/metaserver/bin/metaserver:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(call build_cp_tool,metaserver,bin/metaserver,bin)
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(call build_cp_tool,cloudstor,cloudstor-rootfs.tar.gz,.)
 
 tools/awscli/image:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C tools/awscli
 
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(AZURE_EDITION)"/' moby/packages/azure/etc/init.d/azure 
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
 moby/cloud/aws/ami_id_ee.out: 
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami LOAD_IMAGES=true
 
 moby/build/gcp/gce.img.tar.gz: moby
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C moby gcp-upload
 
 moby/build/aws/initrd.img:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C moby build/aws/initrd.img
 
 moby/build/azure/initrd.img:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C moby build/azure/initrd.img
 
 moby:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C moby all
 
 clean:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C tools/cloudstor clean
@@ -160,14 +164,14 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# way to boot the Azure template.
 
 azure-release:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_EDITION)
 
 $(AZURE_TARGET_TEMPLATE):
 	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_EDITION)
 
 azure-template:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AZURE_TARGET_TEMPLATE)
 
@@ -181,14 +185,14 @@ PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
 PKGS := $(shell echo $(PKGS_AND_MOCKS) | tr ' ' '\n' | grep -v /mock$)
 
 get-gomock:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	-go get github.com/golang/mock/gomock
 	-go get github.com/golang/mock/mockgen
 
 generate:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	@go generate -x $(PKGS_AND_MOCKS)
 
 test:
-	@echo "+ $@"
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	@go test -v github.com/docker/editions/pkg/loadbalancer

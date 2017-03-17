@@ -11,10 +11,12 @@ FULL_IMAGE_NAME=$NAMESPACE/$IMAGE_NAME
 ./build.sh
 
 docker build -t $FULL_IMAGE_NAME:$VERSION -f Dockerfile .
-docker push $FULL_IMAGE_NAME:$VERSION
+if [ ${DOCKER_PUSH} -eq 1 ]; then
+    docker push $FULL_IMAGE_NAME:$VERSION
 
-if [[ "$DOCKER_TAG_LATEST" == "yes" ]] ; then
-    docker push $FULL_IMAGE_NAME:latest
+    if [[ "$DOCKER_TAG_LATEST" == "yes" ]] ; then
+        docker push $FULL_IMAGE_NAME:latest
+    fi
 fi
 
 rm -f bin/swarm-exec

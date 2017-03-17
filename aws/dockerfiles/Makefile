@@ -6,5 +6,5 @@ elb-controller:
 	VERSION="aws-v$(EDITIONS_VERSION)" \
 	DOCKER_REPO="docker4x/l4controller-aws" \
 	DOCKER_TAG="aws-v$(EDITIONS_VERSION)" \
-	DOCKER_PUSH=true DOCKER_TAG_LATEST=true \
+	DOCKER_TAG_LATEST=true \
 	make -k container

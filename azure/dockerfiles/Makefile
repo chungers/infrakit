@@ -10,6 +10,6 @@ alb-controller:
 	VERSION="azure-v$(EDITIONS_VERSION)" \
 	DOCKER_REPO="docker4x/l4controller-azure" \
 	DOCKER_TAG="azure-v$(EDITIONS_VERSION)" \
-	DOCKER_PUSH=true DOCKER_TAG_LATEST=true \
+	DOCKER_TAG_LATEST=true \
 	make -k bin/loadbalancer
 

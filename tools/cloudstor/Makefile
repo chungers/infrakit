@@ -30,4 +30,6 @@ create:  clean build rootfs
 	docker plugin create ${PLUGIN_NAME}:${PLUGIN_TAG} ./plugin
 
 push:  clean build rootfs create
+ifeq (${DOCKER_PUSH},1)
 	docker plugin push ${PLUGIN_NAME}:${PLUGIN_TAG}
+endif

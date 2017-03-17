@@ -49,7 +49,7 @@ container:
 	mkdir -p ${CURDIR}/bin
 	docker cp elb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
 	docker build --no-cache --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
-ifeq (${DOCKER_PUSH},true)
+ifeq (${DOCKER_PUSH},1)
 	docker push ${DOCKER_IMAGE}
 ifeq (${DOCKER_TAG_LATEST},true)
 	docker push ${DOCKER_REPO}:latest
