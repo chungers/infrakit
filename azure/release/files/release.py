@@ -92,12 +92,20 @@ def main():
 
     print("Create ARM templates..")
     for platform, platform_config in AZURE_PLATFORMS.items():
-        template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        ce_template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_version, CFN_TEMPLATE,
                                  platform_config['STORAGE_ENDPOINT'],
                                  platform_config['PORTAL_ENDPOINT'],
-                                 template_name)
+                                 ce_template_name)
+
+        ee_template_name = u"Docker-EE" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
+                                 docker_for_azure_version, edition_version, CFN_TEMPLATE,
+                                 platform_config['STORAGE_ENDPOINT'],
+                                 platform_config['PORTAL_ENDPOINT'],
+                                 ee_template_name)
+
         cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_version, base_url,
@@ -116,10 +124,11 @@ def main():
 
         if args.upload:
             print(u"Uploading templates.. \n")
-            s3_url = upload_rg_template(release_channel, template_name, base_url)
+            s3_url = upload_rg_template(release_channel, ce_template_name, base_url)
+            s3_ee_url = upload_rg_template(release_channel, ee_template_name, ee_url)
             s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
             s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
-            print(u"Uploaded ARM \n\t URL={0} \n\t CLOUD_URL={1} \n\t DDC_URL={2} \n".format(s3_url, s3_cloud_url, s3_ddc_url))
+            print(u"Uploaded ARM \n\t URL={0} \n\t EE_URL={1} \n\t CLOUD_URL={2} \n\t DDC_URL={3} \n".format(s3_url, s3_ee_url, s3_cloud_url, s3_ddc_url))
 
     print(u"Finshed.. \n")
 
