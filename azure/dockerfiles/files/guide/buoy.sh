@@ -26,6 +26,6 @@ if [[ "$IS_LEADER" == "true" ]]; then
       CHANNEL="stable"
     fi
 
-    /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
+    /usr/bin/buoy -event="swarm:ping" -iaas_provider=azure -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
         -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -channel=$CHANNEL -addon=$EDITION_ADDON
 fi

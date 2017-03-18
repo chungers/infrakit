@@ -85,6 +85,7 @@ func main() {
 				"edition_version": *editionVersion,
 				"edition_addon":   *editionAddOn,
 				"channel":         *channel,
+				"iaas_provider":   *iaasProvider,
 			},
 		})
 	} else if strings.HasPrefix(*event, "node:") {
@@ -98,6 +99,7 @@ func main() {
 				"edition_version": *editionVersion,
 				"edition_addon":   *editionAddOn,
 				"channel":         *channel,
+				"iaas_provider":   *iaasProvider,
 			},
 		})
 	} else if strings.HasPrefix(*event, "swarm:") {
@@ -115,6 +117,7 @@ func main() {
 				"edition_version": *editionVersion,
 				"edition_addon":   *editionAddOn,
 				"channel":         *channel,
+				"iaas_provider":   *iaasProvider,
 			},
 		})
 	}

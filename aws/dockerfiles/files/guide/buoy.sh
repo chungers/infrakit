@@ -16,6 +16,6 @@ if [[ "$IS_LEADER" == "true" ]]; then
     DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')
     SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
 
-    /usr/bin/buoy -event="swarm:ping" -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
+    /usr/bin/buoy -event="swarm:ping" -iaas_provider=aws -workers=$NUM_WORKERS -managers=$NUM_MANAGERS -services=$NUM_SERVICES \
         -docker_version=$DOCKER_VERSION -swarm_id=$SWARM_ID -channel=$CHANNEL -addon=$EDITION_ADDON
 fi

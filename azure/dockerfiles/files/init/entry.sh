@@ -124,7 +124,7 @@ join_as_manager()
             break
         fi
     done
-    buoy -event="node:manager_join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
+    buoy -event="node:manager_join" -iaas_provider=azure -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
     echo "   Successfully joined as a Swarm Manager"
 }
 
@@ -158,7 +158,7 @@ setup_manager()
             # send identify message
             buoy -event=identify -iaas_provider=azure -channel=$CHANNEL -addon=$EDITION_ADDON
             # send swarm init message
-            buoy -event="swarm:init" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
+            buoy -event="swarm:init" -iaas_provider=azure -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
         else
             echo " Error is normal, it is because we already have a swarm leader, lets setup a regular manager instead."
             join_as_manager
@@ -206,7 +206,7 @@ setup_worker()
             break
         fi
     done
-    buoy -event="node:join" -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
+    buoy -event="node:join" -iaas_provider=azure -swarm_id=$SWARM_ID -node_id=$NODE_ID -channel=$CHANNEL -addon=$EDITION_ADDON
 }
 
 
