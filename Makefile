@@ -34,6 +34,7 @@ CHANNEL := edge
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
+EDITION_ADDON := base
 
 #### Azure Specific VARS
 VHD_SKU := docker-ce

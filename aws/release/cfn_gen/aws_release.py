@@ -117,7 +117,7 @@ def main():
     docker_ee_s3_url = create_cfn_template(DockerEEVPCTemplate, ami_list,
                                            docker_ee_release_channel,
                                            docker_version, edition_version,
-                                           docker_for_aws_version,
+                                           docker_for_aws_version, edition_addon,
                                            docker_ee_cfn_name)
 
     docker_ee_cfn_name = "{}-no-vpc".format(docker_ee_cfn_name)
@@ -126,11 +126,12 @@ def main():
                                                   docker_ee_release_channel,
                                                   docker_version,
                                                   edition_version,
-                                                  docker_for_aws_version,
+                                                  docker_for_aws_version, edition_addon,
                                                   docker_ee_cfn_name,
                                                   cfn_type="no-vpc")
 
     cfn_name = "{}-cloud".format(docker_for_aws_version)
+    edition_addon = 'cloud'
     s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
                                        release_cloud_channel,
                                        docker_version, edition_version,

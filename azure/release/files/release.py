@@ -112,6 +112,7 @@ def main():
                                  ee_template_name)
 
         cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        edition_addon = 'cloud'
         cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_version, edition_addon, base_url,
                                  platform_config['STORAGE_ENDPOINT'],
@@ -119,6 +120,7 @@ def main():
                                  cloud_template_name)
 
         ddc_template_name = u"Docker-DDC" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        edition_addon = 'ddc'
         ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_version, edition_addon, base_url,
                                  platform_config['STORAGE_ENDPOINT'],
