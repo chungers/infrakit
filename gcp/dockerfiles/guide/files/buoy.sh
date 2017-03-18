@@ -5,6 +5,7 @@ if [ "$1" == "node:join" ]; then
   SWARM_ID='n/a' #TODO:FIX add this for workers.
 
   /usr/bin/buoy -event="node:join" \
+    -iaas_provider=gcp \
     -swarm_id=$SWARM_ID \
     -node_id=$NODE_ID \
     -channel=$CHANNEL
@@ -17,6 +18,7 @@ if [ "$1" == "node:manager_join" ]; then
   SWARM_ID=$(docker info | grep ClusterID | cut -f2 -d: | sed -e 's/^[ \t]*//')
 
   /usr/bin/buoy -event="node:manager_join" \
+    -iaas_provider=gcp \
     -swarm_id=$SWARM_ID \
     -node_id=$NODE_ID \
     -channel=$CHANNEL
@@ -42,6 +44,7 @@ if [ "$IS_LEADER" == "true" ]; then
 
   if [ "$1" == "swarm:init" ]; then
     /usr/bin/buoy -event="swarm:init" \
+      -iaas_provider=gcp \
       -swarm_id=$SWARM_ID \
       -node_id=$NODE_ID \
       -channel=$CHANNEL \
@@ -55,6 +58,7 @@ if [ "$IS_LEADER" == "true" ]; then
   NUM_SERVICES=$(docker service ls -q | wc -w)
 
   /usr/bin/buoy -event="swarm:ping" \
+    -iaas_provider=gcp \
     -swarm_id=$SWARM_ID \
     -node_id=$NODE_ID \
     -channel=$CHANNEL \

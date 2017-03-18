@@ -12,6 +12,7 @@ import (
 	"github.com/segmentio/analytics-go"
 )
 
+// NA represents the default for all non-passed flags
 const NA = "n/a"
 
 func computeHmac256(message string, secret string) string {
@@ -32,9 +33,11 @@ func main() {
 	swarmID := flag.String("swarm_id", NA, "Swarm ID")
 	nodeID := flag.String("node_id", NA, "Node ID")
 	edition := flag.String("edition", NA, "Edition (ce, ee)")
-	editionOS := flag.String("edition_os", "moby", "Edition OS (centos, oel, ubuntu, ws2016, rhel, sles)")
-	editionVersion := flag.String("edition_version", NA, "Edition Version")
+	editionOS := flag.String("editionOS", "moby", "Edition OS (centos, oel, ubuntu, ws2016, rhel, sles)")
+	editionVersion := flag.String("editionVersion", NA, "Edition Version")
+	editionAddOn := flag.String("addon", "base", "Edition Add-On (base, ddc, cloud, etc.)")
 	event := flag.String("event", NA, "Event") // identify, init, ping, scale
+	// Get Common env vars
 	dockerForIAASVersion := os.Getenv("DOCKER_FOR_IAAS_VERSION")
 	accountID := os.Getenv("ACCOUNT_ID")
 	region := os.Getenv("REGION")
@@ -67,6 +70,7 @@ func main() {
 				"region":        region,
 				"edition":       *edition,
 				"edition_os":    *editionOS,
+				"edition_addon": *editionAddOn,
 				"iaas_provider": *iaasProvider,
 			},
 		})
@@ -79,7 +83,9 @@ func main() {
 				"node_id":         *nodeID,
 				"region":          region,
 				"edition_version": *editionVersion,
+				"edition_addon":   *editionAddOn,
 				"channel":         *channel,
+				"iaas_provider":   *iaasProvider,
 			},
 		})
 	} else if strings.HasPrefix(*event, "node:") {
@@ -91,7 +97,9 @@ func main() {
 				"node_id":         *nodeID,
 				"region":          region,
 				"edition_version": *editionVersion,
+				"edition_addon":   *editionAddOn,
 				"channel":         *channel,
+				"iaas_provider":   *iaasProvider,
 			},
 		})
 	} else if strings.HasPrefix(*event, "swarm:") {
@@ -107,7 +115,9 @@ func main() {
 				"worker_count":    *numWorkers,
 				"docker_version":  *dockerVersion,
 				"edition_version": *editionVersion,
+				"edition_addon":   *editionAddOn,
 				"channel":         *channel,
+				"iaas_provider":   *iaasProvider,
 			},
 		})
 	}

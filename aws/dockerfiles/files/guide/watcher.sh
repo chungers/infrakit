@@ -275,7 +275,7 @@ if [ "$NODE_TYPE" == "manager" ] ; then
         echo "This is the last manager in the swarm."
     fi
     echo "Give time for the demotation to take place"
-    buoy -event="node:demote" -swarm_id=$SWARM_ID -channel=$CHANNEL -node_id=$NODE_ID
+    buoy -event="node:demote" -iaas_provider=aws -swarm_id=$SWARM_ID -channel=$CHANNEL -node_id=$NODE_ID -addon=$EDITION_ADDON
     sleep 30
 
     if [[ "$HAS_DDC" == "yes" ]] ; then

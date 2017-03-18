@@ -11,7 +11,7 @@ from sections import resources
 class AWSBaseTemplate(object):
 
     def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, channel, amis,
+                 docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=False,
                  experimental_flag=True):
@@ -20,6 +20,7 @@ class AWSBaseTemplate(object):
         self.parameter_labels = {}
         self.docker_version = docker_version
         self.edition_version = edition_version
+        self.edition_addon = edition_addon
         self.channel = channel
         self.amis = amis
         self.create_vpc = create_vpc
@@ -77,7 +78,7 @@ class AWSBaseTemplate(object):
         self.add_aws2az_mapping()
         mappings.add_mapping_version(
             self.template, self.docker_version,
-            self.docker_for_aws_version, self.channel)
+            self.docker_for_aws_version, self.edition_addon, self.channel)
         mappings.add_mapping_vpc_cidrs(self.template)
         mappings.add_mapping_instance_type_2_arch(self.template)
         mappings.add_mapping_amis(self.template, self.amis)

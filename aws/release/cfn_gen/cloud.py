@@ -182,11 +182,11 @@ class CloudVPCTemplate(AWSBaseTemplate):
 class CloudVPCExistingTemplate(CloudVPCTemplate, ExistingVPCTemplate):
     """ Cloud Template for existing VPC."""
     def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, channel, amis,
+                 docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=False, template_description=None):
         super(CloudVPCExistingTemplate, self).__init__(
             docker_version, edition_version,
-            docker_for_aws_version,
+            docker_for_aws_version, edition_addon,
             channel, amis,
             create_vpc=create_vpc,
             template_description=template_description
