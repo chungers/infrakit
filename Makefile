@@ -1,5 +1,3 @@
-.PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
-
 ifeq (${EDITIONS_TAG},)
 	EDITIONS_TAG := ce
 endif
@@ -59,6 +57,8 @@ AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_EDITION)
 AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
 AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(AWS_EDITION)
 AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
+
+.PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
 release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimages
 	$(MAKE) -C aws/release AMI=$(shell cat moby/cloud/aws/ami_id.out)
@@ -140,6 +140,9 @@ moby/build/azure/initrd.img:
 moby:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C moby all
+
+check:
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 
 clean:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
