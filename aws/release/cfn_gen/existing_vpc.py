@@ -10,7 +10,8 @@ class ExistingVPCTemplate(AWSBaseTemplate):
                  docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=False, template_description=None,
                  use_ssh_cidr=False,
-                 experimental_flag=True):
+                 experimental_flag=True,
+                 has_ddc=False):
         super(ExistingVPCTemplate, self).__init__(
             docker_version, edition_version,
             docker_for_aws_version, edition_addon,
@@ -18,11 +19,16 @@ class ExistingVPCTemplate(AWSBaseTemplate):
             create_vpc=create_vpc,
             template_description=template_description,
             use_ssh_cidr=use_ssh_cidr,
-            experimental_flag=experimental_flag
+            experimental_flag=experimental_flag,
+            has_ddc=has_ddc
             )
 
-    def add_paramaters(self):
-        super(ExistingVPCTemplate, self).add_paramaters()
+    def add_parameters(self,
+                       manager_default_instance_type=None,
+                       worker_default_instance_type=None):
+        super(ExistingVPCTemplate, self).add_parameters(
+            manager_default_instance_type=manager_default_instance_type,
+            worker_default_instance_type=worker_default_instance_type)
         self.add_vpc_param()
         self.add_subnet1()
         self.add_subnet2()

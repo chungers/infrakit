@@ -12,12 +12,14 @@ def add_parameter_keyname(template):
     return ('KeyName', {"default": "Which SSH key to use?"})
 
 
-def add_parameter_instancetype(template):
+def add_parameter_instancetype(template, default_instance_type=None):
+    if not default_instance_type:
+        default_instance_type = 't2.micro'
     template.add_parameter(Parameter(
         'InstanceType',
         Type='String',
         Description='EC2 HVM instance type (t2.micro, m3.medium, etc).',
-        Default='t2.micro',
+        Default=default_instance_type,
         AllowedValues=[
             "t2.micro", "t2.small", "t2.medium", "t2.large", "t2.xlarge", "t2.2xlarge",
             "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m3.medium",
@@ -33,12 +35,14 @@ def add_parameter_instancetype(template):
     return ('InstanceType', {"default": "Agent worker instance type?"})
 
 
-def add_parameter_manager_instancetype(template):
+def add_parameter_manager_instancetype(template, default_instance_type=None):
+    if not default_instance_type:
+        default_instance_type = 't2.micro'
     template.add_parameter(Parameter(
         'ManagerInstanceType',
         Type='String',
         Description='EC2 HVM instance type (t2.micro, m3.medium, etc).',
-        Default='t2.micro',
+        Default=default_instance_type,
         AllowedValues=[
             "t2.micro", "t2.small", "t2.medium", "t2.large", "t2.xlarge", "t2.2xlarge",
             "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m3.medium",

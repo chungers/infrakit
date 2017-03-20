@@ -9,13 +9,14 @@ from base import AWSBaseTemplate
 from existing_vpc import ExistingVPCTemplate
 from cloud import CloudVPCTemplate, CloudVPCExistingTemplate
 from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
+from ddc import DDCVPCTemplate, DDCVPCExistingTemplate
 
 
 def generate_template(template_class, docker_version,
                       edition_version, docker_for_aws_version,
-                      channel, amis, file_name):
+                      edition_addon, channel, amis, file_name):
     aws_template = template_class(docker_version, edition_version,
-                                  docker_for_aws_version,
+                                  docker_for_aws_version, edition_addon,
                                   channel, amis)
     aws_template.build()
 
@@ -96,24 +97,32 @@ if __name__ == '__main__':
 
     # Docker CE
     generate_template(ExistingVPCTemplate, docker_version, edition_version,
-                      docker_for_aws_version, channel, amis,
+                      docker_for_aws_version, 'base' ,channel, amis,
                       'docker_ce_for_aws_no_vpc.json')
     generate_template(AWSBaseTemplate, docker_version, edition_version,
-                      docker_for_aws_version, channel, amis,
+                      docker_for_aws_version, 'base', channel, amis,
                       'docker_ce_for_aws.json')
 
     # Docker EE
     generate_template(DockerEEVPCExistingTemplate, docker_version,
-                      edition_version, docker_for_aws_version, channel, amis,
+                      edition_version, docker_for_aws_version, 'base-ee', channel, amis,
                       'docker_ee_for_aws_no_vpc.json')
     generate_template(DockerEEVPCTemplate, docker_version, edition_version,
-                      docker_for_aws_version, channel, amis,
+                      docker_for_aws_version, 'base-ee', channel, amis,
                       'docker_ee_for_aws.json')
 
     # Docker Cloud
     generate_template(CloudVPCExistingTemplate, docker_version, edition_version,
-                      docker_for_aws_version, channel, amis,
+                      docker_for_aws_version, 'cloud', channel, amis,
                       'docker_ce_for_aws_no_vpc_cloud.json')
     generate_template(CloudVPCTemplate, docker_version, edition_version,
-                      docker_for_aws_version, channel, amis,
+                      docker_for_aws_version, 'cloud', channel, amis,
                       'docker_ce_for_aws_cloud.json')
+
+    # Docker DDC
+    generate_template(DDCVPCExistingTemplate, docker_version, edition_version,
+                      docker_for_aws_version, 'ddc', channel, amis,
+                      'docker_ee_for_aws_no_vpc_ddc.json')
+    generate_template(DDCVPCTemplate, docker_version, edition_version,
+                      docker_for_aws_version, 'ddc', channel, amis,
+                      'docker_ee_for_aws_ddc.json')

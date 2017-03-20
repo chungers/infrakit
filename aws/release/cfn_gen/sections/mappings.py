@@ -193,14 +193,27 @@ def add_mapping_instance_type_2_arch(template):
     })
 
 
-def add_mapping_version(template, docker_version, d4a_version, d4a_addon, channel):
+def add_mapping_version(template, docker_version,
+                        d4a_version, d4a_addon, channel, has_ddc,
+                        extra_data=None):
+    """ Use extra_data to pass in anythig extra you want to add
+    to the version dict """
+    if has_ddc:
+        ddc = 'yes'
+    else:
+        ddc = 'no'
+    data = {
+        "docker": docker_version,
+        "forAws": d4a_version,
+        "channel": channel,
+        "addOn": d4a_addon,
+        'HAS_DDC': ddc,
+    }
+    if extra_data:
+        data.update(extra_data)
+
     template.add_mapping("DockerForAWS", {
-        "version": {
-            "docker": docker_version,
-            "forAws": d4a_version,
-            "channel": channel,
-            "addOn": d4a_addon
-        }
+        "version": data
     })
 
 

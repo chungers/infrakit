@@ -12,19 +12,19 @@ from existing_vpc import ExistingVPCTemplate
 class CloudVPCTemplate(AWSBaseTemplate):
 
     def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, channel, amis,
+                 docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=True, template_description=None):
         if not template_description:
             template_description = u"Docker for AWS {} ({}) cloud".format(
                 docker_version, edition_version)
         super(CloudVPCTemplate, self).__init__(
             docker_version, edition_version,
-            docker_for_aws_version, channel, amis,
+            docker_for_aws_version, edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description)
 
-    def add_paramaters(self):
-        super(CloudVPCTemplate, self).add_paramaters()
+    def add_parameters(self):
+        super(CloudVPCTemplate, self).add_parameters()
         self.add_cloud_clustername()
         self.add_cloud_username()
         self.add_cloud_apikey()

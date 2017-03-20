@@ -8,7 +8,7 @@ from existing_vpc import ExistingVPCTemplate
 class DockerEEVPCTemplate(AWSBaseTemplate):
 
     def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, channel, amis,
+                 docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=True,
                  experimental_flag=False):
@@ -17,14 +17,14 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
                 docker_version, edition_version)
         super(DockerEEVPCTemplate, self).__init__(
             docker_version, edition_version,
-            docker_for_aws_version, channel, amis,
+            docker_for_aws_version, edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
             use_ssh_cidr=use_ssh_cidr,
             experimental_flag=experimental_flag)
 
-    def add_paramaters(self):
-        super(DockerEEVPCTemplate, self).add_paramaters()
+    def add_parameters(self):
+        super(DockerEEVPCTemplate, self).add_parameters()
         self.add_parameter_ssh_cidr()
 
     def parameter_groups(self):
@@ -75,13 +75,13 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
 class DockerEEVPCExistingTemplate(DockerEEVPCTemplate, ExistingVPCTemplate):
     """ Cloud Template for existing VPC."""
     def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, channel, amis,
+                 docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=False, template_description=None,
                  use_ssh_cidr=True,
                  experimental_flag=False):
         super(DockerEEVPCExistingTemplate, self).__init__(
             docker_version, edition_version,
-            docker_for_aws_version,
+            docker_for_aws_version, edition_addon,
             channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,

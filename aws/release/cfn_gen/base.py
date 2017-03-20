@@ -14,7 +14,8 @@ class AWSBaseTemplate(object):
                  docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=False,
-                 experimental_flag=True):
+                 experimental_flag=True,
+                 has_ddc=False):
         self.template = Template()
         self.parameters = {}
         self.parameter_labels = {}
@@ -23,6 +24,7 @@ class AWSBaseTemplate(object):
         self.edition_addon = edition_addon
         self.channel = channel
         self.amis = amis
+        self.has_ddc = has_ddc
         self.create_vpc = create_vpc
         self.template_description = template_description
         self.use_ssh_cidr = use_ssh_cidr
@@ -37,7 +39,7 @@ class AWSBaseTemplate(object):
     def build(self):
         self.add_template_version()
         self.add_template_description()
-        self.add_paramaters()
+        self.add_parameters()
         self.add_conditions()
         self.add_metadata()
         self.add_mappings()
@@ -74,11 +76,15 @@ class AWSBaseTemplate(object):
         if self.create_vpc:
             conditions.add_condition_LambdaSupported(self.template)
 
-    def add_mappings(self):
-        self.add_aws2az_mapping()
+    def add_mapping_version(self):
         mappings.add_mapping_version(
             self.template, self.docker_version,
-            self.docker_for_aws_version, self.edition_addon, self.channel)
+            self.docker_for_aws_version, self.edition_addon,
+            self.channel, self.has_ddc)
+
+    def add_mappings(self):
+        self.add_aws2az_mapping()
+        self.add_mapping_version()
         mappings.add_mapping_vpc_cidrs(self.template)
         mappings.add_mapping_instance_type_2_arch(self.template)
         mappings.add_mapping_amis(self.template, self.amis)
@@ -92,10 +98,20 @@ class AWSBaseTemplate(object):
         key, value = result
         self.parameter_labels[key] = value
 
-    def add_paramaters(self):
+    def add_parameters(self,
+                       manager_default_instance_type=None,
+                       worker_default_instance_type=None):
         self.add_to_parameters(parameters.add_parameter_keyname(self.template))
-        self.add_to_parameters(parameters.add_parameter_instancetype(self.template))
-        self.add_to_parameters(parameters.add_parameter_manager_instancetype(self.template))
+
+        # instance types
+        self.add_to_parameters(
+            parameters.add_parameter_instancetype(
+                self.template,
+                default_instance_type=worker_default_instance_type))
+        self.add_to_parameters(
+            parameters.add_parameter_manager_instancetype(
+                self.template,
+                default_instance_type=manager_default_instance_type))
 
         self.add_to_parameters(parameters.add_parameter_cluster_size(self.template))
         self.add_to_parameters(parameters.add_parameter_worker_disk_size(self.template))
@@ -122,13 +138,13 @@ class AWSBaseTemplate(object):
         return resources.worker_node_userdata_head(
             experimental_flag=self.experimental_flag)
 
-    def workder_userdata_body(self):
+    def worker_userdata_body(self):
         return resources.worker_node_userdata_body()
 
     def worker_userdata(self):
         header = ["#!/bin/sh\n"]
         head_data = self.worker_userdata_head()
-        body_data = self.workder_userdata_body()
+        body_data = self.worker_userdata_body()
         data = header + head_data + body_data
         return Base64(Join("", data))
 
@@ -180,6 +196,9 @@ class AWSBaseTemplate(object):
         # lambda functions
         self.awslambda()
 
+        # s3
+        self.s3()
+
     def vpc(self):
         if self.create_vpc:
             resources.add_resource_vpc(self.template)
@@ -193,6 +212,9 @@ class AWSBaseTemplate(object):
             resources.add_resource_subnet1_route_table(self.template)
             resources.add_resource_subnet2_route_table(self.template)
             resources.add_resource_subnet3_route_table(self.template)
+
+    def s3(self):
+        pass
 
     def logs(self):
         resources.add_resource_log_group(self.template)
