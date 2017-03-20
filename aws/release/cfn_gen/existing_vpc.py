@@ -27,12 +27,15 @@ class ExistingVPCTemplate(AWSBaseTemplate):
         self.add_subnet1()
         self.add_subnet2()
         self.add_subnet3()
+        self.add_vpc_cidr()
 
     def parameter_groups(self):
         parameter_groups = super(ExistingVPCTemplate, self).parameter_groups()
         parameter_groups.append(
             {"Label": {"default": "VPC/Network"},
-             "Parameters": ["Vpc", "PubSubnetAz1", "PubSubnetAz2", "PubSubnetAz3"]}
+             "Parameters": ["Vpc", "VpcCidr",
+                            "PubSubnetAz1", "PubSubnetAz2",
+                            "PubSubnetAz3"]}
         )
         return parameter_groups
 
@@ -51,7 +54,8 @@ class ExistingVPCTemplate(AWSBaseTemplate):
             Description="Public Subnet 1",
             Type='AWS::EC2::Subnet::Id'
         ))
-        self.add_to_parameters(('PubSubnetAz1', {"default": "Public Subnet 1"}))
+        self.add_to_parameters(
+            ('PubSubnetAz1', {"default": "Public Subnet 1"}))
 
     def add_subnet2(self):
         self.template.add_parameter(Parameter(
@@ -59,7 +63,8 @@ class ExistingVPCTemplate(AWSBaseTemplate):
             Description="Public Subnet 2",
             Type='AWS::EC2::Subnet::Id'
         ))
-        self.add_to_parameters(('PubSubnetAz2', {"default": "Public Subnet 2"}))
+        self.add_to_parameters(
+            ('PubSubnetAz2', {"default": "Public Subnet 2"}))
 
     def add_subnet3(self):
         self.template.add_parameter(Parameter(
@@ -67,7 +72,20 @@ class ExistingVPCTemplate(AWSBaseTemplate):
             Description="Public Subnet 3",
             Type='AWS::EC2::Subnet::Id'
         ))
-        self.add_to_parameters(('PubSubnetAz3', {"default": "Public Subnet 3"}))
+        self.add_to_parameters(
+            ('PubSubnetAz3',
+             {"default": "Public Subnet 3"}))
+
+    def add_vpc_cidr(self):
+        self.template.add_parameter(Parameter(
+            "VpcCidr",
+            Type='String',
+            ConstraintDescription="Must be a valid IP CIDR range of the form x.x.x.x/x.",
+            Description="The CIDR range for your VPC in form x.x.x.x/x",
+        ))
+        self.add_to_parameters(
+            ('VpcCidr',
+             {"default": "VPC CIDR Range"}))
 
     def add_aws2az_mapping(self):
         """ No need to have Lambda support when VPC is existing. """

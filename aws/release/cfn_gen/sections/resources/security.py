@@ -24,6 +24,10 @@ def add_resource_swarm_wide_security_group(template, create_vpc):
         }
     },
     """
+    if create_vpc:
+        cidr = FindInMap("VpcCidrs", "vpc", "cidr")
+    else:
+        cidr = Ref("VpcCidr")
 
     sg = SecurityGroup(
         "SwarmWideSG",
@@ -33,7 +37,7 @@ def add_resource_swarm_wide_security_group(template, create_vpc):
             IpProtocol='-1',
             FromPort='0',
             ToPort='65535',
-            CidrIp=FindInMap("VpcCidrs", "vpc", "cidr"),
+            CidrIp=cidr,
         )]
     )
     # have to do this, because DependsOn can't be None or ""
@@ -171,6 +175,11 @@ def add_resource_worker_security_group(template, create_vpc):
     }
     """
 
+    if create_vpc:
+        cidr = FindInMap("VpcCidrs", "vpc", "cidr")
+    else:
+        cidr = Ref("VpcCidr")
+
     sg = SecurityGroup(
         "NodeVpcSG",
         VpcId=Ref("Vpc"),
@@ -180,7 +189,7 @@ def add_resource_worker_security_group(template, create_vpc):
                 IpProtocol='-1',
                 FromPort='0',
                 ToPort='65535',
-                CidrIp=FindInMap("VpcCidrs", "vpc", "cidr")),
+                CidrIp=cidr),
         ],
         SecurityGroupEgress=[
             SecurityGroupRule(
