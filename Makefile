@@ -67,8 +67,9 @@ release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimage
 
 ## Container images targets
 dockerimages: tools
-	dockerimages-aws
-	dockerimages-azure
+	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
+	$(MAKE) dockerimages-aws
+	$(MAKE) dockerimages-azure
 
 dockerimages-aws: tools
 	$(MAKE) -C aws/dockerfiles
