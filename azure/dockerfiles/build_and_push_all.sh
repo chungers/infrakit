@@ -17,15 +17,18 @@ done
 # Ensure that this image (meant to be interacted with manually) has :latest tag
 # as well as a specific one
 docker tag "${NAMESPACE}/create-sp-azure:${TAG_VERSION}" "${NAMESPACE}/create-sp-azure:latest"
-if [ ${DOCKER_PUSH}-eq 1 ]; then
+if [ "${DOCKER_PUSH}" -eq 1 ]; then
 	docker push "${NAMESPACE}/create-sp-azure:latest"
 fi
 
 
 # build and push cloudstor plugin
-tar zxvf cloudstor-rootfs.tar.gz -C files/
+pushd files
+tar zxvf cloudstor-rootfs.tar.gz
 docker plugin rm -f "${NAMESPACE}/cloudstor:${TAG_VERSION}" || true
 docker plugin create "${NAMESPACE}/cloudstor:${TAG_VERSION}" ./plugin
+rm -rf ./plugin
 if [ ${DOCKER_PUSH} -eq 1 ]; then
 	docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
 fi
+popd

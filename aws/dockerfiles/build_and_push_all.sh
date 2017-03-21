@@ -17,15 +17,18 @@ do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
 	docker build --pull -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .
 	docker save "${FINAL_IMAGE}" > "${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-	if [ ${DOCKER_PUSH} -eq 1 ]; then
+	if [ "${DOCKER_PUSH}" -eq 1 ]; then
 		docker push "${FINAL_IMAGE}"
 	fi
 done
 
 # build and push cloudstor plugin
-tar zxvf cloudstor-rootfs.tar.gz -C files/
+pushd files
+tar zxvf cloudstor-rootfs.tar.gz
 docker plugin rm -f "${NAMESPACE}/cloudstor:${TAG_VERSION}" || true
 docker plugin create "${NAMESPACE}/cloudstor:${TAG_VERSION}" ./plugin
+rm -rf ./plugin
 if [ ${DOCKER_PUSH} -eq 1 ]; then
 	docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
 fi
+popd
