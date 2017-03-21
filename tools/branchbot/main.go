@@ -110,8 +110,13 @@ func checkout(branch string, newBranch bool) error {
 }
 
 func cherrypick(sha string) error {
-	// -x -- Add "Cherry-picked from <SHA>" to commit message
-	if _, err := git("cherry-pick", "-x", sha); err != nil {
+	// -x:
+	//   Add "Cherry-picked from <SHA>" to commit message
+	// --stategy=recursive -Xtheirs:
+	//   favor the cherry-picked commits over existing code in merge
+	// -Xpatience:
+	//   spend a little bit more time trying to find the best diff
+	if _, err := git("cherry-pick", "-x", "--strategy=recursive", "-Xtheirs", "-Xpatience", sha); err != nil {
 		return err
 	}
 	return nil
