@@ -8,8 +8,8 @@ WORKDIR /go/
 COPY . ./
 WORKDIR /go/src/metaserver
 RUN vndr
-WORKDIR /go/
+RUN mkdir -p /go/bin
+RUN go vet
+RUN go install
 
-RUN mkdir -p bin
-
-CMD ["./compile.sh"]
+CMD ["ls /go/bin/metaserver]

@@ -1,15 +1,15 @@
 DOCKER_IMAGE_NAME :=buoy
-DOCKER_CONTAINER_NAME :=buoy-build-container
+DOCKER_CONTAINER_NAME :=${DOCKER_IMAGE_NAME}-build-container
 
 default: build
 
-build:
-	-docker rm -f ${DOCKER_CONTAINER_NAME}
+build: clean
 	docker build -t ${DOCKER_IMAGE_NAME} -f Dockerfile.build .
-	docker run --name ${DOCKER_CONTAINER_NAME} ${DOCKER_IMAGE_NAME}
+	docker create --name ${DOCKER_CONTAINER_NAME} ${DOCKER_IMAGE_NAME}
 	mkdir -p bin
 	docker cp ${DOCKER_CONTAINER_NAME}:/go/bin/buoy bin/buoy
 	-docker rm -f ${DOCKER_CONTAINER_NAME}
 
 clean:
+	-docker rm -f ${DOCKER_CONTAINER_NAME}
 	-rm bin/buoy

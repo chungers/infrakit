@@ -9,8 +9,8 @@ WORKDIR /go/
 COPY . ./
 WORKDIR /go/src/swarm-exec
 RUN vndr
-WORKDIR /go/
+RUN mkdir -p /go/bin
+RUN go vet
+RUN go install -tags netgo
 
-RUN mkdir -p bin
-
-CMD ["./compile.sh"]
+CMD ["ls /go/bin/swarm-exec]

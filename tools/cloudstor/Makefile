@@ -11,12 +11,14 @@ clean:
 	-rm -rf ./plugin
 	-rm cloudstor-rootfs.tar.gz
 	-docker rm -vf tmp
+	-rm bin/cloudstor
 
 
 build:
-	docker build -q -t cloudstor-builder -f Dockerfile.dev .
+	docker build -q -t cloudstor-builder -f Dockerfile.build .
 	docker create --name tmp cloudstor-builder
-	docker cp tmp:/go/bin/cloudstor .
+	mkdir -p bin
+	docker cp tmp:/go/bin/cloudstor bin/cloudstor
 	docker rm -vf tmp
 	docker rmi cloudstor-builder
 
