@@ -13,4 +13,4 @@ RUN mkdir -p /go/bin
 RUN go vet
 RUN go install -tags netgo
 
-CMD ["ls /go/bin/swarm-exec]
+CMD ["ls", "/go/bin/swarm-exec"]

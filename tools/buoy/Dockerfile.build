@@ -12,4 +12,4 @@ RUN mkdir -p /go/bin
 RUN go vet
 RUN go install
 
-CMD ["ls /go/bin/buoy]
+CMD ["ls", "/go/bin/buoy"]

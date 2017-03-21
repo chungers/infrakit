@@ -13,4 +13,4 @@ WORKDIR /go/src/cloudstor
 RUN vndr
 RUN go install --ldflags '-extldflags "-static"'
 
-CMD ["ls /go/bin/cloudstor"]
+CMD ["ls", "/go/bin/cloudstor"]
