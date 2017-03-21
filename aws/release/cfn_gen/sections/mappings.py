@@ -257,7 +257,7 @@ def aws2az_data():
         },
         "ap-southeast-2": {
             "Name": "Sydney",
-            "EFSSupport": "no",
+            "EFSSupport": "yes",
             "LambdaSupport": "yes",
             "NumAZs": "3",
             "AZ0": "0",
