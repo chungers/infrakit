@@ -8,3 +8,6 @@ release:
 
 go-build:
 	go build
+
+clean:
+	-rm bin/swarm-exec

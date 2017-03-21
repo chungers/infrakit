@@ -4,4 +4,4 @@ build:
 	./build.sh
 
 clean:
-	rm bin/metaserver || true
+	-rm bin/metaserver

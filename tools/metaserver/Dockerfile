@@ -1,18 +1,15 @@
 FROM golang:1.7-alpine
 
 RUN apk add --update bash git
-RUN go get github.com/docker/docker/client
-RUN go get github.com/aws/aws-sdk-go
-RUN go get github.com/docker/docker/api/types
-RUN go get github.com/docker/go-connections/tlsconfig
-RUN go get github.com/docker/go-connections/sockets
-RUN go get github.com/gorilla/mux
-RUN go get -u github.com/rancher/trash
+RUN go get github.com/LK4D4/vndr
 
 ENV USER root
 WORKDIR /go/
-
 COPY . ./
+WORKDIR /go/src/metaserver
+RUN vndr
+WORKDIR /go/
+
 RUN mkdir -p bin
 
-CMD ["/compile.sh"]
+CMD ["./compile.sh"]

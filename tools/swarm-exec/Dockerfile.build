@@ -1,12 +1,16 @@
-FROM golang:1.7.4-alpine
+FROM golang:1.7-alpine
 MAINTAINER madhu@docker.com
 
-RUN go get github.com/rancher/trash
+RUN apk add --update git bash
+RUN go get github.com/LK4D4/vndr
 
 ENV USER root
 WORKDIR /go/
+COPY . ./
+WORKDIR /go/src/swarm-exec
+RUN vndr
+WORKDIR /go/
 
-RUN mkdir -p bin src/swarm-exec
-COPY . ./src/swarm-exec/
+RUN mkdir -p bin
 
-CMD ["/go/src/swarm-exec/compile.sh"]
+CMD ["./compile.sh"]

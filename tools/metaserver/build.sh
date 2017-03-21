@@ -12,7 +12,7 @@ fi
 
 docker build -t $DOCKER_IMAGE_NAME .
 
-docker run --name $DOCKER_CONTAINER_NAME $DOCKER_IMAGE_NAME ./compile.sh
+docker run --name $DOCKER_CONTAINER_NAME $DOCKER_IMAGE_NAME
 
 mkdir -p bin
 docker cp $DOCKER_CONTAINER_NAME:/go/bin/metaserver bin/metaserver

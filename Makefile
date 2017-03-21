@@ -95,6 +95,12 @@ define build_cp_tool
 	cp tools/$(1)/$(2) gcp/dockerfiles/files/$(3)
 endef
 
+define clean_plugin_tool
+	-rm -f aws/dockerfiles/files/cloudstor-rootfs.tar.gz
+	-rm -f azure/dockerfiles/files/cloudstor-rootfs.tar.gz
+	-rm -f gcp/dockerfiles/files/cloudstor-rootfs.tar.gz
+endef
+
 ## General tools targets
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz tools/awscli/image
 
@@ -155,6 +161,7 @@ clean:
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C tools/cloudstor clean
+	$(MAKE) -C tools/swarm-exec clean
 	$(MAKE) -C moby clean
 	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
@@ -162,6 +169,7 @@ clean:
 	rm -f moby/cloud/azure/vhd_blob_url.out
 	rm -f moby/cloud/aws/ami_id.out
 	rm -f moby/cloud/aws/ami_id_ee.out
+	$(call clean_plugin_tool)
 
 ## Azure targets 
 azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out

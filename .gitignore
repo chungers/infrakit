@@ -15,7 +15,8 @@ aws/dockerfiles/files/bin/*
 aws/dockerfiles/files/elb-controller/container/bin/*
 azure/dockerfiles/files/bin/*
 azure/dockerfiles/files/alb-controller/container/bin/*
-tools/buoy/bin/buoy
+tools/*/bin/*
+tools/*/src/*/vendor/
 aws/release/tmp
 aws/release/cfn_gen/outputs
 azure/release/tmp

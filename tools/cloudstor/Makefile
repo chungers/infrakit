@@ -8,9 +8,9 @@ endif
 default: push
 
 clean:
-	rm -rf ./plugin
-	rm cloudstor-rootfs.tar.gz || true
-	docker rm -vf tmp || true
+	-rm -rf ./plugin
+	-rm cloudstor-rootfs.tar.gz
+	-docker rm -vf tmp
 
 
 build:
@@ -30,7 +30,7 @@ rootfs:  clean build
 	tar zcvf cloudstor-rootfs.tar.gz ./plugin/
 
 create:  clean build rootfs
-	docker plugin rm -f ${NAMESPACE}/cloudstor:${TAG_VERSION} || true
+	-docker plugin rm -f ${NAMESPACE}/cloudstor:${TAG_VERSION}
 	docker plugin create ${NAMESPACE}/cloudstor:${TAG_VERSION} ./plugin
 
 push:  clean build rootfs create
