@@ -1,5 +1,5 @@
-DOCKER_IMAGE_NAME :=buoy
-DOCKER_CONTAINER_NAME :=${DOCKER_IMAGE_NAME}-build-container
+DOCKER_IMAGE_NAME := buoy
+DOCKER_CONTAINER_NAME := ${DOCKER_IMAGE_NAME}-build-container
 
 default: build
 
