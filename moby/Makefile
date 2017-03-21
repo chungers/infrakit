@@ -147,10 +147,7 @@ azure:
 
 vhdartifact:
 	@echo "+ $@"
-	# NB: Multiple 'docker volume create' with same name does not return
-	# non-zero even though maybe it should.  The '|| true' is included as
-	# future insurance.
-	docker volume create --name vhdartifact || true
+	-docker volume create --name vhdartifact
 
 
 aws.img:
@@ -184,8 +181,8 @@ build/gcp/gce.img.tar.gz: build/gcp/initrd.img
 
 clean:
 	@echo "+ $@"
-	rm -rf build src packages/aws/dockerimages/ packages/gcp/dockerimages/ || true
-	rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz || true
-	docker images -q moby-azure:build | xargs docker rmi -f || true
-	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
-	docker volume rm vhdartifact || true
+	-rm -rf build src packages/aws/dockerimages/ packages/gcp/dockerimages/
+	-rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz
+	-docker images -q moby-azure:build | xargs docker rmi -f
+	-docker images -q moby-azure:raw2vhd | xargs docker rmi -f
+	-docker volume rm vhdartifact
