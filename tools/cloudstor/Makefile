@@ -1,5 +1,9 @@
-PLUGIN_NAME ?= docker4x/cloudstor
-PLUGIN_TAG ?= latest
+ifeq (${NAMESPACE},)
+	NAMESPACE := docker4x
+endif
+ifeq (${TAG_VERSION},)
+	TAG_VERSION := latest
+endif
 
 default: push
 
@@ -17,19 +21,19 @@ build:
 	docker rmi cloudstor-builder
 
 rootfs:  clean build
-	docker build -q -t ${PLUGIN_NAME}:rootfs .
+	docker build -q -t ${NAMESPACE}/cloudstor:rootfs .
 	mkdir -p ./plugin/rootfs
-	docker create --name tmp ${PLUGIN_NAME}:rootfs
+	docker create --name tmp ${NAMESPACE}/cloudstor:rootfs
 	docker export tmp | tar -x -C ./plugin/rootfs
 	cp config.json ./plugin/
 	docker rm -vf tmp
 	tar zcvf cloudstor-rootfs.tar.gz ./plugin/
 
 create:  clean build rootfs
-	docker plugin rm -f ${PLUGIN_NAME}:${PLUGIN_TAG} || true
-	docker plugin create ${PLUGIN_NAME}:${PLUGIN_TAG} ./plugin
+	docker plugin rm -f ${NAMESPACE}/cloudstor:${TAG_VERSION} || true
+	docker plugin create ${NAMESPACE}/cloudstor:${TAG_VERSION} ./plugin
 
 push:  clean build rootfs create
 ifeq (${DOCKER_PUSH},1)
-	docker plugin push ${PLUGIN_NAME}:${PLUGIN_TAG}
+	docker plugin push ${NAMESPACE}/cloudstor:${TAG_VERSION}
 endif

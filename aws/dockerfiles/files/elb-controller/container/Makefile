@@ -4,8 +4,8 @@
 VERSION?=aws-v$(EDITIONS_VERSION)
 REVISION=$(shell git rev-list -1 HEAD)
 
-DOCKER_REPO_OWNER?=docker4x
-DOCKER_REPO?=${DOCKER_REPO_OWNER}/l4controller-aws
+NAMESPACE?=docker4x
+DOCKER_REPO?=${NAMESPACE}/l4controller-aws
 DOCKER_TAG?=dev
 DOCKER_IMAGE?=${DOCKER_REPO}:${DOCKER_TAG}
 
@@ -38,14 +38,7 @@ container:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
 	-docker rm elb-controller-build
 	cd ../../../../../ && docker build --no-cache --pull -t elb-controller:build -f ${CURDIR}/Dockerfile.build .
-	docker run \
-		-e EDITIONS_VERSION=$(EDITIONS_VERSION) \
-		-e VERSION=$(VERSION) \
-		-e DOCKER_REPO_OWNER=$(DOCKER_REPO_OWNER) \
-		-e DOCKER_REPO=$(DOCKER_REPO) \
-		-e DOCKER_TAG=$(DOCKER_TAG) \
-		-e DOCKER_IMAGE=$(DOCKER_IMAGE) \
-		--name elb-controller-build elb-controller:build
+	docker run --name elb-controller-build elb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker cp elb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
 	docker build --no-cache --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .

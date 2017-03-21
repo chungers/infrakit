@@ -1,7 +1,7 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
 BUILD_NUMBER ?= 0
-DOCKER_REPO_OWNER ?= docker4x
+NAMESPACE ?= docker4x
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
 EDITIONS_VERSION ?= dev
 BUILDS_BUCKET ?= gs://docker-for-gcp-builds
@@ -91,11 +91,11 @@ build-templates: build-dir test
 	cp -r ./templates ./build/
 
 $(DOCKERFILE_DIRS):
-	DOCKER_IMAGE=$(DOCKER_REPO_OWNER)/$(call last,$@)-gcp:$(BUILD_NUMBER) make -C dockerfiles/$(call last,$@)
+	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(BUILD_NUMBER) make -C dockerfiles/$(call last,$@)
 
 build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	docker save \
-		$(foreach DIR,$(DOCKERFILE_DIRS),$(DOCKER_REPO_OWNER)/$(call basename,$(call last,$(DIR)))-gcp:$(BUILD_NUMBER)) \
+		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(BUILD_NUMBER)) \
 		--output ./build/images.tar
 
 build: build-moby build-images build-templates
@@ -153,8 +153,8 @@ release-images: gcloud-auth
 	echo Release Images build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
 	docker load -i ./build/images.tar
 	for IMAGE in $(foreach DIR,$(DOCKERFILE_DIRS),$(call basename,$(call last,$(DIR)))); do \
-		docker tag $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(BUILD_NUMBER) $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
-		docker push $(DOCKER_REPO_OWNER)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
+		docker tag $(NAMESPACE)/$$IMAGE-gcp:$(BUILD_NUMBER) $(NAMESPACE)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
+		docker push $(NAMESPACE)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
 	done
 
 release: release-moby release-images release-templates

@@ -4,8 +4,8 @@
 VERSION?=azure-v$(EDITIONS_VERSION)
 REVISION=$(shell git rev-list -1 HEAD)
 
-DOCKER_REPO_OWNER?=docker4x
-DOCKER_REPO?=${DOCKER_REPO_OWNER}/l4controller-azure
+NAMESPACE?=docker4x
+DOCKER_REPO?=${NAMESPACE}/l4controller-azure
 DOCKER_TAG?=dev
 DOCKER_IMAGE?=${DOCKER_REPO}:${DOCKER_TAG}
 
@@ -38,15 +38,7 @@ bin/loadbalancer:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
 	-docker rm alb-controller-build
 	cd ../../../../../ && docker build --pull -t alb-controller:build -f ${CURDIR}/Dockerfile.build .
-	docker run \
-		-ti \
-		-e EDITIONS_VERSION=$(EDITIONS_VERSION) \
-		-e VERSION=$(VERSION) \
-		-e DOCKER_REPO_OWNER=$(DOCKER_REPO_OWNER) \
-		-e DOCKER_REPO=$(DOCKER_REPO) \
-		-e DOCKER_TAG=$(DOCKER_TAG) \
-		-e DOCKER_IMAGE=$(DOCKER_IMAGE) \
-		--name alb-controller-build alb-controller:build
+	docker run --name alb-controller-build alb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker cp alb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
 	docker build --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
