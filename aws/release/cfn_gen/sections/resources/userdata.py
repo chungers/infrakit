@@ -30,7 +30,7 @@ def common_userdata_head(experimental_flag=True):
         "export ENABLE_EFS='", FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"), "'\n",
         "export EFS_ID_REGULAR='", If("EFSSupported", Ref("FileSystemGP"), ''), "'\n",
         "export EFS_ID_MAXIO='", If("EFSSupported", Ref("FileSystemMaxIO"), ''), "'\n",
-        "export HAS_DDC='", FindInMap("DockerForAWS", "version", "HAS_DDC"), "'\n",
+        "export HAS_DDC='", FindInMap("DockerForAWS", "version", "HasDDC"), "'\n",
     ]
     if experimental_flag:
         data.append("export DOCKER_EXPERIMENTAL='true' \n")

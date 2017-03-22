@@ -1,10 +1,9 @@
 from os import path
 from troposphere import Parameter, Ref, Output, GetAtt, Join, FindInMap
 
-from base import AWSBaseTemplate
+from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
 from sections import mappings
 from sections import resources
-from existing_vpc import ExistingVPCTemplate
 
 
 DTR_TAG = '2.2.3'
@@ -12,7 +11,7 @@ UCP_TAG = '2.1.1'
 UCP_INIT_TAG = '2.1.0'
 
 
-class DDCVPCTemplate(AWSBaseTemplate):
+class DDCVPCTemplate(DockerEEVPCTemplate):
 
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, edition_addon, channel, amis,
@@ -196,7 +195,7 @@ class DDCVPCTemplate(AWSBaseTemplate):
         return orig_data + data
 
 
-class DDCVPCExistingTemplate(DDCVPCTemplate, ExistingVPCTemplate):
+class DDCVPCExistingTemplate(DDCVPCTemplate, DockerEEVPCExistingTemplate):
     """ DDC Template for existing VPC."""
     def __init__(self, docker_version, edition_version,
                  docker_for_aws_version, edition_addon, channel, amis,

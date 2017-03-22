@@ -207,7 +207,7 @@ def add_mapping_version(template, docker_version,
         "forAws": d4a_version,
         "channel": channel,
         "addOn": d4a_addon,
-        'HAS_DDC': ddc,
+        'HasDDC': ddc,
     }
     if extra_data:
         data.update(extra_data)
