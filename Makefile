@@ -27,6 +27,16 @@ ifeq (${DOCKER_PUSH},)
 	DOCKER_PUSH := 1
 endif
 
+# Push final image output to S3 bucket
+ifeq (${PUSH_BUILD_TO_S3},)
+	PUSH_BUILD_TO_S3 := false
+endif
+
+# By default don't load Docker Images into the AMI
+ifeq (${LOAD_IMAGES},)
+	LOAD_IMAGES := false
+endif
+
 BUILD := 1
 NAMESPACE := docker4x
 AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
@@ -51,8 +61,6 @@ EE_VHD_SKU := docker-ee
 EE_VHD_VERSION := 1.0.0
 # stage offer will have the -preview 
 EE_OFFER_ID := docker-ee
-# By default don't load Docker Images into the AMI
-LOAD_IMAGES := false
 
 export
 

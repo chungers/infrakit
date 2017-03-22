@@ -17,11 +17,32 @@ TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa60
 export
 
 ifeq ($(LOAD_IMAGES),true)
-AMI_OUT=ami_id_ee.out
+AMI_OUT := ami_id_ee.out
 else
-AMI_OUT=ami_id.out
+AMI_OUT := ami_id.out
 endif
+VHD_OUT := vhd_blob_url.out
 
+
+define push_to_s3
+	@echo "+ Pushing ${3} to ${1} with type ${2} - ${3}"
+	docker run --rm \
+		-v $(CURDIR)/cloud/$(1):/tmp \
+		-e AWS_ACCESS_KEY_ID \
+		-e AWS_SECRET_ACCESS_KEY \
+		docker4x/awscli:latest aws s3 cp \
+		/tmp/$(3) \
+		s3://docker-for-$(1)/data/$(2)/${EDITIONS_VERSION}/$(3) \
+		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
+	docker run --rm \
+		-v $(CURDIR)/cloud/$(1):/tmp \
+		-e AWS_ACCESS_KEY_ID \
+		-e AWS_SECRET_ACCESS_KEY \
+		docker4x/awscli:latest aws s3 cp \
+		/tmp/$(3) \
+		s3://docker-for-$(1)/data/$(2)/$(3) \
+		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
+endef
 
 all: 
 	@echo "+ $@"
@@ -80,6 +101,9 @@ ami:
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
 		moby-ami:build bake >  ./cloud/aws/$(AMI_OUT)
+ifeq ($(PUSH_BUILD_TO_S3),true)
+	$(call push_to_s3,aws,ami,$(AMI_OUT))
+endif
 
 ami-clean-mount:
 	@echo "+ $@"
@@ -108,7 +132,10 @@ uploadvhd:
 		--rm \
 		-v vhdartifact:/tmp \
 		moby-azure:build \
-		uploadvhd >./cloud/azure/vhd_blob_url.out
+		uploadvhd >./cloud/azure/$(VHD_OUT)
+ifeq ($(PUSH_BUILD_TO_S3),true)
+	$(call push_to_s3,azure,vhd,$(VHD_OUT))
+endif
 
 azure:
 	@echo "+ $@"

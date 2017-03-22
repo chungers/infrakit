@@ -5,10 +5,20 @@ set -e
 NAMESPACE="${NAMESPACE:-docker4x}"
 TAG_VERSION="${AZURE_TAG_VERSION:-latest}"
 
+CURR_DIR=`pwd`
+ROOTDIR="${ROOTDIR:-$CURR_DIR}"
+DEFAULT_PATH="dist/azure/nightly/$TAG_VERSION"
+AZURE_TARGET_PATH="${AZURE_TARGET_PATH:-$DEFAULT_PATH}"
+
+echo "+ Creating dist folder: $AZURE_TARGET_PATH"
+mkdir -p $ROOTDIR/$AZURE_TARGET_PATH
+
 for IMAGE in init guide create-sp ddc-init cloud logger meta
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${TAG_VERSION}"
 	docker build --pull -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .
+	echo "++ Saving docker image to: ${ROOTDIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
+	docker save "${FINAL_IMAGE}" > "${ROOTDIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
 	if [ ${DOCKER_PUSH} -eq 1 ]; then
 		docker push "${FINAL_IMAGE}"
 	fi

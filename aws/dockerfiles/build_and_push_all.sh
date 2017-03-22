@@ -16,6 +16,7 @@ for IMAGE in shell init guide ddc-init cloud meta
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
 	docker build --pull -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .
+	echo "++ Saving docker image to: ${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 	docker save "${FINAL_IMAGE}" > "${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 	if [ "${DOCKER_PUSH}" -eq 1 ]; then
 		docker push "${FINAL_IMAGE}"
