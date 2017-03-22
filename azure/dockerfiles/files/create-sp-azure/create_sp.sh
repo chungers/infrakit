@@ -1,24 +1,53 @@
 #!/bin/bash
 
 usage() {
-    echo "usage: ${PROG} app_name [resource_group_name resource_group_location]"
+    echo "usage: ${PROG} [-e Public] app_name [resource_group_name resource_group_location]"
+    echo "       ${PROG} -e Gov app_name user_name [resource_group_name resource_group_location]"
     echo "    app_name: Name of the new Azure AD Application used for authentication"
-    echo "    resource_group_name: Name of the new Azure Resource Group where s"
+    echo "    user_name: Username for the Azure account in Azure government regions"
+    echo "    resource_group_name: Name of the new Azure Resource Group where SP will be scoped to"
     echo "    resource_group_location: Location of the new Azure Resource Group"
 }
 
 MAX_RETRIES=20
 PROG="${PROG:-$0}"
-APP_NAME=$1
-RG_NAME=$2
-RG_LOC=$3
+ENV_FLAG=$1
+# default env is public - maintain compat with previous docs/usage
+ENV="Public"
 
-if [ $# -ne 1 ] && [ $# -ne 3 ]; then
-	  usage
-	  exit 1
+if [[ $ENV_FLAG == "-e" ]]; then
+    shift
+    ENV=$1
+    shift
 fi
 
-azure login
+if [[ $ENV == "Gov" ]]; then
+    if [ $# -ne 2 ] && [ $# -ne 4 ]; then
+        usage
+        exit 1
+    fi
+    APP_NAME=$1
+    USER_NAME=$2
+    RG_NAME=$3
+    RG_LOC=$4
+
+    azure login --username $USER_NAME --environment "AzureUSGovernment"
+
+elif [[ $ENV == "Public" ]]; then
+    if [ $# -ne 1 ] && [ $# -ne 3 ]; then
+        usage
+        exit 1
+    fi
+    APP_NAME=$1
+    RG_NAME=$2
+    RG_LOC=$3
+
+    azure login
+
+else
+    usage
+    exit 1
+fi
 
 if [ -z "$SUBSCRIPTION_ID" ]; then
     echo "The following subscriptions were retrieved from your Azure account"
@@ -160,10 +189,7 @@ echo "Your access credentials ==================================================
 echo "AD ServicePrincipal App ID:       ${APP_ID}"
 echo "AD ServicePrincipal App Secret:   ${PASSWORD}"
 echo "AD ServicePrincipal Tenant ID:    ${TENANT_ID}"
-if [[ "" == ${RG_NAME} ]]; then
-    echo "WARNING: The above credentials provide full access to your Azure subscription."
-    echo "Please use Service Principals scoped to individual resource groups."
-else
+if [[ "" != ${RG_NAME} ]]; then
     echo "Resource Group Name:              "${RG_NAME}""
     echo "Resource Group Location:          "${RG_LOC}""
 fi
