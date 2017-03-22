@@ -30,7 +30,8 @@ class AWSBaseTemplate(object):
         self.use_ssh_cidr = use_ssh_cidr
         self.experimental_flag = experimental_flag
 
-        flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
+        flat_edition_version = edition_version.replace(
+            " ", "").replace("_", "").replace("-", "").replace(".", "")
         self.flat_edition_version = flat_edition_version
         flat_edition_version_upper = flat_edition_version.capitalize()
         self.flat_edition_version_upper = flat_edition_version_upper
