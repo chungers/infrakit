@@ -52,8 +52,8 @@ def main():
     edition_version = args.edition_version
     edition_addon = args.edition_addon
     flat_edition_version = edition_version.replace(" ", "")
-    docker_for_aws_version = u"aws-v{}-{}".format(docker_version, flat_edition_version)
-    image_name = u"Moby Linux {}".format(docker_for_aws_version)
+    docker_for_aws_version = u"aws-v{}".format(edition_version)
+    image_name = u"Moby Linux {} {}".format(docker_for_aws_version, release_channel)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))

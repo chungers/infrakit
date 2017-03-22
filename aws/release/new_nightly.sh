@@ -24,29 +24,28 @@ AMI_OUT_DIR="$BUILD_HOME/out"
 AMI_OUT_FILE="ami_id_${DAY}.out"
 export TAG_KEY="aws-nightly-${DAY}-${HASH}"
 
-MASTER_DOCKER_VERSION=$(curl -s https://master.dockerproject.org/version)
+AMI_BUCKET="docker-for-aws"
+AMI_PATH="data/ami"
+AMI_OUT="ami_id.out"
 
-export DOCKER_BIN_URL="https://master.dockerproject.org/linux/amd64/docker-$MASTER_DOCKER_VERSION.tgz"
 
 # git update
 cd $BUILD_HOME/code/editions/
 git pull
 
 # get docker version
-export DOCKER_VERSION=$MASTER_DOCKER_VERSION
-export EDITION_VERSION=nightly_$DAY
-export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
+EDITIONS_META=$(aws s3api get-object --bucket $AMI_BUCKET --key ${AMI_PATH}/ami_id.out docker.out | jq -r '.Metadata')
+export EDITIONS_VERSION=$(echo $EDITIONS_META | jq -r '.editions_version')
+export DOCKER_VERSION=$(echo $EDITIONS_META | jq -r '.docker_version')
+export NIGHTLY_VERSION=nightly_$DAY
+export TAG_VERSION=aws-v$EDITIONS_VERSION
 export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
 export RELEASE=1
 
-make clean
-make moby clean
-git checkout -- moby/packages/aws/etc/init.d/aws
-make moby/cloud/aws/ami_id.out EDITIONS_VERSION=$EDITION_VERSION
-
-mv -f moby/cloud/aws/ami_id.out $AMI_OUT_DIR/$AMI_OUT_FILE
-
-echo "Finished AMI build, lets move onto next part."
+mkdir -p $AMI_OUT_DIR
+# Download the ami_id.out
+aws s3 cp s3://${AMI_BUCKET}/${AMI_PATH}/ami_id.out $AMI_OUT_DIR/$AMI_OUT_FILE
+echo "AMI build captured, lets move onto next part."
 
 # get ami-id
 # look for anyfiles that look like ami_*.out those are ami's ready to be processed.
@@ -56,7 +55,7 @@ for f in $AMI_OUT_DIR/ami_*.out; do
     ## If not, f here will be exactly the pattern above
     ## and the exists test will evaluate to false.
     if [ -e "$f" ]; then
-        AMI_ID=$(cat $f)
+        CI_AMI_ID=$(cat $f)
         mv $f $f.done
     fi
 
@@ -64,42 +63,40 @@ for f in $AMI_OUT_DIR/ami_*.out; do
     break
 done
 
-if [[ -z $AMI_ID ]]
+if [[ -z $CI_AMI_ID ]]
 then
     echo "There is no AMI_ID, nothing to do, so stopping."
     # there are no AMI's ready skip.
      exit 1
 fi
-echo $AMI_ID
+echo $CI_AMI_ID
 
 AMI_SOURCE_REGION=us-east-1
 DOCKER_AWS_ACCOUNT_URL=https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt
 
+# Copy AMI to desired region:
+AMI_ID=$(aws ec2 copy-image --source-image-id $CI_AMI_ID --source-region us-west-2 --region $AMI_SOURCE_REGION --name "Moby Linux ${EDITIONS_VERSION} ${CHANNEL}" | jq -r '.ImageId')
 
-# build binaries
-cd $BUILD_HOME/code/editions/tools/buoy/
-./build_buoy.sh
+echo "Copied AMI to $AMI_SOURCE_REGION waiting for it to be available"
+# Wait for AMI copy to be done
+while :
+do
+    AMI_STATE=$(aws ec2 describe-images --image-ids $AMI_ID | jq -r '.Images[0].State')
+    if [ "$AMI_STATE" == "available" ]; then
+        break
+    elif [ "$AMI_STATE" == "failed" ]; then
+        echo "ERROR in AMI copy"
+        exit 1
+    fi
+    echo -ne "#"
+done
 
-cd $BUILD_HOME/code/editions/tools/metaserver/
-./build.sh
-
-cd $BUILD_HOME/code/editions/aws/dockerfiles/
-
-# build images
-
-./build_and_push_all.sh
-
-cd files/elb-controller/container
-DOCKER_TAG=$VERSION DOCKER_PUSH=true DOCKER_TAG_LATEST=false make -k container
-
-cd $BUILD_HOME/code/editions/common/cloudstor
-
-PLUGIN_TAG=$VERSION make
+echo "AMI: $AMI_ID is now availble in $AMI_SOURCE_REGION"
 
 cd $BUILD_HOME/code/editions/aws/release
 
 # run release
-./new_run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
+./new_run_release.sh -d $DOCKER_VERSION -e $EDITIONS_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
