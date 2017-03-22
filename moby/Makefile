@@ -30,7 +30,7 @@ define push_to_s3
 		-v $(CURDIR)/cloud/$(1):/tmp \
 		-e AWS_ACCESS_KEY_ID \
 		-e AWS_SECRET_ACCESS_KEY \
-		docker4x/awscli:latest aws s3 cp \
+		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
 		s3://docker-for-$(1)/data/$(2)/${EDITIONS_VERSION}/$(3) \
 		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
@@ -38,7 +38,7 @@ define push_to_s3
 		-v $(CURDIR)/cloud/$(1):/tmp \
 		-e AWS_ACCESS_KEY_ID \
 		-e AWS_SECRET_ACCESS_KEY \
-		docker4x/awscli:latest aws s3 cp \
+		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
 		s3://docker-for-$(1)/data/$(2)/$(3) \
 		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
