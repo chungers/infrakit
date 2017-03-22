@@ -4,7 +4,7 @@ FORCE_GSUTIL_AUTH ?= 1
 
 ## Moby specific commit
 ifeq (${MOBY_COMMIT},)
-	MOBY_COMMIT := a53d1c5c4453654174b8a8d7468e276ed704ee20
+	MOBY_COMMIT := 7fedbd41c089ec99c4f05d72211da0f25203d843
 endif
 MOBY_IMG_NAME := mobylinux-ce.tgz
 MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
