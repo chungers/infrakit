@@ -7,4 +7,4 @@ WORKDIR /go/src/github.com/docker/editions/tools/branchbot
 RUN vndr
 RUN ["go", "install", "github.com/docker/editions/tools/branchbot"]
 
-CMD ["ls", "/go/bin/branchbot"]
+CMD ["cat", "/go/bin/branchbot"]

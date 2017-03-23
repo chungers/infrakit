@@ -29,13 +29,8 @@ const (
 	githubRepo      = "editions"
 	editionsRepoDir = "editions"
 	originRemote    = "git@github.com:docker/editions"
-	botRemote       = "git@github.com:nathanleclaire/editions"
-	masterBranch    = "master"
-	edgeBranch      = "edge"
-	stableBranch    = "stable"
-
-	// TODO(nathanleclaire): Change to editionsbot.
-	botUser = "nathanleclaire"
+	botRemote       = "git@github.com:editionsbot/editions"
+	botUser         = "editionsbot"
 
 	// TODO(nathanleclaire): Should include all editions maintainers, just didn't want to
 	// spam before the bot was fully ready.
@@ -122,26 +117,8 @@ func cherrypick(sha string) error {
 	return nil
 }
 
-func main() {
-	var flAccessToken string
-
-	flag.BoolVar(&flVerbose, "verbose", false, "print verbose output")
-	flag.StringVar(&flAccessToken, "token", "", "github API token")
-	flag.Parse()
-
-	if err := mkRepo(); err != nil {
-		log.Print(err)
-		os.Exit(1)
-	}
-	if err := fetch(); err != nil {
-		log.Print(err)
-		os.Exit(1)
-	}
-
+func checkCherrypickLabels(client *github.Client) error {
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: flAccessToken})
-	tc := oauth2.NewClient(ctx, ts)
-	client := github.NewClient(tc)
 
 	// GH label filter seems to be an 'and' filter, so run the query once
 	// per cherrypick label.
@@ -168,11 +145,11 @@ func main() {
 
 			if err := checkout(targetBranch, false); err != nil {
 				log.Print("Error checking out target branch: ", err)
-				os.Exit(1)
+				return err
 			}
 			if err := checkout(cherrypickBranch, true); err != nil {
 				log.Print("Error creating cherry pick branch: ", err)
-				os.Exit(1)
+				return err
 			}
 
 			commits, _, err := client.PullRequests.ListCommits(ctx, githubUser, githubRepo, issue.GetNumber(), &github.ListOptions{})
@@ -236,4 +213,40 @@ ping %s
 			}
 		}
 	}
+
+	return nil
+}
+
+func main() {
+	var flAccessToken string
+
+	flag.BoolVar(&flVerbose, "verbose", false, "print verbose output")
+	flag.StringVar(&flAccessToken, "token", "", "github API token")
+	flag.Parse()
+
+	if err := mkRepo(); err != nil {
+		log.Print("Error cloning repo: ", err)
+		os.Exit(1)
+	}
+	if err := fetch(); err != nil {
+		log.Print("Error fetching: ", err)
+		os.Exit(1)
+	}
+
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: flAccessToken})
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+
+	// Loop until canceled by user.
+	//
+	// TODO(nathanleclaire): Gracefully exit (clean up / finish tag
+	// modifications) when receiving SIGTERM.
+	for {
+		if err := checkCherrypickLabels(client); err != nil {
+			log.Print("Error running cherrypick check: ", err)
+		}
+		time.Sleep(syncWait)
+	}
+
 }
