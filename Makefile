@@ -39,12 +39,9 @@ endif
 
 BUILD := 1
 NAMESPACE := docker4x
-AWS_EDITION := $(EDITIONS_VERSION)-aws$(BUILD)
-AWS_TAG_VERSION := aws-v$(EDITIONS_VERSION)
-AZURE_EDITION := $(EDITIONS_VERSION)-azure$(BUILD)
-AZURE_TAG_VERSION := azure-v$(EDITIONS_VERSION)
-GCP_EDITION := $(EDITIONS_VERSION)-gcp$(BUILD)
-GCP_TAG_VERSION := gcp-v$(EDITIONS_VERSION)
+AWS_TAG_VERSION := $(EDITIONS_VERSION)-aws$(BUILD)
+AZURE_TAG_VERSION := $(EDITIONS_VERSION)-azure$(BUILD)
+GCP_TAG_VERSION := $(EDITIONS_VERSION)-gcp$(BUILD)
 REGION := us-west-2
 CHANNEL := edge
 CHANNEL_DDC := alpha
@@ -66,7 +63,7 @@ export
 
 ROOTDIR := $(shell pwd)
 
-AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_EDITION)
+AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_TAG_VERSION)
 AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
 AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(AWS_EDITION)
 AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
@@ -131,18 +128,18 @@ tools/awscli/image:
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="azure-v$(AZURE_EDITION)"/' moby/packages/azure/etc/init.d/azure 
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
 moby/cloud/aws/ami_id_ee.out: 
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="aws-v$(AWS_EDITION)"/' moby/packages/aws/etc/init.d/aws
+	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami LOAD_IMAGES=true
 
 moby/build/gcp/gce.img.tar.gz: moby
