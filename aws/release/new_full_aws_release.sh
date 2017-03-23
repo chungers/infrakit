@@ -7,11 +7,10 @@ set -e
 export PYTHONUNBUFFERED=1
 # prehook
 
-DOCKER_BIN_URL=
+AMI_EDITIONS_VERSION=
 DOCKER_VERSION=
 EDITION_VERSION=
 CHANNEL=
-MOBY_BRANCH="master"
 DOCKER_AWS_ACCOUNT_URL=
 MAKE_AMI_PUBLIC="no"
 
@@ -29,13 +28,11 @@ Required ENV variables:
 
 OPTIONS:
    -h      Show this message
-   -d      Docker version (1.12.0, etc)
-   -e      Edition version (beta4, etc)
-   -b      Docker Bin URL (location where tar.gz file can be downloaded)
-   -c      Release Channel (beta, nightly, etc)
+   -a      AMI Edition version (17.03.0-ce, etc.)
+   -b      AWS Build number (1, 2, 3, etc.)
+   -c      Release Channel (beta, nightly, etc.)
    -l      AWS account list URL
    -p      Make AMI public (yes, no)
-   -m      Moby Branch (master, 1.13.x, etc)
 EOF
 }
 
@@ -46,14 +43,11 @@ do
              usage
              exit 1
              ;;
-         d)
-             DOCKER_VERSION=$OPTARG
-             ;;
-         e)
-             EDITION_VERSION=$OPTARG
+         a)
+             AMI_EDITIONS_VERSION=$OPTARG
              ;;
          b)
-             DOCKER_BIN_URL=$OPTARG
+             BUILD_NUMBER=$OPTARG
              ;;
          c)
              CHANNEL=$OPTARG
@@ -64,9 +58,6 @@ do
          p)
              MAKE_AMI_PUBLIC=$OPTARG
              ;;
-         m)
-             MOBY_BRANCH=$OPTARG
-             ;;
          ?)
              usage
              exit
@@ -74,7 +65,7 @@ do
      esac
 done
 
-if [[ -z $DOCKER_VERSION ]] || [[ -z $EDITION_VERSION ]] || [[ -z $DOCKER_BIN_URL ]]
+if [[ -z $AMI_EDITIONS_VERSION ]]
 then
      usage
      exit 1
@@ -92,9 +83,15 @@ then
      exit 1
 fi
 
+
+AMI_URL="data/ami/${AMI_EDITIONS_VERSION}/ami_id.out"
+
+EDITIONS_META=$(aws s3api get-object --bucket $AMI_BUCKET --key ${AMI_URL} docker.out | jq -r '.Metadata')
+export EDITIONS_VERSION=$(echo $EDITIONS_META | jq -r '.editions_version')
+export DOCKER_VERSION=$(echo $EDITIONS_META | jq -r '.docker_version')
+export AWS_TAG_VERSION=$EDITIONS_VERSION-aws${BUILD_NUMBER}
+
 export ROOTDIR=`pwd`
-export EDITIONS_VERSION=$DOCKER_VERSION-$EDITION_VERSION
-export TAG_KEY=$EDITIONS_VERSION
 export AMI_SRC_REGION=$(curl --silent http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .region)
 export HUB_LOGIN_ID=$(docker info | grep Username)
 export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
@@ -107,10 +104,10 @@ echo "BUILD_NUMBER=$BUILD_NUMBER"
 echo "DOCKER_VERSION=$DOCKER_VERSION"
 echo "EDITION_VERSION=$EDITION_VERSION"
 echo "EDITIONS_VERSION=$EDITIONS_VERSION"
-echo "DOCKER_BIN_URL=$DOCKER_BIN_URL"
+echo "AWS_TAG_VERSION=$AWS_TAG_VERSION"
+echo "AMI_EDITIONS_VERSION=$AMI_EDITIONS_VERSION"
 echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
-echo "MOBY_BRANCH=$MOBY_BRANCH"
 echo "DOCKER_AWS_ACCOUNT_URL=$DOCKER_AWS_ACCOUNT_URL"
 echo "Docker Hub Login ID=$HUB_LOGIN_ID"
 echo "MAKE_AMI_PUBLIC=$MAKE_AMI_PUBLIC"
@@ -152,72 +149,43 @@ echo "This script assumes directories are setup in the following way"
 echo "two directories at the same level. make sure correct versions are checked out (master, etc)"
 echo " / "
 echo " /editions  <-- github.com/docker/editions "
-echo " /moby  <-- github.com/docker/moby "
 echo "Make sure you run this script from the editions/aws/release directory."
 
-MOBY_DIR=../../../moby/alpine
 BASE_DIR=`pwd`
 
-if [ ! -d "$MOBY_DIR" ]; then
-    echo "$MOBY_DIR doesn't exist"
-else
-    echo "$MOBY_DIR Looks good!"
-fi
 echo "-------"
-echo "== Build AMI =="
-cd $MOBY_DIR
-git checkout $MOBY_BRANCH
-git pull
-git clean -f -d
+echo "== Get AMI =="
 
-make ami-clean-mount || true
-make clean || true
-make ami DOCKER_BIN_URL=$DOCKER_BIN_URL
-make ami-clean-mount
-AMI_ID=$(cat ./cloud/aws/ami_id.out)
-echo "AMI_ID=$AMI_ID"
+# Download the ami_id.out
+aws s3 cp s3://${AMI_BUCKET}/${AMI_URL} ./cloud/aws/ami_id.out
+echo "AMI build captured, lets move onto next part."
+
+CI_AMI_ID=$(cat ./cloud/aws/ami_id.out)
+echo "CI_AMI_ID=$CI_AMI_ID"
+
+# Copy AMI to desired region:
+AMI_ID=$(aws ec2 copy-image --source-image-id $CI_AMI_ID --source-region us-west-2 --region $AMI_SRC_REGION --name "Moby Linux ${AWS_TAG_VERSION} ${CHANNEL}" | jq -r '.ImageId')
+
+echo "Copied AMI to $AMI_SRC_REGION waiting for it to be available"
+# Wait for AMI copy to be done
+while :
+do
+    AMI_STATE=$(aws ec2 describe-images --image-ids $AMI_ID | jq -r '.Images[0].State')
+    if [ "$AMI_STATE" == "available" ]; then
+        break
+    elif [ "$AMI_STATE" == "failed" ]; then
+        echo "ERROR in AMI copy"
+        exit 1
+    fi
+    echo -ne "#"
+done
+
+echo "AMI: $AMI_ID is now availble in $AMI_SRC_REGION"
 
 # move out of the way, so it doesn't cause problems later.
 mv -f ./cloud/aws/ami_id.out ./cloud/aws/ami_id.out.done
 
-echo "== Build Docker images =="
-
-cd $BASE_DIR
-
-export VERSION=aws-v$DOCKER_VERSION-$EDITION_VERSION
-echo "Version=$VERSION"
-
-echo "= Build Buoy ="
-cd ../../tools/buoy
-./build_buoy.sh
-
-echo "= Build Metaserver ="
-cd ../metaserver
-./build.sh
-
-cd $BASE_DIR
-cd ../dockerfiles
-
-echo "= Build aws images ="
-# build images
-
-./build_and_push_all.sh
-
-echo "= Build lb-container ="
-
-cd files/elb-controller/container
-DOCKER_TAG=$VERSION DOCKER_PUSH=true DOCKER_TAG_LATEST=false make -k container
-
-echo "= Build cloudstor ="
-cd $BASE_DIR
-cd ../../common/cloudstor
-
-PLUGIN_TAG=$VERSION make
-
-echo "== Build Docker images =="
-cd $BASE_DIR
-
 # run release, this will create CFN templates and push them to s3, push AMI to different regions and share with list of approved accounts.
-./new_run_release.sh -d $DOCKER_VERSION -e $EDITION_VERSION -a $AMI_ID -r $AMI_SRC_REGION -c $CHANNEL -l $DOCKER_AWS_ACCOUNT_URL -u cloud-$CHANNEL -p $MAKE_AMI_PUBLIC
+./new_run_release.sh -d $DOCKER_VERSION -e $AWS_TAG_VERSION -a $AMI_ID -r $AMI_SRC_REGION -c $CHANNEL -l $DOCKER_AWS_ACCOUNT_URL -u cloud-$CHANNEL -p $MAKE_AMI_PUBLIC
 
 echo "===== Done ====="

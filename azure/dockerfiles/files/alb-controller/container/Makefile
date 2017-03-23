@@ -1,7 +1,7 @@
 # Makefile for building the loadbalancer controller
 
 # Build version metadata
-VERSION?=azure-v$(EDITIONS_VERSION)
+VERSION?=$(EDITIONS_VERSION)
 REVISION=$(shell git rev-list -1 HEAD)
 
 NAMESPACE?=docker4x

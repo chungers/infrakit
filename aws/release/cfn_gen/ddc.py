@@ -13,18 +13,17 @@ UCP_INIT_TAG = '2.1.0'
 
 class DDCVPCTemplate(DockerEEVPCTemplate):
 
-    def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, edition_addon, channel, amis,
+    def __init__(self, docker_version, docker_for_aws_version, 
+                 edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=True,
                  experimental_flag=False,
                  has_ddc=True):
         if not template_description:
-            template_description = u"Docker EE DDC for AWS {} ({})".format(
-                docker_version, edition_version)
+            template_description = u"Docker EE DDC for AWS {}".format(docker_for_aws_version)
         super(DDCVPCTemplate, self).__init__(
-            docker_version, edition_version,
-            docker_for_aws_version, edition_addon, channel, amis,
+            docker_version, docker_for_aws_version, 
+            edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
             use_ssh_cidr=use_ssh_cidr,
@@ -197,12 +196,11 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
 
 class DDCVPCExistingTemplate(DDCVPCTemplate, DockerEEVPCExistingTemplate):
     """ DDC Template for existing VPC."""
-    def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, edition_addon, channel, amis,
+    def __init__(self, docker_version, docker_for_aws_version, 
+                 edition_addon, channel, amis,
                  create_vpc=False, template_description=None, has_ddc=True):
         super(DDCVPCExistingTemplate, self).__init__(
-            docker_version, edition_version,
-            docker_for_aws_version, edition_addon,
+            docker_version, docker_for_aws_version, edition_addon,
             channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,

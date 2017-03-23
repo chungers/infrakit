@@ -129,7 +129,6 @@ tools/awscli/image:
 moby/cloud/azure/vhd_blob_url.out: moby
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION_DIGEST=".*"/export DOCKER_FOR_IAAS_VERSION_DIGEST="$(shell cat azure/dockerfiles/walinuxagent/sha256.out)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby

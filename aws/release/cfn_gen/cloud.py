@@ -11,15 +11,15 @@ from existing_vpc import ExistingVPCTemplate
 
 class CloudVPCTemplate(AWSBaseTemplate):
 
-    def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, edition_addon, channel, amis,
+    def __init__(self, docker_version, docker_for_aws_version, 
+                 edition_addon, channel, amis,
                  create_vpc=True, template_description=None):
         if not template_description:
             template_description = u"Docker for AWS {} ({}) cloud".format(
-                docker_version, edition_version)
+                docker_version, docker_for_aws_version)
         super(CloudVPCTemplate, self).__init__(
-            docker_version, edition_version,
-            docker_for_aws_version, edition_addon, channel, amis,
+            docker_version, docker_for_aws_version, 
+            edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description)
 
@@ -181,13 +181,12 @@ class CloudVPCTemplate(AWSBaseTemplate):
 
 class CloudVPCExistingTemplate(CloudVPCTemplate, ExistingVPCTemplate):
     """ Cloud Template for existing VPC."""
-    def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, edition_addon, channel, amis,
+    def __init__(self, docker_version, docker_for_aws_version, 
+                 edition_addon, channel, amis,
                  create_vpc=False, template_description=None):
         super(CloudVPCExistingTemplate, self).__init__(
-            docker_version, edition_version,
-            docker_for_aws_version, edition_addon,
-            channel, amis,
+            docker_version, docker_for_aws_version, 
+            edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description
             )

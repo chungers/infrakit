@@ -70,17 +70,15 @@ def main():
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
-    edition_version = args.edition_version
+    docker_for_azure_version = args.edition_version
     edition_addon = args.edition_addon
-    flat_edition_version = edition_version.replace(" ", "")
+    flat_edition_version = docker_for_azure_version.replace(" ", "")
     vhd_sku = args.vhd_sku
     vhd_version = args.vhd_version
     offer_id = args.offer_id
     ee_vhd_sku = args.ee_vhd_sku
     ee_vhd_version = args.ee_vhd_version
     ee_offer_id = args.ee_offer_id
-
-    docker_for_azure_version = u"azure-v{}".format(flat_edition_version)
     image_name = u"Moby Linux {}".format(docker_for_azure_version)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
@@ -88,7 +86,7 @@ def main():
     print(u"release_cloud_channel={}".format(release_cloud_channel))
     print(u"release_ddc_channel={}".format(release_ddc_channel))
     print(u"docker_version={}".format(docker_version))
-    print(u"edition_version={}".format(edition_version))
+    print(u"docker_for_azure_version={}".format(docker_for_azure_version))
     print(u"edition_addon={}".format(edition_addon))
     print(u"vhd_sku={}".format(vhd_sku))
     print(u"vhd_version={}".format(vhd_version))
@@ -96,17 +94,18 @@ def main():
     print(u"ee_vhd_version={}".format(ee_vhd_version))
 
     print("Create ARM templates..")
+    
     for platform, platform_config in AZURE_PLATFORMS.items():
         ce_template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                                 docker_for_azure_version, edition_version, edition_addon, CFN_TEMPLATE,
+                                 docker_for_azure_version, edition_addon, CFN_TEMPLATE,
                                  platform_config['STORAGE_ENDPOINT'],
                                  platform_config['PORTAL_ENDPOINT'],
                                  ce_template_name)
 
         ee_template_name = u"Docker-EE" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
-                                 docker_for_azure_version, edition_version, edition_addon, CFN_TEMPLATE,
+                                 docker_for_azure_version, edition_addon, CFN_TEMPLATE,
                                  platform_config['STORAGE_ENDPOINT'],
                                  platform_config['PORTAL_ENDPOINT'],
                                  ee_template_name)
@@ -114,7 +113,7 @@ def main():
         cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         edition_addon = 'cloud'
         cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
-                                 docker_for_azure_version, edition_version, edition_addon, base_url,
+                                 docker_for_azure_version, edition_addon, base_url,
                                  platform_config['STORAGE_ENDPOINT'],
                                  platform_config['PORTAL_ENDPOINT'],
                                  cloud_template_name)
@@ -122,7 +121,7 @@ def main():
         ddc_template_name = u"Docker-DDC" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         edition_addon = 'ddc'
         ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
-                                 docker_for_azure_version, edition_version, edition_addon, base_url,
+                                 docker_for_azure_version, edition_addon, base_url,
                                  platform_config['STORAGE_ENDPOINT'],
                                  platform_config['PORTAL_ENDPOINT'],
                                  ddc_template_name)
@@ -140,8 +139,7 @@ def main():
     print(u"Finshed.. \n")
 
     # TODO: git commit, tag release. requires github keys, etc.
-    print("Don't forget to tag the code (git tag -a v{0} -m {1}; git push --tags)".format(
-        edition_version, docker_for_azure_version))
+    print("Don't forget to tag the code (git tag -a v{0} -m {0}; git push --tags)".format(docker_for_azure_version))
     print("------------------")
 
 

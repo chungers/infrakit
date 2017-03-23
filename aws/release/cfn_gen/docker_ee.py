@@ -10,18 +10,18 @@ from existing_vpc import ExistingVPCTemplate
 
 class DockerEEVPCTemplate(AWSBaseTemplate):
 
-    def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, edition_addon, channel, amis,
+    def __init__(self, docker_version, docker_for_aws_version, 
+                 edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=True,
                  experimental_flag=False,
                  has_ddc=False):
         if not template_description:
             template_description = u"Docker EE for AWS {} ({})".format(
-                docker_version, edition_version)
+                docker_version, docker_for_aws_version)
         super(DockerEEVPCTemplate, self).__init__(
-            docker_version, edition_version,
-            docker_for_aws_version, edition_addon, channel, amis,
+            docker_version, docker_for_aws_version, 
+            edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
             use_ssh_cidr=use_ssh_cidr,
@@ -175,16 +175,15 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
 
 class DockerEEVPCExistingTemplate(DockerEEVPCTemplate, ExistingVPCTemplate):
     """ Cloud Template for existing VPC."""
-    def __init__(self, docker_version, edition_version,
-                 docker_for_aws_version, edition_addon, channel, amis,
+    def __init__(self, docker_version, docker_for_aws_version, 
+                 edition_addon, channel, amis,
                  create_vpc=False, template_description=None,
                  use_ssh_cidr=True,
                  experimental_flag=False,
                  has_ddc=False):
         super(DockerEEVPCExistingTemplate, self).__init__(
-            docker_version, edition_version,
-            docker_for_aws_version, edition_addon,
-            channel, amis,
+            docker_version, docker_for_aws_version, 
+            edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
             use_ssh_cidr=use_ssh_cidr,

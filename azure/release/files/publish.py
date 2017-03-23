@@ -19,12 +19,11 @@ def main():
                         help="release channel (beta, alpha, rc, nightly)")
     args = parser.parse_args()
 
-    release_version = args.release_version
+    docker_for_azure_version = args.release_version
     release_channel = args.channel
-    docker_for_azure_version = u"azure-v{}".format(release_version)
     print("\nVariables")
     print(u"release_channel={}".format(release_channel))
-    print(u"release_version={}".format(release_version))
+    print(u"docker_for_azure_version={}".format(docker_for_azure_version))
 
     s3_latest_url = publish_rg_template(release_channel, docker_for_azure_version)
     print("------------------")

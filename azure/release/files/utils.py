@@ -93,16 +93,16 @@ def publish_rg_template(release_channel, docker_for_azure_version):
     return s3_full_url
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, edition_addon, cfn_template,
+                        docker_for_azure_version, edition_addon, cfn_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     # check if file exists before opening.
-    flat_edition_version = edition_version.replace(" ", "").replace("_", "").replace("-", "")
+    flat_edition_version = docker_for_azure_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
 
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
-    data['variables']['Description'] = u"Docker for Azure {0} ({1})".format(docker_version, edition_version)
+    data['variables']['Description'] = u"Docker for Azure {0}".format(docker_for_azure_version)
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
@@ -115,7 +115,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     custom_data = buildCustomData('custom-data.sh')
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ')]'
 
-    outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
+    outdir = u"dist/azure/{}/{}".format(release_channel, docker_for_azure_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -136,7 +136,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
 # @TODO VERIFY CLOUD TEMPLATE
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
-                        docker_for_azure_version, edition_version, edition_addon, cfn_template,
+                        docker_for_azure_version, edition_addon, cfn_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
@@ -217,7 +217,7 @@ def create_rg_cloud_template(release_channel, docker_version,
         }
         outputs.update(new_outputs)
 
-    outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
+    outdir = u"dist/azure/{}/{}".format(release_channel, docker_for_azure_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
@@ -236,7 +236,7 @@ def create_rg_cloud_template(release_channel, docker_version,
     return outfile
 
 def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_version, edition_addon, cfn_template,
+                        docker_for_azure_version, edition_addon, cfn_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
@@ -492,7 +492,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
         }
         outputs.update(new_outputs)
 
-    outdir = u"dist/azure/{}/{}".format(release_channel, edition_version)
+    outdir = u"dist/azure/{}/{}".format(release_channel, docker_for_azure_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)

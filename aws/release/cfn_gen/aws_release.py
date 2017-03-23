@@ -16,10 +16,10 @@ def main():
     parser = argparse.ArgumentParser(description='Release Docker for AWS')
     parser.add_argument('-d', '--docker_version',
                         dest='docker_version', required=True,
-                        help="Docker version (i.e. 1.12.0-rc4)")
+                        help="Docker version (i.e. 17.03.0-ce)")
     parser.add_argument('-e', '--edition_version',
                         dest='edition_version', required=True,
-                        help="Edition version (i.e. Beta 4)")
+                        help="Edition version (i.e. 17.03.0-ce-aws1)")
     parser.add_argument('-a', '--ami_id',
                         dest='ami_id', required=True,
                         help="ami-id for the Moby AMI we just built (i.e. ami-123456)")
@@ -49,16 +49,15 @@ def main():
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
-    edition_version = args.edition_version
+    docker_for_aws_version = args.edition_version
     edition_addon = args.edition_addon
-    flat_edition_version = edition_version.replace(" ", "")
-    docker_for_aws_version = u"aws-v{}".format(edition_version)
+    flat_edition_version = docker_for_aws_version.replace(" ", "")
     image_name = u"Moby Linux {} {}".format(docker_for_aws_version, release_channel)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))
     print(u"docker_version={}".format(docker_version))
-    print(u"edition_version={}".format(edition_version))
+    print(u"docker_for_aws_version={}".format(docker_for_aws_version))
     print(u"edition_addon={}".format(edition_addon))
     print(u"ami_id={}".format(args.ami_id))
     print(u"ami_src_region={}".format(args.ami_src_region))
@@ -102,47 +101,41 @@ def main():
     print("Create CloudFormation template..")
     cfn_name = docker_for_aws_version
     s3_url = create_cfn_template(AWSBaseTemplate, ami_list, release_channel,
-                                 docker_version, edition_version,
-                                 docker_for_aws_version, edition_addon, cfn_name)
+                                 docker_version, docker_for_aws_version, edition_addon, cfn_name)
 
     cfn_name = "{}-no-vpc".format(docker_for_aws_version)
-    s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list,
-                                        release_channel,
-                                        docker_version, edition_version,
-                                        docker_for_aws_version, edition_addon, cfn_name,
+    s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list, release_channel,
+                                        docker_version, docker_for_aws_version, 
+                                        edition_addon, cfn_name,
                                         cfn_type="no-vpc")
 
     docker_ee_cfn_name = docker_for_aws_version
     docker_ee_release_channel = u"{}-ee".format(release_channel)
     docker_ee_s3_url = create_cfn_template(DockerEEVPCTemplate, ami_list,
                                            docker_ee_release_channel,
-                                           docker_version, edition_version,
-                                           docker_for_aws_version, edition_addon,
+                                           docker_version, docker_for_aws_version, edition_addon,
                                            docker_ee_cfn_name)
 
     docker_ee_cfn_name = "{}-no-vpc".format(docker_ee_cfn_name)
     docker_ee_s3_url_no_vpc = create_cfn_template(DockerEEVPCExistingTemplate,
                                                   ami_list,
                                                   docker_ee_release_channel,
-                                                  docker_version,
-                                                  edition_version,
-                                                  docker_for_aws_version, edition_addon,
-                                                  docker_ee_cfn_name,
+                                                  docker_version, docker_for_aws_version, 
+                                                  edition_addon, docker_ee_cfn_name,
                                                   cfn_type="no-vpc")
 
     cfn_name = "{}-cloud".format(docker_for_aws_version)
     edition_addon = 'cloud'
     s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
                                        release_cloud_channel,
-                                       docker_version, edition_version,
-                                       docker_for_aws_version, edition_addon, cfn_name)
+                                       docker_version, docker_for_aws_version, 
+                                       edition_addon, cfn_name)
 
     cfn_name = "{}-no-vpc-cloud".format(docker_for_aws_version)
     s3_cloud_url_no_vpc = create_cfn_template(CloudVPCExistingTemplate,
                                               ami_list, release_cloud_channel,
-                                              docker_version, edition_version,
-                                              docker_for_aws_version, edition_addon,
-                                              cfn_name, cfn_type="no-vpc")
+                                              docker_version, docker_for_aws_version, 
+                                              edition_addon, cfn_name, cfn_type="no-vpc")
 
     # TODO: git commit, tag release. requires github keys, etc.
 
@@ -153,8 +146,7 @@ def main():
     print(u"Finshed.. Docker EE Base No VPC URL={}".format(docker_ee_s3_url_no_vpc))
     print(u"Finshed.. CloudFormation Cloud URL={}".format(s3_cloud_url))
     print(u"Finshed.. CloudFormation Cloud No VPC URL={}".format(s3_cloud_url_no_vpc))
-    print("Don't forget to tag the code (git tag -a v{0}-{1} -m {0}; git push --tags)".format(
-        docker_version, flat_edition_version))
+    print("Don't forget to tag the code (git tag -a {0} -m {0}; git push --tags)".format(docker_for_aws_version))
     print("------------------")
 
 

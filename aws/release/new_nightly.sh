@@ -37,9 +37,8 @@ git pull
 EDITIONS_META=$(aws s3api get-object --bucket $AMI_BUCKET --key ${AMI_PATH}/ami_id.out docker.out | jq -r '.Metadata')
 export EDITIONS_VERSION=$(echo $EDITIONS_META | jq -r '.editions_version')
 export DOCKER_VERSION=$(echo $EDITIONS_META | jq -r '.docker_version')
-export NIGHTLY_VERSION=nightly_$DAY
-export TAG_VERSION=aws-v$EDITIONS_VERSION
-export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
+export AWS_TAG_VERSION=$EDITIONS_VERSION-aws1
+export AWS_TARGET_PATH="dist/aws/$CHANNEL/$AWS_TAG_VERSION"
 export RELEASE=1
 
 mkdir -p $AMI_OUT_DIR
@@ -96,7 +95,7 @@ echo "AMI: $AMI_ID is now availble in $AMI_SOURCE_REGION"
 cd $BUILD_HOME/code/editions/aws/release
 
 # run release
-./new_run_release.sh -d $DOCKER_VERSION -e $EDITIONS_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
+./new_run_release.sh -d $DOCKER_VERSION -e $AWS_TAG_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py

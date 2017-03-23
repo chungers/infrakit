@@ -10,7 +10,7 @@ from sections import resources
 
 class AWSBaseTemplate(object):
 
-    def __init__(self, docker_version, edition_version,
+    def __init__(self, docker_version,
                  docker_for_aws_version, edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=False,
@@ -20,7 +20,6 @@ class AWSBaseTemplate(object):
         self.parameters = {}
         self.parameter_labels = {}
         self.docker_version = docker_version
-        self.edition_version = edition_version
         self.edition_addon = edition_addon
         self.channel = channel
         self.amis = amis
@@ -29,13 +28,14 @@ class AWSBaseTemplate(object):
         self.template_description = template_description
         self.use_ssh_cidr = use_ssh_cidr
         self.experimental_flag = experimental_flag
+        self.docker_for_aws_version = docker_for_aws_version
 
-        flat_edition_version = edition_version.replace(
+        flat_edition_version = docker_for_aws_version.replace(
             " ", "").replace("_", "").replace("-", "").replace(".", "")
         self.flat_edition_version = flat_edition_version
         flat_edition_version_upper = flat_edition_version.capitalize()
         self.flat_edition_version_upper = flat_edition_version_upper
-        self.docker_for_aws_version = docker_for_aws_version
+        
 
     def build(self):
         self.add_template_version()
@@ -54,8 +54,7 @@ class AWSBaseTemplate(object):
         if self.template_description:
             description = self.template_description
         else:
-            description = u"Docker for AWS {} ({})".format(
-                self.docker_version, self.edition_version)
+            description = u"Docker for AWS {}".format(self.docker_for_aws_version)
         self.template.add_description(description)
 
     def get_parameter_groups(self):
