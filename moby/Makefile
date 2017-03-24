@@ -32,16 +32,18 @@ define push_to_s3
 		-e AWS_SECRET_ACCESS_KEY \
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
-		s3://docker-for-$(1)/data/$(2)/${EDITIONS_VERSION}/$(3) \
+		s3://docker-for-$(1)/data/$(2)/${MOBY_COMMIT}/$(3) \
 		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
-	docker run --rm \
-		-v $(CURDIR)/cloud/$(1):/tmp \
-		-e AWS_ACCESS_KEY_ID \
-		-e AWS_SECRET_ACCESS_KEY \
-		docker4x/awscli:latest s3 cp \
-		/tmp/$(3) \
-		s3://docker-for-$(1)/data/$(2)/$(3) \
-		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
+	@if [ "${RELEASE}" = 0 ]; then \
+		docker run --rm \
+			-v $(CURDIR)/cloud/$(1):/tmp \
+			-e AWS_ACCESS_KEY_ID \
+			-e AWS_SECRET_ACCESS_KEY \
+			docker4x/awscli:latest s3 cp \
+			/tmp/$(3) \
+			s3://docker-for-$(1)/data/$(2)/$(3) \
+			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION} \
+	fi
 endef
 
 all: 
