@@ -5,17 +5,25 @@ echo "Start DDC setup"
 # default to yes if INSTALL DDC is empty.
 INSTALL_DDC=${INSTALL_DDC:-"yes"}
 
-PRODUCTION_HUB_NAMESPACE='docker'
-HUB_NAMESPACE=${HUB_NAMESPACE:-"docker"}
-UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.1"}
-DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0"}
-UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
-DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
-DTR_PORT=8443
+PRODUCTION_UCP_ORG='docker'
+UCP_ORG=${UCP_ORG:-"docker"}
+UCP_TAG=${UCP_TAG-"2.1.1"}
+DTR_TAG=${DTR_TAG-"2.2.3"}
+DTR_ORG=${DTR_ORG:-"docker"}
+UCP_IMAGE=${UCP_ORG}/ucp:${UCP_TAG}
+DTR_IMAGE=${DTR_ORG}/dtr:${DTR_TAG}
+UCP_HTTPS_PORT=12390
+DTR_HTTPS_PORT=12391
+DTR_HTTP_PORT=12392
 IMAGE_LIST_ARGS=''
 MYIP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 LOCAL_HOSTNAME=$(wget -qO- http://169.254.169.254/latest/meta-data/local-hostname)
 DTR_DYNAMO_FIELD='dtr_replicas'
+
+# Normalize the ELB hostnames to be all lowercase.
+APP_ELB_HOSTNAME=$(tr '[:upper:]' '[:lower:]' <<< "$APP_ELB_HOSTNAME")
+UCP_ELB_HOSTNAME=$(tr '[:upper:]' '[:lower:]' <<< "$UCP_ELB_HOSTNAME")
+DTR_ELB_HOSTNAME=$(tr '[:upper:]' '[:lower:]' <<< "$DTR_ELB_HOSTNAME")
 
 echo "MYIP=$MYIP"
 echo "LOCAL_HOSTNAME=$LOCAL_HOSTNAME"
@@ -32,7 +40,9 @@ echo "NODE_NAME=$NODE_NAME"
 echo "UCP_ADMIN_USER=$UCP_ADMIN_USER"
 echo "UCP_IMAGE=$UCP_IMAGE"
 echo "DTR_IMAGE=$DTR_IMAGE"
-echo "DTR_PORT=$DTR_PORT"
+echo "UCP_HTTPS_PORT=$UCP_HTTPS_PORT"
+echo "DTR_HTTPS_PORT=$DTR_HTTPS_PORT"
+echo "DTR_HTTP_PORT=$DTR_HTTP_PORT"
 echo "MANAGER_COUNT=$MANAGER_COUNT"
 echo "#================"
 
@@ -41,7 +51,16 @@ if [[ "$INSTALL_DDC" != "yes" ]] ; then
     exit 0
 fi
 
-images=$(docker run --label com.docker.editions.system --rm "${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}" images --list $IMAGE_LIST_ARGS )
+if [[ "${UCP_ORG}" == "dockerorcadev" ]] ; then
+    IMAGE_LIST_ARGS="--image-version=dev:"
+fi
+
+# Login if credentials were provided
+if [[ "$REGISTRY_PASSWORD" != "" ]] ; then
+    docker login -u "${REGISTRY_USERNAME}" -p "${REGISTRY_PASSWORD}"
+fi
+
+images=$(docker run --label com.docker.editions.system  --rm "${UCP_ORG}/ucp:${UCP_TAG}" images --list $IMAGE_LIST_ARGS && docker run --rm $DTR_IMAGE images)
 for im in $images; do
     docker pull $im
 done
@@ -98,7 +117,7 @@ checkDTR(){
     n=0
     until [ $n -gt 20 ];
     do
-        if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$MYIP:$DTR_PORT/health) -eq 200 ]];
+        if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$MYIP:$DTR_HTTPS_PORT/health) -eq 200 ]];
             then echo "Main DTR Replica is up! Starting DTR replica join process"
             break
         else
@@ -154,10 +173,10 @@ if [[ "$IS_LEADER" == "true" ]]; then
         # Installing UCP
         echo "Run the UCP install script"
         if [[ ${IS_VALID_LICENSE} -eq 1 ]]; then
-            docker run --label com.docker.editions.system --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+            docker run --label com.docker.editions.system  --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install ${UCP_IMAGE_DEV_FLAG} --controller-port "$UCP_HTTPS_PORT" --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
             echo "Finished installing UCP with license"
         else
-            docker run --label com.docker.editions.system --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+            docker run --label com.docker.editions.system  --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --controller-port "$UCP_HTTPS_PORT" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
             echo "Finished installing UCP without license. Please upload your license in UCP and DTR UI. "
         fi
     else
@@ -167,8 +186,12 @@ if [[ "$IS_LEADER" == "true" ]]; then
     # make sure UCP is ready before we continue
     checkUCP
 
+	# wait for a full two minutes before attempting to install DTR
+	echo "Waiting for things to settle down before installing DTR"
+	sleep 120
+
     # Checking if DTR is already running. If it is , exit, if it's not install it.
-    if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$MYIP:$DTR_PORT/health) -ne 200 ]]; then
+    if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$MYIP:$DTR_HTTPS_PORT/health) -ne 200 ]]; then
 
         # For upgrades, ensure that DTR isn't already installed
         REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
@@ -185,7 +208,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
             sleep 30
             echo "Install DTR"
             date
-            docker run --label com.docker.editions.system --rm "$DTR_IMAGE" install --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$NODE_NAME" --dtr-external-url $DTR_ELB_HOSTNAME:443 --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --replica-id $REPLICA_ID
+            docker run --label com.docker.editions.system  --rm "$DTR_IMAGE" install --replica-https-port "$DTR_HTTPS_PORT" --replica-http-port "$DTR_HTTP_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$NODE_NAME" --dtr-external-url $DTR_ELB_HOSTNAME:443 --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --replica-id $REPLICA_ID
             echo "After running install via Docker"
             date
             # make sure everything is good, sleep for a bit, then keep going.
@@ -200,7 +223,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
             DTR_LEADER_INSTALL="no"
             EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
             echo "Join to replicaId = $EXISTING_REPLICA_ID"
-            docker run --label com.docker.editions.system --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
+            docker run --label com.docker.editions.system  --rm "$DTR_IMAGE" join --replica-https-port "$DTR_HTTPS_PORT" --replica-http-port "$DTR_HTTP_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
         fi
     else
         echo "DTR already running"
@@ -255,7 +278,7 @@ else
     # DTR stuff here.
     # check to see if dtr is already installed. if not continue
     # Checking if DTR is already running. If it is , exit, if it's not install it.
-    if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$MYIP:$DTR_PORT/health) -ne 200 ]]; then
+    if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$MYIP:$DTR_HTTPS_PORT/health) -ne 200 ]]; then
         echo "install DTR"
 
         # wait for the dynamodb record is available.
@@ -287,7 +310,7 @@ else
         # once available.
         # get record, and then join, add replica ID to dynamodb
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
-        docker run --label com.docker.editions.system --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
+        docker run --label com.docker.editions.system --rm "$DTR_IMAGE" join --replica-https-port "$DTR_HTTPS_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
 
         JOIN_RESULT=$?
         echo "   JOIN_RESULT=$JOIN_RESULT"
