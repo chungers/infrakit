@@ -1,0 +1,14 @@
+version: '3.2'
+
+secrets:
+  gh-cherrypick-token:
+    external: true
+  gh-ssh-key:
+    external: true
+
+services:
+  branchbot:
+    image: 'editions/branchbot:0.0.9'
+    secrets:
+      - gh-cherrypick-token
+      - gh-ssh-key
