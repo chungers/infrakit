@@ -1,4 +1,4 @@
-default: alb-controller agent
+default: alb-controller
 	VERSION="$(AZURE_TAG_VERSION)" ./build_and_push_all.sh
 
 agent:

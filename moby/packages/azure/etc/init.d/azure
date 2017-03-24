@@ -61,6 +61,12 @@ start()
 		kill -HUP "$(pidof dhcpcd)"
 	fi
 
+	for img in $( ls /var/dockerimages/*.tar ); do
+		echo "Loading image $img"
+		docker load --input $img
+		rm -f $img
+	done
+
 	docker run -d \
 		--privileged \
 		--name agent \

@@ -208,7 +208,7 @@ build/gcp/gce.img.tar.gz: build/gcp/initrd.img
 
 clean:
 	@echo "+ $@"
-	-rm -rf build src packages/aws/dockerimages/ packages/gcp/dockerimages/
+	-rm -rf build src packages/aws/var/ packages/gcp/var/
 	-rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz
 	-docker images -q moby-azure:build | xargs docker rmi -f
 	-docker images -q moby-azure:raw2vhd | xargs docker rmi -f

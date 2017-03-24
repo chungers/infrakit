@@ -65,7 +65,7 @@ ROOTDIR := $(shell pwd)
 
 AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_TAG_VERSION)
 AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
-AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(AWS_EDITION)
+AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(AWS_TAG_VERSION)
 AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
 
 .PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
