@@ -50,6 +50,8 @@ def main():
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
     docker_for_aws_version = args.edition_version
+    if not docker_for_aws_version:
+        raise Exception("No Editions Version was defined")
     edition_addon = args.edition_addon
     flat_edition_version = docker_for_aws_version.replace(" ", "")
     image_name = u"Moby Linux {} {}".format(docker_for_aws_version, release_channel)

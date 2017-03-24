@@ -89,7 +89,7 @@ do
     fi
     echo -ne "#"
 done
-
+echo " - DONE"
 echo "AMI: $AMI_ID is now availble in $AMI_SOURCE_REGION"
 
 cd $BUILD_HOME/code/editions/aws/release
