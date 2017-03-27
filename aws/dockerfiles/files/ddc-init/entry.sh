@@ -87,7 +87,7 @@ checkUCP(){
         for I in $MANAGERS; do
             echo "Checking $I to see if UCP is up"
             # Checking if UCP is up and running
-            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
+            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I:$UCP_HTTPS_PORT/_ping) -ne 200 ]] ; then
                 echo "   - UCP on $I is NOT healty"
                 ALLGOOD='no'
             else
