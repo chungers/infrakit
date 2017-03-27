@@ -15,13 +15,21 @@ rm -rf tmp
 
 # Bundle the docker images if we're deploying to Marketplace
 if [ "$LOAD_IMAGES" == "true" ]; then
-	echo "++ Copying Docker images: from $ROOTDIR/$AWS_TARGET_PATH/*.tar to packages/aws/var/dockerimages/"		
-	cp $ROOTDIR/$AWS_TARGET_PATH/*.tar packages/aws/var/dockerimages/
-	echo "++ Copying Docker images: from $ROOTDIR/$AZURE_TARGET_PATH/*.tar to packages/azure/var/dockerimages/"		
-	cp $ROOTDIR/$AZURE_TARGET_PATH/*.tar packages/azure/var/dockerimages/
+	if [ -e "$ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
+		echo "++ Copying Docker images: from $ROOTDIR/$AWS_TARGET_PATH/*.tar to packages/aws/var/dockerimages/"
+		cp $ROOTDIR/$AWS_TARGET_PATH/*.tar packages/aws/var/dockerimages/
+	fi
+	if [ -e "$ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
+		echo "++ Copying Docker images: from $ROOTDIR/$AZURE_TARGET_PATH/*.tar to packages/azure/var/dockerimages/"
+		cp $ROOTDIR/$AZURE_TARGET_PATH/*.tar packages/azure/var/dockerimages/
+	fi
 else
-	echo "++ Copying Docker Shell image: from $ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar to packages/aws/var/dockerimages/"		
-	cp $ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar packages/aws/var/dockerimages/
-	echo "++ Copying Docker Agent image: from $ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar to packages/azure/var/dockerimages/"		
-	cp $ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar packages/azure/var/dockerimages/
+	if [ -e "$ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
+		echo "++ Copying Docker Shell image: from $ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar to packages/aws/var/dockerimages/"
+		cp $ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar packages/aws/var/dockerimages/
+	fi
+	if [ -e "$ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
+		echo "++ Copying Docker Agent image: from $ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar to packages/azure/var/dockerimages/"
+		cp $ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar packages/azure/var/dockerimages/
+	fi
 fi
