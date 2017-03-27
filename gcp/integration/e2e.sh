@@ -6,14 +6,14 @@ BASEDIR=$(dirname "$0")
 BUILD_NUMBER="${BUILD_NUMBER:-0}"
 STACK="ci-docker4gcp-${BUILD_NUMBER}"
 
-export CLOUDSDK_CORE_PROJECT="${CLOUDSDK_CORE_PROJECT:-docker4x}"
+export CLOUDSDK_CORE_PROJECT="${CLOUDSDK_CORE_PROJECT:-docker-for-gcp-ci}"
 export CLOUDSDK_COMPUTE_ZONE="${CLOUDSDK_COMPUTE_ZONE:-us-central1-f}"
 
 auth_gcloud() {
   echo Authenticate GCloud
 
   echo ${GCLOUD_SERVICE_KEY} | base64 --decode > /.config/key.json
-  gcloud auth activate-service-account infrakit-ci@docker4x.iam.gserviceaccount.com --key-file=/.config/key.json
+  gcloud auth activate-service-account --key-file=/.config/key.json
 }
 
 download_templates() {
