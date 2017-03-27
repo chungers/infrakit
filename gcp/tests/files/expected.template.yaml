@@ -324,7 +324,7 @@ resources:
   properties:
     family: docker
     rawDisk:
-      source: https://storage.googleapis.com/docker-for-gcp-images/dev/gce.img.tar.gz
+      source: https://storage.googleapis.com/docker-for-gcp-builds/0/gce.img.tar.gz
 
 - name: docker-external-ip
   type: compute.v1.address

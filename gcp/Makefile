@@ -5,7 +5,6 @@ NAMESPACE ?= docker4x
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
 EDITIONS_VERSION ?= dev
 BUILDS_BUCKET ?= gs://docker-for-gcp-builds
-MOBY_BUCKET ?= gs://docker-for-gcp-images
 TEMPLATES_BUCKET ?= gs://docker-for-gcp-templates
 TESTS ?= all
 DOCKERFILE_DIRS := $(wildcard dockerfiles/*/)
@@ -44,7 +43,7 @@ define last
 $(lastword $(subst /, ,$1))
 endef
 
-.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates release-moby release-templates $(DOCKERFILE_DIRS) integration-tests
+.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates $(DOCKERFILE_DIRS) integration-tests
 .DEFAULT: all
 
 all: auth create
@@ -89,6 +88,8 @@ build-moby: build-images
 build-templates: build-dir test
 	rm -Rf ./build/templates/*
 	cp -r ./templates ./build/
+	sed -i.bak "s/BUILD_NUMBER = '.*'/BUILD_NUMBER = '$(BUILD_NUMBER)'/" ./build/templates/Docker.jinja
+	rm -f ./build/templates/Docker.jinja.bak
 
 $(DOCKERFILE_DIRS):
 	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp make -C dockerfiles/$(call last,$@)
@@ -120,33 +121,20 @@ save: save-moby save-templates
 retrieve-moby: build-dir gcloud-auth
 	$(GSUTIL) cp $(BUILDS_BUCKET)/$(BUILD_NUMBER)/gce.img.tar.gz ./build/
 
-retrieve-images: build-dir gcloud-auth
-	$(GSUTIL) cp $(BUILDS_BUCKET)/$(BUILD_NUMBER)/images.tar ./build/
-
-retrieve-templates: build-dir gcloud-auth
-	mkdir -p ./build/templates
-	rm -Rf ./build/templates/*
-	$(GSUTIL) cp -r $(BUILDS_BUCKET)/$(BUILD_NUMBER)/templates ./build/
-
 clean:
 	rm -Rf ./build
 
-retrieve: retrieve-images retrieve-moby retrieve-templates
+retrieve: build-dir gcloud-auth
+	mkdir -p ./build
+	$(GSUTIL) -m cp -r $(BUILDS_BUCKET)/$(BUILD_NUMBER)/* ./build/
 
-release-moby: gcloud-auth
-	echo Release Moby build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
-	$(GSUTIL) cp ./build/gce.img.tar.gz $(MOBY_BUCKET)/$(EDITIONS_VERSION)/
-	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(MOBY_BUCKET)/$(EDITIONS_VERSION)
-
-release-templates: gcloud-auth
-	echo Release Templates build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
-	$(GSUTIL) cp -r ./build/templates/* $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
+# TODO: Should be on AWS
+release: gcloud-auth
+	echo Release build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
 	sed -i.bak "s/VERSION = '.*'/VERSION = '$(EDITIONS_VERSION)'/" ./build/templates/Docker.jinja
 	rm -f ./build/templates/Docker.jinja.bak
-	$(GSUTIL) -m acl -r set public-read $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
-	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
-
-release: release-moby release-templates
+	$(GSUTIL) -m cp -a public-read -r ./build/templates/* $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
+	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
 
 integration-tests:
 	echo Run Integration tests from build $(BUILD_NUMBER)

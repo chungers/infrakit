@@ -1,10 +1,12 @@
 {#- Copyright 2016 Docker Inc. All rights reserved. -#}
 
+{%- set BUILD_NUMBER = '0' -%}
 {%- set VERSION = 'dev' -%}
 {%- set PROJECT = env['project'] -%}
 {%- set STACK = env['deployment'] -%}
 {%- set ZONE = properties['zone'] -%}
 {%- set REGION = ZONE[:ZONE.rfind('-')] -%}
+{%- set MOBY_URL = 'https://storage.googleapis.com/docker-for-gcp-builds/' + BUILD_NUMBER + '/gce.img.tar.gz' -%}
 
 {%- macro StartupScript(type) -%}
   {%- filter replace('\n', '","') -%}
@@ -80,7 +82,7 @@ resources:
   properties:
     family: docker
     rawDisk:
-      source: https://storage.googleapis.com/docker-for-gcp-images/{{ VERSION }}/gce.img.tar.gz
+      source: {{ MOBY_URL }}
 
 - name: {{ STACK }}-external-ip
   type: compute.v1.address
