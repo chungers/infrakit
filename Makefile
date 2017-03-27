@@ -37,13 +37,17 @@ ifeq (${LOAD_IMAGES},)
 	LOAD_IMAGES := false
 endif
 
+# Check if CHANNEL has been defined
+ifeq (${CHANNEL},)
+	CHANNEL := edge
+endif
+
 BUILD := 1
 NAMESPACE := docker4x
 AWS_TAG_VERSION := $(EDITIONS_VERSION)-aws$(BUILD)
 AZURE_TAG_VERSION := $(EDITIONS_VERSION)-azure$(BUILD)
 GCP_TAG_VERSION := $(EDITIONS_VERSION)-gcp$(BUILD)
 REGION := us-west-2
-CHANNEL := edge
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
 DOCKER_EXPERIMENTAL := 1
