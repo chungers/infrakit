@@ -1,4 +1,4 @@
-version: '2'
+version: '3.1'
 
 services:
   test:
@@ -9,5 +9,3 @@ services:
     - /usr/bin/docker:/usr/bin/docker
     - /var/lib/docker:/var/lib/docker
     - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-    - GCLOUD_SERVICE_KEY

@@ -44,7 +44,7 @@ define last
 $(lastword $(subst /, ,$1))
 endef
 
-.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates release-moby release-templates $(DOCKERFILE_DIRS)
+.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates release-moby release-templates $(DOCKERFILE_DIRS) integration-tests
 .DEFAULT: all
 
 all: auth create
@@ -147,3 +147,7 @@ release-templates: gcloud-auth
 	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 
 release: release-moby release-templates
+
+integration-tests:
+	echo Run Integration tests from build $(BUILD_NUMBER)
+	cd ${CURDIR}/integration; docker-compose build && docker-compose run e2e

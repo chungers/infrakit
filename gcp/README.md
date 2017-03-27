@@ -32,6 +32,11 @@ To save those artifacts (not needed if releasing from local build):
 
   $ BUILD_NUMBER=X make save
 
+To run the integration tests:
+
+  $ export GCLOUD_SERVICE_KEY="$(base64 path-to/docker-for-gcp-ci-048e1008c949.json)"
+  $ BUILD_NUMBER=X make integration-tests
+
 To retrieve artifacts (not needed if releasing from local build):
 
   $ BUILD_NUMBER=X make clean retrieve
