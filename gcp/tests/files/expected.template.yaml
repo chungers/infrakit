@@ -44,27 +44,21 @@ resources:
           export CHANNEL="beta"
           export NODE_TYPE="leader"
 
-          shell_image="docker4x/shell-gcp:dev"
-          guide_image="docker4x/guide-gcp:dev"
-          lb_image="docker4x/lb-controller-gcp:dev"
-          infrakit_image="docker4x/infrakit-gcp:dev"
+          shell_image="docker4x/shell-gcp"
+          guide_image="docker4x/guide-gcp"
+          lb_image="docker4x/lb-controller-gcp"
+          infrakit_image="docker4x/infrakit-gcp"
 
           docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'
           docker_daemon="$docker_run --rm -d"
           docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'
           docker_cli='-v /usr/bin/docker:/usr/bin/docker'
 
-          function dockerPull {
-            for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done
-          }
-
 
           echo Initialize Swarm
 
           docker node inspect self >/dev/null 2>&1 || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
           docker node inspect self
-
-          dockerPull ${guide_image}
 
           $docker_run --rm \
             -e NODE_TYPE \
@@ -89,11 +83,8 @@ resources:
 
           echo Start infrakit
 
-          dockerPull ${infrakit_image}
           $docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image
           echo Start sshd
-
-          dockerPull ${shell_image}
 
           docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true
           $docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh
@@ -124,7 +115,6 @@ resources:
 
           echo Start guide
 
-          dockerPull ${guide_image}
           $docker_daemon --name=guide \
             -e NODE_TYPE \
             -e RUN_VACUUM="True" \
@@ -139,7 +129,6 @@ resources:
 
           echo Start Load Balancer Listener
 
-          dockerPull ${lb_image}
           $docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5
       - key: startup-script
         value: |
@@ -250,7 +239,7 @@ resources:
                       "Plugin": "flavor-vanilla",
                       "Properties": {
                         "Init": [
-                          "#!/bin/sh","","set -ex","","echo This is a manager node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-dev\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"manager\"","","shell_image=\"docker4x/shell-gcp:dev\"","guide_image=\"docker4x/guide-gcp:dev\"","lb_image=\"docker4x/lb-controller-gcp:dev\"","infrakit_image=\"docker4x/infrakit-gcp:dev\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","function dockerPull {","  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done","}","","","echo Start infrakit","","dockerPull ${infrakit_image}","$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image","echo Start sshd","","dockerPull ${shell_image}","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","dockerPull ${guide_image}","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"True\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","","","echo Start Load Balancer Listener","","dockerPull ${lb_image}","$docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5",""
+                          "#!/bin/sh","","set -ex","","echo This is a manager node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-dev\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"manager\"","","shell_image=\"docker4x/shell-gcp\"","guide_image=\"docker4x/guide-gcp\"","lb_image=\"docker4x/lb-controller-gcp\"","infrakit_image=\"docker4x/infrakit-gcp\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","","echo Start infrakit","","$docker_daemon --name=infrakit $docker_socket $docker_cli $infrakit_image","echo Start sshd","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"True\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","","","echo Start Load Balancer Listener","","$docker_daemon --name=lbcontroller $docker_socket $lb_image run --log=5",""
                         ]
                       }
                     },
@@ -309,7 +298,7 @@ resources:
                       "Plugin": "flavor-vanilla",
                       "Properties": {
                         "Init": [
-                          "#!/bin/sh","","set -ex","","echo This is a worker node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-dev\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"worker\"","","shell_image=\"docker4x/shell-gcp:dev\"","guide_image=\"docker4x/guide-gcp:dev\"","lb_image=\"docker4x/lb-controller-gcp:dev\"","infrakit_image=\"docker4x/infrakit-gcp:dev\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","function dockerPull {","  for i in $(seq 1 60); do docker image pull $1 && break || sleep 1; done","}","","echo Start sshd","","dockerPull ${shell_image}","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","dockerPull ${guide_image}","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"True\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","",""
+                          "#!/bin/sh","","set -ex","","echo This is a worker node","","export DOCKER_FOR_IAAS_VERSION=\"gcp-dev\"","export ACCOUNT_ID=\"$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)\"","export REGION=\"europe-west1\"","export CHANNEL=\"beta\"","export NODE_TYPE=\"worker\"","","shell_image=\"docker4x/shell-gcp\"","guide_image=\"docker4x/guide-gcp\"","lb_image=\"docker4x/lb-controller-gcp\"","infrakit_image=\"docker4x/infrakit-gcp\"","","docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'","docker_daemon=\"$docker_run --rm -d\"","docker_socket='-v /var/run/docker.sock:/var/run/docker.sock'","docker_cli='-v /usr/bin/docker:/usr/bin/docker'","","echo Start sshd","","docker container inspect etc >/dev/null 2>&1 || $docker_run --name=etc -v /etc $shell_image true","$docker_run --volumes-from=etc $shell_image /usr/bin/ssh-keygen.sh","","$docker_daemon --name=accounts \\","  -v /dev/log:/dev/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  $shell_image \\","  /usr/bin/google_accounts_daemon","","$docker_daemon --name=ipforwarding \\","  -v /dev/log:/dev/log \\","  --cap-add=NET_ADMIN \\","  --net=host \\","  $shell_image \\","  /usr/bin/google_ip_forwarding_daemon -d","","$docker_daemon --name=shell \\","  -p 22:22 \\","  $docker_socket \\","  $docker_cli \\","  -v /var/log:/var/log \\","  -v /home:/home \\","  --volumes-from=etc \\","  --net=host \\","  $shell_image","","echo Start guide","","$docker_daemon --name=guide \\","  -e NODE_TYPE \\","  -e RUN_VACUUM=\"True\" \\","  -e DOCKER_FOR_IAAS_VERSION \\","  -e ACCOUNT_ID \\","  -e REGION \\","  -e CHANNEL \\","  $docker_socket \\","  $docker_cli \\","  $guide_image","",""
                         ]
                       }
                     },

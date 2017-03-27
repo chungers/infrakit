@@ -44,7 +44,7 @@ define last
 $(lastword $(subst /, ,$1))
 endef
 
-.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates save-images release-moby release-templates release-images $(DOCKERFILE_DIRS)
+.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates release-moby release-templates $(DOCKERFILE_DIRS)
 .DEFAULT: all
 
 all: auth create
@@ -91,11 +91,11 @@ build-templates: build-dir test
 	cp -r ./templates ./build/
 
 $(DOCKERFILE_DIRS):
-	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(BUILD_NUMBER) make -C dockerfiles/$(call last,$@)
+	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp make -C dockerfiles/$(call last,$@)
 
 build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	docker save \
-		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(BUILD_NUMBER)) \
+		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp) \
 		--output ./build/images.tar
 
 build: build-moby build-images build-templates
@@ -115,10 +115,7 @@ save-moby: create-save-bucket
 save-templates: create-save-bucket
 	$(GSUTIL) -m rsync -r /build/templates $(BUILDS_BUCKET)/$(BUILD_NUMBER)/templates/
 
-save-images: create-save-bucket
-	$(GSUTIL) -m cp /build/images.tar $(BUILDS_BUCKET)/$(BUILD_NUMBER)/
-
-save: save-moby save-images save-templates
+save: save-moby save-templates
 
 retrieve-moby: build-dir gcloud-auth
 	$(GSUTIL) cp $(BUILDS_BUCKET)/$(BUILD_NUMBER)/gce.img.tar.gz ./build/
@@ -149,12 +146,4 @@ release-templates: gcloud-auth
 	$(GSUTIL) -m acl -r set public-read $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)
 
-release-images: gcloud-auth
-	echo Release Images build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
-	docker load -i ./build/images.tar
-	for IMAGE in $(foreach DIR,$(DOCKERFILE_DIRS),$(call basename,$(call last,$(DIR)))); do \
-		docker tag $(NAMESPACE)/$$IMAGE-gcp:$(BUILD_NUMBER) $(NAMESPACE)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
-		docker push $(NAMESPACE)/$$IMAGE-gcp:$(EDITIONS_VERSION); \
-	done
-
-release: release-moby release-images release-templates
+release: release-moby release-templates
