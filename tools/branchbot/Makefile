@@ -1,4 +1,4 @@
-BB_TAG := 0.0.9
+BB_TAG := 0.0.36
 BB_IMAGE := editions/branchbot
 
 default: branchbot
