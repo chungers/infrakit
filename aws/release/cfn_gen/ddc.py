@@ -118,6 +118,14 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         super(DDCVPCTemplate, self).iam()
         resources.add_resource_s3_ddc_bucket_policy(self.template)
 
+    def autoscaling_managers(self, manager_launch_config_name):
+        """ Overrides the base method, to include the two DDC ELBs"""
+        lb_list = ["ExternalLoadBalancer", "UCPLoadBalancer",
+                   "DTRLoadBalancer"]
+        resources.add_resource_manager_autoscalegroup(
+            self.template, self.create_vpc, manager_launch_config_name,
+            lb_list, health_check_grace_period=1200)
+
     def load_balancer(self):
         super(DDCVPCTemplate, self).load_balancer()
         resources.add_resource_ddc_ucp_lb(self.template, self.create_vpc)

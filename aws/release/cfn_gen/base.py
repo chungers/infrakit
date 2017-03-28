@@ -254,6 +254,12 @@ class AWSBaseTemplate(object):
         resources.add_resources_sqs_cleanup(self.template)
         resources.add_resources_sqs_swarm(self.template)
 
+    def autoscaling_managers(self, manager_launch_config_name):
+        lb_list = ["ExternalLoadBalancer", ]
+        resources.add_resource_manager_autoscalegroup(
+            self.template, self.create_vpc, manager_launch_config_name,
+            lb_list)
+
     def autoscaling(self):
         # scaling groups
         resources.add_resource_manager_upgrade_hook(self.template)
@@ -262,8 +268,7 @@ class AWSBaseTemplate(object):
         # manager
         manager_launch_config_name = u'ManagerLaunchConfig{}'.format(
             self.flat_edition_version_upper)
-        resources.add_resource_manager_autoscalegroup(
-            self.template, self.create_vpc, manager_launch_config_name)
+        self.autoscaling_managers(manager_launch_config_name)
         resources.add_resource_manager_launch_config(self.template, self.manager_userdata(),
                                                      launch_config_name=manager_launch_config_name)
         # worker

@@ -51,7 +51,9 @@ def add_resource_worker_upgrade_hook(template):
     ))
 
 
-def add_resource_manager_autoscalegroup(template, create_vpc, launch_config_name):
+def add_resource_manager_autoscalegroup(template, create_vpc,
+                                        launch_config_name, lb_list,
+                                        health_check_grace_period=300):
     """
     "ManagerAsg" : {
         "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1",
@@ -109,11 +111,18 @@ def add_resource_manager_autoscalegroup(template, create_vpc, launch_config_name
        }
     },
     """
+    elb_ref_list = []
+    for lb in lb_list:
+        elb_ref_list.append(Ref(lb))
+
     if create_vpc:
         depends = ["SwarmDynDBTable", "PubSubnetAz1",
-                   "PubSubnetAz2", "PubSubnetAz3", "ExternalLoadBalancer"]
+                   "PubSubnetAz2", "PubSubnetAz3"]
     else:
-        depends = ["SwarmDynDBTable", "ExternalLoadBalancer"]
+        depends = ["SwarmDynDBTable", ]
+
+    # add the ELBs as deps
+    depends.extend(lb_list)
 
     template.add_resource(AutoScalingGroup(
         "ManagerAsg",
@@ -144,9 +153,9 @@ def add_resource_manager_autoscalegroup(template, create_vpc, launch_config_name
                Join(",", [Ref("PubSubnetAz1"), Ref("PubSubnetAz2")]),
                Join(",", [Ref("PubSubnetAz1"), Ref("PubSubnetAz2"), Ref("PubSubnetAz3")]))
         ],
-        LoadBalancerNames=[Ref("ExternalLoadBalancer")],
+        LoadBalancerNames=elb_ref_list,
         HealthCheckType="ELB",
-        HealthCheckGracePeriod=300,
+        HealthCheckGracePeriod=health_check_grace_period,
         UpdatePolicy=UpdatePolicy(
             AutoScalingRollingUpdate=AutoScalingRollingUpdate(
                 PauseTime='PT20M',
