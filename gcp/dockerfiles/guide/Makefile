@@ -5,7 +5,8 @@ DOCKER_IMAGE ?= docker4x/guide-gcp
 all: build test
 
 build:
-	@cp ../files/bin/buoy bin/buoy
+	mkdir -p bin
+	@cp ../../../tools/buoy/bin/buoy bin/buoy
 	@docker build -t $(DOCKER_IMAGE) .
 
 test:
