@@ -125,7 +125,7 @@ class AzureLog(object):
         try:
             self.log_file_handles[container_id].write(message + "\n")
         except IOError as e:
-            print "I/O error({0}): {1}".format(e.errno, e.strerror)
+            print ("I/O error({0}): {1}".format(e.errno, e.strerror))
         self.log_buffer_sizes[container_id] = buffer_sz + len(message)
 
         #check if we need to garbage collect old container log entries
