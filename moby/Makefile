@@ -1,6 +1,6 @@
 ## Env vars
 CHANNEL ?= dev
-FORCE_GSUTIL_AUTH ?= 1
+FORCE_GSUTIL_AUTH ?= 0
 
 ## Moby specific commit
 ifeq (${MOBY_COMMIT},)
@@ -22,6 +22,7 @@ else
 AMI_OUT := ami_id.out
 endif
 VHD_OUT := vhd_blob_url.out
+BDI_OUT := bdi_url.out
 
 
 define push_to_s3
@@ -32,7 +33,7 @@ define push_to_s3
 		-e AWS_SECRET_ACCESS_KEY \
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
-		s3://docker-for-$(1)/data/$(2)/${MOBY_COMMIT}/$(3) \
+		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(3) \
 		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
 	@if [ "${RELEASE}" = 0 ]; then \
 		docker run --rm \
@@ -41,8 +42,8 @@ define push_to_s3
 			-e AWS_SECRET_ACCESS_KEY \
 			docker4x/awscli:latest s3 cp \
 			/tmp/$(3) \
-			s3://docker-for-$(1)/data/$(2)/$(3) \
-			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION} ;\
+			s3://docker-ci-editions/$(2)/$(3) \
+			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION} \
 	fi
 endef
 
@@ -66,11 +67,19 @@ ifeq ($(FORCE_GSUTIL_AUTH),1)
 	-docker rm gsutil-moby-config 2>/dev/null
 	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
 endif
+ifeq ($(JENKINS_BUILD),)
+	-docker rm gsutil-moby-config 2>/dev/null
+	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth activate-service-account --key-file auth.json
+endif
 	docker run --rm -ti \
 		--volumes-from gsutil-moby-config \
 		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
-		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
+		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz
+		echo "docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
+ifeq ($(PUSH_BUILD_TO_S3),true)
+	$(call push_to_s3,gcp,bdi,$(BDI_OUT))
+endif
 
 ami:
 	@echo "+ $@"
@@ -212,6 +221,7 @@ clean:
 	@echo "+ $@"
 	-rm -rf build src packages/aws/var/ packages/gcp/var/
 	-rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz
-	-docker images -q moby-azure:build | xargs docker rmi -f
+	-rm cloud/aws/$(AMI_OUT) cloud/azure/$(VHD_OUT) cloud/gcp/$(BDI_OUT)
+ 	-docker images -q moby-azure:build | xargs docker rmi -f
 	-docker images -q moby-azure:raw2vhd | xargs docker rmi -f
 	-docker volume rm vhdartifact
