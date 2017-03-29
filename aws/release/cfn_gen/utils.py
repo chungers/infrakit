@@ -257,8 +257,8 @@ def create_cfn_template(template_class, amis, release_channel,
     out_path = os.path.join(curr_path, u'outputs/{}'.format(cloudformation_template_name))
 
     aws_template = template_class(
-        docker_version, edition_addon,
-        docker_for_aws_version, release_channel, amis)
+        docker_version, docker_for_aws_version,
+        edition_addon, release_channel, amis)
     aws_template.build()
 
     new_template = json.loads(aws_template.generate_template())
