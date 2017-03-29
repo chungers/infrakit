@@ -1,3 +1,5 @@
+
+
 echo "$EXTERNAL_LB" > /var/lib/docker/swarm/lb_name
 echo "# hostname : ELB_name" >> /var/lib/docker/swarm/elb.config
 echo "127.0.0.1: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config

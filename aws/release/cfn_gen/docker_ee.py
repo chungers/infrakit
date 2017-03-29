@@ -28,13 +28,8 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
             experimental_flag=experimental_flag,
             has_ddc=has_ddc)
 
-    def add_parameters(self,
-                       manager_default_instance_type=None,
-                       worker_default_instance_type=None):
-        super(DockerEEVPCTemplate, self).add_parameters(
-            manager_default_instance_type=manager_default_instance_type,
-            worker_default_instance_type=worker_default_instance_type
-            )
+    def add_parameters(self):
+        super(DockerEEVPCTemplate, self).add_parameters()
         self.add_parameter_ssh_cidr()
         self.add_parameter_http_proxy()
         self.add_parameter_https_proxy()
@@ -147,11 +142,11 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
         data = self.common_userdata_head()
         return orig_data + data
 
-    def common_userdata_body(self):
+    def common_userdata_body_top(self):
         """ This is the body of the userdata """
         script_dir = path.dirname(__file__)
 
-        ddc_path = path.relpath("data/ee/common_userdata.sh")
+        ddc_path = path.relpath("data/ee/common_userdata_top.sh")
         ddc_file_path = path.join(script_dir, ddc_path)
         data = resources.userdata_from_file(ddc_file_path)
         return data
@@ -159,7 +154,7 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
     def manager_userdata_body(self):
         """ This is the body of the userdata """
         orig_data = super(DockerEEVPCTemplate, self).manager_userdata_body()
-        data = self.common_userdata_body()
+        data = self.common_userdata_body_top()
         # we want our data to go above the original data.
         # we have some settings that need to be set before we restart docker.
         return data + orig_data
@@ -167,7 +162,7 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
     def worker_userdata_body(self):
         """ This is the body of the userdata """
         orig_data = super(DockerEEVPCTemplate, self).worker_userdata_body()
-        data = self.common_userdata_body()
+        data = self.common_userdata_body_top()
         # we want our data to go above the original data.
         # we have some settings that need to be set before we restart docker.
         return data + orig_data

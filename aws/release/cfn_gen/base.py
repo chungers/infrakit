@@ -35,7 +35,7 @@ class AWSBaseTemplate(object):
         self.flat_edition_version = flat_edition_version
         flat_edition_version_upper = flat_edition_version.capitalize()
         self.flat_edition_version_upper = flat_edition_version_upper
-        
+
 
     def build(self):
         self.add_template_version()
@@ -98,20 +98,22 @@ class AWSBaseTemplate(object):
         key, value = result
         self.parameter_labels[key] = value
 
-    def add_parameters(self,
-                       manager_default_instance_type=None,
-                       worker_default_instance_type=None):
-        self.add_to_parameters(parameters.add_parameter_keyname(self.template))
-
-        # instance types
+    def add_parameter_instancetype(self):
         self.add_to_parameters(
             parameters.add_parameter_instancetype(
-                self.template,
-                default_instance_type=worker_default_instance_type))
+                self.template))
+
+    def add_parameter_manager_instancetype(self):
         self.add_to_parameters(
             parameters.add_parameter_manager_instancetype(
-                self.template,
-                default_instance_type=manager_default_instance_type))
+                self.template))
+
+    def add_parameters(self):
+        self.add_to_parameters(parameters.add_parameter_keyname(self.template))
+
+        # instance typees
+        self.add_parameter_instancetype()
+        self.add_parameter_manager_instancetype()
 
         self.add_to_parameters(parameters.add_parameter_cluster_size(self.template))
         self.add_to_parameters(parameters.add_parameter_worker_disk_size(self.template))
@@ -141,8 +143,21 @@ class AWSBaseTemplate(object):
     def worker_userdata_body(self):
         return resources.worker_node_userdata_body()
 
+    def userdata_header(self):
+        return ["#!/bin/sh\n", ]
+        # commenting out since it makes debugging issues harder
+        # add it back in once things are stable again.
+        # "# Close STDOUT file descriptor\n",
+        # "exec 1<&-\n",
+        # "# Close STDERR FD\n",
+        # "exec 2<&-\n",
+        # "# Open STDOUT as log file for read and write.\n",
+        # "exec 1<>/var/lib/docker/editions.log\n",
+        # "# Redirect STDERR to STDOUT\n",
+        # "exec 2>&1\n"]
+
     def worker_userdata(self):
-        header = ["#!/bin/sh\n"]
+        header = self.userdata_header()
         head_data = self.worker_userdata_head()
         body_data = self.worker_userdata_body()
         data = header + head_data + body_data
@@ -156,7 +171,7 @@ class AWSBaseTemplate(object):
         return resources.manager_node_userdata_body()
 
     def manager_userdata(self):
-        header = ["#!/bin/sh\n"]
+        header = self.userdata_header()
         head_data = self.manager_userdata_head()
         body_data = self.manager_userdata_body()
         data = header + head_data + body_data

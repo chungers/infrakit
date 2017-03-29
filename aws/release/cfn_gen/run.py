@@ -10,12 +10,13 @@ from existing_vpc import ExistingVPCTemplate
 from cloud import CloudVPCTemplate, CloudVPCExistingTemplate
 from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
 from ddc import DDCVPCTemplate, DDCVPCExistingTemplate
+from ddc_dev import DDCDevVPCTemplate, DDCDevVPCExistingTemplate
 
 
 def generate_template(template_class, docker_version,
                       docker_for_aws_version,
                       edition_addon, channel, amis, file_name):
-    aws_template = template_class(docker_version, docker_for_aws_version, 
+    aws_template = template_class(docker_version, docker_for_aws_version,
                                   edition_addon, channel, amis)
     aws_template.build()
 
@@ -34,61 +35,61 @@ if __name__ == '__main__':
     channel = "stable"
     docker_for_aws_version = '{}-aws1'.format(docker_version)
 
-    AMI = "ami-57cc1341"
-    amis = {"ap-northeast-1": {
-                "HVM64": "ami-b37e2bd4",
+    amis = {
+            "ap-northeast-1": {
+                "HVM64": "ami-35237952",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-northeast-2": {
-                "HVM64": "ami-923dedfc",
+                "HVM64": "ami-795b8817",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-south-1": {
-                "HVM64": "ami-d21b6bbd",
+                "HVM64": "ami-cb0675a4",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-1": {
-                "HVM64": "ami-ab1baac8",
+                "HVM64": "ami-c0932fa3",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ap-southeast-2": {
-                "HVM64": "ami-253c3f46",
+                "HVM64": "ami-5856593b",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "ca-central-1": {
-                "HVM64": "ami-ad72cfc9",
+                "HVM64": "ami-ce18a5aa",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-central-1": {
-                "HVM64": "ami-2acd1845",
+                "HVM64": "ami-672eff08",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-1": {
-                "HVM64": "ami-a5ad82c3",
+                "HVM64": "ami-3e98a558",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "eu-west-2": {
-                "HVM64": "ami-7cc5d018",
+                "HVM64": "ami-bf7c68db",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "sa-east-1": {
-                "HVM64": "ami-3babcd57",
+                "HVM64": "ami-8dc1a1e1",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-1": {
-                "HVM64": "ami-57cc1341",
+                "HVM64": "ami-b079c7a6",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-east-2": {
-                "HVM64": "ami-feb89d9b",
+                "HVM64": "ami-a91d39cc",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-1": {
-                "HVM64": "ami-0e67396e",
+                "HVM64": "ami-a1bae1c1",
                 "HVMG2": "NOT_SUPPORTED"
             },
             "us-west-2": {
-                "HVM64": "ami-21c94b41",
+                "HVM64": "ami-d849dcb8",
                 "HVMG2": "NOT_SUPPORTED"
             }
     }
@@ -124,3 +125,11 @@ if __name__ == '__main__':
     generate_template(DDCVPCTemplate, docker_version, docker_for_aws_version,
                       'ddc', channel, amis,
                       'docker_ee_for_aws_ddc.json')
+
+    # Docker DDC Dev
+    generate_template(DDCDevVPCExistingTemplate, docker_version,
+                      docker_for_aws_version, 'ddc', channel, amis,
+                      'docker_ee_for_aws_no_vpc_ddc_dev.json')
+    generate_template(DDCDevVPCTemplate, docker_version,
+                      docker_for_aws_version, 'ddc', channel, amis,
+                      'docker_ee_for_aws_ddc_dev.json')

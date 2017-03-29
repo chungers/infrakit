@@ -22,12 +22,8 @@ class ExistingVPCTemplate(AWSBaseTemplate):
             has_ddc=has_ddc
             )
 
-    def add_parameters(self,
-                       manager_default_instance_type=None,
-                       worker_default_instance_type=None):
-        super(ExistingVPCTemplate, self).add_parameters(
-            manager_default_instance_type=manager_default_instance_type,
-            worker_default_instance_type=worker_default_instance_type)
+    def add_parameters(self):
+        super(ExistingVPCTemplate, self).add_parameters()
         self.add_vpc_param()
         self.add_subnet1()
         self.add_subnet2()

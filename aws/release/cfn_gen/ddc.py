@@ -4,16 +4,17 @@ from troposphere import Parameter, Ref, Output, GetAtt, Join, FindInMap
 from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
 from sections import mappings
 from sections import resources
-
+from sections import parameters
+from sections import constants
 
 DTR_TAG = '2.2.3'
 UCP_TAG = '2.1.1'
-UCP_INIT_TAG = '2.1.0'
+UCP_INIT_TAG = '17.03.1-ce-aws1'
 
 
 class DDCVPCTemplate(DockerEEVPCTemplate):
 
-    def __init__(self, docker_version, docker_for_aws_version, 
+    def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=True,
@@ -22,7 +23,7 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         if not template_description:
             template_description = u"Docker EE DDC for AWS {}".format(docker_for_aws_version)
         super(DDCVPCTemplate, self).__init__(
-            docker_version, docker_for_aws_version, 
+            docker_version, docker_for_aws_version,
             edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
@@ -38,11 +39,20 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         )
         return parameter_groups
 
-    def add_parameters(self,
-                       manager_default_instance_type=None,
-                       worker_default_instance_type=None):
-        super(DDCVPCTemplate, self).add_parameters(
-            manager_default_instance_type='m4.large')
+    def add_parameter_instancetype(self):
+        self.add_to_parameters(
+            parameters.add_parameter_instancetype(
+                self.template))
+
+    def add_parameter_manager_instancetype(self):
+        self.add_to_parameters(
+            parameters.add_parameter_manager_instancetype(
+                self.template,
+                default_instance_type='m4.large',
+                instance_types=constants.DDC_INSTANCE_TYPES))
+
+    def add_parameters(self):
+        super(DDCVPCTemplate, self).add_parameters()
         self.add_ddc_license()
         self.add_ddc_username()
         self.add_ddc_password()
@@ -139,9 +149,9 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
 
     def add_mapping_version(self):
         extra_data = {
-            'DTR_TAG': DTR_TAG,
-            'UCP_TAG': UCP_TAG,
-            'UCP_INIT_TAG': UCP_INIT_TAG,
+            'DTRTAG': DTR_TAG,
+            'UCPTAG': UCP_TAG,
+            'UCPINITTAG': UCP_INIT_TAG,
         }
         mappings.add_mapping_version(
             self.template, self.docker_version,
@@ -151,6 +161,7 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
     def common_userdata_head(self):
         """ The Head of the userdata script, this is where
         you would declare all of your shell variables"""
+        orig_data = super(DDCVPCTemplate, self).common_userdata_head()
         data = [
             "export UCP_ADMIN_USER='", Ref("DDCUsernameSet"), "'\n",
             "export UCP_ADMIN_PASSWORD='", Ref("DDCPasswordSet"), "'\n",
@@ -160,30 +171,15 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
             "export DTR_ELB_HOSTNAME='", GetAtt("DTRLoadBalancer", "DNSName"), "'\n",
             "export APP_ELB_HOSTNAME='", GetAtt("ExternalLoadBalancer", "DNSName"), "'\n",
             "export MANAGER_COUNT='", Ref("ManagerSize"), "'\n",
-            "export UCP_TAG='", FindInMap("DockerForAWS", "version", "UCP_TAG"), "'\n",
-            "export DTR_TAG='", FindInMap("DockerForAWS", "version", "DTR_TAG"), "'\n",
-            "export UCP_INIT_TAG='", FindInMap("DockerForAWS", "version", "UCP_INIT_TAG"), "'\n",
+            "export UCP_TAG='", FindInMap("DockerForAWS", "version", "UCPTAG"), "'\n",
+            "export DTR_TAG='", FindInMap("DockerForAWS", "version", "DTRTAG"), "'\n",
+            "export UCP_INIT_TAG='", FindInMap("DockerForAWS", "version", "UCPINITTAG"), "'\n",
         ]
-        return data
-
-    def manager_userdata_head(self):
-        """ The Head of the userdata script, this is where
-        you would declare all of your shell variables"""
-        orig_data = super(DDCVPCTemplate, self).manager_userdata_head()
-        data = self.common_userdata_head()
-        return orig_data + data
-
-    def worker_userdata_head(self):
-        """ The Head of the userdata script, this is where
-        you would declare all of your shell variables"""
-        orig_data = super(DDCVPCTemplate, self).worker_userdata_head()
-        data = self.common_userdata_head()
         return orig_data + data
 
     def common_userdata_body(self):
         """ This is the body of the userdata """
         script_dir = path.dirname(__file__)
-
         ddc_path = path.relpath("data/ddc/common_userdata.sh")
         ddc_file_path = path.join(script_dir, ddc_path)
         data = resources.userdata_from_file(ddc_file_path)
@@ -204,13 +200,17 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
 
 class DDCVPCExistingTemplate(DDCVPCTemplate, DockerEEVPCExistingTemplate):
     """ DDC Template for existing VPC."""
-    def __init__(self, docker_version, docker_for_aws_version, 
-                 edition_addon, channel, amis,
-                 create_vpc=False, template_description=None, has_ddc=True):
+    def __init__(self, docker_version,
+                 docker_for_aws_version, edition_addon, channel, amis,
+                 create_vpc=False, template_description=None, has_ddc=True,
+                 experimental_flag=False,
+                 use_ssh_cidr=True):
         super(DDCVPCExistingTemplate, self).__init__(
             docker_version, docker_for_aws_version, edition_addon,
             channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
-            has_ddc=has_ddc
+            has_ddc=has_ddc,
+            experimental_flag=experimental_flag,
+            use_ssh_cidr=use_ssh_cidr
             )

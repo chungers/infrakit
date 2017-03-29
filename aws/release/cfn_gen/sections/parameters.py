@@ -1,4 +1,5 @@
 from troposphere import Parameter
+from constants import ALL_INSTANCE_TYPES
 
 
 def add_parameter_keyname(template):
@@ -12,47 +13,36 @@ def add_parameter_keyname(template):
     return ('KeyName', {"default": "Which SSH key to use?"})
 
 
-def add_parameter_instancetype(template, default_instance_type=None):
+def add_parameter_instancetype(template, default_instance_type=None,
+                               instance_types=None):
     if not default_instance_type:
         default_instance_type = 't2.micro'
+    if not instance_types:
+        instance_types = ALL_INSTANCE_TYPES
     template.add_parameter(Parameter(
         'InstanceType',
         Type='String',
         Description='EC2 HVM instance type (t2.micro, m3.medium, etc).',
         Default=default_instance_type,
-        AllowedValues=[
-            "t2.micro", "t2.small", "t2.medium", "t2.large", "t2.xlarge", "t2.2xlarge",
-            "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m3.medium",
-            "m3.large", "m3.xlarge", "m3.2xlarge", "c4.large", "c4.xlarge", "c4.2xlarge",
-            "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge",
-            "c3.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge",
-            "r4.large", "r4.xlarge", "r4.2xlarge", "r4.4xlarge", "r4.8xlarge", "r4.16xlarge",
-            "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
-            "i3.large", "i3.xlarge", "i3.2xlarge", "i3.4xlarge", "i3.8xlarge", "i3.16xlarge",
-        ],
+        AllowedValues=instance_types,
         ConstraintDescription='Must be a valid EC2 HVM instance type.',
     ))
     return ('InstanceType', {"default": "Agent worker instance type?"})
 
 
-def add_parameter_manager_instancetype(template, default_instance_type=None):
+def add_parameter_manager_instancetype(template, default_instance_type=None,
+                                       instance_types=None):
     if not default_instance_type:
         default_instance_type = 't2.micro'
+    if not instance_types:
+        instance_types = ALL_INSTANCE_TYPES
+
     template.add_parameter(Parameter(
         'ManagerInstanceType',
         Type='String',
         Description='EC2 HVM instance type (t2.micro, m3.medium, etc).',
         Default=default_instance_type,
-        AllowedValues=[
-            "t2.micro", "t2.small", "t2.medium", "t2.large", "t2.xlarge", "t2.2xlarge",
-            "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "m3.medium",
-            "m3.large", "m3.xlarge", "m3.2xlarge", "c4.large", "c4.xlarge", "c4.2xlarge",
-            "c4.4xlarge", "c4.8xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge",
-            "c3.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge",
-            "r4.large", "r4.xlarge", "r4.2xlarge", "r4.4xlarge", "r4.8xlarge", "r4.16xlarge",
-            "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge",
-            "i3.large", "i3.xlarge", "i3.2xlarge", "i3.4xlarge", "i3.8xlarge", "i3.16xlarge",
-        ],
+        AllowedValues=instance_types,
         ConstraintDescription='Must be a valid EC2 HVM instance type.',
     ))
     return ('ManagerInstanceType', {"default": "Swarm manager instance type?"})
