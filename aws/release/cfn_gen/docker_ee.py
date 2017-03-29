@@ -10,7 +10,7 @@ from existing_vpc import ExistingVPCTemplate
 
 class DockerEEVPCTemplate(AWSBaseTemplate):
 
-    def __init__(self, docker_version, docker_for_aws_version, 
+    def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=True, template_description=None,
                  use_ssh_cidr=True,
@@ -20,7 +20,7 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
             template_description = u"Docker EE for AWS {} ({})".format(
                 docker_version, docker_for_aws_version)
         super(DockerEEVPCTemplate, self).__init__(
-            docker_version, docker_for_aws_version, 
+            docker_version, docker_for_aws_version,
             edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
@@ -70,6 +70,7 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
         data['us-east-1']['EFSSupport'] = 'no'
         data['us-east-2']['EFSSupport'] = 'no'
         data['us-west-2']['EFSSupport'] = 'no'
+        data['ap-southeast-2']['EFSSupport'] = 'no'
 
         self.template.add_mapping('AWSRegion2AZ', data)
 
@@ -170,14 +171,14 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
 
 class DockerEEVPCExistingTemplate(DockerEEVPCTemplate, ExistingVPCTemplate):
     """ Cloud Template for existing VPC."""
-    def __init__(self, docker_version, docker_for_aws_version, 
+    def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=False, template_description=None,
                  use_ssh_cidr=True,
                  experimental_flag=False,
                  has_ddc=False):
         super(DockerEEVPCExistingTemplate, self).__init__(
-            docker_version, docker_for_aws_version, 
+            docker_version, docker_for_aws_version,
             edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,

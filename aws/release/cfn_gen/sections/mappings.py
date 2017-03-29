@@ -240,7 +240,7 @@ def aws2az_data():
         "ap-south-1": {
             "Name": "Mumbai",
             "EFSSupport": "no",
-            "LambdaSupport": "no",
+            "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
             "AZ1": "1",
