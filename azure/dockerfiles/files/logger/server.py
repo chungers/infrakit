@@ -17,10 +17,10 @@ CIFS_OPTION_GID = "gid=0"
 
 STORAGE_BASE = "core.windows.net"
 
-BUFFER_SZ_MAX = 1024*64    # 64 KB
-BUFFER_DURATION_MAX = 60   # 60 seconds
-CLEANUP_INTERVAL = 60*60*2 # 2 hrs
-IDLE_DURATION = 60*60*4    # 4 hrs
+BUFFER_SZ_MAX = 1024*4     # 4 KB
+BUFFER_DURATION_MAX = 30   # 30 seconds
+CLEANUP_INTERVAL = 60*10   # 10 mins
+IDLE_DURATION = 60*30      # 30 mins
 
 # Azure log tactic:
 # 1. Mount file storage share in logging storage account over SMB
@@ -114,6 +114,7 @@ class AzureLog(object):
         buffer_sz = self.log_buffer_sizes[container_id]
         buffer_duration = datetime.datetime.utcnow() - self.log_flush_timestamps[container_id]
         # reset the buffer and file handle to flush all contents at regular intervals
+        
         if ((buffer_sz != 0 and buffer_sz + len(message) > BUFFER_SZ_MAX) or 
             (buffer_duration.seconds > BUFFER_DURATION_MAX)):
             self.log_file_handles[container_id].close()
@@ -121,7 +122,10 @@ class AzureLog(object):
             buffer_sz = 0
             self.log_flush_timestamps[container_id] = datetime.datetime.utcnow()
 
-        self.log_file_handles[container_id].write(message + "\n")
+        try:
+            self.log_file_handles[container_id].write(message + "\n")
+        except IOError as e:
+            print "I/O error({0}): {1}".format(e.errno, e.strerror)
         self.log_buffer_sizes[container_id] = buffer_sz + len(message)
 
         #check if we need to garbage collect old container log entries
@@ -150,19 +154,19 @@ class AzureLog(object):
         return file_service     
 
     def cleanup_file_entries(self, check_time):
-        for container_id, log_file_handle in self.file_handles:
+        for container_id in self.log_file_handles.keys():
             if check_time:
-                if (self.log_flush_timestamps[container_id] - datetime.datetime.utcnow() > IDLE_DURATION):
+                if ((self.log_flush_timestamps[container_id] - datetime.datetime.utcnow()).seconds > IDLE_DURATION):
                     self.cleanup_file_entry(container_id)
             else:
                 self.cleanup_file_entry(container_id)
+        self.last_cleanup = datetime.datetime.utcnow()
 
     def cleanup_file_entry(self, container_id):
-        close(self.log_file_handles[container_id])
+        self.log_file_handles[container_id].close()
         del self.log_file_handles[container_id]
         del self.log_buffer_sizes[container_id]
         del self.log_flush_timestamps[container_id]   
-
 	# @TODO implement cleanup for container
 
 
