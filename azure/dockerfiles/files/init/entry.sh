@@ -231,7 +231,9 @@ run_system_containers()
         -e SWARM_LOGS_STORAGE_ACCOUNT \
         -e SWARM_FILE_SHARE="$AZURE_HOSTNAME" \
         -p 514:514/udp \
-        -v container-logs:/log/ \
+        --cap-add SYS_ADMIN \
+        --cap-add DAC_OVERRIDE \
+        --cap-add DAC_READ_SEARCH \
         docker4x/logger-azure:$DOCKER_FOR_IAAS_VERSION
 
     echo "kick off guide container"
