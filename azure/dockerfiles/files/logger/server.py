@@ -105,7 +105,7 @@ class AzureLog(object):
 
     def write(self, container_id, message):
         # called in the context of a UDP recv call. Avoid calling blocking/remote APIs!
-        container_log_path = LOG_MNT_PATH + "/" + container_id
+        container_log_path = LOG_MNT_PATH + "/" + container_id + ".log"
         if not container_id in self.log_file_handles:
             self.log_file_handles[container_id] = open(container_log_path, 'a')
             self.log_buffer_sizes[container_id] = 0
