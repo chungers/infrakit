@@ -15,10 +15,12 @@ metadata() {
 start()
 {
   ebegin "Pre-load docker images"
-
-  for IMAGE in /dockerimages/*.tar; do
+  for IMAGE in $( ls /var/dockerimages/*.tar ); do
+    echo "Loading image ${IMAGE}"
     docker load --input ${IMAGE}
+    rm -f ${IMAGE}
   done
+  eend 0
 
   ebegin "Run startup script"
 
