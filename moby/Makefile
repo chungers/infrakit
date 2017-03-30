@@ -4,9 +4,16 @@ FORCE_GSUTIL_AUTH ?= 0
 
 ## Moby specific commit
 ifeq (${MOBY_COMMIT},)
-	MOBY_COMMIT := 7fedbd41c089ec99c4f05d72211da0f25203d843
+	MOBY_COMMIT := ece859d8ebd517736443af9677751b88fe243bc7
+	MOBY_EE_COMMIT := 0a0d8a2094844079a4a07b079766c98633995a93
 endif
-MOBY_IMG_NAME := mobylinux-ce.tgz
+
+ifeq ($(shell echo ${EDITIONS_VERSION} | sed -ne '/-ee/p'), $(EDITIONS_VERSION))
+	MOBY_IMG_NAME := mobylinux-ee.tgz
+else
+	MOBY_IMG_NAME := mobylinux-ce.tgz
+endif
+
 MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
 REGEXTRACT_IMAGE=docker4x/regextract@sha256:a843d793ba6b83d4bb7d68102ca2c7dba0f985330581224e9afeacdbbf76b8db
 GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63

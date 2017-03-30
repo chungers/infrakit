@@ -42,7 +42,16 @@ ifeq (${CHANNEL},)
 	CHANNEL := edge
 endif
 
-BUILD := 1
+# Check if DOCKER_EXPERIMENTAL has been defined
+ifeq (${DOCKER_EXPERIMENTAL},)
+	DOCKER_EXPERIMENTAL := 1
+endif
+
+# Check if BUILD has been defined
+ifeq (${BUILD},)
+	BUILD := 2
+endif
+
 NAMESPACE := docker4x
 AWS_TAG_VERSION := $(EDITIONS_VERSION)-aws$(BUILD)
 AZURE_TAG_VERSION := $(EDITIONS_VERSION)-azure$(BUILD)
@@ -50,7 +59,6 @@ GCP_TAG_VERSION := $(EDITIONS_VERSION)-gcp$(BUILD)
 REGION := us-west-2
 CHANNEL_DDC := alpha
 CHANNEL_CLOUD := alpha
-DOCKER_EXPERIMENTAL := 1
 EDITION_ADDON := base
 
 #### Azure Specific VARS
@@ -117,7 +125,7 @@ define clean_plugin_tool
 endef
 
 ## General tools targets
-tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz tools/awscli/image
+tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
 
 tools/buoy/bin/buoy:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
