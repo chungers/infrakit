@@ -43,7 +43,7 @@ define push_to_s3
 			docker4x/awscli:latest s3 cp \
 			/tmp/$(3) \
 			s3://docker-ci-editions/$(2)/$(3) \
-			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION} \
+			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}; \
 	fi
 endef
 
