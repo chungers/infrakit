@@ -72,6 +72,12 @@ AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
 AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(AWS_TAG_VERSION)
 AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
 
+UNAME_S := $(shell uname -s)
+SEDFLAGS := -i
+ifeq ($(UNAME_S),Darwin)
+	SEDFLAGS := -i ""
+endif
+
 .PHONY: moby tools tools/buoy tools/metaserver tools/cloudstor
 
 release: moby/cloud/aws/ami_id.out moby/cloud/azure/vhd_blob_url.out dockerimages
@@ -132,17 +138,17 @@ tools/awscli/image:
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
+	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
+	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
 moby/cloud/aws/ami_id_ee.out: 
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed -i 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
+	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami LOAD_IMAGES=true
 
 moby/build/gcp/gce.img.tar.gz: moby
