@@ -154,7 +154,7 @@ vhdartifact:
 
 
 aws.img:
-	tar cf - -C packages/aws etc dockerimages -C ../.. | \
+	tar cf - -C packages/aws etc var/dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/aws/initrd.img: src/initrd.img aws.img
@@ -163,7 +163,7 @@ build/aws/initrd.img: src/initrd.img aws.img
 
 azure.img:
 	@echo "+ $@"
-	tar cf - -C packages/azure etc -C ../.. | \
+	tar cf - -C packages/azure etc var/dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/azure/initrd.img: src/initrd.img azure.img
@@ -172,7 +172,7 @@ build/azure/initrd.img: src/initrd.img azure.img
 
 gce.img:
 	@echo "+ $@"
-	tar cf - -C packages/gcp etc dockerimages -C ../.. | \
+	tar cf - -C packages/gcp etc var/dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/gcp/initrd.img: src/initrd.img gce.img
