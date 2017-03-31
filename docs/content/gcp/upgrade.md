@@ -50,7 +50,7 @@ Docker Swarm, and service state will be maintained during and after the upgrade.
 Appropriately scaled services should not experience downtime during an upgrade.
 
     $ gcloud deployment-manager deployments update <deployment-name> \
-        --config https://docker-for-gcp-templates.storage.googleapis.com/v[NEW-VERSION]/Docker.jinja \
+        --config https://download.docker.com/gcp/edge/Docker.jinja \
         --properties managerCount:3,workerCount:5
 
 _Warning_: If you created your deployment with non default settings (node count,
