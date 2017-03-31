@@ -36,8 +36,8 @@ define push_to_s3
 	@echo "+ Pushing ${3} to ${1} with type ${2} - ${3}"
 	docker run --rm \
 		-v $(CURDIR)/cloud/$(1):/tmp \
-		-e AWS_ACCESS_KEY_ID \
-		-e AWS_SECRET_ACCESS_KEY \
+		-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \
+		-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
 		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(3) \
@@ -45,8 +45,8 @@ define push_to_s3
 	@if [ "${RELEASE}" = 0 ]; then \
 		docker run --rm \
 			-v $(CURDIR)/cloud/$(1):/tmp \
-			-e AWS_ACCESS_KEY_ID \
-			-e AWS_SECRET_ACCESS_KEY \
+			-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \
+			-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 			docker4x/awscli:latest s3 cp \
 			/tmp/$(3) \
 			s3://docker-ci-editions/$(2)/$(3) \
