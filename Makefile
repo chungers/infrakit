@@ -5,7 +5,7 @@ ifeq (${EDITIONS_TAG},)
 endif
 
 ifeq (${EDITIONS_DOCKER_VERSION},)
-	EDITIONS_DOCKER_VERSION := 17.03.1-rc1
+	EDITIONS_DOCKER_VERSION := 17.04.0
 endif
 
 ifeq (${RELEASE},)
