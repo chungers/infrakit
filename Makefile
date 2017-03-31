@@ -154,11 +154,6 @@ moby/cloud/aws/ami_id.out: moby
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
-moby/cloud/aws/ami_id_ee.out: 
-	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
-	$(MAKE) -C moby ami LOAD_IMAGES=true
-
 moby/build/gcp/gce.img.tar.gz: moby
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
 	$(MAKE) -C moby gcp-upload

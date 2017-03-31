@@ -10,8 +10,15 @@ endif
 
 ifeq ($(shell echo ${EDITIONS_VERSION} | sed -ne '/-ee/p'), $(EDITIONS_VERSION))
 	MOBY_IMG_NAME := mobylinux-ee.tgz
+	AMI_OUT := ami_id_ee.out
+	LOAD_IMAGES := true
+	VHD_OUT := vhd_ee_blob_url.out
+	BDI_OUT := bdi_ee_url.out
 else
 	MOBY_IMG_NAME := mobylinux-ce.tgz
+	AMI_OUT := ami_id.out
+	VHD_OUT := vhd_blob_url.out
+	BDI_OUT := bdi_url.out
 endif
 
 MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
@@ -23,13 +30,7 @@ TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa60
 
 export
 
-ifeq ($(LOAD_IMAGES),true)
-AMI_OUT := ami_id_ee.out
-else
-AMI_OUT := ami_id.out
-endif
-VHD_OUT := vhd_blob_url.out
-BDI_OUT := bdi_url.out
+
 
 
 define push_to_s3
