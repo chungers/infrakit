@@ -165,10 +165,10 @@ func getVMSSNic(client network.InterfacesClient, env map[string]string, vmss str
 	IPTable = map[string]string{}
 
 	for _, nic := range *result.Value {
-		if *nic.Properties.Primary {
-			for _, ipConfig := range *nic.Properties.IPConfigurations {
-				if *ipConfig.Properties.Primary {
-					IPTable[*nic.ID] = *ipConfig.Properties.PrivateIPAddress
+		if *nic.InterfacePropertiesFormat.Primary {
+			for _, ipConfig := range *nic.InterfacePropertiesFormat.IPConfigurations {
+				if *ipConfig.InterfaceIPConfigurationPropertiesFormat.Primary {
+					IPTable[*nic.ID] = *ipConfig.InterfaceIPConfigurationPropertiesFormat.PrivateIPAddress
 				}
 			}
 		}
@@ -187,7 +187,7 @@ func getVMSSList(client compute.VirtualMachineScaleSetVMsClient, env map[string]
 	}
 
 	for _, vm := range *result.Value {
-		nics := *vm.Properties.NetworkProfile.NetworkInterfaces
+		nics := *vm.VirtualMachineScaleSetVMProperties.NetworkProfile.NetworkInterfaces
 		privateIP := nicIPTable[*nics[0].ID]
 		newVM := WebInstance{
 			ID:               *vm.ID,
@@ -196,7 +196,7 @@ func getVMSSList(client compute.VirtualMachineScaleSetVMsClient, env map[string]
 			InstanceType:     *vm.Type,
 			InstanceNic:      *nics[0].ID,
 			PrivateIPAddress: privateIP,
-			InstanceState:    *vm.Properties.ProvisioningState}
+			InstanceState:    *vm.VirtualMachineScaleSetVMProperties.ProvisioningState}
 		vms = append(vms, newVM)
 	}
 	return vms, nil
