@@ -55,7 +55,7 @@ define push_to_s3
 	fi
 endef
 
-all: 
+all:
 	@echo "+ $@"
 	$(MAKE) src/initrd.img
 
@@ -215,7 +215,7 @@ build/azure/initrd.img: src/initrd.img azure.img
 
 gce.img:
 	@echo "+ $@"
-	tar cf - -C packages/gcp etc var/dockerimages -C ../.. | \
+	tar cf - -C packages/gcp etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/gcp/initrd.img: src/initrd.img gce.img

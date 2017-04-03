@@ -6,7 +6,7 @@ moby/cloud/azure/vhd_blob_url.out
 moby/cloud/mobylinux.vhd
 moby/packages/aws/var/dockerimages/
 moby/packages/azure/var/dockerimages/
-moby/packages/gcp/var/dockerimages/
+moby/packages/gcp/dockerimages/
 
 # vendored sources -- these are synced by govendor
 vendor/*/

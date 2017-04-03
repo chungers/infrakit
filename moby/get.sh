@@ -2,10 +2,10 @@
 
 set -e
 
-mkdir -p build/aws build/azure build/gcp src packages/aws/var/dockerimages/ packages/azure/var/dockerimages/ packages/gcp/var/dockerimages/ tmp
+mkdir -p build/aws build/azure build/gcp src packages/aws/var/dockerimages/ packages/azure/var/dockerimages/ packages/gcp/dockerimages/ tmp
 
 echo "++ Copying Moby build ${MOBY_IMG_URL} to ${MOBY_IMG_NAME}"
-docker run --rm -v ${PWD}/tmp:/tmp docker4x/awscli:latest s3 --no-sign-request cp ${MOBY_IMG_URL} /tmp/${MOBY_IMG_NAME} 
+docker run --rm -v ${PWD}/tmp:/tmp docker4x/awscli:latest s3 --no-sign-request cp ${MOBY_IMG_URL} /tmp/${MOBY_IMG_NAME}
 pushd tmp
 tar xvf ${MOBY_IMG_NAME}
 cp initrd.img ../src/initrd.img
