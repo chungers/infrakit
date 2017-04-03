@@ -62,7 +62,7 @@ start()
 	fi
 
 	ebegin "Pre-load docker images"
-	for IMAGE in $( ls /var/dockerimages/*.tar ); do
+	for IMAGE in $( ls /dockerimages/*.tar ); do
 		echo "Loading image ${IMAGE}"
 		docker load --input ${IMAGE}
 		rm -f ${IMAGE}

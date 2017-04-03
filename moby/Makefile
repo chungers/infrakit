@@ -197,7 +197,7 @@ vhdartifact:
 
 
 aws.img:
-	tar cf - -C packages/aws etc var/dockerimages -C ../.. | \
+	tar cf - -C packages/aws etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/aws/initrd.img: src/initrd.img aws.img
@@ -206,7 +206,7 @@ build/aws/initrd.img: src/initrd.img aws.img
 
 azure.img:
 	@echo "+ $@"
-	tar cf - -C packages/azure etc var/dockerimages -C ../.. | \
+	tar cf - -C packages/azure etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 build/azure/initrd.img: src/initrd.img azure.img
@@ -227,7 +227,7 @@ build/gcp/gce.img.tar.gz: build/gcp/initrd.img
 
 clean:
 	@echo "+ $@"
-	-rm -rf build src packages/aws/var/ packages/gcp/var/
+	-rm -rf build src packages/aws/dockerimages/ packages/azure/dockerimages/ packages/gcp/dockerimages/
 	-rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz
 	-rm cloud/aws/$(AMI_OUT) cloud/azure/$(VHD_OUT) cloud/gcp/$(BDI_OUT)
  	-docker images -q moby-azure:build | xargs docker rmi -f
