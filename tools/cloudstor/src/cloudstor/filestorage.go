@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	azure "github.com/Azure/azure-sdk-for-go/storage"
+	azure "github.com/Azure/azure-storage-go"
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/go-plugins-helpers/volume"
 )
@@ -93,7 +93,8 @@ func (v *azfsDriver) Create(req volume.Request) (resp volume.Response) {
 	}
 	logctx.Debug("request accepted")
 
-	if ok, err := v.cl.CreateShareIfNotExists(share); err != nil {
+	s := v.cl.GetShareReference(volMeta.Options.Share);
+	if ok, err := s.CreateIfNotExists(); err != nil {
 		resp.Err = fmt.Sprintf("error creating azure file share: %v", err)
 		logctx.Error(resp.Err)
 		return
@@ -209,7 +210,8 @@ func (v *azfsDriver) Remove(req volume.Request) (resp volume.Response) {
 	}
 
 	share := meta.Options.Share
-	if ok, err := v.cl.DeleteShareIfExists(share); err != nil {
+	s := v.cl.GetShareReference(share)
+	if ok, err := s.DeleteIfExists(); err != nil {
 		resp.Err = fmt.Sprintf("error removing azure file share %q: %v", share, err)
 		logctx.Error(resp.Err)
 		return
