@@ -2,7 +2,7 @@
 
 if [ "$1" = "tarout" ]
 then
-	tar --directory /tmp -cf - -S build/azure/mobylinux.vhd
+	tar --directory /tmp -cf - -S mobylinux.vhd
 else
 	./bake-azure.sh "$@" 1>&2
 	if [ "$1" = "uploadvhd" ]
