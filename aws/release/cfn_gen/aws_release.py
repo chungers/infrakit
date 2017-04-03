@@ -10,6 +10,8 @@ from base import AWSBaseTemplate
 from cloud import CloudVPCTemplate, CloudVPCExistingTemplate
 from existing_vpc import ExistingVPCTemplate
 from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
+from ddc import DDCVPCExistingTemplate, DDCVPCTemplate
+from ddc_dev import DDCDevVPCTemplate, DDCDevVPCExistingTemplate
 
 
 def main():
@@ -107,7 +109,7 @@ def main():
 
     cfn_name = "{}-no-vpc".format(docker_for_aws_version)
     s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list, release_channel,
-                                        docker_version, docker_for_aws_version, 
+                                        docker_version, docker_for_aws_version,
                                         edition_addon, cfn_name,
                                         cfn_type="no-vpc")
 
@@ -122,7 +124,7 @@ def main():
     docker_ee_s3_url_no_vpc = create_cfn_template(DockerEEVPCExistingTemplate,
                                                   ami_list,
                                                   docker_ee_release_channel,
-                                                  docker_version, docker_for_aws_version, 
+                                                  docker_version, docker_for_aws_version,
                                                   edition_addon, docker_ee_cfn_name,
                                                   cfn_type="no-vpc")
 
@@ -130,14 +132,43 @@ def main():
     edition_addon = 'cloud'
     s3_cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
                                        release_cloud_channel,
-                                       docker_version, docker_for_aws_version, 
+                                       docker_version, docker_for_aws_version,
                                        edition_addon, cfn_name)
 
     cfn_name = "{}-no-vpc-cloud".format(docker_for_aws_version)
     s3_cloud_url_no_vpc = create_cfn_template(CloudVPCExistingTemplate,
                                               ami_list, release_cloud_channel,
-                                              docker_version, docker_for_aws_version, 
+                                              docker_version, docker_for_aws_version,
                                               edition_addon, cfn_name, cfn_type="no-vpc")
+
+    # DDC
+    ddc_channel = "{}-ddc".format(release_channel)
+    cfn_name = "{}-ddc".format(docker_for_aws_version)
+    edition_addon = 'ddc'
+    s3_ddc_url = create_cfn_template(DDCVPCTemplate, ami_list,
+                                     ddc_channel,
+                                     docker_version, docker_for_aws_version,
+                                     edition_addon, cfn_name)
+
+    cfn_name = "{}-no-vpc-ddc".format(docker_for_aws_version)
+    s3_ddc_url_no_vpc = create_cfn_template(DDCVPCExistingTemplate,
+                                            ami_list, ddc_channel,
+                                            docker_version, docker_for_aws_version,
+                                            edition_addon, cfn_name, cfn_type="no-vpc")
+
+    # DDC-Dev
+    cfn_name = "{}-ddc-dev".format(docker_for_aws_version)
+    edition_addon = 'ddc-dev'
+    s3_ddc_dev_url = create_cfn_template(DDCDevVPCTemplate, ami_list,
+                                         ddc_channel,
+                                         docker_version, docker_for_aws_version,
+                                         edition_addon, cfn_name)
+
+    cfn_name = "{}-no-vpc-ddc-dev".format(docker_for_aws_version)
+    s3_ddc_dev_url_no_vpc = create_cfn_template(DDCDevVPCExistingTemplate,
+                                                ami_list, ddc_channel,
+                                                docker_version, docker_for_aws_version,
+                                                edition_addon, cfn_name, cfn_type="no-vpc")
 
     # TODO: git commit, tag release. requires github keys, etc.
 
@@ -146,8 +177,12 @@ def main():
     print(u"Finshed.. Docker CE Base No VPC URL={}".format(s3_url_no_vpc))
     print(u"Finshed.. Docker EE Base URL={}".format(docker_ee_s3_url))
     print(u"Finshed.. Docker EE Base No VPC URL={}".format(docker_ee_s3_url_no_vpc))
-    print(u"Finshed.. CloudFormation Cloud URL={}".format(s3_cloud_url))
-    print(u"Finshed.. CloudFormation Cloud No VPC URL={}".format(s3_cloud_url_no_vpc))
+    print(u"Finshed.. Docker EE DDC URL={}".format(s3_ddc_url))
+    print(u"Finshed.. Docker EE DDC No VPC URL={}".format(s3_ddc_url_no_vpc))
+    print(u"Finshed.. Docker EE DDC Dev URL={}".format(s3_ddc_dev_url))
+    print(u"Finshed.. Docker EE DDC Dev No VPC URL={}".format(s3_ddc_dev_url_no_vpc))
+    print(u"Finshed.. Docker Cloud URL={}".format(s3_cloud_url))
+    print(u"Finshed.. Docker Cloud No VPC URL={}".format(s3_cloud_url_no_vpc))
     print("Don't forget to tag the code (git tag -a {0} -m {0}; git push --tags)".format(docker_for_aws_version))
     print("------------------")
 
