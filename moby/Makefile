@@ -77,9 +77,9 @@ ifeq ($(FORCE_GSUTIL_AUTH),1)
 endif
 ifeq ($(JENKINS_BUILD),)
 	-docker rm gsutil-moby-config 2>/dev/null
-	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth activate-service-account --key-file auth.json
+	docker run --rm --name gsutil-moby-config google/cloud-sdk gcloud auth activate-service-account --key-file auth.json
 endif
-	docker run --rm -ti \
+	docker run --rm \
 		--volumes-from gsutil-moby-config \
 		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
