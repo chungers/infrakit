@@ -28,5 +28,6 @@ func Flags(o *logutil.Options) *pflag.FlagSet {
 	f.BoolVar(&o.CallFunc, "log-caller", o.CallFunc, "include caller function")
 	f.BoolVar(&o.CallStack, "log-stack", o.CallStack, "include caller stack")
 	f.StringVar(&o.Format, "log-format", o.Format, "log format: logfmt|term|json")
+	f.StringSliceVar(&o.Filters, "log-filters", o.Filters, "log filters: reject key1=val1,val2,val3 key2=a,b,c")
 	return f
 }

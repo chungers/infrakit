@@ -3,6 +3,7 @@ package log
 import (
 	"flag"
 	"os"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -28,6 +29,10 @@ type Options struct {
 	Format    string
 	CallFunc  bool
 	CallStack bool
+
+	// filters OUT all matching values with given context key field.
+	// The format is module=discovery/local,storage/local  key2=v1,v2,v3
+	Filters []string
 }
 
 // DevDefaults is the default options for development
@@ -36,6 +41,7 @@ var DevDefaults = Options{
 	Stdout:    false,
 	Format:    "json",
 	CallStack: true,
+	Filters:   []string{"module=discovery/local,etcd/leader"},
 }
 
 // ProdDefaults is the default options for production
@@ -44,6 +50,7 @@ var ProdDefaults = Options{
 	Stdout:   false,
 	Format:   "term",
 	CallFunc: true,
+	Filters:  []string{"module=discovery/local,etcd/leader"},
 }
 
 func init() {
@@ -107,8 +114,37 @@ func Configure(options *Options) {
 	default:
 		h = log15.LvlFilterHandler(log15.LvlInfo, h)
 	}
+
+	if len(options.Filters) > 0 {
+		for _, s := range options.Filters {
+			p := strings.SplitN(s, "=", 2)
+			if len(p) == 2 {
+				key := p[0]
+				values := strings.Split(p[1], ",")
+				h = matchFilterHandler(key, values, h)
+			}
+		}
+	}
+
 	log15.Root().SetHandler(h)
 
 	// Necessary to stop glog from complaining / noisy logs
 	flag.CommandLine.Parse([]string{})
+}
+
+// if the log context field keyed by 'key' contains any of the strings given, do NOT log.
+func matchFilterHandler(key string, values []string, h log15.Handler) log15.Handler {
+	return log15.FilterHandler(func(r *log15.Record) (pass bool) {
+		for i := 0; i < len(r.Ctx); i += 2 {
+			if r.Ctx[i] == key {
+				check := r.Ctx[i+1]
+				for _, v := range values {
+					if v == check {
+						return false
+					}
+				}
+			}
+		}
+		return true
+	}, h)
 }
