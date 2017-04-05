@@ -7,7 +7,7 @@ echo This is a {{type}} node
 export DOCKER_FOR_IAAS_VERSION="gcp-{{ VERSION }}"
 export ACCOUNT_ID="$(curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email)"
 export REGION="{{ REGION }}"
-export CHANNEL="beta"
+export CHANNEL="edge"
 export NODE_TYPE="{{ type }}"
 
 shell_image="docker4x/shell-gcp"
