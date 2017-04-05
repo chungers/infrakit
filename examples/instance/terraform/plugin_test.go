@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io/ioutil"
 	"os"
@@ -184,7 +185,7 @@ func run(t *testing.T, resourceType, properties string) {
 			"terraform_demo_swarm_mgr_sl",
 			"label1:value1",
 			"label2:value2",
-			"Name:" + string(*id),
+			"name:" + string(*id),
 		}), conv(props["tags"].([]interface{})))
 		require.Equal(t, instanceSpec.Init, props["user_metadata"])
 
@@ -207,7 +208,7 @@ func run(t *testing.T, resourceType, properties string) {
 			"label2":         "value2",
 			"Name":           string(*id),
 		}, props["tags"])
-		require.Equal(t, instanceSpec.Init, props["user_data"])
+		require.Equal(t, base64.StdEncoding.EncodeToString([]byte(instanceSpec.Init)), props["user_data"])
 	}
 
 	// label resources
@@ -232,7 +233,7 @@ func run(t *testing.T, resourceType, properties string) {
 			"label1:changed1",
 			"label2:value2",
 			"label3:value3",
-			"Name:" + string(*id),
+			"name:" + string(*id),
 		}), conv(props["tags"].([]interface{})))
 	case "aws_instance":
 		require.Equal(t, map[string]interface{}{
@@ -244,7 +245,7 @@ func run(t *testing.T, resourceType, properties string) {
 		}, props["tags"])
 	}
 
-	list, err := terraform.DescribeInstances(map[string]string{"label1": "changed1"})
+	list, err := terraform.DescribeInstances(map[string]string{"label1": "changed1"}, false)
 	require.NoError(t, err)
 
 	switch resourceType {
@@ -257,7 +258,7 @@ func run(t *testing.T, resourceType, properties string) {
 					"label1":                      "changed1",
 					"label2":                      "value2",
 					"label3":                      "value3",
-					"Name":                        string(*id),
+					"name":                        string(*id),
 				},
 			},
 		}, list)
@@ -279,7 +280,7 @@ func run(t *testing.T, resourceType, properties string) {
 	err = terraform.Destroy(*id)
 	require.NoError(t, err)
 
-	list, err = terraform.DescribeInstances(map[string]string{"label1": "changed1"})
+	list, err = terraform.DescribeInstances(map[string]string{"label1": "changed1"}, false)
 	require.NoError(t, err)
 	require.Equal(t, []instance.Description{}, list)
 }
