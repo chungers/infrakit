@@ -57,6 +57,15 @@ resources:
 
           echo Initialize Swarm
 
+          cat << EOF > /etc/docker/daemon.json
+          {
+            "labels": [
+            "infrakit-link=bootstrap",
+          ]
+          }
+          EOF
+          kill -s HUP $(cat /var/run/docker.pid)
+
           docker node inspect self >/dev/null 2>&1 || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
           docker node inspect self
 
@@ -152,7 +161,7 @@ resources:
               --network projects/test-project/global/networks/docker-network \
               --tags swarm,swarm-manager \
               --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
-              --metadata infrakit--group=docker-managers,infrakit--config_sha=bootstrap \
+              --metadata infrakit--group=docker-managers,infrakit--config_sha=bootstrap,infrakit-link=bootstrap \
               --metadata-from-file startup-script=/start.sh \
               --disk=boot=yes,device-name=docker-manager-1,name=docker-manager-1
           else
@@ -162,7 +171,7 @@ resources:
               --image projects/test-project/global/images/docker-disk-image-dev \
               --tags swarm,swarm-manager \
               --scopes https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/trace.append,https://www.googleapis.com/auth/compute,https://www.googleapis.com/auth/cloudruntimeconfig \
-              --metadata infrakit--group=docker-managers,infrakit--config_sha=bootstrap \
+              --metadata infrakit--group=docker-managers,infrakit--config_sha=bootstrap,infrakit-link=bootstrap \
               --metadata-from-file startup-script=/start.sh \
               --boot-disk-size 100GB \
               --boot-disk-type pd-standard \

@@ -23,6 +23,15 @@ docker_cli='-v /usr/bin/docker:/usr/bin/docker'
 {% if (type in ['leader']) %}
 echo Initialize Swarm
 
+cat << EOF > /etc/docker/daemon.json
+{
+  "labels": [
+  "infrakit-link=bootstrap",
+]
+}
+EOF
+kill -s HUP $(cat /var/run/docker.pid)
+
 docker node inspect self >/dev/null 2>&1 || docker swarm init --advertise-addr eth0:2377 --listen-addr eth0:2377
 docker node inspect self
 
