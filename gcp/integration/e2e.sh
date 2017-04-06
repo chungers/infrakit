@@ -110,6 +110,9 @@ destroy_swarm() {
   if [ $EXISTS -eq 0 ]; then
     gcloud --verbosity=none deployment-manager deployments describe ${STACK} && gcloud deployment-manager deployments delete -q ${STACK} || true
   fi
+
+  DISKS=$(gcloud compute disks list --filter="name~${STACK}-manager-" --uri)
+  [ -n "${DISKS}" ] && gcloud compute disks delete -q ${DISKS}
 }
 
 check_instances_gone() {
