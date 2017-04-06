@@ -4,8 +4,8 @@ moby/tmp/
 moby/cloud/aws/ami_id.out
 moby/cloud/azure/vhd_blob_url.out
 moby/cloud/mobylinux.vhd
-moby/packages/aws/var/dockerimages/
-moby/packages/azure/var/dockerimages/
+moby/packages/aws/dockerimages/
+moby/packages/azure/dockerimages/
 moby/packages/gcp/dockerimages/
 
 # vendored sources -- these are synced by govendor
