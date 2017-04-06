@@ -1,10 +1,10 @@
 
-
-echo "$EXTERNAL_LB" > /var/lib/docker/swarm/lb_name
-echo "# hostname : ELB_name" >> /var/lib/docker/swarm/elb.config
-echo "127.0.0.1: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config
-echo "localhost: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config
-echo "default: $EXTERNAL_LB" >> /var/lib/docker/swarm/elb.config
+mkdir -p /var/lib/docker/editions
+echo "$EXTERNAL_LB" > /var/lib/docker/editions/lb_name
+echo "# hostname : ELB_name" >> /var/lib/docker/editions/elb.config
+echo "127.0.0.1: $EXTERNAL_LB" >> /var/lib/docker/editions/elb.config
+echo "localhost: $EXTERNAL_LB" >> /var/lib/docker/editions/elb.config
+echo "default: $EXTERNAL_LB" >> /var/lib/docker/editions/elb.config
 
 echo '{"experimental": '$DOCKER_EXPERIMENTAL', "labels":["os=linux", "region='$NODE_REGION'", "availability_zone='$NODE_AZ'", "instance_type='$INSTANCE_TYPE'", "node_type='$NODE_TYPE'"] ' > /etc/docker/daemon.json
 if [ $ENABLE_CLOUDWATCH_LOGS == 'yes' ] ; then

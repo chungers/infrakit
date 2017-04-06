@@ -280,15 +280,16 @@ run_system_containers()
             docker4x/meta-azure:$DOCKER_FOR_IAAS_VERSION metaserver -iaas_provider=azure
 
         echo "kick off l4controller container"
-        echo default: "$LB_NAME" >> /var/lib/docker/swarm/elb.config
-        echo "$LB_NAME" > /var/lib/docker/swarm/lb_name
+        mkdir -p /var/lib/docker/editions/
+        echo default: "$LB_NAME" >> /var/lib/docker/editions/elb.config
+        echo "$LB_NAME" > /var/lib/docker/editions/lb_name
         docker run \
             -d \
             --label com.docker.editions.system \
             --log-driver=json-file  \
             --name=editions_controller \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /var/lib/docker/swarm:/var/lib/docker/swarm \
+            -v /var/lib/docker/editions:/var/lib/docker/editions \
             docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" \
 	    run \
             --default_lb_name="$LB_NAME" \

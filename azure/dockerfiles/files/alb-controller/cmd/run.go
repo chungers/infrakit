@@ -1,14 +1,15 @@
 package main
 
 import (
+	"io/ioutil"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/editions/pkg/loadbalancer"
 	"github.com/docker/editions/pkg/loadbalancer/azure"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"time"
 )
 
 func runCommand() *cobra.Command {
@@ -171,7 +172,7 @@ func runCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&forceLeader, "leader", forceLeader, "True forces this instance to be a leader")
 	cmd.Flags().BoolVar(&hardSync, "hard_sync", true, "True to force syncing")
 	cmd.Flags().IntVar(&interval, "poll_interval", interval, "Polling interval in seconds")
-	cmd.Flags().StringVar(&elbConfig, "config", "/var/lib/docker/swarm/elb.config", "Loadbalancer config")
+	cmd.Flags().StringVar(&elbConfig, "config", "/var/lib/docker/editions/elb.config", "Loadbalancer config")
 
 	cmd.Flags().IntVar(&albOptions.PollingDelaySeconds, "polling_delay", 5, "Polling delay in seconds")
 	cmd.Flags().IntVar(&albOptions.PollingDurationSeconds, "polling_duration", 30, "Polling duration in seconds")

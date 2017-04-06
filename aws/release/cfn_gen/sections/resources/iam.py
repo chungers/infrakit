@@ -436,6 +436,7 @@ def add_resource_iam_elb_policy(template):
                 "elasticloadbalancing:DescribeTags",
                 "elasticloadbalancing:SetLoadBalancerListenerSSLCertificate",
                 "elasticloadbalancing:DescribeSSLPolicies",
+                "elasticloadbalancing:DescribeLoadBalancers",
             ],
             "Resource": "*"
             } ]

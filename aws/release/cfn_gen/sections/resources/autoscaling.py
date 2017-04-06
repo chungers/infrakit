@@ -311,11 +311,11 @@ def add_resource_manager_launch_config(template, user_data, launch_config_name="
                     "Fn::Join": [
                         "", [
                             "#!/bin/sh\n",
-                            "echo \"", {"Ref": "ExternalLoadBalancer"}, "\" > /var/lib/docker/swarm/lb_name\n",
-                            "echo \"# hostname : ELB_name\" >> /var/lib/docker/swarm/elb.config\n",
-                            "echo \"127.0.0.1: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
-                            "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
-                            "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/swarm/elb.config\n",
+                            "echo \"", {"Ref": "ExternalLoadBalancer"}, "\" > /var/lib/docker/editions/lb_name\n",
+                            "echo \"# hostname : ELB_name\" >> /var/lib/docker/editions/elb.config\n",
+                            "echo \"127.0.0.1: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/editions/elb.config\n",
+                            "echo \"localhost: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/editions/elb.config\n",
+                            "echo \"default: ", {"Ref": "ExternalLoadBalancer"}, "\" >> /var/lib/docker/editions/elb.config\n",
                             "export DOCKER_FOR_IAAS_VERSION='", { "Fn::FindInMap" : [ "DockerForAWS", "version", "forAws" ] }, "'\n",
                             "export LOCAL_IP=$(wget -qO- http://169.254.169.254/latest/meta-data/local-ipv4)\n",
                             "export ENABLE_CLOUDWATCH_LOGS='", {"Ref": "EnableCloudWatchLogs"} , "'\n",
@@ -381,8 +381,6 @@ def add_resource_manager_launch_config(template, user_data, launch_config_name="
                             "docker run --label com.docker.editions.system --log-driver=json-file --name=shell-aws --restart=always -d -p 22:22 ",
                             "-v /home/docker/:/home/docker/ ",
                             "-v /var/run/docker.sock:/var/run/docker.sock ",
-                            "-v /var/lib/docker/swarm/lb_name:/var/lib/docker/swarm/lb_name:ro ",
-                            "-v /var/lib/docker/swarm/elb.config:/var/lib/docker/swarm/elb.config ",
                             "-v /usr/bin/docker:/usr/bin/docker ",
                             "-v /var/log:/var/log ",
                             "-v sshkey:/etc/ssh ",
@@ -393,7 +391,7 @@ def add_resource_manager_launch_config(template, user_data, launch_config_name="
 
                             "docker run --label com.docker.editions.system --log-driver=json-file --name=l4controller-aws --restart=always -d ",
                             "-v /var/run/docker.sock:/var/run/docker.sock ",
-                            "-v /var/lib/docker/swarm:/var/lib/docker/swarm ",
+                            "-v /var/lib/docker/editions:/var/lib/docker/editions ",
                             "docker4x/l4controller-aws:$DOCKER_FOR_IAAS_VERSION run --log=4 --all=true\n"
                         ]
                     ]

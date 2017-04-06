@@ -160,7 +160,7 @@ func runCommand() *cobra.Command {
 	cmd.Flags().IntVar(&interval, "poll_interval", interval, "Polling interval in seconds")
 	cmd.Flags().IntVar(&elbOptions.Retries, "retries", 10, "Retries")
 	cmd.Flags().StringVar(&elbOptions.Region, "region", "", "Region")
-	cmd.Flags().StringVar(&elbConfig, "config", "/var/lib/docker/swarm/elb.config", "Loadbalancer config")
+	cmd.Flags().StringVar(&elbConfig, "config", "/var/lib/docker/editions/elb.config", "Loadbalancer config")
 
 	cmd.Flags().StringVar(&defaultLBName, "default_lb_name", defaultLBName, "Set to override the name of the default LB")
 
