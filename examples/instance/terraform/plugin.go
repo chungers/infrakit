@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,9 +26,9 @@ import (
 // This example uses terraform as the instance plugin.
 // It is very similar to the file instance plugin.  When we
 // provision an instance, we write a *.tf.json file in the directory
-// and call terra apply.  For describing instances, we parse the
-// result of terra show.  Destroying an instance is simply removing a
-// tf.json file and call terra apply again.
+// and call terraform apply.  For describing instances, we parse the
+// result of terraform show.  Destroying an instance is simply removing a
+// tf.json file and call terraform apply again.
 
 type plugin struct {
 	Dir       string
@@ -102,7 +103,7 @@ JSON looks like below, where the value of `value` is the instance body of the TF
             "vpc_security_group_ids" : ["${aws_security_group.default.id}"],
             "subnet_id": "${aws_subnet.default.id}",
             "tags" :  {
-                "Name" : "web4",
+                "name" : "web4",
                 "InstancePlugin" : "terraform"
             },
             "connection" : {
@@ -324,7 +325,7 @@ func (p *plugin) ensureUniqueFile() string {
 
 func ensureUniqueFile(dir string) string {
 	n := fmt.Sprintf("instance-%d", time.Now().Unix())
-	// if we can open then we have to try again...  the file cannot exist currently
+	// if we can open then we have to try again... the file cannot exist currently
 	if f, err := os.Open(filepath.Join(dir, n) + ".tf.json"); err == nil {
 		f.Close()
 		return ensureUniqueFile(dir)
@@ -382,8 +383,17 @@ func (p *plugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	// set the tags.
 	// add a name
 	if spec.Tags != nil {
-		if _, has := spec.Tags["Name"]; !has {
-			spec.Tags["Name"] = string(id)
+		switch properties.Type {
+		case "softlayer_virtual_guest":
+			// Set the "name" tag to be lowercase to meet platform requirements
+			if _, has := spec.Tags["name"]; !has {
+				spec.Tags["name"] = string(id)
+			}
+		default:
+			// Set the first character of the "Name" tag to be uppercase to meet platform requirements
+			if _, has := spec.Tags["Name"]; !has {
+				spec.Tags["Name"] = string(id)
+			}
 		}
 	}
 
@@ -434,7 +444,7 @@ func (p *plugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	// merge the inits
 	switch properties.Type {
 	case "aws_instance", "digitalocean_droplet":
-		addUserData(properties.Value, "user_data", spec.Init)
+		addUserData(properties.Value, "user_data", base64.StdEncoding.EncodeToString([]byte(spec.Init)))
 	case "softlayer_virtual_guest":
 		addUserData(properties.Value, "user_metadata", spec.Init)
 	case "azurerm_virtual_machine":
@@ -556,7 +566,7 @@ func (p *plugin) Destroy(instance instance.ID) error {
 }
 
 // DescribeInstances returns descriptions of all instances matching all of the provided tags.
-func (p *plugin) DescribeInstances(tags map[string]string) ([]instance.Description, error) {
+func (p *plugin) DescribeInstances(tags map[string]string, properties bool) ([]instance.Description, error) {
 	log.Debugln("describe-instances", tags)
 
 	show, err := p.terraformShow()
@@ -615,7 +625,9 @@ func terraformTags(v interface{}, key string) map[string]string {
 			value := fmt.Sprintf("%v", v)
 			if strings.Contains(value, ":") {
 				log.Debugln("terraformTags system tags detected v=", v)
-				vv := strings.Split(value, ":")
+				// This assumes that the first colon is separating the key and the value of the tag.
+				// This is done so that colons are valid characters in the value.
+				vv := strings.SplitN(value, ":", 2)
 				if len(vv) == 2 {
 					tags[vv[0]] = vv[1]
 				} else {

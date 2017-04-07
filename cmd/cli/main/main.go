@@ -2,12 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net/url"
 	"os"
 
 	"github.com/docker/infrakit/cmd/cli/base"
+	"github.com/docker/infrakit/cmd/cli/playbook"
 	"github.com/docker/infrakit/pkg/cli"
 	cli_local "github.com/docker/infrakit/pkg/cli/local"
+	cli_remote "github.com/docker/infrakit/pkg/cli/remote"
 	"github.com/docker/infrakit/pkg/discovery"
 	discovery_local "github.com/docker/infrakit/pkg/discovery/local"
 	"github.com/docker/infrakit/pkg/discovery/remote"
@@ -93,18 +96,37 @@ func main() {
 		cmd.AddCommand(c)
 	})
 
+	mods := []*cobra.Command{}
 	// additional modules
-	modules, err := cli_local.NewModules(cli_local.Dir())
-	if err != nil {
-		log.Crit("error executing", "err", err)
-		os.Exit(1)
+	if os.Getenv(cli.CliDirEnvVar) != "" {
+		modules, err := cli_local.NewModules(cli_local.Dir())
+		if err != nil {
+			log.Crit("error executing", "err", err)
+			os.Exit(1)
+		}
+		localModules, err := modules.List()
+		log.Debug("modules", "local", localModules)
+		if err != nil {
+			log.Crit("error executing", "err", err)
+			os.Exit(1)
+		}
+		mods = append(mods, localModules...)
 	}
 
-	mods, err := modules.List()
-	log.Debug("modules", "mods", mods)
+	// any remote modules?
+	pmod, err := playbook.Load()
 	if err != nil {
-		log.Crit("error executing", "err", err)
-		os.Exit(1)
+		log.Warn("playbooks failed to load", "err", err)
+	} else {
+		if playbooks, err := cli_remote.NewModules(pmod, os.Stdin); err != nil {
+			log.Warn("error loading playbooks", "err", err)
+		} else {
+			if more, err := playbooks.List(); err != nil {
+				log.Warn("cannot list playbooks", "err", err)
+			} else {
+				mods = append(mods, more...)
+			}
+		}
 	}
 
 	for _, mod := range mods {
@@ -112,22 +134,57 @@ func main() {
 		cmd.AddCommand(mod)
 	}
 
-	usage := banner + "\n\n" + cmd.UsageTemplate()
-	cmd.SetUsageTemplate(usage)
+	cmd.SetUsageTemplate(usageTemplate)
+	cmd.SetHelpTemplate(helpTemplate)
 
 	err = cmd.Execute()
 	if err != nil {
-		log.Crit("error executing", "err", err)
+		log.Crit("error executing", "cmd", cmd.Use, "err", err)
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
 
-const banner = `
- ___  ________   ________ ________  ________  ___  __    ___  _________   
+const (
+	helpTemplate = `
+
+___  ________   ________ ________  ________  ___  __    ___  _________   
 |\  \|\   ___  \|\  _____\\   __  \|\   __  \|\  \|\  \ |\  \|\___   ___\ 
 \ \  \ \  \\ \  \ \  \__/\ \  \|\  \ \  \|\  \ \  \/  /|\ \  \|___ \  \_| 
  \ \  \ \  \\ \  \ \   __\\ \   _  _\ \   __  \ \   ___  \ \  \   \ \  \  
   \ \  \ \  \\ \  \ \  \_| \ \  \\  \\ \  \ \  \ \  \\ \  \ \  \   \ \  \ 
    \ \__\ \__\\ \__\ \__\   \ \__\\ _\\ \__\ \__\ \__\\ \__\ \__\   \ \__\
     \|__|\|__| \|__|\|__|    \|__|\|__|\|__|\|__|\|__| \|__|\|__|    \|__|
+
+
+{{with or .Long .Short }}{{. | trim}}{{end}}
+{{if or .Runnable .HasSubCommands}}{{.UsageString}}{{end}}
 `
+
+	usageTemplate = `
+Usage:{{if .Runnable}}
+  {{if .HasAvailableFlags}}{{appendIfNotPresent .UseLine "[flags]"}}{{else}}{{.UseLine}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+  {{ .CommandPath}} [command]{{end}}{{if gt .Aliases 0}}
+
+Aliases:
+  {{.NameAndAliases}}
+{{end}}{{if .HasExample}}
+
+Examples:
+{{ .Example }}{{end}}{{ if .HasAvailableSubCommands}}
+
+Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasAvailableLocalFlags}}
+
+Flags:
+{{.LocalFlags.FlagUsages | trimRightSpace}}{{end}}{{ if .HasAvailableInheritedFlags}}
+
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimRightSpace}}{{end}}{{if .HasHelpSubCommands}}
+
+Additional help topics:{{range .Commands}}{{if .IsHelpCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{ if .HasAvailableSubCommands }}
+
+Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
+`
+)

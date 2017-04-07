@@ -1,10 +1,12 @@
 package exec
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/template"
@@ -12,75 +14,63 @@ import (
 
 var log = logutil.New("module", "util/exec")
 
-// Command is the template which is rendered before it's executed
-type Command string
-
-// Output runs the command until completion and returns the results
-func (c Command) Output(args ...string) ([]byte, error) {
-	return c.builder().Output(args...)
-}
-
-// Start runs the command without blocking
-func (c Command) Start(args ...string) error {
-	return c.builder().Start(args...)
-}
-
-// Run does a Cmd.Run on the command
-func (c Command) Run(args ...string) error {
-	return c.builder().Run(args...)
-}
-
-// String returns the interpolated version of the command
-func (c Command) String(args ...string) (string, error) {
-	p, err := c.builder().generate(args...)
-	if err == nil {
-		return strings.Join(p, " "), nil
+// Command returns a fluent builder for running a command where the command string
+// can have template functions and arguments
+func Command(s string) *Builder {
+	return &Builder{
+		command: s,
+		funcs:   map[string]interface{}{},
+		args:    map[interface{}]interface{}{},
 	}
-	return string(c), err
-}
-
-// WithOptions adds the template options
-func (c Command) WithOptions(options template.Options) *Builder {
-	return c.builder().WithOptions(options)
-}
-
-// WithFunc adds a function that can be used in the template
-func (c Command) WithFunc(name string, function interface{}) *Builder {
-	return c.builder().WithFunc(name, function)
-}
-
-// WithContext sets the context for the template
-func (c Command) WithContext(context interface{}) *Builder {
-	return c.builder().WithContext(context)
-}
-
-// InheritEnvs determines whether the process should inherit the envs of the parent
-func (c Command) InheritEnvs(v bool) *Builder {
-	return c.builder().InheritEnvs(v)
-}
-
-// NewCommand creates an instance of the command builder to allow detailed configuration
-func NewCommand(s string) *Builder {
-	return Command(s).builder()
 }
 
 // Builder collects options until it's run
 type Builder struct {
-	command     Command
+	command     string
 	options     template.Options
 	inheritEnvs bool
 	envs        []string
 	funcs       map[string]interface{}
+	args        map[interface{}]interface{}
 	context     interface{}
 	rendered    string // rendered command string
 	cmd         *exec.Cmd
+	stdout      io.Writer
+	stderr      io.Writer
+	stdin       io.Reader
+	wg          sync.WaitGroup
 }
 
-func (c Command) builder() *Builder {
-	return &Builder{
-		command: c,
-		funcs:   map[string]interface{}{},
+// WithStdin sets the stdin reader
+func (b *Builder) WithStdin(r io.Reader) *Builder {
+	b.stdin = r
+	return b
+}
+
+// WithStdout sets the stdout writer
+func (b *Builder) WithStdout(w io.Writer) *Builder {
+	b.stdout = w
+	return b
+}
+
+// WithStderr sets the stderr writer
+func (b *Builder) WithStderr(w io.Writer) *Builder {
+	b.stdout = w
+	return b
+}
+
+// WithArg sets the arg key, value pair that can be accessed via the 'arg' function
+func (b *Builder) WithArg(key string, value interface{}) *Builder {
+	b.args[key] = value
+	return b
+}
+
+// WithArgs adds the command line args array
+func (b *Builder) WithArgs(args ...interface{}) *Builder {
+	for i, arg := range args {
+		b.args[i+1] = arg
 	}
+	return b
 }
 
 // InheritEnvs determines whether the process should inherit the envs of the parent
@@ -113,132 +103,111 @@ func (b *Builder) WithContext(context interface{}) *Builder {
 	return b
 }
 
+var noop = func() error { return nil }
+
+// StartWithHandlers starts the cmd non blocking and calls the given handlers to process input / output
+func (b *Builder) StartWithHandlers(stdinFunc func(io.Writer) error,
+	stdoutFunc func(io.Reader) error,
+	stderrFunc func(io.Reader) error,
+	args ...interface{}) error {
+
+	if err := b.Prepare(args...); err != nil {
+		return err
+	}
+
+	// There's a race between the input/output streams reads and cmd.wait() which
+	// will close the pipes even while others are trying to read.
+	// So we need to ensure that all the input/output are done before actually waiting
+	// on the cmd to complete.
+	// To do so, we use a waitgroup
+
+	handleInput := noop
+	if stdinFunc != nil {
+		pIn, err := b.cmd.StdinPipe()
+		if err != nil {
+			return err
+		}
+
+		handleInput = func() error {
+			defer func() {
+				pIn.Close()
+				b.wg.Done()
+			}()
+			return stdinFunc(pIn)
+		}
+		b.wg.Add(1)
+	}
+
+	handleStdout := noop
+	if stdoutFunc != nil {
+		pOut, err := b.cmd.StdoutPipe()
+		if err != nil {
+			return err
+		}
+		handleStdout = func() error {
+			defer func() {
+				pOut.Close()
+				b.wg.Done()
+			}()
+			return stdoutFunc(pOut)
+		}
+		b.wg.Add(1)
+	}
+	handleStderr := noop
+	if stderrFunc != nil {
+		pErr, err := b.cmd.StderrPipe()
+		if err != nil {
+			return err
+		}
+		handleStderr = func() error {
+			defer func() {
+				pErr.Close()
+				b.wg.Done()
+			}()
+			return stderrFunc(pErr)
+		}
+		b.wg.Add(1)
+	}
+
+	if err := b.cmd.Start(); err != nil {
+		return err
+	}
+
+	go handleStdout()
+	go handleStderr()
+	go handleInput()
+
+	return nil
+}
+
+// Start does a Cmd.Start on the command
+func (b *Builder) Start(args ...interface{}) error {
+	if err := b.Prepare(args...); err != nil {
+		return err
+	}
+	return b.StartWithHandlers(nil, nil, nil, args...)
+}
+
+// Wait waits for the command to complete
+func (b *Builder) Wait() error {
+	b.wg.Wait()
+	return b.cmd.Wait()
+}
+
 // Output runs the command until completion and returns the results
-func (b *Builder) Output(args ...string) ([]byte, error) {
-	run, err := b.exec(args...)
-	if err != nil {
+func (b *Builder) Output(args ...interface{}) ([]byte, error) {
+	if err := b.Prepare(args...); err != nil {
 		return nil, err
 	}
-	return run.Output()
+	return b.cmd.Output()
 }
 
-// Start runs the command without blocking
-func (b *Builder) Start(args ...string) error {
-	run, err := b.exec(args...)
-	if err != nil {
-		return err
-	}
-	return run.Start()
-}
-
-// Step is something you do with the processes streams
-type Step func(stdin io.WriteCloser, stdout io.ReadCloser, stderr io.ReadCloser) error
-
-// Thenable is a fluent builder for chaining tasks
-type Thenable struct {
-	steps []Step
-}
-
-// Do creates a thenable
-func Do(f Step) *Thenable {
-	return &Thenable{
-		steps: []Step{f},
-	}
-}
-
-// Then adds another step
-func (t *Thenable) Then(then Step) *Thenable {
-	t.steps = append(t.steps, then)
-	return t
-}
-
-// Done returns the final function
-func (t *Thenable) Done() Step {
-	steps := t.steps
-	return func(stdin io.WriteCloser, stdout, stderr io.ReadCloser) error {
-		for _, step := range steps {
-			if err := step(stdin, stdout, stderr); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-}
-
-// SendInput is a convenience function for writing to the exec process's stdin. When the function completes, the
-// stdin is closed.
-func SendInput(f func(io.WriteCloser) error) Step {
-	return func(stdin io.WriteCloser, stdout, stderr io.ReadCloser) error {
-		defer stdin.Close()
-		return f(stdin)
-	}
-}
-
-// RedirectStdout sends stdout to given writer
-func RedirectStdout(out io.Writer) Step {
-	return func(stdin io.WriteCloser, stdout, stderr io.ReadCloser) error {
-		_, err := io.Copy(out, stdout)
-		return err
-	}
-}
-
-// RedirectStderr sends stdout to given writer
-func RedirectStderr(out io.Writer) Step {
-	return func(stdin io.WriteCloser, stdout, stderr io.ReadCloser) error {
-		_, err := io.Copy(out, stderr)
-		return err
-	}
-}
-
-// MergeOutput combines the stdout and stderr into the given stream
-func MergeOutput(out io.Writer) Step {
-	return func(stdin io.WriteCloser, stdout, stderr io.ReadCloser) error {
-		_, err := io.Copy(out, io.MultiReader(stdout, stderr))
-		return err
-	}
-}
-
-// StartWithStreams starts the the process and then calls the function which allows
-// the streams to be wired.  Calling the provided function blocks.
-func (b *Builder) StartWithStreams(f Step,
-	args ...string) error {
-
-	_, err := b.exec(args...)
-	if err != nil {
-		return err
+func (b *Builder) generate(args ...interface{}) ([]string, error) {
+	// also index the args by index
+	for i, v := range args {
+		b.args[i+1] = v
 	}
 
-	pOut, err := b.cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	pErr, err := b.cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-	pIn, err := b.cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-
-	err = b.cmd.Start()
-	if err != nil {
-		return err
-	}
-
-	return f(pIn, pOut, pErr)
-}
-
-// Run does a Cmd.Run on the command
-func (b *Builder) Run(args ...string) error {
-	run, err := b.exec(args...)
-	if err != nil {
-		return err
-	}
-	return run.Run()
-}
-
-func (b *Builder) generate(args ...string) ([]string, error) {
 	ct, err := template.NewTemplate("str://"+string(b.command), template.Options{})
 	if err != nil {
 		return nil, err
@@ -246,11 +215,20 @@ func (b *Builder) generate(args ...string) ([]string, error) {
 	for k, v := range b.funcs {
 		ct.AddFunc(k, v)
 	}
-	ct.AddFunc("arg", func(i int) interface{} {
-		return args[i-1] // starts at 1
+	ct.AddFunc("arg", func(i interface{}) interface{} {
+		if i, is := i.(int); is {
+			if len(args) > i {
+				return args[i-1] // starts at 1
+			}
+		}
+		return b.args[i]
 	})
 	ct.AddFunc("argv", func() interface{} {
-		return args
+		argv := []string{}
+		for _, arg := range args {
+			argv = append(argv, fmt.Sprintf("%v", arg))
+		}
+		return argv
 	})
 	cmd, err := ct.Render(b.context)
 	if err != nil {
@@ -267,16 +245,48 @@ func (b *Builder) generate(args ...string) ([]string, error) {
 	}
 	return command, nil
 }
-func (b *Builder) exec(args ...string) (*exec.Cmd, error) {
+
+// Prepare generates the command based on the input args. This is the step before actual Start or Run
+func (b *Builder) Prepare(args ...interface{}) error {
 	command, err := b.generate(args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	log.Debug("exec", "command", command)
 	b.cmd = exec.Command(command[0], command[1:]...)
 	if b.inheritEnvs {
 		b.cmd.Env = append(os.Environ(), b.envs...)
 	}
+	if b.stdin != nil {
+		b.cmd.Stdin = b.stdin
+	}
+	if b.stdout != nil {
+		b.cmd.Stdout = b.stdout
+	}
+	if b.stderr != nil {
+		b.cmd.Stderr = b.stderr
+	}
+	return nil
+}
 
-	return b.cmd, nil
+// Stdin takes the input from the writer
+func (b *Builder) Stdin(f func(w io.Writer) error) error {
+	input, err := b.cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	defer input.Close()
+	return f(input)
+}
+
+// StdoutTo connects the stdout of this to the next stage
+func (b *Builder) StdoutTo(next *Builder) {
+	r, w := io.Pipe()
+	b.cmd.Stdout = w
+	next.cmd.Stdin = r
+}
+
+// Stdout sets the stdout
+func (b *Builder) Stdout(w io.Writer) {
+	b.cmd.Stdout = w
 }
