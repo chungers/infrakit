@@ -170,7 +170,7 @@ then the deployment. For example, to delete a stack named `docker`:
     $ gcloud deployment-manager deployments delete docker
 
 
- [Google Cloud Deployment Manager V2 API]: https://console.developers.google.com/apis/api/deploymentmanager-json.googleapis.com/overview
+ [Google Cloud Deployment Manager V2 API]: https://console.developers.google.com/apis/api/deploymentmanager.googleapis.com/overview
  [Google Cloud RuntimeConfig API]: https://console.developers.google.com/apis/api/runtimeconfig.googleapis.com/overview
  [gcloud]: https://cloud.google.com/sdk/downloads
  [Deployment Manager]: https://cloud.google.com/deployment-manager/docs/
