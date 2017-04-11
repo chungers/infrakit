@@ -153,13 +153,27 @@ func awsInstances(customFilters []*ec2.Filter) []WebInstance {
 	var instances []WebInstance
 	for _, reservation := range result.Reservations {
 		for _, instance := range reservation.Instances {
+			var instanceState, instancePubIP, instanceAZ, instancePrivateIP string
+			if instance.State != nil {
+				instanceState = *instance.State.Name
+			}
+			if instance.PublicIpAddress != nil {
+				instancePubIP = *instance.PublicIpAddress
+			}
+			if instance.PrivateIpAddress != nil {
+				instancePrivateIP = *instance.PrivateIpAddress
+			}
+			if instance.Placement != nil {
+				instanceAZ = *instance.Placement.AvailabilityZone
+			}
+
 			aInstance := WebInstance{
 				InstanceID:       *instance.InstanceId,
 				InstanceType:     *instance.InstanceType,
-				PublicIPAddress:  *instance.PublicIpAddress,
-				PrivateIPAddress: *instance.PrivateIpAddress,
-				InstanceState:    *instance.State.Name,
-				InstanceAZ:       *instance.Placement.AvailabilityZone,
+				PublicIPAddress:  instancePubIP,
+				PrivateIPAddress: instancePrivateIP,
+				InstanceState:    instanceState,
+				InstanceAZ:       instanceAZ,
 			}
 			instances = append(instances, aInstance)
 		}
