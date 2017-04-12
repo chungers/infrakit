@@ -123,6 +123,12 @@ func (a AWSWeb) Instances(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DtrInfo prints the list of Instance ID and their private IP
+func (a AWSWeb) DtrInfo(w http.ResponseWriter, r *http.Request) {
+	// show DTR image used on manager
+	fmt.Fprintf(w, "%s\n", getDTRImage())
+}
+
 func awsInstances(customFilters []*ec2.Filter) []WebInstance {
 	// get the instances from AWS, takes a filter to limit the results.
 	client := ec2.New(session.New(&aws.Config{}))

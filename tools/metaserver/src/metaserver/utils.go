@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/sockets"
@@ -18,7 +19,8 @@ import (
 )
 
 const (
-	clientVersion = "1.24" // docker client version
+	clientVersion    = "1.24"    // docker client version
+	dtrContainerName = "dtr-api" // dtr-api container name lookup
 )
 
 // DockerClient get docker APIclient and context
@@ -163,4 +165,20 @@ func isManagerNode(a Web, ip string) bool {
 func isWorkerNode(a Web, ip string) bool {
 	// Is the node making the request a worker node
 	return isNodeInList(ip, a.Workers())
+}
+
+func getDTRImage() string {
+	cli, ctx := DockerClient()
+	// Find DTR image
+	filters := filters.NewArgs()
+	// filters.Add("reference", dtrReference)
+	filters.Add("name", dtrContainerName)
+	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{Filters: filters})
+	if err != nil {
+		return ""
+	}
+	if len(containers) > 0 {
+		return strings.Split(containers[0].Image, ":")[1]
+	}
+	return ""
 }

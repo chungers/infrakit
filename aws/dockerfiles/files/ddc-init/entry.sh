@@ -223,6 +223,10 @@ if [[ "$IS_LEADER" == "true" ]]; then
             DTR_LEADER_INSTALL="no"
             EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
             echo "Join to replicaId = $EXISTING_REPLICA_ID"
+            CURRENT_DTR=$(curl --silent http://$MYIP:9024/info/dtr/)
+            if [ -n "$CURRENT_DTR" ]; then
+                DTR_IMAGE=${DTR_ORG}/dtr:${CURRENT_DTR}
+            fi
             docker run --label com.docker.editions.system  --rm "$DTR_IMAGE" join --replica-https-port "$DTR_HTTPS_PORT" --replica-http-port "$DTR_HTTP_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
         fi
     else
@@ -310,6 +314,10 @@ else
         # once available.
         # get record, and then join, add replica ID to dynamodb
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
+        CURRENT_DTR=$(curl --silent http://$MYIP:9024/info/dtr/)
+        if [ -n "$CURRENT_DTR" ]; then
+            DTR_IMAGE=${DTR_ORG}/dtr:${CURRENT_DTR}
+        fi
         docker run --label com.docker.editions.system --rm "$DTR_IMAGE" join --replica-https-port "$DTR_HTTPS_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$LOCAL_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
 
         JOIN_RESULT=$?

@@ -35,6 +35,7 @@ type Web interface {
 	Managers() []WebInstance
 	Workers() []WebInstance
 	Instances(w http.ResponseWriter, r *http.Request)
+	DtrInfo(w http.ResponseWriter, r *http.Request)
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -82,6 +83,7 @@ func handleRequests(iaasProvider string) {
 	r.HandleFunc("/token/manager/", w.TokenManager) // Return manager token
 	r.HandleFunc("/token/worker/", w.TokenWorker)   // Return worker token
 	r.HandleFunc("/instances/all/", w.Instances)    // Return all provider instances
+	r.HandleFunc("/info/dtr/", w.DtrInfo)           // Return DTR image version
 
 	// setup the custom server.
 	srv := &http.Server{

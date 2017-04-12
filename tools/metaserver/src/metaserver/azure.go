@@ -138,6 +138,12 @@ func (a AzureWeb) Instances(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DtrInfo prints the list of Instance ID and their private IP
+func (a AzureWeb) DtrInfo(w http.ResponseWriter, r *http.Request) {
+	// show DTR image used on manager
+	fmt.Fprintf(w, "%s\n", getDTRImage())
+}
+
 func initClients(env map[string]string) (network.InterfacesClient, compute.VirtualMachineScaleSetVMsClient) {
 
 	spt, err := helpers.NewServicePrincipalTokenFromCredentials(env, azure.PublicCloud.ResourceManagerEndpoint)
