@@ -24,6 +24,7 @@ clean:
 	@# Remove local images
 	docker rmi -f ${DOCKER_IMAGE} >/dev/null 2>&1 || true
 	docker rmi -f ${DOCKER_REPO}:latest >/dev/null 2>&1 || true
+	-docker rm elb-controller-build
 
 # This target runs inside the container
 build-in-container: govendor
@@ -36,11 +37,11 @@ build-in-container: govendor
 # This one runs outside
 container:
 	echo "Building $(VERSION), Image=$(DOCKER_IMAGE)"
-	-docker rm elb-controller-build
 	cd ../../../../../ && docker build --no-cache --pull -t elb-controller:build -f ${CURDIR}/Dockerfile.build .
 	docker run --name elb-controller-build elb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker cp elb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
+	-docker rm -fv elb-controller-build
 	docker build --no-cache --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
 ifeq (${DOCKER_PUSH},1)
 	docker push ${DOCKER_IMAGE}
