@@ -6,7 +6,7 @@ default: rootfs
 clean:
 	-rm -rf ./plugin
 	-rm cloudstor-rootfs.tar.gz
-	-docker rm -vf tmp
+	-docker rm -vf ${DOCKER_CONTAINER_NAME}
 	-rm bin/cloudstor
 
 build:
