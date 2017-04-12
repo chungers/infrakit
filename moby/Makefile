@@ -75,15 +75,17 @@ ifeq ($(FORCE_GSUTIL_AUTH),1)
 	-docker rm gsutil-moby-config 2>/dev/null
 	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
 endif
-ifeq ($(JENKINS_BUILD),)
+ifeq ($(JENKINS_BUILD),1)
+	@echo "++ Creating auth volume for Jenkins"
 	-docker rm gsutil-moby-config 2>/dev/null
-	docker run --rm --name gsutil-moby-config google/cloud-sdk gcloud auth activate-service-account --key-file auth.json
+	docker run --name gsutil-moby-config -v $(AUTH_FILE):/auth.json google/cloud-sdk gcloud auth activate-service-account --key-file /auth.json
 endif
 	docker run --rm \
 		--volumes-from gsutil-moby-config \
 		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz
+		mkdir -p cloud/gcp
 		echo "docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,gcp,bdi,$(BDI_OUT))
