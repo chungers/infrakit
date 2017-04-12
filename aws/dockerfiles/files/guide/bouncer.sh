@@ -40,7 +40,7 @@ for I in $DOWN_LIST; do
         # those are the only two we know won't be coming back.
         echo "$I has a status of '"$STATUS"', remove it"
         echo "get Node_ID for $I"
-        NODE_ID=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Addr | split(":")[0] == env.I) | .ID')
+        NODE_ID=$(docker node inspect $(docker node ls --filter role=manager -q) | jq --arg I $I -r '.[] | select(.ManagerStatus.Addr | split(":")[0] == $I) | .ID')
         echo "$I is NODE_ID=$NODE_ID, demote and remove from swarm"
         docker node demote $NODE_ID
         docker node rm $NODE_ID
