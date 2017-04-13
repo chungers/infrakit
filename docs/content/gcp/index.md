@@ -101,9 +101,13 @@ If you're testing, `g1-small` instances are fine.
 The [machine type] for your Worker nodes. The default value is `g1-small`.
 If you're testing, `g1-small` instances are fine.
 
+#### managerBootDiskSize
+
+The size of the Manager boot disks in Gb. The default value is `10`.
+
 #### managerDiskSize
 
-The size of the Manager boot disks in Gb. The default value is `100`.
+The size of the Manager data disks in Gb. The default value is `100`.
 
 #### workerDiskSize
 

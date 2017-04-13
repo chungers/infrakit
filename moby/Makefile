@@ -4,7 +4,7 @@ FORCE_GSUTIL_AUTH ?= 0
 
 ## Moby specific commit
 ifeq (${MOBY_COMMIT},)
-	MOBY_COMMIT := 841feca3a717f7c1ec6c2abfaabcab57fff36b50
+	MOBY_COMMIT := 59517ed54277fd85b8ef220e54b38bce2d6f6bca
 	MOBY_EE_COMMIT := 0a0d8a2094844079a4a07b079766c98633995a93
 endif
 

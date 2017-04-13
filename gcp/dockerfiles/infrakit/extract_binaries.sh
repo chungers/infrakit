@@ -2,8 +2,8 @@
 
 set -ex
 
-INFRAKIT_IMAGE="infrakit/devbundle:master-1300"
-INFRAKIT_GCP_IMAGE="infrakit/gcp:master-90"
+INFRAKIT_IMAGE="infrakit/devbundle:master-1580"
+INFRAKIT_GCP_IMAGE="infrakit/gcp:master-132"
 
 mkdir -p bin
 

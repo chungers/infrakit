@@ -18,6 +18,7 @@ MANAGER_MACHINE_TYPE ?= n1-standard-1
 WORKER_MACHINE_TYPE ?= n1-standard-1
 MANAGER_DISK_TYPE ?= pd-standard
 WORKER_DISK_TYPE ?= pd-standard
+MANAGER_BOOT_DISK_SIZE ?= 10
 MANAGER_DISK_SIZE ?= 100
 WORKER_DISK_SIZE ?= 100
 ENABLE_SYSTEM_PRUNE ?= true
@@ -58,12 +59,12 @@ revoke:
 create:
 	$(DEPLOYMENTS) create $(DEPLOYMENT_NAME) \
 		--config /build/templates/Docker.jinja \
-		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),enableSystemPrune:${ENABLE_SYSTEM_PRUNE},demoMode:$(DEMO_MODE),remoteSshOrigin:$(REMOTE_SSH_ORIGIN)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerBootDiskSize:$(MANAGER_BOOT_DISK_SIZE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),enableSystemPrune:${ENABLE_SYSTEM_PRUNE},demoMode:$(DEMO_MODE),remoteSshOrigin:$(REMOTE_SSH_ORIGIN)
 
 update:
 	$(DEPLOYMENTS) update $(DEPLOYMENT_NAME) \
 		--config /build/templates/Docker.jinja \
-		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),enableSystemPrune:${ENABLE_SYSTEM_PRUNE},demoMode:$(DEMO_MODE),remoteSshOrigin:$(REMOTE_SSH_ORIGIN)
+		--properties managerCount:$(MANAGER_COUNT),workerCount:$(WORKER_COUNT),zone:$(ZONE),managerMachineType:$(MANAGER_MACHINE_TYPE),workerMachineType:$(WORKER_MACHINE_TYPE),managerDiskType:$(MANAGER_DISK_TYPE),workerDiskType:$(WORKER_DISK_TYPE),managerBootDiskSize:$(MANAGER_BOOT_DISK_SIZE),managerDiskSize:$(MANAGER_DISK_SIZE),workerDiskSize:$(WORKER_DISK_SIZE),enableSystemPrune:${ENABLE_SYSTEM_PRUNE},demoMode:$(DEMO_MODE),remoteSshOrigin:$(REMOTE_SSH_ORIGIN)
 
 delete:
 	-$(GCLOUD) compute instances delete -q --delete-disks=boot $(shell $(GCLOUD) compute instances list --filter='networkInterfaces[0].network ~ $(DEPLOYMENT_NAME)-network' --uri)

@@ -9,7 +9,7 @@ function metadata {
 function startPlugins {
   echo Start Plugins
 
-  rm -Rf ~/.infrakit
+  rm -Rf /infrakit/plugins
   infrakit plugin start --config-url file:///infrakit/plugins.json --wait --exec os \
     manager \
     flavor-combo \
@@ -22,14 +22,14 @@ function startPlugins {
 }
 
 function checkPlugins {
-  [ $(ls ~/.infrakit/plugins/*.pid | wc -l) -eq 6 ]
+  [ $(ls /infrakit/plugins/*.pid | wc -l) -eq 6 ]
 }
 
 function restartPlugins {
   echo Restart Plugins
 
   infrakit plugin stop --all
-  while :; do [ $(ls ~/.infrakit/plugins/*.pid | wc -l) -eq 0 ] && break || sleep 1; done
+  while :; do [ $(ls /infrakit/plugins/*.pid | wc -l) -eq 0 ] && break || sleep 1; done
   startPlugins
 }
 

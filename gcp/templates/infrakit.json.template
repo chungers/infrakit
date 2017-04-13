@@ -18,9 +18,21 @@
             "MachineType": "{{ properties['managerMachineType'] }}",
             "Network": "$(ref.{{ STACK }}-network.selfLink)",
             "NamePrefix": "{{ STACK }}-manager",
-            "DiskSizeMb": {{ properties['managerDiskSize'] }},
-            "DiskType": "{{ properties['managerDiskType'] }}",
-            "DiskImage": "$(ref.{{ STACK }}-disk-image-{{ VERSION }}.selfLink)",
+            "Disks": [{
+              "Boot": true,
+              "Image": "$(ref.{{ STACK }}-disk-image-{{ VERSION }}.selfLink)",
+              "Type": "{{ properties['managerDiskType'] }}",
+              "AutoDelete": true,
+              "ReuseExisting": false,
+              "SizeGb": {{ properties['managerBootDiskSize'] }}
+            },{
+              "Boot": false,
+              "NameSuffix": "-data",
+              "Type": "{{ properties['managerDiskType'] }}",
+              "AutoDelete": false,
+              "ReuseExisting": true,
+              "SizeGb": {{ properties['managerDiskSize'] }}
+            }],
             "TargetPools": ["{{ STACK }}-lb-pool"],
             "Tags": [
               "swarm",
@@ -79,9 +91,14 @@
             "MachineType": "{{ properties['workerMachineType'] }}",
             "Network": "$(ref.{{ STACK }}-network.selfLink)",
             "NamePrefix": "{{ STACK }}-worker",
-            "DiskSizeMb": {{ properties['workerDiskSize'] }},
-            "DiskType": "{{ properties['workerDiskType'] }}",
-            "DiskImage": "$(ref.{{ STACK }}-disk-image-{{ VERSION }}.selfLink)",
+            "Disks": [{
+              "Boot": true,
+              "Image": "$(ref.{{ STACK }}-disk-image-{{ VERSION }}.selfLink)",
+              "Type": "{{ properties['workerDiskType'] }}",
+              "AutoDelete": true,
+              "ReuseExisting": false,
+              "SizeGb": {{ properties['workerDiskSize'] }}
+            }],
             "TargetPools": ["{{ STACK }}-lb-pool"],
             "Tags": [
               "swarm",

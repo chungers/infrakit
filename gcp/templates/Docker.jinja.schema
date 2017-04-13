@@ -67,16 +67,25 @@ properties:
     default: "g1-small"
     description: Manager machine type
 
+  managerBootDiskSize:
+    type: integer
+    default: 10
+    minimum: 10
+    description: Manager boot disk size (Gb)
+
   managerDiskSize:
     type: integer
     default: 100
     minimum: 10
-    description: Manager disk size (Mb)
+    description: Manager disk size (Gb)
 
   managerDiskType:
     type: string
     default: "pd-standard"
     description: Manager disk type
+    enum:
+    - "pd-standard"
+    - "pd-ssd"
 
   workerMachineType:
     type: string
@@ -87,7 +96,7 @@ properties:
     type: integer
     default: 100
     minimum: 10
-    description: Worker disk size (Mb)
+    description: Worker disk size (Gb)
 
   workerDiskType:
     type: string
