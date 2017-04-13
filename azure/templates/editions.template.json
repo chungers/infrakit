@@ -185,7 +185,8 @@
     }
   },
   "variables": {
-    "Description": "Docker for Azure 1.13.0",
+    "Description": "Docker for Azure 17.03.0 (17.03.0-ce-azure1)",
+    "docker": "17.03.0",
     "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
     "storageLocation": "[resourceGroup().location]",
     "imagePublisher": "docker",

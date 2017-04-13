@@ -103,6 +103,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
         data = json.load(data_file)
 
     data['variables']['Description'] = u"Docker for Azure {0}".format(docker_for_azure_version)
+    data['variables']['docker'] = u"{}".format(docker_version)
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
