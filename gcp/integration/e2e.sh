@@ -99,7 +99,9 @@ check_instances_updated() {
 destroy_swarm() {
   echo Delete Swarm ${STACK}
 
+  set +e
   INSTANCES=$(gcloud compute instances list --filter="networkInterfaces[0].network:${STACK}-network" --uri)
+  set -e
   [ -n "${INSTANCES}" ] && gcloud compute instances delete -q --delete-disks=boot ${INSTANCES}
 
   set +e
@@ -111,7 +113,9 @@ destroy_swarm() {
     gcloud --verbosity=none deployment-manager deployments describe ${STACK} && gcloud deployment-manager deployments delete -q ${STACK} || true
   fi
 
+  set +e
   DISKS=$(gcloud compute disks list --filter="name~${STACK}-manager-" --uri)
+  set +e
   [ -n "${DISKS}" ] && gcloud compute disks delete -q ${DISKS}
 }
 
