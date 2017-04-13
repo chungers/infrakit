@@ -36,7 +36,7 @@ check_instances_created() {
 
   for i in $(seq 1 120); do
     COUNT=$(gcloud compute instances list --filter="status:RUNNING AND networkInterfaces[0].network:${STACK}-network" --uri | wc -w | tr -d '[:space:]')
-    echo "- ${COUNT} instances where created"
+    echo "- ${COUNT} instances were created"
 
     if [ ${COUNT} -gt 5 ]; then
       echo "- ERROR: that's too many!"
@@ -44,11 +44,14 @@ check_instances_created() {
     fi
 
     if [ ${COUNT} -eq 5 ]; then
-      return
+      return 0
     fi
 
     sleep 1
   done
+
+  echo "- ERROR: not all instances were created"
+  return 1
 }
 
 check_web_service() {
@@ -81,7 +84,7 @@ check_instances_updated() {
 
   for i in $(seq 1 120); do
     COUNT=$(gcloud compute instances list --filter="status:RUNNING AND machineType=n1-standard-1 AND networkInterfaces[0].network:${STACK}-network" --uri | wc -w | tr -d '[:space:]')
-    echo "- ${COUNT} instances where updated"
+    echo "- ${COUNT} instances were updated"
 
     if [ ${COUNT} -gt 4 ]; then
       echo "- ERROR: that's too many!"
@@ -89,11 +92,14 @@ check_instances_updated() {
     fi
 
     if [ ${COUNT} -eq 4 ]; then
-      return
+      return 0
     fi
 
     sleep 1
   done
+
+  echo "- ERROR: not all instances were updated"
+  return 1
 }
 
 destroy_swarm() {
