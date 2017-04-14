@@ -24,4 +24,4 @@ rootfs:  clean build
 	docker export ${DOCKER_CONTAINER_NAME} | tar -x -C ./plugin/rootfs
 	cp config.json ./plugin/
 	docker rm -vf ${DOCKER_CONTAINER_NAME}
-	tar zcvf cloudstor-rootfs.tar.gz ./plugin/
+	tar zcf cloudstor-rootfs.tar.gz ./plugin/

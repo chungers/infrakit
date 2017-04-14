@@ -8,12 +8,10 @@ RUN apk add --update bash ca-certificates jq groff less python py-pip py-setupto
     && apk --purge -v del py-pip \
     && rm -rf /var/cache/apk/*
 
-COPY files/etc/ /etc/
-
 # setup init
 RUN mkdir -p /usr/bin/ /var/log/docker/
-COPY files/init/entry.sh /entry.sh
-ADD files/bin/buoy /usr/bin
+COPY files/entry.sh /entry.sh
+ADD bin/buoy /usr/bin
 RUN chmod 755 /entry.sh /usr/bin/buoy
 
 CMD ["/entry.sh"]

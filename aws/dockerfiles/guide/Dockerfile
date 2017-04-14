@@ -10,15 +10,15 @@ RUN apk add --update bash ca-certificates jq groff python py-pip py-setuptools c
 
 # setup cron
 RUN mkdir -p /usr/docker /var/log/docker/
-ADD files/guide/crontab.txt /usr/docker/crontab.txt
-ADD files/guide/watcher.sh /usr/bin
-ADD files/guide/cleanup.sh /usr/bin
-ADD files/guide/buoy.sh /usr/bin
-ADD files/guide/refresh.sh /usr/bin
-ADD files/guide/vacuum.sh /usr/bin
-ADD files/guide/bouncer.sh /usr/bin
-ADD files/bin/buoy /usr/bin
-COPY files/guide/entry.sh /entry.sh
+ADD files/crontab.txt /usr/docker/crontab.txt
+ADD files/watcher.sh /usr/bin
+ADD files/cleanup.sh /usr/bin
+ADD files/buoy.sh /usr/bin
+ADD files/refresh.sh /usr/bin
+ADD files/vacuum.sh /usr/bin
+ADD files/bouncer.sh /usr/bin
+ADD bin/buoy /usr/bin
+COPY files/entry.sh /entry.sh
 RUN chmod 755 /usr/bin/watcher.sh /entry.sh /usr/bin/cleanup.sh \
     /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/vacuum.sh /usr/bin/refresh.sh \
     /usr/bin/bouncer.sh

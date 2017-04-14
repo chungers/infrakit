@@ -8,13 +8,14 @@ RUN apk add --update bash openssh ca-certificates sudo curl jq && \
 # add docker to sudoers file
 RUN echo -e "\ndocker ALL=(ALL) NOPASSWD: ALL\n" >> /etc/sudoers
 
-COPY files/etc/ /etc/
+COPY etc/ /etc/
 
-COPY files/shell/entry.sh /entry.sh
-COPY files/bin/docker-diagnose /usr/bin/docker-diagnose
-COPY files/bin/swarm-exec /usr/bin/swarm-exec
+COPY files/entry.sh /entry.sh
+COPY bin/docker-diagnose /usr/bin/docker-diagnose
+COPY bin/swarm-exec /usr/bin/swarm-exec
 RUN chmod 755 /entry.sh
 RUN chmod 755 /usr/bin/swarm-exec
+RUN chmod 755 /usr/bin/docker-diagnose
 
 EXPOSE 22
 

@@ -8,10 +8,8 @@ RUN apk add --update bash ca-certificates jq groff less python py-pip py-setupto
     && apk --purge -v del py-pip \
     && rm -rf /var/cache/apk/*
 
-COPY files/etc/ /etc/
-
 # setup init
-COPY files/ddc-init/entry.sh /entry.sh
+COPY files/entry.sh /entry.sh
 RUN chmod 755 /entry.sh
 
 CMD ["/entry.sh"]

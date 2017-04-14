@@ -6,33 +6,51 @@ NAMESPACE="${NAMESPACE:-docker4x}"
 TAG_VERSION="${AWS_TAG_VERSION:-latest}"
 
 CURR_DIR=`pwd`
-ROOTDIR="${ROOTDIR:-$CURR_DIR}"
+ROOTDIR="${ROOT_DIR:-$CURR_DIR}"
 DEFAULT_PATH="dist/aws/nightly/$TAG_VERSION"
 AWS_TARGET_PATH="${AWS_TARGET_PATH:-$DEFAULT_PATH}"
 
-echo "+ Creating dist folder: $AWS_TARGET_PATH"
+# Test all images built
+function test () {
+	if [ -z "$1" ]
+	then
+     echo "Image to test is needed"
+		 exit 1
+	fi
+	IMAGE=${1}
+	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
+	echo -e "+++ \033[1mTesting\033[0m \033[4m${FINAL_IMAGE}\033[0m"
+	docker container run --rm \
+		-v ${CURR_DIR}/${IMAGE}/tests:/tests \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v /usr/bin/docker:/usr/bin/docker \
+		--entrypoint sh \
+		${FINAL_IMAGE} /tests/run.sh
+}
+
+echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
 mkdir -p $ROOTDIR/$AWS_TARGET_PATH
 
 for IMAGE in shell init guide ddc-init cloud meta
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
-	docker build --pull -t "${FINAL_IMAGE}" -f "Dockerfile.${IMAGE}" .
+	echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
+	docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
 	if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
-		echo "++ Saving docker image to: ${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
+		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 		docker save "${FINAL_IMAGE}" > "${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 	fi
+	test ${IMAGE}
 	if [ "${DOCKER_PUSH}" -eq 1 ]; then
 		docker push "${FINAL_IMAGE}"
 	fi
 done
 
 # build and push cloudstor plugin
-pushd files
-tar zxvf cloudstor-rootfs.tar.gz
+tar zxf cloudstor-rootfs.tar.gz
 docker plugin rm -f "${NAMESPACE}/cloudstor:${TAG_VERSION}" || true
 docker plugin create "${NAMESPACE}/cloudstor:${TAG_VERSION}" ./plugin
 rm -rf ./plugin
 if [ ${DOCKER_PUSH} -eq 1 ]; then
 	docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
 fi
-popd

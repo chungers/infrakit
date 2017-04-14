@@ -2,7 +2,7 @@ FROM alpine:3.5
 
 RUN apk add --update ca-certificates && rm -Rf /tmp/* /var/lib/cache/apk/*
 
-ADD files/bin/metaserver /usr/local/bin/
-RUN chmod +x /usr/local/bin/metaserver
+ADD bin/metaserver /usr/bin/
+RUN chmod +x /usr/bin/metaserver
 
 CMD [ "metaserver" ]

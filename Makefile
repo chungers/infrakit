@@ -24,7 +24,7 @@ ifeq (${EDITIONS_VERSION},)
 endif
 
 ifeq (${DOCKER_PUSH},)
-	DOCKER_PUSH := 1
+	DOCKER_PUSH := 0
 endif
 
 # Push final image output to S3 bucket
@@ -73,7 +73,7 @@ EE_OFFER_ID := docker-ee
 
 export
 
-ROOTDIR := $(shell pwd)
+ROOT_DIR := ${CURDIR}
 
 AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_TAG_VERSION)
 AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
@@ -110,18 +110,18 @@ dockerimages-walinuxagent:
 
 define build_cp_tool
 	$(MAKE) -C tools/$(1)
-	mkdir -p aws/dockerfiles/files/$(3)
-	mkdir -p azure/dockerfiles/files/$(3)
-	mkdir -p gcp/dockerfiles/files/$(3)
-	cp tools/$(1)/$(2) aws/dockerfiles/files/$(3)
-	cp tools/$(1)/$(2) azure/dockerfiles/files/$(3)
-	cp tools/$(1)/$(2) gcp/dockerfiles/files/$(3)
+	mkdir -p aws/dockerfiles/$(3)
+	mkdir -p azure/dockerfiles/$(3)
+	mkdir -p gcp/dockerfiles/$(3)
+	cp tools/$(1)/$(2) aws/dockerfiles/$(3)
+	cp tools/$(1)/$(2) azure/dockerfiles/$(3)
+	cp tools/$(1)/$(2) gcp/dockerfiles/$(3)
 endef
 
 define clean_plugin_tool
-	-rm -f aws/dockerfiles/files/cloudstor-rootfs.tar.gz
-	-rm -f azure/dockerfiles/files/cloudstor-rootfs.tar.gz
-	-rm -f gcp/dockerfiles/files/cloudstor-rootfs.tar.gz
+	-rm -f aws/dockerfiles/cloudstor-rootfs.tar.gz
+	-rm -f azure/dockerfiles/cloudstor-rootfs.tar.gz
+	-rm -f gcp/dockerfiles/cloudstor-rootfs.tar.gz
 endef
 
 ## General tools targets
@@ -129,11 +129,12 @@ tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloud
 
 tools/buoy/bin/buoy:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	$(call build_cp_tool,buoy,bin/buoy,bin)
+	$(call build_cp_tool,buoy,bin/buoy,guide/bin)
+	$(call build_cp_tool,buoy,bin/buoy,init/bin)
 
 tools/metaserver/bin/metaserver:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	$(call build_cp_tool,metaserver,bin/metaserver,bin)
+	$(call build_cp_tool,metaserver,bin/metaserver,meta/bin)
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
