@@ -10,13 +10,18 @@
     "socket": "cloudstor.sock"
   },
   "linux": {
+    "allowalldevices": true,
     "capabilities": ["CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_DAC_READ_SEARCH"],
-    "devices": [
-      {
-        "path":"/dev/fuse"
-      }
-    ]
+    "devices": null
   },
+  "mounts": [
+    {
+      "source": "/dev",
+      "destination": "/dev",
+      "type": "bind",
+      "options": ["rbind"]
+    }
+  ],
   "propagatedmount": "/mnt",
   "env": [
     {

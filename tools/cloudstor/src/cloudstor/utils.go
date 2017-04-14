@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +10,42 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 )
+
+const (
+	/* For EXT file systems, look for 0xEF 0x53 at offset 1080 */
+	ext4MagicString = "\123\357" // octal for EF 53 reversed
+	ext4MagicOffset = 0x438
+)
+
+func getNameFromUrl(url string) string {
+	elements := strings.Split(url, "/")
+	return elements[len(elements)-1]
+}
+
+func isExtFS(dev string) (bool, error) {
+	ext4MagicBufferLen := ext4MagicOffset + uint64(len(ext4MagicString))
+	file, err := os.Open(dev)
+	if err != nil {
+		return false, fmt.Errorf("failed to open device to probe ext4: %v", err)
+	}
+	defer file.Close()
+
+	buf := make([]byte, ext4MagicBufferLen)
+	l, err := file.Read(buf)
+	if err != nil {
+		return false, fmt.Errorf("failed to read magic bytes for ext4: %v", err)
+	}
+
+	if uint64(l) < ext4MagicBufferLen {
+		return false, fmt.Errorf("failed to read all magic bytes for ext4")
+	}
+
+	if bytes.Equal(
+		[]byte(ext4MagicString), buf[ext4MagicOffset:ext4MagicBufferLen]) {
+		return true, nil
+	}
+	return false, nil
+}
 
 func unmount(mountpoint string) error {
 	cmd := exec.Command("umount", mountpoint)

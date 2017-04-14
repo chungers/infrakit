@@ -27,7 +27,6 @@ type azfsDriver struct {
 }
 
 const (
-	mountPoint         = "/mnt/cloudstor"
 	cifsOptionVersion  = "vers=2.1"
 	cifsOptionFileMode = "file_mode=0777"
 	cifsOptionDirMode  = "dir_mode=0777"
@@ -93,7 +92,7 @@ func (v *azfsDriver) Create(req volume.Request) (resp volume.Response) {
 	}
 	logctx.Debug("request accepted")
 
-	s := v.cl.GetShareReference(volMeta.Options.Share);
+	s := v.cl.GetShareReference(volMeta.Options.Share)
 	if ok, err := s.CreateIfNotExists(); err != nil {
 		resp.Err = fmt.Sprintf("error creating azure file share: %v", err)
 		logctx.Error(resp.Err)
