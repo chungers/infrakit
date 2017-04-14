@@ -13,6 +13,14 @@ weight="400"
 
 # Release notes
 
+## v9
+
++ Managers now have two disks. One for the kernel, one for the data. This makes
+the upgrades much smoother.
++ Fixed the channel name. Should be `edge`, not `beta`.
++ System docker images are now read from disk rather than pulled from the network.
++ Docker 17.05.0-ce-rc1
+
 ## v8
 
 + Fix the image pruning. It was not possible to use `enableSystemPrune` and the
