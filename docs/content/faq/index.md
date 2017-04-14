@@ -22,6 +22,12 @@ don't recommend use with production workloads.
 
 No, at this time we only support the default Docker Disk Image.
 
+## What is this **bootstrap** instance?
+
+This instance is currently used to create (bootstrap) the first manager.
+We plan on removing the need for such an additional instance before Docker for
+GCP goes GA.
+
 ## Where do I report problems or bugs?
 
 Send an email to <docker-for-iaas@docker.com> or post to the #docker-for-gcp channel in the [Docker Community Slack](https://dockr.ly/2geAjfo).
