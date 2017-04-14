@@ -10,6 +10,12 @@ WORKDIR /go/
 COPY . ./
 RUN mkdir -p bin
 WORKDIR /go/src/cloudstor
+
+RUN go get cloud.google.com/go/compute/metadata
+RUN go get golang.org/x/oauth2/google
+RUN go get google.golang.org/api/googleapi
+RUN go get google.golang.org/api/compute/v1
+
 RUN vndr
 RUN go install --ldflags '-extldflags "-static"'
 

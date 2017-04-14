@@ -12,6 +12,7 @@ const (
 	volumeDriverName = "cloudstor"
 	metadataRoot     = "/etc/docker/plugins/cloudstor/volumes"
 	socketAddress    = "/run/docker/plugins/cloudstor.sock"
+	mountPoint       = "/mnt/cloudstor"
 )
 
 func main() {
@@ -54,6 +55,14 @@ func main() {
 		h := volume.NewHandler(driver)
 		log.Fatal(h.ServeUnix(socketAddress, 0))
 
+	} else if cloudEnv == "GCP" {
+		log.Debug("Starting GCP server.")
+		driver, err := newGCPDriver(metadataRoot)
+		if err != nil {
+			log.Fatal(err)
+		}
+		h := volume.NewHandler(driver)
+		log.Fatal(h.ServeUnix(socketAddress, 0))
 	} else {
 		log.Fatal("Failed to initialize Cloudstor: unsupported cloud platform")
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	recognizedOptions = []string{"share", "perfmode"}
+	recognizedOptions = []string{"share", "perfmode", "size"}
 )
 
 type volumeMetadata struct {
@@ -23,6 +23,7 @@ type volumeMetadata struct {
 // VolumeOptions stores the opts passed to the driver by the docker engine.
 type VolumeOptions struct {
 	Share    string `json:"share"`
+	Size     string `json:"size"`
 	PerfMode string `json:"perfmode"`
 }
 
@@ -55,6 +56,7 @@ func (m *metadataDriver) Validate(meta map[string]string) (volumeMetadata, error
 		}
 	}
 	opts.Share = meta["share"]
+	opts.Size = meta["size"]
 	opts.PerfMode = meta["perfmode"]
 
 	return volumeMetadata{
