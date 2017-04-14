@@ -49,7 +49,7 @@ endif
 
 # Check if BUILD has been defined
 ifeq (${BUILD},)
-	BUILD := 2
+	BUILD := 1
 endif
 
 NAMESPACE := docker4x
@@ -63,7 +63,7 @@ EDITION_ADDON := base
 
 #### Azure Specific VARS
 VHD_SKU := docker-ce
-VHD_VERSION := 1.0.0
+VHD_VERSION := 1.0.3
 # stage offer will have the -preview 
 VHD_OFFER_ID := docker-ce
 EE_VHD_SKU := docker-ee
@@ -199,10 +199,10 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 
 azure-release:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"
-	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_EDITION)
+	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 $(AZURE_TARGET_TEMPLATE):
-	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_EDITION)
+	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 azure-template:
 	@echo "+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}"

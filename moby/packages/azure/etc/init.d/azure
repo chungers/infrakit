@@ -13,11 +13,13 @@ start()
 	[ "$(mobyplatform)" != "azure" ] && exit 0
 	ebegin "Running Azure-specific initialization"
 
+	export DOCKER_FOR_IAAS_VERSION="#EDITION_VERSION#"
+
 	for i in $(seq 1 20)
 	do
 		einfo "Pulling Windows Azure Linux Agent container"
 
-		docker pull docker4x/agent-azure >/dev/null
+		docker pull docker4x/agent-azure:$DOCKER_FOR_IAAS_VERSION >/dev/null
 
 		if [ $? -eq 0 ]
 		then
@@ -33,8 +35,6 @@ start()
 	done
 
 	einfo "Running Windows Azure Linux Agent container"
-
-	export DOCKER_FOR_IAAS_VERSION="#EDITION_VERSION#"
 
 	# "Fake" /etc/hostname setup for persistence across reboots
 	#
