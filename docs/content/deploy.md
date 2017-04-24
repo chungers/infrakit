@@ -205,24 +205,22 @@ After creating a swarm on Docker for GCP and connecting to any manager using SSH
 verify that Cloudstor is already installed and configured for the stack/resource 
 group:
 
-    ```bash
-    $ docker plugin ls
-    ID                  NAME                        DESCRIPTION                       ENABLED
-    d528e6214d7c        cloudstor:gcp               cloud storage plugin for Docker   true
-    ```
+```
+$ docker plugin ls
+ID                  NAME                        DESCRIPTION                       ENABLED
+d528e6214d7c        cloudstor:gcp               cloud storage plugin for Docker   true
+```
 
 The following examples show how to create swarm services that require data 
 persistence using the --mount flag and specifying Cloudstor as the driver.
 
 #### Use a unique volume per task:
 
-    ```bash
-    {% raw %}
-    docker service create --replicas 5 --name ping2 \
-        --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25 \
-        alpine ping docker.com
-    {% endraw %}
-    ```
+```
+docker service create --replicas 5 --name ping2 \
+    --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25 \
+    alpine ping docker.com
+```
 
 Here the templatized notation is used to indicate to Docker Swarm that a unique 
 volume of size 25 GB be created and mounted for each replica/task of the service `ping2`. 
@@ -254,12 +252,11 @@ this and block/handle in post-Beta.
 By default, Cloudstor uses Standard Persistent Disks for backing volumes. If you want
 to use SSDs, you can specify that using the `perfmode` option:
 
-```bash
-{% raw %}
+```
 docker service create --replicas 5 --name ping2 \
     --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25,volume-opt=perfmode=pd-ssd \
     alpine ping docker.com
-{% endraw %}
+
 ```
 
 
