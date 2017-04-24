@@ -186,6 +186,83 @@ underlying platform load balancers:
 
     $ docker service update --publish-add 80:80 <example-service>
 
+### Persistent Storage
+
+Cloudstor is a volume plugin managed by Docker. It comes pre-installed and 
+pre-configured in swarms deployed on Docker for GCP. A swarm task can use a volume 
+created through Cloudstor to mount a persistent data volume that stays attached 
+to the swarm task no matter which swarm node they get scheduled or migrated to. 
+Cloudstor relies on GCP Persistent Disks to allow swarm tasks to create/mount 
+their persistent volumes on any node in the swarm. Please note that due to the 
+lack of a highly available shared storage infrastructure in GCP, using the same 
+Cloudstor volume across multiple swarm services or multiple tasks within the 
+same swarm service is not supported at this point. Each Cloudstor volume can 
+only be attached to a single swarm task to avoid data loss. 
+
+#### Use Cloudstor
+
+After creating a swarm on Docker for GCP and connecting to any manager using SSH, 
+verify that Cloudstor is already installed and configured for the stack/resource 
+group:
+
+    ```bash
+    $ docker plugin ls
+    ID                  NAME                        DESCRIPTION                       ENABLED
+    d528e6214d7c        cloudstor:gcp               cloud storage plugin for Docker   true
+    ```
+
+The following examples show how to create swarm services that require data 
+persistence using the --mount flag and specifying Cloudstor as the driver.
+
+#### Use a unique volume per task:
+
+    ```bash
+    {% raw %}
+    docker service create --replicas 5 --name ping2 \
+        --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25 \
+        alpine ping docker.com
+    {% endraw %}
+    ```
+
+Here the templatized notation is used to indicate to Docker Swarm that a unique 
+volume of size 25 GB be created and mounted for each replica/task of the service `ping2`. 
+After initial creation of the volumes corresponding to the tasks they are attached 
+to (in the nodes the tasks are scheduled in), if a task is rescheduled on a different 
+node, Docker Swarm will interact with the Cloudstor plugin to attach and mount 
+the volume corresponding to the task on the node the task got scheduled on. 
+It's highly recommended that you use the `.Task.Slot` template to make sure 
+task N always gets access to vol N no matter which node it is executing on/scheduled to.
+
+In the above example, each task has it's own 25 GB volume mounted at `/mydata/` 
+and the files under there are unique to the task mounting the volume.
+
+#### List or remove volumes created by Cloudstor
+
+You can use `docker volume ls` to enumerate all volumes created on a node including 
+those backed by Cloudstor. Note that if a swarm service task starts off in a node 
+and has a Cloudstor volume associated and later gets rescheduled to a different 
+node, `docker volume ls` in the initial node will continue to list the Cloudstor 
+volume that was created for the task that no longer executes on the node although 
+the volume is mounted elsewhere. Do NOT prune/rm the volumes that gets enumerated 
+on a node without any tasks associated since these actions will result in data 
+loss if the same volume is mounted in another node (i.e. the volume shows up in 
+the `docker volume ls` output on another node in the swarm). We will detect 
+this and block/handle in post-Beta.
+
+#### Conigure IO performance for volumes created by Cloudstor
+
+By default, Cloudstor uses Standard Persistent Disks for backing volumes. If you want
+to use SSDs, you can specify that using the `perfmode` option:
+
+```bash
+{% raw %}
+docker service create --replicas 5 --name ping2 \
+    --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25,volume-opt=perfmode=pd-ssd \
+    alpine ping docker.com
+{% endraw %}
+```
+
+
 ### Images in private repos
 
 To create swarm services using images in private repos, first make sure you're
