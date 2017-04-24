@@ -5,6 +5,7 @@ NAMESPACE ?= docker4x
 DOCKER_PUSH ?= 0
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
 EDITIONS_VERSION ?= dev
+IMAGE_VERSION ?= $(shell whoami)-dev
 BUILDS_BUCKET ?= gs://docker-for-gcp-builds
 TEMPLATES_BUCKET ?= gs://docker-for-gcp-templates
 TESTS ?= all
@@ -85,14 +86,14 @@ build-cloudstor:
 	    make -C ../tools/cloudstor build;                          \
 	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz dockerfiles/;\
 	fi
-	cd dockerfiles;                                                \
-	tar zxvf cloudstor-rootfs.tar.gz;                              \
-	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp" || true;      \
-	docker plugin create "$(NAMESPACE)/cloudstor-gcp" ./plugin;    \
-	rm -rf ./plugin;                                               \
-	if [ $(DOCKER_PUSH) -eq 1 ]; then                              \
-	    docker plugin push "$(NAMESPACE)/cloudstor-gcp";           \
-	fi;                                                            \
+	cd dockerfiles;                                                              \
+	tar zxvf cloudstor-rootfs.tar.gz;                                            \
+	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)" || true;   \
+	docker plugin create "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)" ./plugin; \
+	rm -rf ./plugin;                                                             \
+	if [ $(DOCKER_PUSH) -eq 1 ]; then                                            \
+	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)";        \
+	fi;                                                                          \
 	cd ..
 
 build-moby: build-images
