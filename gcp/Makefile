@@ -2,6 +2,7 @@
 
 BUILD_NUMBER ?= 0
 NAMESPACE ?= docker4x
+DOCKER_PUSH ?= 0
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
 EDITIONS_VERSION ?= dev
 BUILDS_BUCKET ?= gs://docker-for-gcp-builds
@@ -44,7 +45,7 @@ define last
 $(lastword $(subst /, ,$1))
 endef
 
-.PHONY: all auth revoke create delete release test build build-buoy build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates $(DOCKERFILE_DIRS) integration-tests
+.PHONY: all auth revoke create delete release test build build-buoy build-cloudstor build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates $(DOCKERFILE_DIRS) integration-tests
 .DEFAULT: all
 
 all: auth create
@@ -79,6 +80,21 @@ build-dir:
 build-buoy:
 	make -C ../tools/buoy build
 
+build-cloudstor:
+	if [ ! -e dockerfiles/cloudstor-rootfs.tar.gz ]; then          \
+	    make -C ../tools/cloudstor build;                          \
+	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz dockerfiles/;\
+	fi
+	cd dockerfiles;                                                \
+	tar zxvf cloudstor-rootfs.tar.gz;                              \
+	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp" || true;      \
+	docker plugin create "$(NAMESPACE)/cloudstor-gcp" ./plugin;    \
+	rm -rf ./plugin;                                               \
+	if [ $(DOCKER_PUSH) -eq 1 ]; then                              \
+	    docker plugin push "$(NAMESPACE)/cloudstor-gcp";           \
+	fi;                                                            \
+	cd ..
+
 build-moby: build-images
 	make -C ../moby clean
 	mkdir -p ../moby/packages/gcp/dockerimages
@@ -100,7 +116,7 @@ build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp) \
 		--output ./build/images.tar
 
-build: build-moby build-images build-templates
+build: build-moby build-cloudstor build-images build-templates
 
 gcloud-auth:
 ifeq "$(FORCE_GSUTIL_AUTH)" "1"
@@ -124,6 +140,7 @@ retrieve-moby: build-dir gcloud-auth
 
 clean:
 	rm -Rf ./build
+	rm -f ./dockerfiles/cloudstor-rootfs.tar.gz
 
 retrieve: build-dir gcloud-auth
 	mkdir -p ./build
