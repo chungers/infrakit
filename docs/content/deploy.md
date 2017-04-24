@@ -206,7 +206,7 @@ verify that Cloudstor is already installed and configured for the stack/resource
 group:
 
 ```
-$ docker plugin ls
+$  docker plugin ls
 ID                  NAME                        DESCRIPTION                       ENABLED
 d528e6214d7c        cloudstor:gcp               cloud storage plugin for Docker   true
 ```
@@ -217,7 +217,7 @@ persistence using the --mount flag and specifying Cloudstor as the driver.
 #### Use a unique volume per task:
 
 ```
-docker service create --replicas 5 --name ping2 \
+$  docker service create --replicas 5 --name ping2 \
     --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25 \
     alpine ping docker.com
 ```
@@ -253,7 +253,7 @@ By default, Cloudstor uses Standard Persistent Disks for backing volumes. If you
 to use SSDs, you can specify that using the `perfmode` option:
 
 ```
-docker service create --replicas 5 --name ping2 \
+$  docker service create --replicas 5 --name ping2 \
     --mount type=volume,volume-driver=cloudstor:gcp,source={{.Service.Name}}-{{.Task.Slot}}-vol,destination=/mydata,volume-opt=size=25,volume-opt=perfmode=pd-ssd \
     alpine ping docker.com
 
