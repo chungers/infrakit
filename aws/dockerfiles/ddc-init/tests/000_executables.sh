@@ -2,4 +2,5 @@
 
 set -ex
 
-echo Nothing to check
+echo Check that all executable files are there
+test -x /entry.sh

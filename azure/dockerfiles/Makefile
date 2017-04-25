@@ -12,4 +12,3 @@ alb-controller:
 	DOCKER_TAG="$(AZURE_TAG_VERSION)" \
 	DOCKER_TAG_LATEST=true \
 	make -k bin/loadbalancer
-
