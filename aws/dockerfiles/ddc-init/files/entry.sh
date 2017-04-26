@@ -25,6 +25,12 @@ APP_ELB_HOSTNAME=$(tr '[:upper:]' '[:lower:]' <<< "$APP_ELB_HOSTNAME")
 UCP_ELB_HOSTNAME=$(tr '[:upper:]' '[:lower:]' <<< "$UCP_ELB_HOSTNAME")
 DTR_ELB_HOSTNAME=$(tr '[:upper:]' '[:lower:]' <<< "$DTR_ELB_HOSTNAME")
 
+echo "Get Primary Manager IP"
+# query dynamodb and get the Ip for the primary manager.
+PRIMARY_MANAGER=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "primary_manager"}}')
+export PRIMARY_MANAGER_IP=$(echo $PRIMARY_MANAGER | jq -r '.Item.ip.S')
+
+echo "PRIMARY_MANAGER_IP=$PRIMARY_MANAGER_IP"
 echo "MYIP=$MYIP"
 echo "LOCAL_HOSTNAME=$LOCAL_HOSTNAME"
 echo "PATH=$PATH"
@@ -64,6 +70,8 @@ images=$(docker run --label com.docker.editions.system  --rm "${UCP_ORG}/ucp:${U
 for im in $images; do
     docker pull $im
 done
+
+# ^^ If this is an upgrade, do we still need to pull down these images? Should they instead be the version that installed in the swarm?
 
 if [ "$NODE_TYPE" == "worker" ] ; then
      echo "Let AWS know this worker node is ready."
@@ -148,9 +156,24 @@ done
 
 echo "We have enough managers we can continue now."
 
+echo "Is DDC already running on swarm?"
+# if UCP is running, then this service grep will return a value of 0
+# if not, it will return 1.
+docker service ls | grep /ucp-
+
+IS_UCP_RUNNING_RESULT=$?  # 0 = installed, 1 = not installed
+echo " IS_UCP_RUNNING_RESULT=$IS_UCP_RUNNING_RESULT"
+if [ $IS_UCP_RUNNING_RESULT -ne 0 ]; then
+    echo "  UCP is not already installed"
+    IS_UCP_RUNNING='false'
+else
+    echo "  UCP is already installed"
+    IS_UCP_RUNNING='true'
+fi
+
 IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
-if [[ "$IS_LEADER" == "true" ]]; then
+if [[ "$IS_LEADER" == "true" ]] && [[ "$IS_UCP_RUNNING" == "false" ]]  ; then
     echo "We are the swarm leader"
     echo "Installing DDC..."
 
@@ -198,6 +221,11 @@ if [[ "$IS_LEADER" == "true" ]]; then
         NUM_REPLICAS=$(echo $REPLICAS | jq -r '.Item.nodes.SS | length')
         # if we get a result, we know DTR is already running on this cluster
 
+        # check to see if DTR is already running in swarm, if so get DTR_IMAGE to match
+        # current version installed.
+        # If not running on swarm already, default DTR_IMAGE to what we have
+        # passed in via template/ENV params
+
         if [[ $NUM_REPLICAS -eq 0 ]] ; then
             echo "Generate our DTR replica ID"
             # create a unique replica id, given the IP address of this host.
@@ -223,7 +251,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
             DTR_LEADER_INSTALL="no"
             EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
             echo "Join to replicaId = $EXISTING_REPLICA_ID"
-            CURRENT_DTR=$(curl --silent http://$MYIP:9024/info/dtr/)
+            CURRENT_DTR=$(curl --silent http://$PRIMARY_MANAGER_IP:9024/info/dtr/)
             if [ -n "$CURRENT_DTR" ]; then
                 DTR_IMAGE=${DTR_ORG}/dtr:${CURRENT_DTR}
             fi
@@ -273,7 +301,7 @@ if [[ "$IS_LEADER" == "true" ]]; then
     fi
 
 else
-    echo "Not the Swarm leader. "
+    echo "Not the Swarm leader, or UCP already installed."
 
     # make sure UCP is ready.
     checkUCP
@@ -314,7 +342,7 @@ else
         # once available.
         # get record, and then join, add replica ID to dynamodb
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
-        CURRENT_DTR=$(curl --silent http://$MYIP:9024/info/dtr/)
+        CURRENT_DTR=$(curl --silent http://$PRIMARY_MANAGER_IP:9024/info/dtr/)
         if [ -n "$CURRENT_DTR" ]; then
             DTR_IMAGE=${DTR_ORG}/dtr:${CURRENT_DTR}
         fi

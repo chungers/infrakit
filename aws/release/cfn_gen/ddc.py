@@ -7,8 +7,8 @@ from sections import resources
 from sections import parameters
 from sections import constants
 
-DTR_TAG = '2.2.3'
-UCP_TAG = '2.1.1'
+DTR_TAG = '2.2.4'
+UCP_TAG = '2.1.3'
 UCP_INIT_TAG = '17.03.1-ce-aws1'
 
 

@@ -221,6 +221,9 @@ if [ "$NODE_TYPE" == "manager" ] ; then
             --expression-attribute-values '{":n": {"SS":["'"$LOCAL_DTR_ID"'"]}}' \
             --return-consumed-capacity TOTAL
 
+        # TODO: What happens when the manager node crashes, and the replica_ID isn't removed from
+        # dynamodb, we need a cleanup job to remove those nodes that are not valid anymore.
+        # is there a way to get a current list of valid replica ids?
         REPLICAS=$(aws dynamodb get-item --region $REGION --table-name $DYNAMODB_TABLE --key '{"node_type":{"S": "'"$DTR_DYNAMO_FIELD"'"}}')
         EXISTING_REPLICA_ID=$(echo $REPLICAS | jq -r '.Item.nodes.SS[0]')
         echo "EXISTING_REPLICA_ID=$EXISTING_REPLICA_ID"
