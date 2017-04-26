@@ -14,6 +14,7 @@ shell_image="docker4x/shell-gcp"
 guide_image="docker4x/guide-gcp"
 lb_image="docker4x/lb-controller-gcp"
 infrakit_image="docker4x/infrakit-gcp"
+cloudstor_image="docker4x/cloudstor-gcp:{{ VERSION }}"
 
 docker_run='docker container run --label com.docker.editions.system --log-driver=json-file'
 docker_daemon="$docker_run --rm -d"
@@ -104,6 +105,9 @@ $docker_daemon --name=guide \
   $docker_socket \
   $docker_cli \
   $guide_image
+
+echo Install cloudstor-gcp
+docker plugin install --alias cloudstor:gcp --grant-all-permissions $cloudstor_image CLOUD_PLATFORM=GCP
 
 {% if (type in ['manager', 'leader']) %}
 echo Start Load Balancer Listener
