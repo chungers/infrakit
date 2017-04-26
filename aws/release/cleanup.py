@@ -58,10 +58,11 @@ for key in files:
 
     key_date = datetime.strptime(key.last_modified, '%Y-%m-%dT%H:%M:%S.000Z')
     if key_date < EXPIRE_DATE:
-        print(u"{} is {}, which is too old (< {}), remove it.".format(key.name, key.last_modified, EXPIRE_DATE))
+        print(u"{} is {}, which is too old (< {}), remove it.".format(
+            key.name, key.last_modified, EXPIRE_DATE))
         key.delete()
 
-files = list(bucket.list("aws/ddc-nightly/"))
+files = list(bucket.list("aws/nightly-ddc/"))
 
 for key in files:
     # we only care about json files.
@@ -70,7 +71,21 @@ for key in files:
 
     key_date = datetime.strptime(key.last_modified, '%Y-%m-%dT%H:%M:%S.000Z')
     if key_date < EXPIRE_DATE:
-        print(u"{} is {}, which is too old (< {}), remove it.".format(key.name, key.last_modified, EXPIRE_DATE))
+        print(u"{} is {}, which is too old (< {}), remove it.".format(
+            key.name, key.last_modified, EXPIRE_DATE))
+        key.delete()
+
+files = list(bucket.list("aws/cloud-nightly/"))
+
+for key in files:
+    # we only care about json files.
+    if not key.name.endswith(".json"):
+        continue
+
+    key_date = datetime.strptime(key.last_modified, '%Y-%m-%dT%H:%M:%S.000Z')
+    if key_date < EXPIRE_DATE:
+        print(u"{} is {}, which is too old (< {}), remove it.".format(
+            key.name, key.last_modified, EXPIRE_DATE))
         key.delete()
 
 # rest for 60 seconds, so we don't go over API limits
@@ -88,7 +103,7 @@ for region in REGIONS:
         continue
     for stack in stacks:
         print(stack.stack_name)
-        if stack.tags.get('channel') in ['nightly', 'ddc-nightly']:
+        if stack.tags.get('channel') in ['nightly', 'ddc-nightly', 'cloud-nightly']:
             cfn_date_tag = stack.tags.get('date')
             cfn_date = datetime.strptime(image_date_tag, "%m_%d_%Y")
             if cfn_date < CFN_EXPIRE_DATE:
