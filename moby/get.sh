@@ -15,21 +15,25 @@ rm -rf tmp
 
 # Bundle the docker images if we're deploying to Marketplace
 if [ "$LOAD_IMAGES" == "true" ]; then
-	if [ -e "$ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
-		echo "++ Copying Docker images: from $ROOTDIR/$AWS_TARGET_PATH/*.tar to packages/aws/dockerimages/"
-		cp $ROOTDIR/$AWS_TARGET_PATH/*.tar packages/aws/dockerimages/
+  echo "++ Check if AWS images exists at $ROOT_DIR/$AWS_TARGET_PATH/"
+	if [ -e "$ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
+		echo "++ Copying Docker images: from $ROOT_DIR/$AWS_TARGET_PATH/*.tar to packages/aws/dockerimages/"
+		cp $ROOT_DIR/$AWS_TARGET_PATH/*.tar packages/aws/dockerimages/
 	fi
-	if [ -e "$ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
-		echo "++ Copying Docker images: from $ROOTDIR/$AZURE_TARGET_PATH/*.tar to packages/azure/dockerimages/"
-		cp $ROOTDIR/$AZURE_TARGET_PATH/*.tar packages/azure/dockerimages/
+  echo "++ Check if Azure images exists at $ROOT_DIR/$AZURE_TARGET_PATH/"
+	if [ -e "$ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
+		echo "++ Copying Docker images: from $ROOT_DIR/$AZURE_TARGET_PATH/*.tar to packages/azure/dockerimages/"
+		cp $ROOT_DIR/$AZURE_TARGET_PATH/*.tar packages/azure/dockerimages/
 	fi
 else
-	if [ -e "$ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
-		echo "++ Copying Docker Shell image: from $ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar to packages/aws/dockerimages/"
-		cp $ROOTDIR/$AWS_TARGET_PATH/shell-aws.tar packages/aws/dockerimages/
+  echo "++ Check if shell exists at $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar"
+	if [ -e "$ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
+		echo "++ Copying Docker Shell image: from $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar to packages/aws/dockerimages/"
+		cp $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar packages/aws/dockerimages/
 	fi
-	if [ -e "$ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
-		echo "++ Copying Docker Agent image: from $ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar to packages/azure/dockerimages/"
-		cp $ROOTDIR/$AZURE_TARGET_PATH/agent-azure.tar packages/azure/dockerimages/
+  echo "++ Check if agent exists at $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar"
+	if [ -e "$ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
+		echo "++ Copying Docker Agent image: from $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar to packages/azure/dockerimages/"
+		cp $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar packages/azure/dockerimages/
 	fi
 fi
