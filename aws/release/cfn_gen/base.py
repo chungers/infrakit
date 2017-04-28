@@ -229,6 +229,7 @@ class AWSBaseTemplate(object):
             resources.add_resource_subnet1_route_table(self.template)
             resources.add_resource_subnet2_route_table(self.template)
             resources.add_resource_subnet3_route_table(self.template)
+            outputs.add_output_vpcid(self.template)
 
     def s3(self):
         pass

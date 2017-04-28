@@ -92,3 +92,20 @@ def add_output_az_warning(template):
             "fully functional Swarm in case you lose an AZ."
         )
     ))
+
+
+def add_output_vpcid(template):
+    """
+    "VPCID": {
+            "Description":
+                "Use this as the VPC for configuring Private Hosted Zones",
+            "Value": {
+                "Ref": "Vpc"
+            }
+    },
+    """
+    template.add_output(Output(
+        "VPCID",
+        Description="Use this as the VPC for configuring Private Hosted Zones",
+        Value=Ref("Vpc")
+    ))
