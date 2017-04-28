@@ -27,9 +27,6 @@ def common_userdata_head(experimental_flag=True):
         "export CLEANUP_QUEUE='", Ref("SwarmSQSCleanup"), "'\n",
         "export RUN_VACUUM='", Ref("EnableSystemPrune"), "'\n",
         "export LOG_GROUP_NAME='", Join("-", [Ref("AWS::StackName"), "lg"]), "'\n",
-        "export ENABLE_EFS='", FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"), "'\n",
-        "export EFS_ID_REGULAR='", If("EFSSupported", Ref("FileSystemGP"), ''), "'\n",
-        "export EFS_ID_MAXIO='", If("EFSSupported", Ref("FileSystemMaxIO"), ''), "'\n",
         "export HAS_DDC='", FindInMap("DockerForAWS", "version", "HasDDC"), "'\n",
     ]
     if experimental_flag:

@@ -3,22 +3,21 @@ from os import path
 from troposphere import Parameter, And, Not, Equals, Ref, Output, Join, GetAtt
 from troposphere.elasticloadbalancing import Listener
 
-from base import AWSBaseTemplate
+from docker_ce import DockerCEVPCTemplate, DockerCEVPCExistingTemplate
 
 from sections import resources
-from existing_vpc import ExistingVPCTemplate
 
 
-class CloudVPCTemplate(AWSBaseTemplate):
+class CloudVPCTemplate(DockerCEVPCTemplate):
 
-    def __init__(self, docker_version, docker_for_aws_version, 
+    def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=True, template_description=None):
         if not template_description:
             template_description = u"Docker for AWS {} ({}) cloud".format(
                 docker_version, docker_for_aws_version)
         super(CloudVPCTemplate, self).__init__(
-            docker_version, docker_for_aws_version, 
+            docker_version, docker_for_aws_version,
             edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description)
@@ -179,13 +178,13 @@ class CloudVPCTemplate(AWSBaseTemplate):
             extra_listeners=listener_list)
 
 
-class CloudVPCExistingTemplate(CloudVPCTemplate, ExistingVPCTemplate):
+class CloudVPCExistingTemplate(CloudVPCTemplate, DockerCEVPCExistingTemplate):
     """ Cloud Template for existing VPC."""
-    def __init__(self, docker_version, docker_for_aws_version, 
+    def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=False, template_description=None):
         super(CloudVPCExistingTemplate, self).__init__(
-            docker_version, docker_for_aws_version, 
+            docker_version, docker_for_aws_version,
             edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description

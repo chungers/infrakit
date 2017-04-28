@@ -36,7 +36,6 @@ class AWSBaseTemplate(object):
         flat_edition_version_upper = flat_edition_version.capitalize()
         self.flat_edition_version_upper = flat_edition_version_upper
 
-
     def build(self):
         self.add_template_version()
         self.add_template_description()
@@ -54,7 +53,8 @@ class AWSBaseTemplate(object):
         if self.template_description:
             description = self.template_description
         else:
-            description = u"Docker for AWS {}".format(self.docker_for_aws_version)
+            description = u"Docker for AWS {}".format(
+                self.docker_for_aws_version)
         self.template.add_description(description)
 
     def get_parameter_groups(self):
@@ -72,7 +72,6 @@ class AWSBaseTemplate(object):
     def add_conditions(self):
         conditions.add_condition_create_log_resources(self.template)
         conditions.add_condition_hasonly2AZs(self.template)
-        conditions.add_condition_EFSSupported(self.template)
 
     def add_mapping_version(self):
         mappings.add_mapping_version(
@@ -113,16 +112,24 @@ class AWSBaseTemplate(object):
         self.add_parameter_instancetype()
         self.add_parameter_manager_instancetype()
 
-        self.add_to_parameters(parameters.add_parameter_cluster_size(self.template))
-        self.add_to_parameters(parameters.add_parameter_worker_disk_size(self.template))
-        self.add_to_parameters(parameters.add_parameter_worker_disk_type(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_cluster_size(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_worker_disk_size(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_worker_disk_type(self.template))
 
-        self.add_to_parameters(parameters.add_parameter_manager_size(self.template))
-        self.add_to_parameters(parameters.add_parameter_manager_disk_size(self.template))
-        self.add_to_parameters(parameters.add_parameter_manager_disk_type(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_manager_size(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_manager_disk_size(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_manager_disk_type(self.template))
 
-        self.add_to_parameters(parameters.add_parameter_enable_system_prune(self.template))
-        self.add_to_parameters(parameters.add_parameter_enable_cloudwatch_logs(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_enable_system_prune(self.template))
+        self.add_to_parameters(
+            parameters.add_parameter_enable_cloudwatch_logs(self.template))
 
     def add_outputs(self):
         outputs.add_output_managers(self.template)
@@ -200,9 +207,6 @@ class AWSBaseTemplate(object):
         # sqs queues
         self.sqs()
 
-        # EFS
-        self.efs()
-
         # Custom resources
         self.custom()
 
@@ -253,10 +257,14 @@ class AWSBaseTemplate(object):
 
     def security_groups(self):
         # security groups
-        resources.add_resource_swarm_wide_security_group(self.template, self.create_vpc)
-        resources.add_resource_manager_security_group(self.template, use_ssh_cidr=self.use_ssh_cidr)
-        resources.add_resource_worker_security_group(self.template, self.create_vpc)
-        resources.add_resource_external_lb_sg(self.template, self.create_vpc)
+        resources.add_resource_swarm_wide_security_group(
+            self.template, self.create_vpc)
+        resources.add_resource_manager_security_group(
+            self.template, use_ssh_cidr=self.use_ssh_cidr)
+        resources.add_resource_worker_security_group(
+            self.template, self.create_vpc)
+        resources.add_resource_external_lb_sg(
+            self.template, self.create_vpc)
 
     def sqs(self):
         # SQS
@@ -278,18 +286,17 @@ class AWSBaseTemplate(object):
         manager_launch_config_name = u'ManagerLaunchConfig{}'.format(
             self.flat_edition_version_upper)
         self.autoscaling_managers(manager_launch_config_name)
-        resources.add_resource_manager_launch_config(self.template, self.manager_userdata(),
-                                                     launch_config_name=manager_launch_config_name)
+        resources.add_resource_manager_launch_config(
+            self.template, self.manager_userdata(),
+            launch_config_name=manager_launch_config_name)
         # worker
-        worker_launch_config_name = u'NodeLaunchConfig{}'.format(self.flat_edition_version_upper)
-        resources.add_resource_worker_autoscalegroup(self.template, worker_launch_config_name)
-        resources.add_resource_worker_launch_config(self.template, self.worker_userdata(),
-                                                    launch_config_name=worker_launch_config_name)
-
-    def efs(self):
-        # efs
-        resources.add_resource_efs(self.template)
-        resources.add_resource_mount_targets(self.template)
+        worker_launch_config_name = u'NodeLaunchConfig{}'.format(
+            self.flat_edition_version_upper)
+        resources.add_resource_worker_autoscalegroup(
+            self.template, worker_launch_config_name)
+        resources.add_resource_worker_launch_config(
+            self.template, self.worker_userdata(),
+            launch_config_name=worker_launch_config_name)
 
     def custom(self):
         # custom resources

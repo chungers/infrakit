@@ -170,7 +170,7 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
 
 
 class DockerEEVPCExistingTemplate(DockerEEVPCTemplate, ExistingVPCTemplate):
-    """ Cloud Template for existing VPC."""
+    """ EE Template for existing VPC."""
     def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=False, template_description=None,

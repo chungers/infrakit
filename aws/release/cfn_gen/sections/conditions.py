@@ -1,4 +1,4 @@
-from troposphere import Equals, Or, FindInMap, Ref
+from troposphere import Equals, FindInMap, Ref, And, Condition
 
 
 def add_condition_create_log_resources(template):
@@ -17,12 +17,29 @@ def add_condition_hasonly2AZs(template):
         )
 
 
+def add_condition_CloudStor_selected(template):
+    template.add_condition(
+        "CloudStorSelected",
+        Equals(Ref("EnableCloudStor"), "yes")
+        )
+
+
 def add_condition_EFSSupported(template):
     template.add_condition(
         "EFSSupported",
         Equals(
             FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"),
             "yes")
+    )
+
+
+def add_condition_InstallCloudStor(template):
+    template.add_condition(
+        "InstallCloudStor",
+        And(
+            Condition("EFSSupported"),
+            Condition("CloudStorSelected"),
+        )
     )
 
 

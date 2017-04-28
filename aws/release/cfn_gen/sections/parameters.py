@@ -129,3 +129,13 @@ def add_parameter_enable_cloudwatch_logs(template):
         AllowedValues=["no", "yes"],
         Description="Send all Container logs to CloudWatch"))
     return ('EnableCloudWatchLogs', {"default": "Use Cloudwatch for container logging?"})
+
+
+def add_parameter_enable_cloudstor(template):
+    template.add_parameter(Parameter(
+        'EnableCloudStor',
+        Type='String',
+        Default='no',
+        AllowedValues=["no", "yes"],
+        Description="Enable CloudStor, if available in your region"))
+    return ('EnableCloudStor', {"default": "Enable CloudStor"})

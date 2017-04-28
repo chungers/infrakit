@@ -6,9 +6,8 @@ from utils import (
     copy_amis, get_account_list, set_ami_public,
     approve_accounts, ACCOUNT_LIST_FILE_URL, create_cfn_template)
 
-from base import AWSBaseTemplate
+from docker_ce import DockerCEVPCTemplate, DockerCEVPCExistingTemplate
 from cloud import CloudVPCTemplate, CloudVPCExistingTemplate
-from existing_vpc import ExistingVPCTemplate
 from docker_ee import DockerEEVPCTemplate, DockerEEVPCExistingTemplate
 from ddc import DDCVPCExistingTemplate, DDCVPCTemplate
 from ddc_dev import DDCDevVPCTemplate, DDCDevVPCExistingTemplate
@@ -104,11 +103,11 @@ def main():
 
     print("Create CloudFormation template..")
     cfn_name = docker_for_aws_version
-    s3_url = create_cfn_template(AWSBaseTemplate, ami_list, release_channel,
+    s3_url = create_cfn_template(DockerCEVPCTemplate, ami_list, release_channel,
                                  docker_version, docker_for_aws_version, edition_addon, cfn_name)
 
     cfn_name = "{}-no-vpc".format(docker_for_aws_version)
-    s3_url_no_vpc = create_cfn_template(ExistingVPCTemplate, ami_list, release_channel,
+    s3_url_no_vpc = create_cfn_template(DockerCEVPCExistingTemplate, ami_list, release_channel,
                                         docker_version, docker_for_aws_version,
                                         edition_addon, cfn_name,
                                         cfn_type="no-vpc")

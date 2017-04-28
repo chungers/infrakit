@@ -6,14 +6,14 @@ from sections import mappings
 
 class ExistingVPCTemplate(AWSBaseTemplate):
 
-    def __init__(self, docker_version, docker_for_aws_version, 
+    def __init__(self, docker_version, docker_for_aws_version,
                  edition_addon, channel, amis,
                  create_vpc=False, template_description=None,
                  use_ssh_cidr=False,
                  experimental_flag=True,
                  has_ddc=False):
         super(ExistingVPCTemplate, self).__init__(
-            docker_version, docker_for_aws_version, 
+            docker_version, docker_for_aws_version,
             edition_addon, channel, amis,
             create_vpc=create_vpc,
             template_description=template_description,
