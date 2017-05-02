@@ -8,7 +8,7 @@ RUN mkdir -p /go/src/github.com/docker/editions
 
 ADD ./ /go/src/github.com/docker/editions
 
-ENTRYPOINT cd /go/src/github.com/docker/editions/aws/dockerfiles/files/elb-controller/container && make -k build-in-container
+ENTRYPOINT cd /go/src/github.com/docker/editions/aws/dockerfiles/elb-controller/files/container && make -k build-in-container
 
 
 
