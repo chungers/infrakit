@@ -1,5 +1,5 @@
 ifeq (${EDITIONS_TAG},)
-	EDITIONS_TAG := ce-rc1
+	EDITIONS_TAG := ce-rc3
 endif
 
 ifeq (${EDITIONS_DOCKER_VERSION},)
