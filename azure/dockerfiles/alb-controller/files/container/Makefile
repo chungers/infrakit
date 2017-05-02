@@ -9,14 +9,9 @@ DOCKER_REPO?=${NAMESPACE}/l4controller-azure
 DOCKER_TAG?=dev
 DOCKER_IMAGE?=${DOCKER_REPO}:${DOCKER_TAG}
 
-.PHONY: clean all
+.PHONY: clean bin/loadbalancer all
 .DEFAULT: all
-all: govendor bin/loadbalancer
-
-govendor:
-	@echo "+ getting govendor"
-	-go get -u github.com/kardianos/govendor
-	govendor sync
+all: bin/loadbalancer
 
 clean:
 	@echo "+ $@"
@@ -24,15 +19,7 @@ clean:
 	@# Remove local images
 	docker rmi -f ${DOCKER_IMAGE} >/dev/null 2>&1 || true
 	docker rmi -f ${DOCKER_REPO}:latest >/dev/null 2>&1 || true
-	-docker rm alb-controller-build
-
-# This target runs inside the container
-build-in-container: govendor
-	@echo "+ $@"
-	mkdir -p /go/build
-	cd ../ && \
-	go build -ldflags "-X main.Version=$(VERSION) -X main.Revision=$(REVISION)" \
-		-o /go/build/loadbalancer cmd/*.go
+	docker rmi -f alb-controller:build >/dev/null 2>&1 || true
 
 # This one runs outside
 bin/loadbalancer:
@@ -40,9 +27,9 @@ bin/loadbalancer:
 	cd ../../../../../ && docker build --pull -t alb-controller:build -f ${CURDIR}/Dockerfile.build .
 	docker run --name alb-controller-build alb-controller:build
 	mkdir -p ${CURDIR}/bin
-	docker cp alb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
+	docker cp alb-controller-build:/go/bin/loadbalancer ${CURDIR}/bin
 	-docker rm alb-controller-build
-	docker build --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest -t $(DOCKER_REPO):$(VERSION) .
+	docker build --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest .
 ifeq (${DOCKER_PUSH},1)
 	docker push ${DOCKER_IMAGE}
 ifeq (${DOCKER_TAG_LATEST},true)
