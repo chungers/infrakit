@@ -42,6 +42,7 @@ define push_to_s3
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
 		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(3) \
+		--acl public-read \
 		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
 	@if [ "${RELEASE}" = 0 ]; then \
 		docker run --rm \
@@ -51,6 +52,7 @@ define push_to_s3
 			docker4x/awscli:latest s3 cp \
 			/tmp/$(3) \
 			s3://docker-ci-editions/$(2)/$(3) \
+			--acl public-read \
 			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}; \
 	fi
 endef
