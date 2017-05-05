@@ -8,7 +8,7 @@ ifeq (${MOBY_COMMIT},)
 	MOBY_EE_COMMIT := 0a0d8a2094844079a4a07b079766c98633995a93
 endif
 
-ifeq ($(shell echo ${EDITIONS_VERSION} | sed -ne '/-ee/p'), $(EDITIONS_VERSION))
+ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	MOBY_IMG_NAME := mobylinux-ee.tgz
 	AMI_OUT := ami_id_ee.out
 	LOAD_IMAGES := true
@@ -31,8 +31,6 @@ TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa60
 export
 
 
-
-
 define push_to_s3
 	@echo "+ Pushing ${3} to ${1} with type ${2} - ${3}"
 	docker run --rm \
@@ -43,7 +41,7 @@ define push_to_s3
 		/tmp/$(3) \
 		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(3) \
 		--acl public-read \
-		--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}
+		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT}
 	@if [ "${RELEASE}" = 0 ]; then \
 		docker run --rm \
 			-v $(CURDIR)/cloud/$(1):/tmp \
@@ -53,7 +51,7 @@ define push_to_s3
 			/tmp/$(3) \
 			s3://docker-ci-editions/$(2)/$(3) \
 			--acl public-read \
-			--metadata editions_version=${EDITIONS_VERSION},arch=$(1),channel=${CHANNEL},docker_version=${EDITIONS_DOCKER_VERSION}; \
+			--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT}; \
 	fi
 endef
 
@@ -90,7 +88,7 @@ endif
 		mkdir -p cloud/gcp
 		echo "docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
 ifeq ($(PUSH_BUILD_TO_S3),true)
-	$(call push_to_s3,gcp,bdi,$(BDI_OUT))
+	$(call push_to_s3,gcp,bdi,$(BDI_OUT),$(GCP_TAG_VERSION))
 endif
 
 ami:
@@ -110,7 +108,7 @@ ami:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
-		-e EDITIONS_VERSION \
+		-e EDITIONS_VERSION=$(DOCKER_VERSION) \
 		-e CHANNEL \
 		moby-ami:build clean
 	docker run \
@@ -119,13 +117,13 @@ ami:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
-		-e EDITIONS_VERSION \
+		-e EDITIONS_VERSION=$(DOCKER_VERSION) \
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
 		moby-ami:build bake >  ./cloud/aws/$(AMI_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
-	$(call push_to_s3,aws,ami,$(AMI_OUT))
+	$(call push_to_s3,aws,ami,$(AMI_OUT),$(AWS_TAG_VERSION))
 endif
 
 ami-clean-mount:
@@ -136,7 +134,7 @@ ami-clean-mount:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
-		-e EDITIONS_VERSION \
+		-e EDITIONS_VERSION=$(DOCKER_VERSION) \
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
 		-e DOCKER_BIN_URL \
@@ -157,7 +155,7 @@ uploadvhd:
 		moby-azure:build \
 		uploadvhd >./cloud/azure/$(VHD_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
-	$(call push_to_s3,azure,vhd,$(VHD_OUT))
+	$(call push_to_s3,azure,vhd,$(VHD_OUT),$(AZURE_TAG_VERSION))
 endif
 
 azure:

@@ -6,12 +6,12 @@ NAMESPACE="${NAMESPACE:-docker4x}"
 TAG_VERSION="${AZURE_TAG_VERSION:-latest}"
 
 CURR_DIR=`pwd`
-ROOTDIR="${ROOTDIR:-$CURR_DIR}"
+ROOT_DIR="${ROOT_DIR:-$CURR_DIR}"
 DEFAULT_PATH="dist/azure/nightly/$TAG_VERSION"
 AZURE_TARGET_PATH="${AZURE_TARGET_PATH:-$DEFAULT_PATH}"
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AZURE_TARGET_PATH"
-mkdir -p $ROOTDIR/$AZURE_TARGET_PATH
+mkdir -p $ROOT_DIR/$AZURE_TARGET_PATH
 
 
 # Test all images built
@@ -38,8 +38,8 @@ do
 	echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
 	docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
 	if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
-		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOTDIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
-		docker save "${FINAL_IMAGE}" > "${ROOTDIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
+		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
+		docker save "${FINAL_IMAGE}" > "${ROOT_DIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
 	fi
 	test ${IMAGE}
 	if [ ${DOCKER_PUSH} -eq 1 ]; then
@@ -49,8 +49,8 @@ done
 
 # build and push walinuxagent image
 docker build --pull -t docker4x/agent-azure:${TAG_VERSION} -f walinuxagent/Dockerfile walinuxagent
-echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOTDIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
-docker save "docker4x/agent-azure:${TAG_VERSION}" > "${ROOTDIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
+echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
+docker save "docker4x/agent-azure:${TAG_VERSION}" > "${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
 if [ ${DOCKER_PUSH} -eq 1 ]; then
 	docker push "docker4x/agent-azure:${TAG_VERSION}"
 fi

@@ -15,18 +15,29 @@ REGIONS = ['us-west-1', 'us-west-2', 'us-east-1',
            'sa-east-1', 'ap-south-1', 'us-east-2', 'ca-central-1']
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-S3_BUCKET_NAME = "docker-for-aws"
+S3_BUCKET_NAME = os.getenv('S3_BUCKET', 'docker-ci-editions')
+CFN_S3_BUCKET_NAME = os.getenv('UPLOAD_S3_BUCKET', 'docker-for-aws')
+CFN_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
+CFN_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
+MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
 
 
 # file with list of aws account_ids
 ACCOUNT_LIST_FILE_URL = u"https://s3.amazonaws.com/docker-for-aws/data/accounts.txt"
 DOCKER_AWS_ACCOUNT_URL = "https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt"
-CS_AMI_LIST_PATH = u"data/ami/cs/{}/ami_list.json"
+AMI_LIST_PATH = u"data/ami/{}/ami_list.json"
 
 
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
+def is_json(cfn_template):
+  try:
+    with open(cfn_template) as data_file:
+      json_object = json.load(data_file)
+  except ValueError, e:
+    return False
+  return True
 
 def get_ami(conn, ami_id):
     ''' Gets a single AMI as a boto.ec2.image.Image object '''
@@ -165,13 +176,34 @@ def set_ami_public(ami_list):
                                    attribute='launchPermission',
                                    groups='all')
 
+def upload_ami_list(ami_list_json, editions_version, docker_version):
+	
+    # upload to s3, make public, return s3 URL
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
+    s3_path = u"ami/{}/ami_list.json".format(MOBY_COMMIT)
+    s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
+    print(u"Upload ami list json template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
+    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
+
+    key = bucket.new_key(s3_path)
+    key.set_metadata("Content-Type", "application/json")
+    key.set_metadata("editions_version", editions_version)
+    key.set_metadata("docker_version", docker_version)
+    key.set_contents_from_string(ami_list_json)
+    key.set_acl("public-read")
+
+    return s3_full_url
 
 def upload_cfn_template(release_channel, cloudformation_template_name,
                         tempfile, cfn_type=None):
 
     # upload to s3, make public, return s3 URL
-    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = u"aws/{}/{}".format(release_channel, cloudformation_template_name)
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(CFN_S3_BUCKET_NAME)
+    channel = release_channel[:release_channel.find("-")]
+    if MOBY_COMMIT:
+        channel = u"{}/{}".format(channel, MOBY_COMMIT)
+    s3_path = u"aws/{}/{}.json".format(channel, u"Docker{}".format(cloudformation_template_name[cloudformation_template_name.find("-aws"):]))
     latest_name = "latest.json"
     if cfn_type:
         latest_name = "{}-latest.json".format(cfn_type)
@@ -179,10 +211,10 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
     s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
 
-    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
+    s3conn = boto.connect_s3(CFN_AWS_ACCESS_KEY_ID, CFN_AWS_SECRET_ACCESS_KEY)
+    bucket = s3conn.get_bucket(CFN_S3_BUCKET_NAME)
 
-    print(u"Upload Cloudformation template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
+    print(u"Upload Cloudformation template to {} in {} s3 bucket".format(s3_path, CFN_S3_BUCKET_NAME))
     key = bucket.new_key(s3_path)
     key.set_metadata("Content-Type", "application/json")
     key.set_contents_from_filename(tempfile)
@@ -191,7 +223,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
     if release_channel == 'nightly' or release_channel == 'cloud-nightly':
         print("This is a nightly build, update the latest.json file.")
         print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
-            s3_path_latest, S3_BUCKET_NAME))
+            s3_path_latest, CFN_S3_BUCKET_NAME))
         key = bucket.new_key(s3_path_latest)
         key.set_metadata("Content-Type", "application/json")
         key.set_contents_from_filename(tempfile)
@@ -202,7 +234,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
 
 def publish_cfn_template(release_channel, docker_for_aws_version):
     # upload to s3, make public, return s3 URL
-    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(CFN_S3_BUCKET_NAME)
     s3_path = u"aws/{}/{}.json".format(release_channel, docker_for_aws_version)
 
     print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_aws_version, release_channel))
@@ -210,39 +242,13 @@ def publish_cfn_template(release_channel, docker_for_aws_version):
     s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path_latest)
 
-    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
+    s3conn = boto.connect_s3(CFN_AWS_ACCESS_KEY_ID, CFN_AWS_SECRET_ACCESS_KEY)
+    bucket = s3conn.get_bucket(CFN_S3_BUCKET_NAME)
 
     print(u"Copy Cloudformation template from {} to {} s3 bucket".format(s3_path, s3_path_latest))
     srckey = bucket.get_key(s3_path)
     dstkey = bucket.new_key(s3_path_latest)
-    srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
-    return s3_full_url
-
-
-def upload_ami_list(ami_list_json, docker_version):
-
-    # upload to s3, make public, return s3 URL
-    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = u"data/cs_amis.json"
-    s3_cs_path = CS_AMI_LIST_PATH.format(docker_version)
-    s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
-
-    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
-
-    print(u"Upload ami list json template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
-    key = bucket.new_key(s3_path)
-    key.set_metadata("Content-Type", "application/json")
-    key.set_contents_from_string(ami_list_json)
-    key.set_acl("public-read")
-
-    print(u"Upload ami list json template to {} in {} s3 bucket".format(s3_cs_path, S3_BUCKET_NAME))
-    key = bucket.new_key(s3_cs_path)
-    key.set_metadata("Content-Type", "application/json")
-    key.set_contents_from_string(ami_list_json)
-    key.set_acl("public-read")
-
+    srckey.copy(CFN_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
     return s3_full_url
 
 
@@ -253,8 +259,12 @@ def create_cfn_template(template_class, amis, release_channel,
 
     cloudformation_template_name = u"{}.json".format(cfn_name)
     curr_path = os.path.dirname(__file__)
-    print(u"current path {}".format(curr_path))
-    out_path = os.path.join(curr_path, u'outputs/{}'.format(cloudformation_template_name))
+
+    outdir = u'dist/aws/{}'.format(release_channel)
+    # if the directory doesn't exist, create it.
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
 
     aws_template = template_class(
         docker_version, docker_for_aws_version,
@@ -263,9 +273,10 @@ def create_cfn_template(template_class, amis, release_channel,
 
     new_template = json.loads(aws_template.generate_template())
 
-    with open(out_path, 'w') as newfile:
+    with open(outfile, 'w') as newfile:
         json.dump(new_template, newfile, sort_keys=True, indent=4, separators=(',', ': '))
 
-    print(u"Cloudformation template created in {}".format(out_path))
-    return upload_cfn_template(release_channel, cloudformation_template_name,
-                               out_path, cfn_type=cfn_type)
+    # TODO: json validate
+    if is_json(outfile) is False:
+      print(u"ERROR: Cloudformation template invalid in {}".format(outfile))
+    return outfile

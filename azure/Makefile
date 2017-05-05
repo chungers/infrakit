@@ -54,3 +54,8 @@ shell:
 
 login:
 	make -C dockerfiles/xplatcli login
+
+.PHONY: release 
+
+release:
+	@echo "Azure release not yet implemented"

@@ -6,7 +6,7 @@ NAMESPACE="${NAMESPACE:-docker4x}"
 TAG_VERSION="${AWS_TAG_VERSION:-latest}"
 
 CURR_DIR=`pwd`
-ROOTDIR="${ROOT_DIR:-$CURR_DIR}"
+ROOT_DIR="${ROOT_DIR:-$CURR_DIR}"
 DEFAULT_PATH="dist/aws/nightly/$TAG_VERSION"
 AWS_TARGET_PATH="${AWS_TARGET_PATH:-$DEFAULT_PATH}"
 
@@ -29,7 +29,7 @@ function test () {
 }
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
-mkdir -p $ROOTDIR/$AWS_TARGET_PATH
+mkdir -p $ROOT_DIR/$AWS_TARGET_PATH
 
 for IMAGE in shell init guide ddc-init cloud meta
 do
@@ -37,8 +37,8 @@ do
 	echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
 	docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
 	if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
-		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-		docker save "${FINAL_IMAGE}" > "${ROOTDIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
+		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
+		docker save "${FINAL_IMAGE}" > "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 	fi
 	test ${IMAGE}
 	if [ "${DOCKER_PUSH}" -eq 1 ]; then

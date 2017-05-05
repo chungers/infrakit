@@ -18,32 +18,32 @@ export AWS_ACCESS_KEY_ID=$(cat ~/.aws/credentials | grep aws_access_key_id | cut
 export AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/credentials | grep aws_secret_access_key | cut -f2 -d= | sed -e 's/^[ \t]*//')
 export PYTHONUNBUFFERED=1
 export CHANNEL="nightly"
-export ROOTDIR=`pwd`
 BUILD_HOME="/home/ubuntu"
 AMI_OUT_DIR="$BUILD_HOME/out"
 AMI_OUT_FILE="ami_id_${DAY}.out"
 export TAG_KEY="aws-nightly-${DAY}-${HASH}"
 
-AMI_BUCKET="docker-for-aws"
-AMI_PATH="data/ami"
-AMI_OUT="ami_id.out"
-
+AMI_BUCKET="docker-ci-editions"
+AMI_URL="aws/ami_id.out"
 
 # git update
 cd $BUILD_HOME/code/editions/
 git pull
 
 # get docker version
-EDITIONS_META=$(aws s3api get-object --bucket $AMI_BUCKET --key ${AMI_PATH}/ami_id.out docker.out | jq -r '.Metadata')
+EDITIONS_META=$(aws s3api --no-sign-request get-object --bucket $AMI_BUCKET --key ${AMI_URL} docker.out | jq -r '.Metadata')
 export EDITIONS_VERSION=$(echo $EDITIONS_META | jq -r '.editions_version')
 export DOCKER_VERSION=$(echo $EDITIONS_META | jq -r '.docker_version')
-export AWS_TAG_VERSION=$EDITIONS_VERSION-aws1
+export MOBY_COMMIT=$(echo $EDITIONS_META | jq -r '.moby_commit')
 export AWS_TARGET_PATH="dist/aws/$CHANNEL/$AWS_TAG_VERSION"
+
 export RELEASE=1
+
+AMI_SOURCE_REGION=us-west-2
 
 mkdir -p $AMI_OUT_DIR
 # Download the ami_id.out
-aws s3 cp s3://${AMI_BUCKET}/${AMI_PATH}/ami_id.out $AMI_OUT_DIR/$AMI_OUT_FILE
+aws s3 --no-sign-request cp s3://${AMI_BUCKET}/${AMI_URL} $AMI_OUT_DIR/ami_id.out
 echo "AMI build captured, lets move onto next part."
 
 # get ami-id
@@ -54,7 +54,7 @@ for f in $AMI_OUT_DIR/ami_*.out; do
     ## If not, f here will be exactly the pattern above
     ## and the exists test will evaluate to false.
     if [ -e "$f" ]; then
-        CI_AMI_ID=$(cat $f)
+        AMI_ID=$(cat $f)
         mv $f $f.done
     fi
 
@@ -62,56 +62,37 @@ for f in $AMI_OUT_DIR/ami_*.out; do
     break
 done
 
-if [[ -z $CI_AMI_ID ]]
+if [[ -z $AMI_ID ]]
 then
     echo "There is no AMI_ID, nothing to do, so stopping."
     # there are no AMI's ready skip.
      exit 1
 fi
-echo $CI_AMI_ID
+echo "AMI: $AMI_ID is availble in $AMI_SRC_REGION"
 
-AMI_SOURCE_REGION=us-east-1
+
 DOCKER_AWS_ACCOUNT_URL=https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt
-
-# Copy AMI to desired region:
-AMI_ID=$(aws ec2 copy-image --source-image-id $CI_AMI_ID --source-region us-west-2 --region $AMI_SOURCE_REGION --name "Moby Linux ${EDITIONS_VERSION} ${CHANNEL}" | jq -r '.ImageId')
-
-echo "Copied AMI to $AMI_SOURCE_REGION waiting for it to be available"
-# Wait for AMI copy to be done
-while :
-do
-    AMI_STATE=$(aws ec2 describe-images --image-ids $AMI_ID | jq -r '.Images[0].State')
-    if [ "$AMI_STATE" == "available" ]; then
-        break
-    elif [ "$AMI_STATE" == "failed" ]; then
-        echo "ERROR in AMI copy"
-        exit 1
-    fi
-    echo -ne "#"
-done
-echo " - DONE"
-echo "AMI: $AMI_ID is now availble in $AMI_SOURCE_REGION"
 
 cd $BUILD_HOME/code/editions/aws/release
 
 # run release
-./new_run_release.sh -d $DOCKER_VERSION -e $AWS_TAG_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
+./new_run_release.sh -d $DOCKER_VERSION -e $EDITIONS_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
 
 # run s3_cleanup, remove buckets left over from DDC testing.
-python s3_cleanup.py
+python ../common/s3_cleanup.py
 
 # sleep to help with API throttle limits
 sleep 60
 
 # run tests
-python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json -f results -t oss
+python ../test/cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/nightly/latest.json -f results -t oss
 
 # sleep to help with API throttle limits
 sleep 60
-python test_cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/cloud-nightly/latest.json -f cloud_results -t cloud
+python ../test/cfn.py -c https://docker-for-aws.s3.amazonaws.com/aws/cloud-nightly/latest.json -f cloud_results -t cloud
 
 # Rebuild the nightly index page.
 python build_index.py
