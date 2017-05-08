@@ -8,6 +8,7 @@ RUN apk add --update bash ca-certificates jq groff less openssl cifs-utils opens
 		&& pip install pyparsing
 
 ADD files/server.py /server.py
+ADD files/azendpt.py /azendpt.py
 RUN chmod 755 /server.py
 
 CMD ["python", "/server.py"]

@@ -32,6 +32,12 @@ function test () {
 		${FINAL_IMAGE} /tests/run.sh
 }
 
+#copy in common files that apply across containers
+for IMAGE in init guide ddc-init logger
+do
+	cp common/* ${IMAGE}/files/
+done
+
 for IMAGE in init guide create-sp ddc-init cloud logger meta
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${TAG_VERSION}"

@@ -15,8 +15,6 @@ CIFS_OPTION_DIR_MODE = "dir_mode=0777"
 CIFS_OPTION_UID = "uid=0"
 CIFS_OPTION_GID = "gid=0"
 
-STORAGE_BASE = "core.windows.net"
-
 BUFFER_SZ_MAX = 1024*4     # 4 KB
 BUFFER_DURATION_MAX = 30   # 30 seconds
 CLEANUP_INTERVAL = 60*10   # 10 mins
@@ -39,6 +37,11 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.storage.file import (FileService, ContentSettings)
 from pyparsing import Word, alphas, Suppress, Combine, nums, string, Optional, Regex
 from time import strftime
+from azendpt import *
+
+RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
+ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
+STORAGE_ENDPOINT = os.getenv('STORAGE_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['STORAGE_ENDPOINT'])
 
 class Parser(object):
     def __init__(self):
@@ -83,7 +86,7 @@ class AzureLog(object):
         self.last_cleanup = datetime.datetime.utcnow()
 
     def mount_log_share(self, account_name, account_key, share_name):
-        mount_uri = "//" + account_name + ".file." + STORAGE_BASE + "/" + share_name
+        mount_uri = "//" + account_name + ".file." + STORAGE_ENDPOINT + "/" + share_name
 
         mount_opts = [
             CIFS_OPTION_VERSION,
@@ -139,9 +142,11 @@ class AzureLog(object):
         cred = ServicePrincipalCredentials(
                 client_id=os.environ['APP_ID'],
                 secret=os.environ['APP_SECRET'],
-                tenant=os.environ['TENANT_ID']
+                tenant=os.environ['TENANT_ID'],
+                resource=RESOURCE_MANAGER_ENDPOINT,
+                auth_uri=ACTIVE_DIRECTORY_ENDPOINT
         )
-        storage_client = StorageManagementClient(cred, sub_id)
+        storage_client = StorageManagementClient(cred, sub_id, base_url=RESOURCE_MANAGER_ENDPOINT)
         rg_name = os.environ['GROUP_NAME']
         sa_name = os.environ['SWARM_LOGS_STORAGE_ACCOUNT']
         storage_keys = storage_client.storage_accounts.list_keys(rg_name, sa_name)
@@ -149,7 +154,7 @@ class AzureLog(object):
         return storage_keys['key1']
 
     def create_file_service(self, storage_key, share_name):
-        file_service = FileService(account_name=os.environ['SWARM_LOGS_STORAGE_ACCOUNT'], account_key=storage_key)
+        file_service = FileService(account_name=os.environ['SWARM_LOGS_STORAGE_ACCOUNT'], account_key=storage_key, endpoint_suffix=STORAGE_ENDPOINT)
         file_service.create_share(share_name)
         return file_service     
 

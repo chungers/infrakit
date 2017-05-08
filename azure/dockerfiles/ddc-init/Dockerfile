@@ -17,6 +17,7 @@ RUN azure config mode arm
 # setup init
 COPY files/entry.sh /entry.sh
 COPY files/dtrutils.py /dtrutils.py
+COPY files/azendpt.py /azendpt.py
 RUN chmod 755 /entry.sh /dtrutils.py
 
 

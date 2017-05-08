@@ -15,6 +15,7 @@ COPY files/entry.sh /entry.sh
 COPY files/azureleader.py /usr/bin
 COPY files/sakey.py /usr/bin
 COPY files/aztags.py /usr/bin
+COPY files/azendpt.py /usr/bin
 ADD bin/buoy /usr/bin
 RUN chmod 755 /entry.sh /usr/bin/azureleader.py /usr/bin/sakey.py \
     /usr/bin/aztags.py /usr/bin/buoy

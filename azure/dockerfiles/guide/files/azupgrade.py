@@ -24,6 +24,7 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
 from azure.storage.queue import QueueService
 from azutils import *
+from azendpt import *
 
 LOG_CFG_FILE = "/etc/azupgrade_log_cfg.json"
 LOG = logging.getLogger("azupg")
@@ -52,6 +53,10 @@ DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
 DTR_PORT = 443
 UCP_PORT = 8443
 
+RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
+ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
+STORAGE_ENDPOINT = os.getenv('STORAGE_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['STORAGE_ENDPOINT'])
+
 try:
     SA_DTR_NAME = os.environ['DTR_STORAGE_ACCOUNT']
     UCP_ADMIN_USER = os.environ['UCP_ADMIN_USER']
@@ -68,7 +73,7 @@ VMSS_ROLE_MAPPING = {
 
 # update description on DTR table storage
 def set_upgrade_desc(sa_key, desc):
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
         return False
     try:
@@ -82,7 +87,7 @@ def set_upgrade_desc(sa_key, desc):
 
 # get all replica ids from DTR Table
 def get_ids(sa_key):
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
         return False
     try:
@@ -95,7 +100,7 @@ def get_ids(sa_key):
 
 # get replica id that matches swarm node from DTR Table
 def get_id(sa_key, nodename):
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
         return False
     try:
@@ -111,7 +116,7 @@ def get_id(sa_key, nodename):
 
 #delete replicaid from the DTR Table
 def delete_id(sa_key, replica_id):
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     try:
         # this upsert operation should always succeed
         tbl_svc.delete_entity(DTR_TBL_NAME, DTR_PARTITION_NAME, replica_id)
@@ -167,9 +172,11 @@ def checkDDC(client, node_name):
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
         secret=APP_SECRET,
-        tenant=TENANT_ID
+        tenant=TENANT_ID,
+        resource=RESOURCE_MANAGER_ENDPOINT,
+        auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
-    storage_client = StorageManagementClient(cred, SUB_ID)
+    storage_client = StorageManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, SA_DTR_NAME)
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}
     key = storage_keys['key1']
@@ -458,21 +465,23 @@ def main():
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
         secret=APP_SECRET,
-        tenant=TENANT_ID
+        tenant=TENANT_ID,
+        resource=RESOURCE_MANAGER_ENDPOINT,
+        auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
 
     docker_client = Client(base_url='unix://var/run/docker.sock', version="1.25")
 
-    resource_client = ResourceManagementClient(cred, SUB_ID)
-    storage_client = StorageManagementClient(cred, SUB_ID)
-    compute_client = ComputeManagementClient(cred, SUB_ID)
+    resource_client = ResourceManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    storage_client = StorageManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    compute_client = ComputeManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     # the default API version for the REST APIs for Network points to 2016-06-01
     # which does not have several VMSS NIC APIs we need. So specify version here
-    network_client = NetworkManagementClient(cred, SUB_ID, api_version='2016-09-01')
+    network_client = NetworkManagementClient(cred, SUB_ID, api_version='2016-09-01', base_url=RESOURCE_MANAGER_ENDPOINT)
 
     storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, SA_NAME)
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}
-    tbl_svc = TableService(account_name=SA_NAME, account_key=storage_keys['key1'])
+    tbl_svc = TableService(account_name=SA_NAME, account_key=storage_keys['key1'], endpoint_suffix=STORAGE_ENDPOINT)
 
     try:
         LOG.info("Validate Template URL to upgrade to")
@@ -481,7 +490,7 @@ def main():
         LOG.error("Template validation failed. Please make sure the template URL has a valid JSON file and is accessible.")
         raise
 
-    qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'])
+    qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'], endpoint_suffix=STORAGE_ENDPOINT)
     # the Upgrade Msg Queue should only exist when an upgrade is in progress
     if qsvc.exists(UPGRADE_MSG_QUEUE):
         LOG.error("Upgrade message queue already exists. Please make sure another upgrade is not in progress.")

@@ -9,6 +9,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
+from azendpt import *
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
@@ -23,6 +24,9 @@ DTR_TBL_NAME = 'dtrtable'
 VMSS_MGR = 'swarm-manager-vmss'
 VMSS_WRK = 'swarm-worker-vmss'
 
+RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
+ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
+STORAGE_ENDPOINT = os.getenv('STORAGE_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['STORAGE_ENDPOINT'])
 
 def get_mgr_nodes():
     global MGR_VMSS_NAME
@@ -31,9 +35,11 @@ def get_mgr_nodes():
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
         secret=APP_SECRET,
-        tenant=TENANT_ID
+        tenant=TENANT_ID,
+        resource=RESOURCE_MANAGER_ENDPOINT,
+        auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
-    compute_client = ComputeManagementClient(cred, SUB_ID)
+    compute_client = ComputeManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, VMSS_MGR)
     mgr_nodes = 0
     for vm in vms:
@@ -47,9 +53,11 @@ def get_wrk_nodes():
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
         secret=APP_SECRET,
-        tenant=TENANT_ID
+        tenant=TENANT_ID,
+        resource=RESOURCE_MANAGER_ENDPOINT,
+        auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
-    compute_client = ComputeManagementClient(cred, SUB_ID)
+    compute_client = ComputeManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, VMSS_WRK)
     wrk_nodes = 0
     for vm in vms:
@@ -61,11 +69,13 @@ def get_storage_key():
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
         secret=APP_SECRET,
-        tenant=TENANT_ID
+        tenant=TENANT_ID,
+        resource=RESOURCE_MANAGER_ENDPOINT,
+        auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
 
-    resource_client = ResourceManagementClient(cred, SUB_ID)
-    storage_client = StorageManagementClient(cred, SUB_ID)
+    resource_client = ResourceManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    storage_client = StorageManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
 
     storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, SA_DTR_NAME)
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}
@@ -77,7 +87,7 @@ def get_key(sa_key):
 
 def get_replica_ids(sa_key):
     global SA_DTR_NAME, DTR_TBL_NAME
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
         return False
     try:
@@ -90,7 +100,7 @@ def get_replica_ids(sa_key):
 
 def get_desc(sa_key):
     global SA_DTR_NAME, DTR_TBL_NAME
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
         return False
     try:
@@ -104,7 +114,7 @@ def get_desc(sa_key):
 
 def print_id(sa_key):
     global SA_DTR_NAME, DTR_TBL_NAME
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
         return False
     try:
@@ -118,7 +128,7 @@ def print_id(sa_key):
 def insert_id(sa_key, replica_id, node_name, description):
     global  DTR_TBL_NAME, SA_DTR_NAME
     print ("replica id:{}".format(replica_id))
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     dtr_id = {'PartitionKey': 'dtrreplicas', 'RowKey': replica_id, 'replica_id': replica_id, 'node_name': node_name, 'description':description}
     try:
         # this upsert operation should always succeed
@@ -131,7 +141,7 @@ def insert_id(sa_key, replica_id, node_name, description):
 
 def add_id(sa_key, id):
     global  DTR_TBL_NAME, SA_DTR_NAME
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     try:
         # this upsert operation should always succeed
     	dtr_id = {'PartitionKey': 'dtrseqid', 'RowKey': '1', 'replica_id': id}
@@ -144,7 +154,7 @@ def add_id(sa_key, id):
 
 def delete_id(sa_key, replica_id):
     global DTR_TBL_NAME, SA_DTR_NAME
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     dtr_id = {'PartitionKey': 'dtrreplicas', 'RowKey': replica_id}
     try:
         # this upsert operation should always succeed
@@ -158,7 +168,7 @@ def delete_id(sa_key, replica_id):
 
 def create_table(sa_key):
     global DTR_TBL_NAME, SA_DTR_NAME
-    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key)
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     try:
         # this will succeed only once for a given table name on a storage account
         tbl_svc.create_table(DTR_TBL_NAME, fail_on_exist=True)
@@ -218,4 +228,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
