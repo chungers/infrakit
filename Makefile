@@ -101,7 +101,7 @@ endif
 release: 
 	$(MAKE) -C aws release
 	$(MAKE) -C azure release
-	$(MAKE) -C gcp release
+# $(MAKE) -C gcp release
 
 nightly:
 	$(MAKE) aws-nightly
