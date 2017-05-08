@@ -94,7 +94,9 @@ def publish_rg_template(release_channel, docker_for_azure_version):
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_addon, cfn_template,
-                        storage_endpoint, portal_endpoint, arm_template_name):
+                        arm_template_name, public_platform, portal_endpoint, 
+                        resource_mgr_url, storage_suffix, storage_endpoint, 
+                        active_dir_url, svc_mgmt_url):
     # check if file exists before opening.
     flat_edition_version = docker_for_azure_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
@@ -108,12 +110,21 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
     data['variables']['channel'] = release_channel
-    data['variables']['storageAccountDNSSuffix'] = storage_endpoint
+    data['variables']['storageAccountDNSSuffix'] = storage_suffix
     data['variables']['portalFQDN'] = portal_endpoint
     data['variables']['editionAddOn'] = edition_addon
 
-    # Updated custom data for Managers and Workers
-    custom_data = buildCustomData('custom-data.sh')
+    if public_platform:
+        # for the Public Azure platform, all API endpoints/urls have defaults
+        custom_data = buildCustomData('custom-data-public.sh')
+    else:
+        # for non Public platforms (Gov, China, Stacks) set the endpoints/urls 
+        data['variables']['resMgrUrl'] = resource_mgr_url
+        data['variables']['storageEndpoint'] = storage_endpoint
+        data['variables']['adUrl'] = active_dir_url
+        data['variables']['svcMgmtUrl'] = svc_mgmt_url
+        custom_data = buildCustomData('custom-data.sh')
+
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ')]'
 
     outdir = u"dist/azure/{}/{}".format(release_channel, docker_for_azure_version)
@@ -138,7 +149,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
                         docker_for_azure_version, edition_addon, cfn_template,
-                        storage_endpoint, portal_endpoint, arm_template_name):
+                        storage_suffix, portal_endpoint, arm_template_name):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
@@ -147,7 +158,7 @@ def create_rg_cloud_template(release_channel, docker_version,
     custom_data_cloud = buildCustomData('custom-data_cloud.sh')
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ", '\n', " + ', '.join(custom_data_cloud) + ')]'
     data['variables']['channel'] = release_channel
-    data['variables']['storageAccountDNSSuffix'] = storage_endpoint
+    data['variables']['storageAccountDNSSuffix'] = storage_suffix
     data['variables']['portalFQDN'] = portal_endpoint
     data['variables']['editionAddOn'] = edition_addon
 
@@ -237,21 +248,34 @@ def create_rg_cloud_template(release_channel, docker_version,
     return outfile
 
 def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_addon, cfn_template,
-                        storage_endpoint, portal_endpoint, arm_template_name):
+                        docker_for_azure_version, edition_addon, cfn_template, 
+                        arm_template_name, public_platform, portal_endpoint, 
+                        resource_mgr_url, storage_suffix, storage_endpoint, 
+                        active_dir_url, svc_mgmt_url, resource_mgr_vm_suffix):
     with open(cfn_template) as data_file:
         data = json.load(data_file)
 
     # Updated custom data for Managers and Workers
-    custom_data = buildCustomData('custom-data.sh')
-    custom_data_ddc = buildCustomData('custom-data_ddc.sh')
+    if public_platform:
+        # for the Public Azure platform, all API endpoints/urls have defaults
+        custom_data = buildCustomData('custom-data-public.sh')
+        custom_data_ddc = buildCustomData('custom-data-public_ddc.sh')
+    else:
+        # for non Public platforms (Gov, China, Stacks) set the endpoints/urls 
+        data['variables']['resMgrUrl'] = resource_mgr_url
+        data['variables']['storageEndpoint'] = storage_endpoint
+        data['variables']['adUrl'] = active_dir_url
+        data['variables']['svcMgmtUrl'] = svc_mgmt_url
+        custom_data = buildCustomData('custom-data.sh')
+        custom_data_ddc = buildCustomData('custom-data_ddc.sh')
+
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ", '\n', " +  ', '.join(custom_data_ddc) + ')]'
 
     data['variables']['imageSku'] = vhd_sku
     data['variables']['imageVersion'] = vhd_version
     data['variables']['imageOffer'] = offer_id
     data['variables']['channel'] = release_channel
-    data['variables']['storageAccountDNSSuffix'] = storage_endpoint
+    data['variables']['storageAccountDNSSuffix'] = storage_suffix
     data['variables']['portalFQDN'] = portal_endpoint
     data['variables']['editionAddOn'] = edition_addon
 
@@ -296,9 +320,9 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
             "ucpLbPublicIpDnsName": "[concat('ucplb-', variables('groupName'))]",
             "dtrLbPublicIpDnsName": "[concat('dtrlb-', variables('groupName'))]",
-            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '.cloudapp.azure.com')]",
-            "ucplbname": "[concat(variables('ucpLbPublicIpDnsName'), '.', variables('storageLocation'), '.cloudapp.azure.com')]",
-            "dtrlbname": "[concat(variables('dtrLbPublicIpDnsName'), '.', variables('storageLocation'), '.cloudapp.azure.com')]",
+            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '" + resource_mgr_vm_suffix + "')]",
+            "ucplbname": "[concat(variables('ucpLbPublicIpDnsName'), '.', variables('storageLocation'), '" + resource_mgr_vm_suffix + "')]",
+            "dtrlbname": "[concat(variables('dtrLbPublicIpDnsName'), '.', variables('storageLocation'), '" + resource_mgr_vm_suffix + "')]",
             "lbpublicIPAddress1": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbSSHPublicIPAddressName'))]",
             "lbpublicIPAddress2": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbDTRPublicIPAddressName'))]",
             "dtrStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'dtr')]"

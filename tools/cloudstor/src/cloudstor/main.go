@@ -24,6 +24,7 @@ func main() {
 	if cloudEnv == "AZURE" {
 		accountName := os.Getenv("AZURE_STORAGE_ACCOUNT")
 		accountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
+		storEndPt  := os.Getenv("AZURE_STORAGE_ENDPOINT")
 		if accountName == "" || accountKey == "" {
 			log.Fatal("azure storage account name and key must be provided.")
 		}
@@ -32,7 +33,7 @@ func main() {
 			"accountName": accountName,
 		}).Debug("Starting Azure server.")
 
-		driver, err := newAZFSDriver(accountName, accountKey, metadataRoot)
+		driver, err := newAZFSDriver(accountName, accountKey, metadataRoot, storEndPt)
 		if err != nil {
 			log.Fatal(err)
 		}

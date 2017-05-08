@@ -40,6 +40,11 @@
       "value":""
     },
     {
+      "name":"AZURE_STORAGE_ENDPOINT",
+      "settable":["value"],
+      "value":""
+    },
+    {
       "name":"EFS_ID_REGULAR",
       "settable":["value"],
       "value":""

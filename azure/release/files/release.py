@@ -10,15 +10,30 @@ CFN_TEMPLATE = '/home/docker/editions.template'
 TEMPLATE_EXTENSION = u".tmpl"
 AZURE_PLATFORMS = {
     "PUBLIC" : {
-        "STORAGE_ENDPOINT" : u".blob.core.windows.net",
-        "PORTAL_ENDPOINT"  : u"portal.azure.com",
-        "TEMPLATE_SUFFIX"  : ""
+        "PORTAL_ENDPOINT"                   : u"portal.azure.com",
+        "TEMPLATE_SUFFIX"                   : "",
+        "PUBLIC_PLATFORM"                   : True,
+        "STORAGE_ENDPOINT"                  : None,
+        "STORAGE_BLOB_SUFFIX"               : u".blob.core.windows.net",
+        "RESOURCE_MANAGER_ENDPOINT"         : None,
+        "ACTIVE_DIRECTORY_ENDPOINT"         : None,
+        "SERVICE_MANAGEMENT_ENDPOINT"       : None,
+        "RESOURCE_MANAGER_VM_SUFFIX"        : u"cloudapp.azure.com"
     },
     "GOV" : {
-        "STORAGE_ENDPOINT" : u".blob.core.usgovcloudapi.net",
-        "PORTAL_ENDPOINT"  : u"portal.azure.us",
-        "TEMPLATE_SUFFIX"  : u"-gov"
+        "PORTAL_ENDPOINT"                   : u"portal.azure.us",
+        "TEMPLATE_SUFFIX"                   : u"-gov",
+        "PUBLIC_PLATFORM"                   : False,
+        "STORAGE_ENDPOINT"                  : u"core.usgovcloudapi.net",
+        "STORAGE_BLOB_SUFFIX"               : u".blob.core.usgovcloudapi.net",
+        "RESOURCE_MANAGER_ENDPOINT"         : u"https://management.usgovcloudapi.net/",
+        "ACTIVE_DIRECTORY_ENDPOINT"         : u"https://login.microsoftonline.com/",
+        "SERVICE_MANAGEMENT_ENDPOINT"       : u"https://management.core.usgovcloudapi.net/",
+        "RESOURCE_MANAGER_VM_SUFFIX"        : u"cloudapp.windowsazure.us"
     }
+    # add more configs for Azure platforms like China, Germany, etc. Refer to:
+    # https://github.com/Azure/go-autorest/blob/master/autorest/azure/environments.go
+    # For on-prem Azure stack, we will need to get these as parameters from admin
 }
 
 def main():
@@ -98,33 +113,37 @@ def main():
     for platform, platform_config in AZURE_PLATFORMS.items():
         ce_template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                                 docker_for_azure_version, edition_addon, CFN_TEMPLATE,
-                                 platform_config['STORAGE_ENDPOINT'],
-                                 platform_config['PORTAL_ENDPOINT'],
-                                 ce_template_name)
+                        docker_for_azure_version, edition_addon, CFN_TEMPLATE, ce_template_name,
+                        platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
+                        platform_config['RESOURCE_MANAGER_ENDPOINT'], platform_config['STORAGE_BLOB_SUFFIX'], 
+                        platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
+                        platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
         ee_template_name = u"Docker-EE" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
-                                 docker_for_azure_version, edition_addon, CFN_TEMPLATE,
-                                 platform_config['STORAGE_ENDPOINT'],
-                                 platform_config['PORTAL_ENDPOINT'],
-                                 ee_template_name)
+                        docker_for_azure_version, edition_addon, CFN_TEMPLATE, ee_template_name,
+                        platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
+                        platform_config['RESOURCE_MANAGER_ENDPOINT'], platform_config['STORAGE_BLOB_SUFFIX'], 
+                        platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
+                        platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
         cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         edition_addon = 'cloud'
         cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url,
-                                 platform_config['STORAGE_ENDPOINT'],
+                                 platform_config['STORAGE_BLOB_SUFFIX'],
                                  platform_config['PORTAL_ENDPOINT'],
                                  cloud_template_name)
 
         ddc_template_name = u"Docker-DDC" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
         edition_addon = 'ddc'
         ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
-                                 docker_for_azure_version, edition_addon, base_url,
-                                 platform_config['STORAGE_ENDPOINT'],
-                                 platform_config['PORTAL_ENDPOINT'],
-                                 ddc_template_name)
+                                 docker_for_azure_version, edition_addon, base_url, ddc_template_name, 
+                                 platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
+                                 platform_config['RESOURCE_MANAGER_ENDPOINT'], platform_config['STORAGE_BLOB_SUFFIX'], 
+                                 platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
+                                 platform_config['SERVICE_MANAGEMENT_ENDPOINT'], 
+                                 platform_config['RESOURCE_MANAGER_VM_SUFFIX'])
 
         print("------------------")
 

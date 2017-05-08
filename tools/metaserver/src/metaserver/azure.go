@@ -145,17 +145,21 @@ func (a AzureWeb) DtrInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func initClients(env map[string]string) (network.InterfacesClient, compute.VirtualMachineScaleSetVMsClient) {
+	rmEndpoint := azure.PublicCloud.ResourceManagerEndpoint
+	if uri := os.Getenv("RESOURCE_MANAGER_ENDPOINT"); uri != "" {
+		rmEndpoint = uri
+	}
 
-	spt, err := helpers.NewServicePrincipalTokenFromCredentials(env, azure.PublicCloud.ResourceManagerEndpoint)
+	spt, err := helpers.NewServicePrincipalTokenFromCredentials(env, rmEndpoint)
 	if err != nil {
 		fmt.Printf("ERROR: Getting SP token - check that all ENV variables are set")
 		os.Exit(1)
 	}
 	// Create Network Interface Client
-	nicClient := network.NewInterfacesClient(env["AZURE_SUBSCRIPTION_ID"])
+	nicClient := network.NewInterfacesClientWithBaseURI(rmEndpoint, env["AZURE_SUBSCRIPTION_ID"])
 	nicClient.Authorizer = spt
 	// Create VMSS Client
-	vmssClient := compute.NewVirtualMachineScaleSetVMsClient(env["AZURE_SUBSCRIPTION_ID"])
+	vmssClient := compute.NewVirtualMachineScaleSetVMsClientWithBaseURI(rmEndpoint, env["AZURE_SUBSCRIPTION_ID"])
 	vmssClient.Authorizer = spt
 	return nicClient, vmssClient
 }

@@ -34,9 +34,11 @@ const (
 	cifsOptionGID      = "gid=0"
 )
 
-func newAZFSDriver(accountName, accountKey, metadataRoot string) (*azfsDriver, error) {
-
+func newAZFSDriver(accountName, accountKey, metadataRoot, storageEndpoint string) (*azfsDriver, error) {
 	storageBase := azure.DefaultBaseURL
+	if storageEndpoint != "" {
+		storageBase = storageEndpoint
+	}
 	storageClient, err := azure.NewClient(accountName, accountKey, storageBase, azure.DefaultAPIVersion, true)
 	if err != nil {
 		return nil, fmt.Errorf("error creating azure client: %v", err)
