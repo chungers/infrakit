@@ -99,6 +99,7 @@ def main():
     
     for platform, platform_config in AZURE_PLATFORMS.items():
         ce_template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        edition_addon = 'base'
         base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_addon, CFN_TEMPLATE,
                                  platform_config['STORAGE_ENDPOINT'],
@@ -106,6 +107,7 @@ def main():
                                  ce_template_name)
 
         ee_template_name = u"Docker-EE" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        edition_addon = 'base'
         ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_addon, CFN_TEMPLATE,
                                  platform_config['STORAGE_ENDPOINT'],

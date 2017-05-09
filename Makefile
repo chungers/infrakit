@@ -1,9 +1,9 @@
 ifeq (${EDITIONS_TAG},)
-	EDITIONS_TAG := ce-rc3
+	EDITIONS_TAG := ce-rc1
 endif
 
 ifeq (${EDITIONS_DOCKER_VERSION},)
-	EDITIONS_DOCKER_VERSION := 17.05.0
+	EDITIONS_DOCKER_VERSION := 17.06.0
 endif
 
 ifeq (${RELEASE},)
@@ -70,11 +70,11 @@ AWS_AMI_LIST := https://s3.amazonaws.com/docker-for-aws/data/ami/$(DOCKER_VERSIO
 
 #### Azure Specific VARS
 VHD_SKU := docker-ce
-VHD_VERSION := 1.0.3
+VHD_VERSION := 1.0.6
 # stage offer will have the -preview 
 VHD_OFFER_ID := docker-ce
 EE_VHD_SKU := docker-ee
-EE_VHD_VERSION := 1.0.0
+EE_VHD_VERSION := 1.0.1
 # stage offer will have the -preview 
 EE_OFFER_ID := docker-ee
 
