@@ -14,14 +14,19 @@ NOW_STRING = NOW.strftime("%m_%d_%Y")
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
-S3_BUCKET_NAME = "docker-for-azure"
+S3_BUCKET_NAME = os.getenv('S3_BUCKET', 'docker-ci-editions')
+ARM_S3_BUCKET_NAME = os.getenv('UPLOAD_S3_BUCKET', 'docker-for-azure')
+ARM_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
+ARM_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
+MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
+
 
 def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
 
-def is_json(cfn_template):
+def is_json(arm_template):
   try:
-    with open(cfn_template) as data_file:
+    with open(arm_template) as data_file:
       json_object = json.load(data_file)
   except ValueError, e:
     return False
@@ -41,22 +46,25 @@ def buildCustomData(data_file):
         customData += ['\'' + line + '\'']
   return customData
 
-def upload_rg_template(release_channel, arm_template_name, tempfile, cfn_type=''):
+def upload_rg_template(release_channel, arm_template_name, tempfile, arm_type=''):
 
     # upload to s3, make public, return s3 URL
-    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = u"azure/{}/{}".format(release_channel, arm_template_name)
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(ARM_S3_BUCKET_NAME)
+    channel = release_channel
+    if MOBY_COMMIT:
+        channel = u"{}/{}".format(channel, MOBY_COMMIT)
+    s3_path = u"azure/{}/{}".format(channel, arm_template_name)
     latest_name = "latest.json"
-    if cfn_type:
-        latest_name = "{}-latest.json".format(cfn_type)
+    if arm_type:
+        latest_name = "{}-latest.json".format(arm_type)
 
     s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
 
-    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
+    s3conn = boto.connect_s3(ARM_AWS_ACCESS_KEY_ID, ARM_AWS_SECRET_ACCESS_KEY)
+    bucket = s3conn.get_bucket(ARM_S3_BUCKET_NAME)
 
-    print(u"Upload template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
+    print(u"Upload template to {} in {} s3 bucket".format(s3_path, ARM_S3_BUCKET_NAME))
     key = bucket.new_key(s3_path)
     key.set_metadata("Content-Type", "application/json")
     key.set_contents_from_filename(tempfile)
@@ -65,7 +73,7 @@ def upload_rg_template(release_channel, arm_template_name, tempfile, cfn_type=''
     if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
         print("This is a nightly build, update the latest.json file.")
         print(u"Upload ARM template to {} in {} s3 bucket".format(
-            s3_path_latest, S3_BUCKET_NAME))
+            s3_path_latest, ARM_S3_BUCKET_NAME))
         key = bucket.new_key(s3_path_latest)
         key.set_metadata("Content-Type", "application/json")
         key.set_contents_from_filename(tempfile)
@@ -75,7 +83,7 @@ def upload_rg_template(release_channel, arm_template_name, tempfile, cfn_type=''
 
 def publish_rg_template(release_channel, docker_for_azure_version):
     # upload to s3, make public, return s3 URL
-    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(ARM_S3_BUCKET_NAME)
     s3_path = u"azure/{}/{}.json".format(release_channel, docker_for_azure_version)
 
     print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_azure_version, release_channel))
@@ -83,23 +91,23 @@ def publish_rg_template(release_channel, docker_for_azure_version):
     s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path_latest)
 
-    s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
-    bucket = s3conn.get_bucket(S3_BUCKET_NAME)
+    s3conn = boto.connect_s3(ARM_AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    bucket = s3conn.get_bucket(ARM_S3_BUCKET_NAME)
 
     print(u"Copy Azure template from {} to {} s3 bucket".format(s3_path, s3_path_latest))
     srckey = bucket.get_key(s3_path)
     dstkey = bucket.new_key(s3_path_latest)
-    srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+    srckey.copy(ARM_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
     return s3_full_url
 
 def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_addon, cfn_template,
+                        docker_for_azure_version, edition_addon, arm_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
     # check if file exists before opening.
     flat_edition_version = docker_for_azure_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
 
-    with open(cfn_template) as data_file:
+    with open(arm_template) as data_file:
         data = json.load(data_file)
 
     data['variables']['Description'] = u"Docker for Azure {0}".format(docker_for_azure_version)
@@ -137,9 +145,9 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
 # @TODO VERIFY CLOUD TEMPLATE
 # @TODO IMPLEMENT DDC TEMPLATE
 def create_rg_cloud_template(release_channel, docker_version,
-                        docker_for_azure_version, edition_addon, cfn_template,
+                        docker_for_azure_version, edition_addon, arm_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
-    with open(cfn_template) as data_file:
+    with open(arm_template) as data_file:
         data = json.load(data_file)
 
     # Updated custom data for Managers and Workers
@@ -237,9 +245,9 @@ def create_rg_cloud_template(release_channel, docker_version,
     return outfile
 
 def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
-                        docker_for_azure_version, edition_addon, cfn_template,
+                        docker_for_azure_version, edition_addon, arm_template,
                         storage_endpoint, portal_endpoint, arm_template_name):
-    with open(cfn_template) as data_file:
+    with open(arm_template) as data_file:
         data = json.load(data_file)
 
     # Updated custom data for Managers and Workers
