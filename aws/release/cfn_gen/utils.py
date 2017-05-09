@@ -200,7 +200,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(CFN_S3_BUCKET_NAME)
-    channel = release_channel[:release_channel.find("-")]
+    channel = release_channel
     if MOBY_COMMIT:
         channel = u"{}/{}".format(channel, MOBY_COMMIT)
     s3_path = u"aws/{}/{}.json".format(channel, u"Docker{}".format(cloudformation_template_name[cloudformation_template_name.find("-aws"):]))

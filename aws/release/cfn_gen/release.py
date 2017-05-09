@@ -190,17 +190,17 @@ def main():
         s3_url = upload_cfn_template(release_channel, cfn_name, base_url)
         s3_url_no_vpc = upload_cfn_template(release_channel, no_vpc_cfn_name, base_url_no_vpc, cfn_type="no-vpc")
         # EE upload
-        s3_docker_ee_url = upload_cfn_template(docker_ee_release_channel, docker_ee_cfn_name, docker_ee_base_url)
-        s3_docker_ee_url_no_vpc = upload_cfn_template(docker_ee_release_channel, docker_ee_no_vpc_cfn_name, docker_ee_base_url_no_vpc, cfn_type="no-vpc")
+        s3_docker_ee_url = upload_cfn_template(release_channel, docker_ee_cfn_name, docker_ee_base_url)
+        s3_docker_ee_url_no_vpc = upload_cfn_template(release_channel, docker_ee_no_vpc_cfn_name, docker_ee_base_url_no_vpc, cfn_type="no-vpc")
         # Cloud upload
-        s3_cloud_url = upload_cfn_template(release_cloud_channel, cloud_cfn_name, cloud_url)
-        s3_cloud_url_no_vpc = upload_cfn_template(release_cloud_channel, cloud_no_vpc_cfn_name, cloud_url_no_vpc, cfn_type="no-vpc")
+        s3_cloud_url = upload_cfn_template(release_channel, cloud_cfn_name, cloud_url)
+        s3_cloud_url_no_vpc = upload_cfn_template(release_channel, cloud_no_vpc_cfn_name, cloud_url_no_vpc, cfn_type="no-vpc")
         # DDC upload
-        s3_ddc_url = upload_cfn_template(ddc_channel, ddc_cfn_name, ddc_url)
-        s3_ddc_url_no_vpc = upload_cfn_template(ddc_channel, ddc_no_vpc_cfn_name, ddc_url_no_vpc, cfn_type="no-vpc")
+        s3_ddc_url = upload_cfn_template(release_channel, ddc_cfn_name, ddc_url)
+        s3_ddc_url_no_vpc = upload_cfn_template(release_channel, ddc_no_vpc_cfn_name, ddc_url_no_vpc, cfn_type="no-vpc")
         # DDC dev upload
-        s3_ddc_dev_url = upload_cfn_template(ddc_channel, ddc_dev_cfn_name, ddc_dev_url)
-        s3_ddc_dev_url_no_vpc = upload_cfn_template(ddc_channel, ddc_dev_no_vpc_cfn_name, ddc_dev_url_no_vpc, cfn_type="no-vpc")
+        s3_ddc_dev_url = upload_cfn_template(release_channel, ddc_dev_cfn_name, ddc_dev_url)
+        s3_ddc_dev_url_no_vpc = upload_cfn_template(release_channel, ddc_dev_no_vpc_cfn_name, ddc_dev_url_no_vpc, cfn_type="no-vpc")
         print(u"Uploaded CFN URL={0} \n\t URL_NO_VPC={1}".format(s3_url, s3_url_no_vpc))
         print(u"Uploaded CFN EE_URL={0} \n\t EE_URL_NO_VPC={1}".format(s3_docker_ee_url, s3_docker_ee_url_no_vpc))
         print(u"Uploaded CFN CLOUD_URL={0} \n\t CLOUD_URL_NO_VPC={1}".format(s3_cloud_url, s3_cloud_url_no_vpc))
