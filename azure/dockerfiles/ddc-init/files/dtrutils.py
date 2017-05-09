@@ -9,7 +9,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.compute import ComputeManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
-from azendpt import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']

@@ -7,7 +7,7 @@ from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
-from azendpt import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 PARTITION_NAME = 'tokens'
 ROW_ID = '1'

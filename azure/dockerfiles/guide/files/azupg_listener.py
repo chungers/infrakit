@@ -18,7 +18,7 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
 from azure.storage.queue import QueueService
 from azutils import *
-from azendpt import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']

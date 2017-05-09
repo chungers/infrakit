@@ -37,7 +37,7 @@ from azure.mgmt.storage import StorageManagementClient
 from azure.storage.file import (FileService, ContentSettings)
 from pyparsing import Word, alphas, Suppress, Combine, nums, string, Optional, Regex
 from time import strftime
-from azendpt import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
 ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])

@@ -6,7 +6,7 @@ import sys
 
 from azure.common.credentials import ServicePrincipalCredentials
 from azure.mgmt.resource import ResourceManagementClient
-from azendpt import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']

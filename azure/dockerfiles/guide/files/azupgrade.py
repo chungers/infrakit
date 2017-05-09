@@ -24,7 +24,7 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
 from azure.storage.queue import QueueService
 from azutils import *
-from azendpt import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 LOG_CFG_FILE = "/etc/azupgrade_log_cfg.json"
 LOG = logging.getLogger("azupg")
