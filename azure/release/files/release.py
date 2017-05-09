@@ -41,8 +41,8 @@ def main():
     parser.add_argument('-d', '--docker_version',
                         dest='docker_version', required=True,
                         help="Docker version (i.e. 17.03)")
-    parser.add_argument('-e', '--edition_version',
-                        dest='edition_version', required=True,
+    parser.add_argument('-e', '--editions_version',
+                        dest='editions_version', required=True,
                         help="Edition version (i.e. Beta 4)")
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
@@ -85,16 +85,18 @@ def main():
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
-    docker_for_azure_version = args.edition_version
+    docker_for_azure_version = args.editions_version
+    if not docker_for_azure_version:
+        raise Exception("No Editions Version was defined")
     edition_addon = args.edition_addon
-    flat_edition_version = docker_for_azure_version.replace(" ", "")
+    flat_editions_version = docker_for_azure_version.replace(" ", "")
     vhd_sku = args.vhd_sku
     vhd_version = args.vhd_version
     offer_id = args.offer_id
     ee_vhd_sku = args.ee_vhd_sku
     ee_vhd_version = args.ee_vhd_version
     ee_offer_id = args.ee_offer_id
-    image_name = u"Moby Linux {}".format(docker_for_azure_version)
+    image_name = u"Moby Linux {} {}".format(docker_for_azure_version, release_channel)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))

@@ -57,5 +57,53 @@ login:
 
 .PHONY: release 
 
+VHD_S3_BUCKET := docker-ci-editions
+VHD_S3_PATH := vhd
+VHD_SRC_REGION := us-west-2
+
+STAGE_S3_BUCKET := editions-stage-us-east-1-150610-005505
+
+ifneq ($(MOBY_COMMIT),)
+	VHD_S3_PATH := $(VHD_S3_PATH)/$(MOBY_COMMIT)
+endif
+
+ifeq ($(EDITIONS_VERSION),)
+	VHDTIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(VHD_S3_BUCKET) --key $(VHD_S3_PATH)/vhd_blob_url.out docker.out | jq -r '.Metadata' > metadata.json )
+	EDITIONS_VERSION := $(shell jq -r '.editions_version' metadata.json)
+	DOCKER_VERSION := $(shell jq -r '.docker_version' metadata.json)
+	MOBY_COMMIT := $(shell jq -r '.moby_commit' metadata.json)
+	CHANNEL := $(shell jq -r '.channel' metadata.json)
+	VHD_ID := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${VHD_S3_BUCKET}/${VHD_S3_PATH}/vhd_blob_url.out /tmp/vhd_blob_url.out && cat /tmp/vhd_blob_url.out)
+	AZURE_TARGET_PATH = dist/azure/${CHANNEL}/${EDITIONS_VERSION}
+endif
+
 release:
-	@echo "Azure release not yet implemented"
+	@echo "\033[0;1;34m++ Create Azure release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
+	$(MAKE) -C release build
+	docker run --rm \
+		-e AWS_ACCESS_KEY_ID \
+		-e AWS_SECRET_ACCESS_KEY \
+		-e UPLOAD_S3_BUCKET="${STAGE_S3_BUCKET}" \
+		-e UPLOAD_S3_KEY="${AWS_STAGE_ACCESS_KEY_ID}" \
+		-e UPLOAD_S3_SECRET="${AWS_STAGE_SECRET_ACCESS_KEY}" \
+		-e MOBY_COMMIT \
+		-v ${ROOT_DIR}/dist/:/home/docker/dist/ \
+		azure-release \
+		--upload \
+		--docker_version="$(DOCKER_VERSION)" \
+		--editions_version="$(EDITIONS_VERSION)" \
+		--vhd_sku="$(VHD_SKU)" \
+		--vhd_version="$(VHD_VERSION)" \
+		--offer_id="$(VHD_OFFER_ID)" \
+		--channel="$(CHANNEL)" \
+		--channel_cloud="$(CHANNEL)-cloud" \
+		--channel_ddc="$(CHANNEL)-ddc" \
+		--ee_vhd_sku="$(EE_VHD_SKU)" \
+		--ee_vhd_version="$(EE_VHD_VERSION)" \
+		--ee_offer_id="$(EE_OFFER_ID)" \
+		--edition_addon=$(EDITION_ADDON)
+	docker rmi azure-release
+
+# e2e
+# az group create --name fb-1705 --location centralus
+# az vm create --name fb-vm-1705 --resource-group fb-1705 --image https://edition.blob.core.windows.net/mobylinux/eb52bc482d85adae5b6e817958173a5c-mobylinux.vhd --os-type linux --admin-username docker --size Standard_DS2_v2 --generate-ssh-keys --use-unmanaged-disk --storage-account editions --storage-container-name vhds

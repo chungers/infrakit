@@ -37,7 +37,7 @@ ifeq ($(AMI_ID),)
 	MOBY_COMMIT := $(shell jq -r '.moby_commit' metadata.json)
 	CHANNEL := $(shell jq -r '.channel' metadata.json)
 	AMI_ID := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${AMI_S3_BUCKET}/${AMI_S3_PATH}/ami_id.out /tmp/ami_id.out && cat /tmp/ami_id.out)
-	AWS_TARGET_PATH = dist/aws/${CHANNEL}/${AWS_TAG_VERSION}
+	AWS_TARGET_PATH = dist/aws/${CHANNEL}/${EDITIONS_VERSION}
 endif
 
 DOCKER_AWS_ACCOUNT_URL := https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt
@@ -70,7 +70,7 @@ clean-stack:
 	aws cloudformation delete-stack --stack-name "$(STACK_NAME)"
 
 release:
-	@echo "\033[0;1;34m++ Create release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
+	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
 	docker build -t docker4x/cfngen -f release/cfn_gen/Dockerfile release/cfn_gen
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
