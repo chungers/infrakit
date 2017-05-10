@@ -105,6 +105,14 @@ class AWSBaseTemplate(object):
             parameters.add_parameter_manager_instancetype(
                 self.template))
 
+    def add_parameter_manager_cluster_size(self):
+        self.add_to_parameters(
+            parameters.add_parameter_manager_size(self.template))
+
+    def add_parameter_cloudwatch_logs(self):
+        self.add_to_parameters(
+            parameters.add_parameter_enable_cloudwatch_logs(self.template))
+
     def add_parameters(self):
         self.add_to_parameters(parameters.add_parameter_keyname(self.template))
 
@@ -119,8 +127,8 @@ class AWSBaseTemplate(object):
         self.add_to_parameters(
             parameters.add_parameter_worker_disk_type(self.template))
 
-        self.add_to_parameters(
-            parameters.add_parameter_manager_size(self.template))
+        self.add_parameter_manager_cluster_size()
+
         self.add_to_parameters(
             parameters.add_parameter_manager_disk_size(self.template))
         self.add_to_parameters(
@@ -128,8 +136,7 @@ class AWSBaseTemplate(object):
 
         self.add_to_parameters(
             parameters.add_parameter_enable_system_prune(self.template))
-        self.add_to_parameters(
-            parameters.add_parameter_enable_cloudwatch_logs(self.template))
+        self.add_parameter_cloudwatch_logs()
 
     def add_outputs(self):
         outputs.add_output_managers(self.template)
@@ -141,9 +148,10 @@ class AWSBaseTemplate(object):
         # dynamodb table
         resources.add_resource_dyn_table(self.template)
 
-    def worker_userdata_head(self):
+    def worker_userdata_head(self, instance_name=None):
         return resources.worker_node_userdata_head(
-            experimental_flag=self.experimental_flag)
+            experimental_flag=self.experimental_flag,
+            instance_name=instance_name)
 
     def worker_userdata_body(self):
         return resources.worker_node_userdata_body()
@@ -240,21 +248,39 @@ class AWSBaseTemplate(object):
     def load_balancer(self):
         resources.add_resource_external_lb(self.template, self.create_vpc)
 
-    def iam(self):
-        resources.add_resource_proxy_role(self.template)
-        resources.add_resource_IAM_dyn_policy(self.template)
-        resources.add_resource_iam_swarm_api_policy(self.template)
+    def iam_dyn(self):
+        # overridable for DTR role
+        resources.add_resource_iam_dyn_policy(self.template)
+
+    def iam_sqs(self):
+        # overridable for DTR role
         resources.add_resource_iam_sqs_policy(self.template)
         resources.add_resource_iam_sqs_cleanup_policy(self.template)
+
+    def iam_autoscale(self):
+        # overridable for DTR role
         resources.add_resource_iam_autoscale_policy(self.template)
+
+    def iam_log(self):
+        # overridable for DTR role
+        resources.add_resource_iam_log_policy(self.template)
+
+    def iam(self):
+        resources.add_resource_proxy_role(self.template)
+
+        resources.add_resource_iam_swarm_api_policy(self.template)
         resources.add_resource_iam_elb_policy(self.template)
         resources.add_resource_iam_instance_profile(self.template)
+
+        self.iam_dyn()
+        self.iam_sqs()
+        self.iam_autoscale()
 
         # worker
         resources.add_resource_worker_iam_role(self.template)
         resources.add_resource_iam_worker_dyn_policy(self.template)
-        resources.add_resource_iam_log_policy(self.template)
         resources.add_resource_iam_worker_instance_profile(self.template)
+        self.iam_log()
 
     def security_groups(self):
         # security groups

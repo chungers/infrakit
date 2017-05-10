@@ -91,10 +91,11 @@ class DockerCEVPCTemplate(AWSBaseTemplate):
         data = self.common_userdata_head()
         return orig_data + data
 
-    def worker_userdata_head(self):
+    def worker_userdata_head(self, instance_name=None):
         """ The Head of the userdata script, this is where
         you would declare all of your shell variables"""
-        orig_data = super(DockerCEVPCTemplate, self).worker_userdata_head()
+        orig_data = super(DockerCEVPCTemplate, self).worker_userdata_head(
+            instance_name=instance_name)
         data = self.common_userdata_head()
         return orig_data + data
 

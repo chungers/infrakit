@@ -36,12 +36,14 @@ def common_userdata_head(experimental_flag=True):
     return data
 
 
-def manager_node_userdata_head(experimental_flag=True):
+def manager_node_userdata_head(experimental_flag=True, instance_name=None):
     """ The Head of the userdata script, this is where
     you would declare all of your shell variables"""
+    if not instance_name:
+        instance_name = 'ManagerAsg'
     data = [
         "export NODE_TYPE='manager'\n",
-        "export INSTANCE_NAME='ManagerAsg'\n"
+        "export INSTANCE_NAME='{}'\n".format(instance_name)
     ]
     return common_userdata_head(experimental_flag=experimental_flag) + data
 
@@ -60,12 +62,14 @@ def manager_node_userdata_body():
     return common_data + manager_data
 
 
-def worker_node_userdata_head(experimental_flag=True):
+def worker_node_userdata_head(experimental_flag=True, instance_name=None):
     """ The Head of the userdata script, this is where
     you would declare all of your shell variables"""
+    if not instance_name:
+        instance_name = 'NodeAsg'
     data = [
         "export NODE_TYPE='worker'\n",
-        "export INSTANCE_NAME='NodeAsg'\n"
+        "export INSTANCE_NAME='{}'\n".format(instance_name)
     ]
     return common_userdata_head(experimental_flag=experimental_flag) + data
 

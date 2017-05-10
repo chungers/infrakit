@@ -80,13 +80,17 @@ def add_parameter_worker_disk_type(template):
     return ('WorkerDiskType', {"default": "Worker ephemeral storage volume type"})
 
 
-def add_parameter_manager_size(template):
+def add_parameter_manager_size(template, allowed_values=None):
+    if not allowed_values:
+        allowed_values = ["1", "3", "5"]
+    allowed_value_str = ", ".join(allowed_values)
     template.add_parameter(Parameter(
         'ManagerSize',
         Type='Number',
         Default="3",
-        AllowedValues=["1", "3", "5"],
-        Description="Number of Swarm manager nodes (1, 3, 5)"))
+        AllowedValues=allowed_values,
+        Description="Number of Swarm manager nodes ({})".format(
+            allowed_value_str)))
     return ('ManagerSize', {"default": "Number of Swarm managers?"})
 
 
@@ -121,11 +125,13 @@ def add_parameter_enable_system_prune(template):
     return ('EnableSystemPrune', {"default": "Enable daily resource cleanup?"})
 
 
-def add_parameter_enable_cloudwatch_logs(template):
+def add_parameter_enable_cloudwatch_logs(template, default=None):
+    if not default:
+        default = 'yes'
     template.add_parameter(Parameter(
         'EnableCloudWatchLogs',
         Type='String',
-        Default='yes',
+        Default=default,
         AllowedValues=["no", "yes"],
         Description="Send all Container logs to CloudWatch"))
     return ('EnableCloudWatchLogs', {"default": "Use Cloudwatch for container logging?"})

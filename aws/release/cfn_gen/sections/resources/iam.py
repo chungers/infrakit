@@ -70,7 +70,8 @@ def add_resource_worker_iam_role(template):
                     Effect=Allow,
                     Action=[AssumeRole],
                     Principal=Principal(
-                        "Service", ["ec2.amazonaws.com", "autoscaling.amazonaws.com" ])
+                        "Service", ["ec2.amazonaws.com",
+                                    "autoscaling.amazonaws.com"])
                 )
             ]
         ),
@@ -78,7 +79,7 @@ def add_resource_worker_iam_role(template):
     ))
 
 
-def add_resource_IAM_dyn_policy(template):
+def add_resource_iam_dyn_policy(template, extra_roles=None):
     """
     "DynDBPolicies": {
         "DependsOn": ["ProxyRole", "SwarmDynDBTable"],
@@ -107,11 +108,16 @@ def add_resource_IAM_dyn_policy(template):
             }
     },
     """
+
+    roles = [Ref("ProxyRole"), ]
+    if extra_roles:
+        roles.extend(extra_roles)
+
     template.add_resource(PolicyType(
         "DynDBPolicies",
         DependsOn=["ProxyRole", "SwarmDynDBTable"],
         PolicyName="dyndb-getput",
-        Roles=[Ref("ProxyRole")],
+        Roles=roles,
         PolicyDocument={
             "Version": "2012-10-17",
             "Statement": [{
@@ -225,7 +231,7 @@ def add_resource_iam_swarm_api_policy(template):
     ))
 
 
-def add_resource_iam_log_policy(template):
+def add_resource_iam_log_policy(template, extra_roles=None):
     """
     "SwarmLogPolicy": {
         "DependsOn": ["ProxyRole", "WorkerRole" ],
@@ -251,11 +257,16 @@ def add_resource_iam_log_policy(template):
             }
     },
     """
+
+    roles = [Ref("ProxyRole"), Ref("WorkerRole")]
+    if extra_roles:
+        roles.extend(extra_roles)
+
     template.add_resource(PolicyType(
         "SwarmLogPolicy",
         DependsOn=["ProxyRole", "WorkerRole"],
         PolicyName="swarm-log-policy",
-        Roles=[Ref("ProxyRole"), Ref("WorkerRole")],
+        Roles=roles,
         PolicyDocument={
             "Version": "2012-10-17",
             "Statement": [{
@@ -270,7 +281,7 @@ def add_resource_iam_log_policy(template):
     ))
 
 
-def add_resource_iam_sqs_policy(template):
+def add_resource_iam_sqs_policy(template, extra_roles=None):
     """
     "SwarmSQSPolicy": {
         "DependsOn": ["ProxyRole", "WorkerRole", "SwarmSQS"],
@@ -300,11 +311,15 @@ def add_resource_iam_sqs_policy(template):
             }
     },
     """
+    roles = [Ref("ProxyRole"), Ref("WorkerRole")]
+    if extra_roles:
+        roles.extend(extra_roles)
+
     template.add_resource(PolicyType(
         "SwarmSQSPolicy",
         DependsOn=["ProxyRole", "WorkerRole", "SwarmSQS"],
         PolicyName="swarm-sqs-policy",
-        Roles=[Ref("ProxyRole"), Ref("WorkerRole")],
+        Roles=roles,
         PolicyDocument={
             "Version": "2012-10-17",
             "Statement": [{
@@ -323,7 +338,7 @@ def add_resource_iam_sqs_policy(template):
     ))
 
 
-def add_resource_iam_sqs_cleanup_policy(template):
+def add_resource_iam_sqs_cleanup_policy(template, extra_roles=None):
     """
     "SwarmSQSCleanupPolicy": {
         "DependsOn": ["ProxyRole", "WorkerRole", "SwarmSQSCleanup"],
@@ -353,11 +368,14 @@ def add_resource_iam_sqs_cleanup_policy(template):
             }
     },
     """
+    roles = [Ref("ProxyRole"), Ref("WorkerRole")]
+    if extra_roles:
+        roles.extend(extra_roles)
     template.add_resource(PolicyType(
         "SwarmSQSCleanupPolicy",
         DependsOn=["ProxyRole", "WorkerRole", "SwarmSQSCleanup"],
         PolicyName="swarm-sqs-cleanup-policy",
-        Roles=[Ref("ProxyRole"), Ref("WorkerRole")],
+        Roles=roles,
         PolicyDocument={
             "Version": "2012-10-17",
             "Statement": [{
@@ -376,7 +394,7 @@ def add_resource_iam_sqs_cleanup_policy(template):
     ))
 
 
-def add_resource_iam_autoscale_policy(template):
+def add_resource_iam_autoscale_policy(template, extra_roles=None):
     """
     "SwarmAutoscalePolicy": {
         "Type": "AWS::IAM::Policy",
@@ -399,11 +417,14 @@ def add_resource_iam_autoscale_policy(template):
             }
     },
     """
+    roles = [Ref("ProxyRole"), Ref("WorkerRole")]
+    if extra_roles:
+        roles.extend(extra_roles)
     template.add_resource(PolicyType(
         "SwarmAutoscalePolicy",
         DependsOn=["ProxyRole", "WorkerRole"],
         PolicyName="swarm-autoscale-policy",
-        Roles=[Ref("ProxyRole"), Ref("WorkerRole")],
+        Roles=roles,
         PolicyDocument={
             "Version": "2012-10-17",
             "Statement": [{
@@ -577,98 +598,4 @@ def add_resource_iam_lambda_execution_role(template):
                 }
             }]
         },
-    ))
-
-
-def add_resource_s3_ddc_bucket_policy(template):
-    """
-    "S3Policies": {
-            "DependsOn": "ProxyRole",
-            "Properties": {
-                "PolicyDocument": {
-                    "Statement": [
-                        {
-                            "Action": [
-                                "s3:ListBucket",
-                                "s3:GetBucketLocation",
-                                "s3:ListBucketMultipartUploads"
-                            ],
-                            "Effect": "Allow",
-                            "Resource": {
-                                "Fn::Join": [
-                                    "",
-                                    [
-                                        "arn:aws:s3:::",
-                                        {
-                                            "Ref": "DDCBucket"
-                                        }
-                                    ]
-                                ]
-                            }
-                        },
-                        {
-                            "Action": [
-                                "s3:PutObject",
-                                "s3:GetObject",
-                                "s3:DeleteObject",
-                                "s3:ListMultipartUploadParts",
-                                "s3:AbortMultipartUpload"
-                            ],
-                            "Effect": "Allow",
-                            "Resource": {
-                                "Fn::Join": [
-                                    "",
-                                    [
-                                        "arn:aws:s3:::",
-                                        {
-                                            "Ref": "DDCBucket"
-                                        },
-                                        "/*"
-                                    ]
-                                ]
-                            }
-                        }
-                    ],
-                    "Version": "2012-10-17"
-                },
-                "PolicyName": "S3-DDC-Policy",
-                "Roles": [
-                    {
-                        "Ref": "ProxyRole"
-                    }
-                ]
-            },
-            "Type": "AWS::IAM::Policy"
-        }
-    """
-    template.add_resource(PolicyType(
-        "S3Policies",
-        DependsOn="ProxyRole",
-        PolicyName="S3-DDC-Policy",
-        Roles=[Ref("ProxyRole")],
-        PolicyDocument={
-            "Version": "2012-10-17",
-            "Statement": [{
-                "Effect": "Allow",
-                "Action": [
-                    "s3:ListBucket",
-                    "s3:GetBucketLocation",
-                    "s3:ListBucketMultipartUploads"
-                ],
-                "Resource": Join(
-                    "", ["arn:aws:s3:::", Ref("DDCBucket")])
-            }, {
-                "Effect": "Allow",
-                "Action": [
-                    "s3:PutObject",
-                    "s3:GetObject",
-                    "s3:DeleteObject",
-                    "s3:ListMultipartUploadParts",
-                    "s3:AbortMultipartUpload"
-                ],
-                "Resource": Join(
-                    "", ["arn:aws:s3:::", Ref("DDCBucket"), "/*"])
-            }
-            ],
-        }
     ))
