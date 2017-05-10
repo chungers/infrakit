@@ -1,11 +1,16 @@
 wrappedNode(label: "docker") {
   deleteDir()
   checkout scm
-  def cloudFormation = (ArrayList)(sh(script: 'find . -iname "*.json"', returnStdout: true).split("\r?\n"))
   parallel(
+    'templates': { ->
+      stage(name: "build JSON templates") {
+        sh("make templates")
+      }
+    },
     'validate': { ->
       stage(name: "validate json files") {
         withTool("jq@1.5") {
+          def cloudFormation = (ArrayList)(sh(script: 'find . -iname "*.json"', returnStdout: true).split("\r?\n"))
           for (i in cloudFormation) {
             try {
               sh("jq . '${i}' >/dev/null")
@@ -18,17 +23,9 @@ wrappedNode(label: "docker") {
         }
       }
     },
-    'sanitize': { ->
-      stage(name: "sanitize json files") {
-        for (i in cloudFormation) {
-          try {
-            sh("docker run --rm -v `pwd`:/data docker4x/sanity:latest '${i}'")
-          } catch (Exception exc) {
-            currentBuild.result = 'UNSTABLE'
-            echo "sanity failed"
-            return
-          }
-        }
+    'build': { ->
+      stage(name: "build docker images") {
+        sh("make dockerimages")
       }
     }
   )

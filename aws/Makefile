@@ -51,6 +51,8 @@ endif
 TOOLS := docker4x/tools:latest
 TOOLSRUN := docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $(TOOLS) python
 
+CFNGEN := docker4x/cfngen:latest
+
 export
 
 .PHONY: release
@@ -71,7 +73,6 @@ clean-stack:
 
 release:
 	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
-	docker build -t docker4x/cfngen -f release/cfn_gen/Dockerfile release/cfn_gen
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
 		-e AWS_SECRET_ACCESS_KEY \
@@ -90,7 +91,6 @@ release:
 		-e MOBY_COMMIT \
 		-v ${CURDIR}/cfn_gen/outputs:/home/docker/outputs \
 		docker4x/cfngen
-	docker rmi -f docker4x/cfngen
 
 nightly:
 	@echo "\033[0;1;34m++ Start nightly release\033[0m"
@@ -104,8 +104,25 @@ nightly:
 	@echo "\033[0;1;34m++ Rebuild the nightly index page.\033[0m"
 	$(TOOLSRUN) build_index.py
 
-buildtools:
-	@echo "\033[0;1;34m+++ Build common release tools\033[0m"
+template: buildtools
+	@echo "\033[0;1;34m++ Create AWS template of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
+	docker run \
+		-e AWS_ACCESS_KEY_ID \
+		-e AWS_SECRET_ACCESS_KEY \
+		-e DOCKER_VERSION="${DOCKER_VERSION}" \
+		-e EDITIONS_VERSION="${EDITIONS_VERSION}" \
+		-e CHANNEL="${CHANNEL}" \
+		-e CHANNEL_CLOUD="${CHANNEL}-cloud" \
+		-e MOBY_COMMIT \
+		-e FLAGS="--template" \
+		-v ${ROOT_DIR}/dist:/home/docker/dist \
+		docker4x/cfngen
+
+buildtools: clean
+	-mkdir -p tmp/ $(ROOT_DIR)/dist/
+	@echo "\033[0;1;34m+++ Build cfngen image\033[0m"
+	docker build -t $(CFNGEN) -f release/cfn_gen/Dockerfile release/cfn_gen
+	@echo "\033[0;1;34m+++ Build common tools image\033[0m"
 	docker build -t $(TOOLS) -f release/Dockerfile.tools .
 
 test: buildtools
@@ -119,3 +136,7 @@ test: buildtools
 notify:
 	@echo "\033[0;1;34m++ Notify results\033[0m"
 	$(TOOLSRUN) notify.py
+
+clean:
+	@echo "\033[0;1;34m++ Clean existing artifacts\033[0m"
+	-docker rmi -f $(TOOLS) $(CFNGEN)

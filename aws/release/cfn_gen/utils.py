@@ -25,7 +25,7 @@ MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
 # file with list of aws account_ids
 ACCOUNT_LIST_FILE_URL = u"https://s3.amazonaws.com/docker-for-aws/data/accounts.txt"
 DOCKER_AWS_ACCOUNT_URL = "https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt"
-AMI_LIST_PATH = u"data/ami/{}/ami_list.json"
+AMI_LIST_PATH = u"ami/{}/ami_list.json"
 
 
 def str2bool(v):
@@ -113,6 +113,10 @@ def get_account_list(account_file_url):
     response = urllib2.urlopen(account_file_url)
     return [strip_and_padd(line) for line in response.readlines() if len(line) > 0]
 
+def generate_ami_list_url():
+    s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
+    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT)
+    return u"{}/{}".format(s3_host_name, s3_path)
 
 def get_ami_list(ami_list_url):
     """ Given a url to an ami json file, return the json object"""
@@ -176,11 +180,11 @@ def set_ami_public(ami_list):
                                    attribute='launchPermission',
                                    groups='all')
 
-def upload_ami_list(ami_list_json, editions_version, docker_version):
+def upload_ami_list(ami_list_json, editions_version, docker_version, release_channel):
 	
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = u"ami/{}/ami_list.json".format(MOBY_COMMIT)
+    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
     print(u"Upload ami list json template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -190,6 +194,9 @@ def upload_ami_list(ami_list_json, editions_version, docker_version):
     key.set_metadata("Content-Type", "application/json")
     key.set_metadata("editions_version", editions_version)
     key.set_metadata("docker_version", docker_version)
+    key.set_metadata("arch", "aws")
+    key.set_metadata("channel", release_channel)
+    key.set_metadata("moby_commit", MOBY_COMMIT)
     key.set_contents_from_string(ami_list_json)
     key.set_acl("public-read")
 

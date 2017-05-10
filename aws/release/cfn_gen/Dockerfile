@@ -15,4 +15,6 @@ RUN chmod 755 /home/docker/release.sh /home/docker/run.py
 
 ENV PYTHONUNBUFFERED 1
 
+WORKDIR /home/docker/
+
 CMD ["/home/docker/release.sh"]

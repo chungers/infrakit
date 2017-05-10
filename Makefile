@@ -1,12 +1,12 @@
-ifeq (${EDITIONS_TAG},)
+ifeq ($(EDITIONS_TAG),)
 	EDITIONS_TAG := ce-rc1
 endif
 
-ifeq (${EDITIONS_DOCKER_VERSION},)
+ifeq ($(EDITIONS_DOCKER_VERSION),)
 	EDITIONS_DOCKER_VERSION := 17.06.0
 endif
 
-ifeq (${RELEASE},)
+ifeq ($(RELEASE),)
 	RELEASE := 0
 endif
 
@@ -19,37 +19,42 @@ ifeq ($(RELEASE),0)
 	endif
 endif
 
-ifeq (${DOCKER_VERSION},)
+ifeq ($(DOCKER_VERSION),)
 	DOCKER_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 endif
 
-ifeq (${DOCKER_PUSH},)
+ifeq ($(DOCKER_PUSH),)
 	DOCKER_PUSH := 0
 endif
 
 # Push final image output to S3 bucket
-ifeq (${PUSH_BUILD_TO_S3},)
+ifeq ($(PUSH_BUILD_TO_S3),)
 	PUSH_BUILD_TO_S3 := false
 endif
 
 # By default don't load Docker Images into the AMI
-ifeq (${LOAD_IMAGES},)
+ifeq ($(LOAD_IMAGES),)
 	LOAD_IMAGES := false
 endif
 
 # Check if CHANNEL has been defined
-ifeq (${CHANNEL},)
+ifeq ($(CHANNEL),)
 	CHANNEL := edge
 endif
 
 # Check if DOCKER_EXPERIMENTAL has been defined
-ifeq (${DOCKER_EXPERIMENTAL},)
+ifeq ($(DOCKER_EXPERIMENTAL),)
 	DOCKER_EXPERIMENTAL := 1
 endif
 
 # Check if BUILD has been defined
-ifeq (${BUILD},)
+ifeq ($(BUILD),)
 	BUILD := 1
+endif
+
+# Check if MOBY_COMMIT has been defined
+ifeq ($(MOBY_COMMIT),)
+	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
 endif
 
 NAMESPACE := docker4x
@@ -106,6 +111,10 @@ release:
 nightly:
 	$(MAKE) aws-nightly
 	$(MAKE) azure-nightly
+
+templates:
+	$(MAKE) azure-template
+	$(MAKE) aws-template
 
 ## Container images targets
 dockerimages: tools
@@ -223,11 +232,12 @@ aws-release:
 	$(MAKE) -C aws release
 
 $(AWS_TARGET_TEMPLATE):
-	$(MAKE) -C aws/release template
+	$(MAKE) -C aws template EDITIONS_VERSION=$(AWS_TAG_VERSION)
 
-aws-template: moby/alpine/cloud/aws/ami_list.json
+aws-template:
+	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
 	# "easy use" alias to generate latest version of template.
-	$(MAKE) $(AWS_TARGET_TEMPLATE) AWS_AMI_LIST=moby/alpine/cloud/aws/ami_list.json
+	$(MAKE) $(AWS_TARGET_TEMPLATE)
 
 aws-nightly:
 	@echo "+ $@"

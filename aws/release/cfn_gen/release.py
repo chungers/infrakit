@@ -3,7 +3,7 @@ import json
 import argparse
 
 from utils import (
-    copy_amis, get_ami_list, get_account_list, set_ami_public, upload_ami_list,
+    copy_amis, get_ami_list, get_account_list, set_ami_public, upload_ami_list, generate_ami_list_url,
     approve_accounts, ACCOUNT_LIST_FILE_URL, create_cfn_template, upload_cfn_template)
 
 from docker_ce import DockerCEVPCTemplate, DockerCEVPCExistingTemplate
@@ -47,6 +47,8 @@ def main():
     parser.add_argument("--share", 
                         dest='share_ami', default="yes",
                         help="Share the AWS AMI with provided account list")
+    parser.add_argument("--template", action="store_true",
+                        help="Generate the AWS template using moby commit AMI list")
 
     args = parser.parse_args()
 
@@ -67,53 +69,52 @@ def main():
     print(u"docker_version={}".format(docker_version))
     print(u"docker_for_aws_version={}".format(docker_for_aws_version))
     print(u"edition_addon={}".format(edition_addon))
-    print(u"ami_id={}".format(args.ami_id))
-    print(u"ami_src_region={}".format(args.ami_src_region))
-    print(u"make_ami_public={}".format(args.make_ami_public))
-    if not args.account_list_url:
-        print("account_list_url parameter is None, defaulting")
-        account_list_url = ACCOUNT_LIST_FILE_URL
+    if args.template:
+        ami_list = get_ami_list(generate_ami_list_url())
     else:
-        account_list_url = args.account_list_url
-    print(u"account_list_url={}".format(account_list_url))
-    
-    make_ami_public = False
-    if args.make_ami_public:
-        if args.make_ami_public.lower() == 'yes':
-            make_ami_public = True
-    print(u"make_ami_public={}".format(make_ami_public))
+        if not args.account_list_url:
+            print("account_list_url parameter is None, defaulting")
+            account_list_url = ACCOUNT_LIST_FILE_URL
+        else:
+            account_list_url = args.account_list_url
+        print(u"account_list_url={}".format(account_list_url))
+        print(u"ami_id={}".format(args.ami_id))
+        print(u"ami_src_region={}".format(args.ami_src_region))
+        print(u"make_ami_public={}".format(args.make_ami_public))
+        make_ami_public = False
+        if args.make_ami_public:
+            if args.make_ami_public.lower() == 'yes':
+                make_ami_public = True
+        print(u"make_ami_public={}".format(make_ami_public))
 
-    ami_id = ''
-    if args.ami_id:
-        ami_id = args.ami_id
+        ami_id = ''
+        if args.ami_id:
+            ami_id = args.ami_id
 
-    if ami_id.endswith("ami_list.json"):
-        ami_list = get_ami_list(args.ami_id)
-    else:
         print("Copy AMI to each region..")
         ami_list = copy_amis(args.ami_id, args.ami_src_region,
-                         image_name, image_description, release_channel)
+                        image_name, image_description, release_channel)
         print(u"AMI copy complete. AMI List: \n{}".format(ami_list))
 
-    ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)
-    print("Upload AMI list to s3")
-    upload_ami_list(ami_list_json, docker_for_aws_version, docker_version)
+        ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)
+        print("Upload AMI list to s3")
+        upload_ami_list(ami_list_json, docker_for_aws_version, docker_version, release_channel)
 
-    share_ami = ''
-    if args.share_ami:
-        share_ami = args.share_ami
+        share_ami = ''
+        if args.share_ami:
+            share_ami = args.share_ami
 
-    if make_ami_public:
-        print("Make AMI's public.")
-        # we want to make this public.
-        set_ami_public(ami_list)
-        print("Finished making AMI's public.")
-    elif share_ami.lower() == 'yes':
-        print("Get account list..")
-        account_list = get_account_list(account_list_url)
-        print(u"Approving AMIs for {} accounts..".format(len(account_list)))
-        approve_accounts(ami_list, account_list)
-        print("Accounts have been approved.")
+        if make_ami_public:
+            print("Make AMI's public.")
+            # we want to make this public.
+            set_ami_public(ami_list)
+            print("Finished making AMI's public.")
+        elif share_ami.lower() == 'yes':
+            print("Get account list..")
+            account_list = get_account_list(account_list_url)
+            print(u"Approving AMIs for {} accounts..".format(len(account_list)))
+            approve_accounts(ami_list, account_list)
+            print("Accounts have been approved.")
 
     print("Create CloudFormation template..")
 
