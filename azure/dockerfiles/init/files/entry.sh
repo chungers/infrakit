@@ -10,6 +10,10 @@ echo "REGION=$REGION"
 echo "AZURE_HOSTNAME=$HOSTNAME"
 echo "CHANNEL=$CHANNEL"
 echo "EDITION_ADDON=$EDITION_ADDON"
+echo "RESOURCE_MANAGER_ENDPOINT=$RESOURCE_MANAGER_ENDPOINT"
+echo "STORAGE_ENDPOINT=$STORAGE_ENDPOINT"
+echo "ACTIVE_DIRECTORY_ENDPOINT=$ACTIVE_DIRECTORY_ENDPOINT"
+echo "SERVICE_MANAGEMENT_ENDPOINT=$SERVICE_MANAGEMENT_ENDPOINT"
 echo "#================"
 
 # these need to be kept in sync with the template file
@@ -229,6 +233,9 @@ run_system_containers()
         -e APP_SECRET \
         -e ACCOUNT_ID \
         -e GROUP_NAME \
+        -e STORAGE_ENDPOINT \
+        -e RESOURCE_MANAGER_ENDPOINT \
+        -e ACTIVE_DIRECTORY_ENDPOINT \
         -e SWARM_LOGS_STORAGE_ACCOUNT \
         -e SWARM_FILE_SHARE="$AZURE_HOSTNAME" \
         -p 514:514/udp \
@@ -254,6 +261,9 @@ run_system_containers()
         -e PRIVATE_IP \
         -e DOCKER_FOR_IAAS_VERSION \
         -e EDITION_ADDON \
+        -e RESOURCE_MANAGER_ENDPOINT \
+        -e STORAGE_ENDPOINT \
+        -e ACTIVE_DIRECTORY_ENDPOINT \
         -e SWARM_LOGS_STORAGE_ACCOUNT \
         -e SWARM_INFO_STORAGE_ACCOUNT \
         -v /var/run/docker.sock:/var/run/docker.sock \
@@ -274,6 +284,7 @@ run_system_containers()
             -e ACCOUNT_ID \
             -e TENANT_ID \
             -e GROUP_NAME \
+            -e RESOURCE_MANAGER_ENDPOINT \
             -e VMSS_MGR="$VMSS_MGR" \
             -e VMSS_WRK="$VMSS_WRK" \
             -v /var/run/docker.sock:/var/run/docker.sock \
@@ -290,10 +301,12 @@ run_system_containers()
             --name=editions_controller \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v /var/lib/docker/editions:/var/lib/docker/editions \
-            docker4x/l4controller-azure:"$DOCKER_FOR_IAAS_VERSION" \
+            docker4x/l4controller-azure:$DOCKER_FOR_IAAS_VERSION \
 	    run \
             --default_lb_name="$LB_NAME" \
-            --environment=AzurePublicCloud \
+            --resource_manager_endpoint=$RESOURCE_MANAGER_ENDPOINT \
+            --active_directory_endpoint=$ACTIVE_DIRECTORY_ENDPOINT \
+            --service_management_endpoint=$SERVICE_MANAGEMENT_ENDPOINT \
             --ad_app_id="$APP_ID" \
             --ad_app_secret="$APP_SECRET" \
             --subscription_id="$SUB_ID" \
@@ -309,6 +322,7 @@ install_cloudstor_plugin()
         CLOUD_PLATFORM=AZURE \
         AZURE_STORAGE_ACCOUNT_KEY="$SA_KEY" \
         AZURE_STORAGE_ACCOUNT="$SWARM_INFO_STORAGE_ACCOUNT" \
+        AZURE_STORAGE_ENDPOINT="$STORAGE_ENDPOINT" \
         DEBUG=1
 }
 

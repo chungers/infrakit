@@ -63,6 +63,18 @@ func runCommand() *cobra.Command {
 				leader = false
 			}
 
+			if albOptions.ResourceManagerEndpoint == "" {
+				albOptions.ResourceManagerEndpoint = azure.DefaultResourceManagerEndpoint
+			}
+
+			if albOptions.ActiveDirectoryEndpoint == "" {
+				albOptions.ActiveDirectoryEndpoint = azure.DefaultActiveDirectoryEndpoint
+			}
+
+			if albOptions.ServiceManagementEndpoint == "" {
+				albOptions.ServiceManagementEndpoint = azure.DefaultServiceManagementEndpoint
+			}
+
 			// Just poll until I become the leader...
 			// TODO(chungers) - This doesn't account for the change from leader to
 			// non-leader. It's not clear whether this can happen when a leader
@@ -176,7 +188,11 @@ func runCommand() *cobra.Command {
 
 	cmd.Flags().IntVar(&albOptions.PollingDelaySeconds, "polling_delay", 5, "Polling delay in seconds")
 	cmd.Flags().IntVar(&albOptions.PollingDurationSeconds, "polling_duration", 30, "Polling duration in seconds")
-	cmd.Flags().StringVar(&albOptions.Environment, "environment", azure.DefaultEnvironment, "environment")
+
+	cmd.Flags().StringVar(&albOptions.ResourceManagerEndpoint, "resource_manager_endpoint", azure.DefaultResourceManagerEndpoint, "Azure Resource Manager endpoint")
+	cmd.Flags().StringVar(&albOptions.ActiveDirectoryEndpoint, "active_directory_endpoint", azure.DefaultActiveDirectoryEndpoint, "Azure Resource Manager endpoint")
+	cmd.Flags().StringVar(&albOptions.ServiceManagementEndpoint, "service_management_endpoint", azure.DefaultServiceManagementEndpoint, "Azure Service Management endpoint")
+
 	cmd.Flags().StringVar(&albOptions.OAuthClientID, "oauth_client_id", "", "OAuth client ID")
 
 	cmd.Flags().StringVar(&albOptions.ADClientID, "ad_app_id", "", "AD app ID")

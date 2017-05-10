@@ -22,6 +22,7 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
 from azure.storage.queue import QueueService
 from azutils import *
+from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
@@ -35,6 +36,10 @@ IP_ADDR = os.environ['PRIVATE_IP']
 
 LOG_CFG_FILE = "/etc/azrejoin_log_cfg.json"
 LOG = logging.getLogger("azrejoin")
+
+RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
+ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
+STORAGE_ENDPOINT = os.getenv('STORAGE_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['STORAGE_ENDPOINT'])
 
 def rejoin_swarm(leader_ip):
     docker_client = Client(base_url='unix://var/run/docker.sock', version="1.25")
@@ -79,21 +84,23 @@ def main():
     cred = ServicePrincipalCredentials(
         client_id=APP_ID,
         secret=APP_SECRET,
-        tenant=TENANT_ID
+        tenant=TENANT_ID,
+        resource=RESOURCE_MANAGER_ENDPOINT,
+        auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
 
     docker_client = Client(base_url='unix://var/run/docker.sock', version="1.25")
-    storage_client = StorageManagementClient(cred, SUB_ID)
-    compute_client = ComputeManagementClient(cred, SUB_ID)
+    storage_client = StorageManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    compute_client = ComputeManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     # the default API version for the REST APIs for Network points to 2016-06-01
     # which does not have several VMSS NIC APIs we need. So specify version here
-    network_client = NetworkManagementClient(cred, SUB_ID, api_version='2016-09-01')
+    network_client = NetworkManagementClient(cred, SUB_ID, api_version='2016-09-01', base_url=RESOURCE_MANAGER_ENDPOINT)
 
     storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, SA_NAME)
     storage_keys = {v.key_name: v.value for v in storage_keys.keys}
 
-    tbl_svc = TableService(account_name=SA_NAME, account_key=storage_keys['key1'])
-    qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'])
+    tbl_svc = TableService(account_name=SA_NAME, account_key=storage_keys['key1'], endpoint_suffix=STORAGE_ENDPOINT)
+    qsvc = QueueService(account_name=SA_NAME, account_key=storage_keys['key1'], endpoint_suffix=STORAGE_ENDPOINT)
 
 
     if not qsvc.exists(REJOIN_MSG_QUEUE):
