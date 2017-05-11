@@ -123,7 +123,7 @@ buildtools: clean
 	@echo "\033[0;1;34m+++ Build cfngen image\033[0m"
 	docker build -t $(CFNGEN) -f release/cfn_gen/Dockerfile release/cfn_gen
 	@echo "\033[0;1;34m+++ Build common tools image\033[0m"
-	docker build -t $(TOOLS) -f release/Dockerfile.aws_release .
+	docker build -t $(TOOLS) -f release/Dockerfile.tools .
 
 test: buildtools
 	@echo "\033[0;1;34m++ Run tests\033[0m"
