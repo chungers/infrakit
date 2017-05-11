@@ -71,7 +71,7 @@ deploy:
 clean-stack:
 	aws cloudformation delete-stack --stack-name "$(STACK_NAME)"
 
-release:
+release: buildtools
 	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
