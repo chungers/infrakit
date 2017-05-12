@@ -9,10 +9,12 @@ RUN apk add --update bash ca-certificates jq groff python py-pip py-setuptools \
     && rm -rf /var/cache/apk/*
 
 RUN mkdir -p /home/docker
-ADD build_index.py /home/docker
-ADD cfn_audit.py /home/docker
-ADD cleanup.py /home/docker
-ADD notify.py /home/docker
+ADD release/build_index.py /home/docker
+ADD release/cfn_audit.py /home/docker
+ADD release/cleanup.py /home/docker
+ADD release/notify.py /home/docker
+ADD test /home/docker/test/
 RUN chmod 755 /home/docker/*
+WORKDIR /home/docker
 
 CMD ["/home/docker/release.sh"]
