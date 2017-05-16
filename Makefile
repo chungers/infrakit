@@ -14,11 +14,19 @@ ifeq ($(RELEASE),0)
 	ifdef JENKINS_BUILD
 		DAY := $(shell date +"%m_%d_%Y")
 		EDITIONS_TAG := $(EDITIONS_TAG)-$(DAY)
+		# If not a release in Jenkins then use the head of docker/editions.moby
+		MOBY_COMMIT := $(shell docker run --rm docker4x/mobyhead@sha256:823149afe4b4f2ee7ac45c7963193ae2274cb216760fb98631a3109aff05e4af)
 	else
 		EDITIONS_TAG := $(EDITIONS_TAG)-$(shell whoami)-dev
 	endif
 endif
 
+# Check if MOBY_COMMIT has been defined via env
+ifeq ($(MOBY_COMMIT),)
+	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
+endif
+
+# Check if DOCKER_VERSION has been set
 ifeq ($(DOCKER_VERSION),)
 	DOCKER_VERSION := $(EDITIONS_DOCKER_VERSION)-$(EDITIONS_TAG)
 endif
@@ -32,7 +40,7 @@ ifeq ($(PUSH_BUILD_TO_S3),)
 	PUSH_BUILD_TO_S3 := false
 endif
 
-# By default don't load Docker Images into the AMI
+# By default don't load all Docker Images into the AMI (shell is still loaded)
 ifeq ($(LOAD_IMAGES),)
 	LOAD_IMAGES := false
 endif
@@ -50,11 +58,6 @@ endif
 # Check if BUILD has been defined
 ifeq ($(BUILD),)
 	BUILD := 1
-endif
-
-# Check if MOBY_COMMIT has been defined
-ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
 endif
 
 NAMESPACE := docker4x

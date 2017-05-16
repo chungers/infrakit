@@ -1,12 +1,6 @@
 ## Env vars
-CHANNEL ?= dev
 FORCE_GSUTIL_AUTH ?= 0
 
-## Moby specific commit
-ifeq (${MOBY_COMMIT},)
-	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
-	MOBY_EE_COMMIT := 0a0d8a2094844079a4a07b079766c98633995a93
-endif
 
 ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	MOBY_IMG_NAME := mobylinux-ee.tgz
