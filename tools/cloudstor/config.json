@@ -55,6 +55,11 @@
       "value":""
     },
     {
+      "name":"EFS_SUPPORTED",
+      "settable":["value"],
+      "value":""
+    },
+    {
       "name":"DEBUG",
       "settable":["value"],
       "value":""

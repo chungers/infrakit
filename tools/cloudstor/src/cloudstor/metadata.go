@@ -25,6 +25,7 @@ type VolumeOptions struct {
 	Share    string `json:"share"`
 	Size     string `json:"size"`
 	PerfMode string `json:"perfmode"`
+	Backing  string `json:"backing"`
 }
 
 type metadataDriver struct {
@@ -58,6 +59,7 @@ func (m *metadataDriver) Validate(meta map[string]string) (volumeMetadata, error
 	opts.Share = meta["share"]
 	opts.Size = meta["size"]
 	opts.PerfMode = meta["perfmode"]
+	opts.Backing = meta["backing"]
 
 	return volumeMetadata{
 		Options: opts,
