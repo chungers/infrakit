@@ -108,6 +108,18 @@ checkUCP(){
     done
 }
 
+addDTRToken() {
+    echo "Adding DTR-agent token"
+    AGENT_USER="dtrapi"
+    head -c 24 /dev/urandom | base64 | tee /tmp/dtr.txt | docker secret create dtr_api_token -
+    AGENT_PASSWORD=$(cat /tmp/dtr.txt)
+    STATUS=$(curl --insecure --silent -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD --output /dev/null --write-out '%{http_code}' -X POST -H 'Content-Type: application/json' -d '{"name": "$AGENT_USER", "password": "$AGENT_PASSWORD", "isAdmin": true, "isActive": true}' "https://$UCP_ELB_HOSTNAME:$UCP_HTTPS_PORT/accounts/")
+    if [ "$STATUS" -ne "200" ]; then
+        echo "ERROR: Adding user failed"
+    fi
+    rm -f /tmp/dtr.txt
+}
+
 echo "Wait until we have enough managers up and running."
 NUM_MANAGERS=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability == "reachable") | .ManagerStatus.Addr | split(":")[0]' | wc -w)
 echo "Current number of Managers = $NUM_MANAGERS"
@@ -170,6 +182,7 @@ if [[ "$IS_LEADER" == "true" ]] && [[ "$IS_UCP_RUNNING" == "false" ]]  ; then
             docker run --label com.docker.editions.system  --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --san "$UCP_ELB_HOSTNAME" --controller-port "$UCP_HTTPS_PORT" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
             echo "Finished installing UCP without license. Please upload your license in UCP UI. "
         fi
+        addDTRToken
     else
         echo "UCP is already installed"
     fi
