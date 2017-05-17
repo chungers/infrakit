@@ -1,7 +1,6 @@
 ## Env vars
 FORCE_GSUTIL_AUTH ?= 0
 
-
 ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	MOBY_IMG_NAME := mobylinux-ee.tgz
 	AMI_OUT := ami_id_ee.out
@@ -33,7 +32,7 @@ define push_to_s3
 		-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
-		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(3) \
+		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(BUILD_NUMBER)/$(3) \
 		--acl public-read \
 		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT}
 	@if [ "${RELEASE}" = 0 ]; then \
@@ -50,21 +49,21 @@ define push_to_s3
 endef
 
 all:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) src/initrd.img
 
 # interactive versions need to use volume mounts
 boot-qemu:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) src/initrd.img
 	docker run -it --rm -v $(CURDIR)/src/initrd.img:/tmp/initrd.img -v $(CURDIR)/build/vmlinuz64:/tmp/vmlinuz64 $(QEMU_IMAGE)
 
 src/initrd.img:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	bash get.sh
 
 gcp-upload: build/gcp/gce.img.tar.gz
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 ifeq ($(FORCE_GSUTIL_AUTH),1)
 	-docker rm gsutil-moby-config 2>/dev/null
 	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
@@ -78,15 +77,15 @@ endif
 		--volumes-from gsutil-moby-config \
 		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
-		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz
+		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${MOBY_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz
 		mkdir -p cloud/gcp
-		echo "docker-for-gcp-images/${MOBY_COMMIT}/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
+		echo "docker-for-gcp-images/${MOBY_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,gcp,bdi,$(BDI_OUT),$(GCP_TAG_VERSION))
 endif
 
 ami:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) build/aws/initrd.img
 	tar cf - \
 	  cloud -C build/aws/ initrd.img -C ../ vmlinuz64 \
@@ -115,13 +114,14 @@ ami:
 		-e CHANNEL \
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
+		-e BUILD_TAG \
 		moby-ami:build bake >  ./cloud/aws/$(AMI_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,aws,ami,$(AMI_OUT),$(AWS_TAG_VERSION))
 endif
 
 ami-clean-mount:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	docker run \
 		--rm \
 		--privileged \
@@ -135,7 +135,7 @@ ami-clean-mount:
 		moby-ami:build clean-mount
 
 uploadvhd:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) azure
 	docker run \
 		-i \
@@ -143,6 +143,7 @@ uploadvhd:
 		-e AZURE_STG_ACCOUNT_KEY \
 		-e AZURE_STG_ACCOUNT_NAME \
 		-e CONTAINER_NAME \
+		-e BUILD_TAG \
 		--log-driver none \
 		--rm \
 		-v vhdartifact:/tmp \
@@ -153,7 +154,7 @@ ifeq ($(PUSH_BUILD_TO_S3),true)
 endif
 
 azure:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) build/azure/initrd.img vhdartifact
 	tar cf - \
 	  cloud -C build/azure/ initrd.img -C ../ vmlinuz64 \
@@ -188,7 +189,7 @@ azure:
 	| tar -xvf -
 
 vhdartifact:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	-docker volume create --name vhdartifact
 
 
@@ -201,7 +202,7 @@ build/aws/initrd.img: src/initrd.img aws.img
 	rm aws.img
 
 azure.img:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	tar cf - -C packages/azure etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
@@ -210,7 +211,7 @@ build/azure/initrd.img: src/initrd.img azure.img
 	rm azure.img
 
 gce.img:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	tar cf - -C packages/gcp etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
@@ -222,7 +223,7 @@ build/gcp/gce.img.tar.gz: build/gcp/initrd.img
 	tar cf - -C build/gcp/ initrd.img -C ../ vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 clean:
-	@echo "+ $@"
+	@echo "\033[32m++ $@\033[0m"
 	-rm -rf build src packages/aws/dockerimages/ packages/azure/dockerimages/ packages/gcp/dockerimages/
 	-rm -f *.img *.vhd *.iso *.tag mobylinux.efi gce.img.tar.gz
 	-rm cloud/aws/$(AMI_OUT) cloud/azure/$(VHD_OUT) cloud/gcp/$(BDI_OUT)

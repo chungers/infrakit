@@ -88,7 +88,7 @@ release: buildtools
 		-e UPLOAD_S3_BUCKET="${STAGE_S3_BUCKET}" \
 		-e UPLOAD_S3_KEY="${AWS_STAGE_ACCESS_KEY_ID}" \
 		-e UPLOAD_S3_SECRET="${AWS_STAGE_SECRET_ACCESS_KEY}" \
-		-e MOBY_COMMIT \
+		-e MOBY_COMMIT=${MOBY_COMMIT}/${BUILD_NUMBER} \
 		-v ${CURDIR}/cfn_gen/outputs:/home/docker/outputs \
 		docker4x/cfngen
 

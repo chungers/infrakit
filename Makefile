@@ -60,6 +60,17 @@ ifeq ($(BUILD),)
 	BUILD := 1
 endif
 
+# Check if MOBY_COMMIT has been defined
+ifeq ($(MOBY_COMMIT),)
+	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
+endif
+
+## Jenkins ENV
+ifeq ($(JENKINS_BUILD),)
+	BUILD_NUMBER ?= manual-$(shell date +"%s")
+	BUILD_TAG ?= jenkins-editions-$(BUILD_NUMBER)
+endif
+
 NAMESPACE := docker4x
 AWS_TAG_VERSION := $(DOCKER_VERSION)-aws$(BUILD)
 AZURE_TAG_VERSION := $(DOCKER_VERSION)-azure$(BUILD)
@@ -121,7 +132,7 @@ templates:
 
 ## Container images targets
 dockerimages: tools
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) dockerimages-aws EDITIONS_VERSION=$(AWS_TAG_VERSION)
 	$(MAKE) dockerimages-azure EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
@@ -132,7 +143,7 @@ dockerimages-azure: tools
 	$(MAKE) -C azure/dockerfiles
 
 dockerimages-walinuxagent:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C azure walinuxagent TAG="$(AZURE_TAG_VERSION)"
 
 define build_cp_tool
@@ -155,50 +166,50 @@ endef
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
 
 tools/buoy/bin/buoy:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(call build_cp_tool,buoy,bin/buoy,guide/bin)
 	$(call build_cp_tool,buoy,bin/buoy,init/bin)
 
 tools/metaserver/bin/metaserver:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(call build_cp_tool,metaserver,bin/metaserver,meta/bin)
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(call build_cp_tool,cloudstor,cloudstor-rootfs.tar.gz,.)
 
 tools/awscli/image:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C tools/awscli
 
 ## Moby targets
 moby/cloud/azure/vhd_blob_url.out: moby
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/cloud/aws/ami_id.out: moby
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
 moby/build/gcp/gce.img.tar.gz: moby
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C moby gcp-upload
 
 moby/build/aws/initrd.img:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C moby build/aws/initrd.img
 
 moby/build/azure/initrd.img:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C moby build/azure/initrd.img
 
 moby/alpine/cloud/aws/ami_list.json: moby/alpine/cloud/aws/ami_id.out
 	$(MAKE) -C aws/release replicate
 
 moby:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C moby all
 
 ## Azure targets 
@@ -211,14 +222,14 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# way to boot the Azure template.
 
 azure-release:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 $(AZURE_TARGET_TEMPLATE):
 	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 azure-template:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AZURE_TARGET_TEMPLATE)
 
@@ -226,24 +237,24 @@ azure/editions.json: azure-template
 	cp $(AZURE_TARGET_TEMPLATE) azure/editions.json
 
 azure-nightly:
-	@echo "+ $@"
+	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C azure nightly
 
 ## AWS Targets
 aws-release:
-	@echo "+ $@"
+	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C aws release
 
 $(AWS_TARGET_TEMPLATE):
 	$(MAKE) -C aws template EDITIONS_VERSION=$(AWS_TAG_VERSION)
 
 aws-template:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AWS_TARGET_TEMPLATE)
 
 aws-nightly:
-	@echo "+ $@"
+	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C aws nightly
 
 ## Golang targets
@@ -252,23 +263,23 @@ PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
 PKGS := $(shell echo $(PKGS_AND_MOCKS) | tr ' ' '\n' | grep -v /mock$)
 
 get-gomock:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	-go get github.com/golang/mock/gomock
 	-go get github.com/golang/mock/mockgen
 
 generate:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	@go generate -x $(PKGS_AND_MOCKS)
 
 test:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	@go test -v github.com/docker/editions/pkg/loadbalancer
 
 check:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 
 clean:
-	@echo "+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C tools/cloudstor clean

@@ -27,6 +27,13 @@ wrappedNode(label: "docker") {
       stage(name: "build docker images") {
         sh("make dockerimages")
       }
+    },
+    'release': { ->
+      stage(name: "trigger editions-release pipeline") {
+        if (env.BRANCH_NAME == 'master') {
+            build job: '../editions-release/master', wait: false
+        }
+      }
     }
   )
 }
