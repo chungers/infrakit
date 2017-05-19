@@ -131,9 +131,10 @@ def main():
                         platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
                         platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
-        cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
-        edition_addon = 'cloud'
-        cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
+        if platform_config['PUBLIC_PLATFORM']:
+            cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+            edition_addon = 'cloud'
+            cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url,
                                  platform_config['STORAGE_BLOB_SUFFIX'],
                                  platform_config['PORTAL_ENDPOINT'],

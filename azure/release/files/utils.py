@@ -162,8 +162,8 @@ def create_rg_cloud_template(release_channel, docker_version,
         data = json.load(data_file)
 
     # Updated custom data for Managers and Workers
-    custom_data = buildCustomData('custom-data.sh')
-    custom_data_cloud = buildCustomData('custom-data_cloud.sh')
+    custom_data = buildCustomData('custom-data-public.sh')
+    custom_data_cloud = buildCustomData('custom-data-public_cloud.sh')
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ", '\n', " + ', '.join(custom_data_cloud) + ')]'
     data['variables']['channel'] = release_channel
     data['variables']['storageAccountDNSSuffix'] = storage_suffix
