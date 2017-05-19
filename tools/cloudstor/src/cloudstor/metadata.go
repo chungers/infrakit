@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	recognizedOptions = []string{"share", "perfmode", "size"}
+	recognizedOptions = []string{"share", "perfmode", "size", "backing"}
 )
 
 type volumeMetadata struct {

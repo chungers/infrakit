@@ -150,9 +150,9 @@ func (v *awsDriver) Create(req volume.Request) (resp volume.Response) {
 	voltype := req.Options["backing"]
 	if voltype == "" {
 		if v.efsSupported {
-			volMeta.Options.Backing = backingTypeShared
+			voltype = backingTypeShared
 		} else {
-			volMeta.Options.Backing = backingTypeLocal
+			voltype = backingTypeLocal
 		}
 	}
 	if !strings.EqualFold(voltype, backingTypeLocal) && !strings.EqualFold(voltype, backingTypeShared) {
@@ -634,25 +634,33 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 	}
 
 	var device string
+	var devicePath string
 
 	attached := false
+	detach := false
 	for _, attachment := range vol.Attachments {
 		if (*attachment.InstanceId == v.instanceID) && (*attachment.State == ec2.AttachmentStatusAttached) {
 			attached = true
-			device = *attachment.Device
+			devicePath = *attachment.Device
+		}
+		if (*attachment.InstanceId != v.instanceID) && (*attachment.State != ec2.AttachmentStatusDetached) {
+			detach = true
 		}
 	}
 
 	if !attached {
 		device, err = v.findUnusedDevice()
+		devicePath = fmt.Sprintf("/dev/%s", device)
 		if err != nil {
 			logctx.Error(fmt.Sprintf("findUnusedDevice failed: %v", err))
 			return "", err
 		}
 
-		if err := v.detachEBS(*vol.VolumeId); err != nil {
-			logctx.Error(fmt.Sprintf("Failed to detach volume: %v", err))
-			return "", err
+		if detach {
+			if err := v.detachEBS(*vol.VolumeId); err != nil {
+				logctx.Error(fmt.Sprintf("Failed to detach volume: %v", err))
+				return "", err
+			}
 		}
 
 		if err := v.attachEBS(*vol.VolumeId, device); err != nil {
@@ -663,19 +671,19 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 		logctx.Infof("Volume attached to %q", v.instanceID)
 	}
 
-	formatted, err := isExtFS(device)
+	formatted, err := isExtFS(devicePath)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("failed to probe volume FS: %v", err))
 		return "", err
 	}
 
 	if !formatted {
-		cmd := exec.Command("mkfs.ext4", "-F", device)
+		cmd := exec.Command("mkfs.ext4", "-F", devicePath)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			logctx.Error(fmt.Sprintf("format failed: %v\noutput=%q", err, out))
 			return "", err
 		}
-		logctx.Infof("Formatting succeeded for device: %q", device)
+		logctx.Infof("Formatting succeeded for device: %q", devicePath)
 	}
 
 	path := v.pathForEBSVolume(req.Name)
@@ -692,12 +700,12 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 	}
 
 	if !mounted {
-		cmd := exec.Command("mount", "-t", "ext4", "-v", device, path)
+		cmd := exec.Command("mount", "-t", "ext4", "-v", devicePath, path)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			logctx.Error(fmt.Sprintf("mount failed: %v\noutput=%q", err, out))
 			return "", err
 		}
-		logctx.Infof("mount succeeded for dev: %q", device)
+		logctx.Infof("mount succeeded for dev: %q", devicePath)
 	}
 
 	return path, nil

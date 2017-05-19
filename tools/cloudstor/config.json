@@ -60,6 +60,11 @@
       "value":""
     },
     {
+      "name":"AWS_REGION",
+      "settable":["value"],
+      "value":""
+    },
+    {
       "name":"DEBUG",
       "settable":["value"],
       "value":""
