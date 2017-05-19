@@ -44,12 +44,17 @@ func main() {
 		efsIDRegular := os.Getenv("EFS_ID_REGULAR")
 		efsIDMaxIO := os.Getenv("EFS_ID_MAXIO")
 
+		efsSupported, err := strconv.ParseBool(os.Getenv("EFS_SUPPORTED"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		log.WithFields(log.Fields{
 			"Regular EFS ID": efsIDRegular,
 			"MaxIO EFS ID":   efsIDMaxIO,
 		}).Debug("Starting server.")
 
-		driver, err := newEFSDriver(efsIDRegular, efsIDMaxIO, metadataRoot)
+		driver, err := newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot, efsSupported)
 		if err != nil {
 			log.Fatal(err)
 		}
