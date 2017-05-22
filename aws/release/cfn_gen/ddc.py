@@ -266,8 +266,9 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         header = self.userdata_header()
         head = super(DDCVPCTemplate, self).worker_userdata_head(
             instance_name="DTRAsg")
+        is_dtr = ["export IS_DTR='yes'\n", ]
         body = super(DDCVPCTemplate, self).worker_userdata_body()
-        full_data = header + head + body + data
+        full_data = header + head + is_dtr + body + data
         return Base64(Join("", full_data))
 
 
