@@ -518,6 +518,7 @@ def add_resource_worker_launch_config(template, user_data, launch_config_name="N
                             "-e CLEANUP_QUEUE='",{ "Ref" : "SwarmSQSCleanup" }, "' ",
                             "-e RUN_VACUUM='",{ "Ref" : "EnableSystemPrune" }, "' ",
                             "-e DOCKER_FOR_IAAS_VERSION=$DOCKER_FOR_IAAS_VERSION ",
+                            "-e CHANNEL=$CHANNEL ",
                             "-v /var/run/docker.sock:/var/run/docker.sock ",
                             "-v /usr/bin/docker:/usr/bin/docker ",
                             "docker4x/guide-aws:$DOCKER_FOR_IAAS_VERSION\n"

@@ -16,6 +16,9 @@ echo "ACTIVE_DIRECTORY_ENDPOINT=$ACTIVE_DIRECTORY_ENDPOINT"
 echo "SERVICE_MANAGEMENT_ENDPOINT=$SERVICE_MANAGEMENT_ENDPOINT"
 echo "#================"
 
+if [ -z $CHANNEL ]; then
+    CHANNEL=$(aztags.py channel)
+fi
 # these need to be kept in sync with the template file
 # we cannot reference variables to pass these in through customData
 # since changes in customData will block upgrades!
@@ -259,6 +262,7 @@ run_system_containers()
         -e APP_SECRET \
         -e GROUP_NAME \
         -e PRIVATE_IP \
+        -e CHANNEL
         -e DOCKER_FOR_IAAS_VERSION \
         -e EDITION_ADDON \
         -e RESOURCE_MANAGER_ENDPOINT \
