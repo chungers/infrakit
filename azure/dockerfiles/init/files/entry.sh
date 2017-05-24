@@ -262,7 +262,7 @@ run_system_containers()
         -e APP_SECRET \
         -e GROUP_NAME \
         -e PRIVATE_IP \
-        -e CHANNEL
+        -e CHANNEL \
         -e DOCKER_FOR_IAAS_VERSION \
         -e EDITION_ADDON \
         -e RESOURCE_MANAGER_ENDPOINT \
