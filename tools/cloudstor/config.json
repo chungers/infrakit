@@ -65,6 +65,11 @@
       "value":""
     },
     {
+      "name":"AWS_STACK_ID",
+      "settable":["value"],
+      "value":""
+    },
+    {
       "name":"DEBUG",
       "settable":["value"],
       "value":""
