@@ -45,7 +45,7 @@ class DockerCEVPCTemplate(AWSBaseTemplate):
                 new_params = []
                 for param in params:
                     new_params.append(param)
-                    if param == "EnableCloudStorEfs":
+                    if param == "EnableCloudWatchLogs":
                         new_params.append("EnableCloudStorEfs")
                 new_groups.append({
                     "Label": {"default": "Swarm Properties"},
