@@ -24,7 +24,7 @@ func main() {
 	if cloudEnv == "AZURE" {
 		accountName := os.Getenv("AZURE_STORAGE_ACCOUNT")
 		accountKey := os.Getenv("AZURE_STORAGE_ACCOUNT_KEY")
-		storEndPt  := os.Getenv("AZURE_STORAGE_ENDPOINT")
+		storEndPt := os.Getenv("AZURE_STORAGE_ENDPOINT")
 		if accountName == "" || accountKey == "" {
 			log.Fatal("azure storage account name and key must be provided.")
 		}
@@ -43,7 +43,7 @@ func main() {
 	} else if cloudEnv == "AWS" {
 		efsIDRegular := os.Getenv("EFS_ID_REGULAR")
 		efsIDMaxIO := os.Getenv("EFS_ID_MAXIO")
-
+		stackID := os.Getenv("AWS_STACK_ID")
 		efsSupported, err := strconv.ParseBool(os.Getenv("EFS_SUPPORTED"))
 		if err != nil {
 			log.Fatal(err)
@@ -52,9 +52,10 @@ func main() {
 		log.WithFields(log.Fields{
 			"Regular EFS ID": efsIDRegular,
 			"MaxIO EFS ID":   efsIDMaxIO,
+			"AWS Stack ID":   stackID,
 		}).Debug("Starting server.")
 
-		driver, err := newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot, efsSupported)
+		driver, err := newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot, stackID, efsSupported)
 		if err != nil {
 			log.Fatal(err)
 		}

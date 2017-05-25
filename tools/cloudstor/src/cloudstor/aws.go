@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"crypto/md5"
 	"fmt"
 	"net/http"
 	"os"
@@ -50,6 +51,7 @@ type awsDriver struct {
 	cl           *ec2.EC2
 	az           string
 	instanceID   string
+	stackID      string
 	region       string
 	efsSupported bool
 }
@@ -60,7 +62,7 @@ type metaData struct {
 	InstanceId string `json:"instanceId,omitempty"`
 }
 
-func newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot string, efsSupported bool) (*awsDriver, error) {
+func newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot, stackID string, efsSupported bool) (*awsDriver, error) {
 	cl := ec2.New(session.New(&aws.Config{}))
 
 	md, err := fetchAWSMetaData()
@@ -99,12 +101,15 @@ func newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot string, efsSupported bo
 		return nil, fmt.Errorf("cannot initialize metadata driver: %v", err)
 	}
 
+	stackIDmd5 := fmt.Sprintf("%x", md5.Sum([]byte(stackID)))
+
 	v := &awsDriver{
 		meta:         metaDriver,
 		cl:           cl,
 		az:           md.AvailZone,
 		region:       md.Region,
 		instanceID:   md.InstanceId,
+		stackID:      stackIDmd5,
 		efsSupported: efsSupported,
 	}
 
@@ -531,7 +536,8 @@ func (v *awsDriver) createEBS(req volume.Request) error {
 		return nil
 	}
 	// volume exists in another AZ
-	return v.createEBSFromSnapshot(req)
+	_, err := v.createEBSFromSnapshot(req.Name)
+	return err
 }
 
 func (v *awsDriver) createEBSNew(req volume.Request) error {
@@ -555,7 +561,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 	return nil
 }
 
-func (v *awsDriver) createEBSFromSnapshot(req volume.Request) error {
+func (v *awsDriver) createEBSFromSnapshot(volname string) (*ec2.Volume, error) {
 	/*
 		For volume create in different AZ:
 		1. Create a new snapshot of volume, wait to complete.
@@ -566,27 +572,26 @@ func (v *awsDriver) createEBSFromSnapshot(req volume.Request) error {
 
 	logctx := log.WithFields(log.Fields{
 		"operation": "createEBSFromSnapshot",
-		"name":      req.Name,
-		"options":   req.Options})
+		"name":      volname})
 
-	snap, err := v.snapEBS(req.Name)
+	snap, err := v.snapEBS(volname)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create snapshot of volume in original AZ: %v", err))
-		return err
+		return nil, err
 	}
 	logctx.Infof(fmt.Sprintf("Snapshot created of volume in original AZ: %v", snap))
 
-	vol, err := v.createEBSCore(req.Name, "", *snap.SnapshotId, 0, false)
+	vol, err := v.createEBSCore(volname, "", *snap.SnapshotId, 0, false)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
-		return err
+		return nil, err
 	}
 	logctx.Infof(fmt.Sprintf("Volume creation in new AZ succeeded: %v", vol))
 
 	err = v.detachEBS(*snap.VolumeId)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("DetachVolume failed: %v", err))
-		return err
+		return nil, err
 	}
 
 	logctx.Debug("Delete old version of volume in original AZ")
@@ -598,7 +603,7 @@ func (v *awsDriver) createEBSFromSnapshot(req volume.Request) error {
 	_, err = v.cl.DeleteVolume(volDelete)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("DeleteVolume failed: %v", err))
-		return err
+		return nil, err
 	}
 	logctx.Infof("Old Volume deleted")
 
@@ -619,7 +624,7 @@ func (v *awsDriver) createEBSFromSnapshot(req volume.Request) error {
 			continue
 		}
 	}
-	return nil
+	return vol, nil
 }
 
 func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
@@ -657,9 +662,19 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 		}
 
 		if detach {
-			if err := v.detachEBS(*vol.VolumeId); err != nil {
-				logctx.Error(fmt.Sprintf("Failed to detach volume: %v", err))
-				return "", err
+			if *vol.AvailabilityZone == v.az {
+				// volume exists in same AZ
+				if err := v.detachEBS(*vol.VolumeId); err != nil {
+					logctx.Error(fmt.Sprintf("Failed to detach volume: %v", err))
+					return "", err
+				}
+			} else {
+				// volume exists in another AZ - transfer it to current AZ
+				vol, err = v.createEBSFromSnapshot(req.Name)
+				if err != nil {
+					logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
+					return "", err
+				}
 			}
 		}
 
@@ -752,6 +767,13 @@ func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, vol
 		&ec2.Tag{
 			Key:   aws.String("CloudstorVolumeName"),
 			Value: &volumeName,
+		})
+
+	nametag.Tags = append(
+		nametag.Tags,
+		&ec2.Tag{
+			Key:   aws.String("StackID"),
+			Value: &v.stackID,
 		})
 
 	volCreate := &ec2.CreateVolumeInput{
@@ -942,6 +964,10 @@ func (v *awsDriver) getEBSByName(volumeName string) (*ec2.Volume, error) {
 			{
 				Name:   aws.String("tag:CloudstorVolumeName"),
 				Values: []*string{aws.String(volumeName)},
+			},
+			{
+				Name:   aws.String("tag:StackID"),
+				Values: []*string{aws.String(v.stackID)},
 			},
 		},
 	}
