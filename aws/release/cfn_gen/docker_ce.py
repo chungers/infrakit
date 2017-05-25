@@ -31,7 +31,7 @@ class DockerCEVPCTemplate(AWSBaseTemplate):
     def add_parameters(self):
         super(DockerCEVPCTemplate, self).add_parameters()
         self.add_to_parameters(
-            parameters.add_parameter_enable_cloudstor(
+            parameters.add_parameter_enable_cloudstor_efs(
                 self.template))
 
     def parameter_groups(self):
@@ -46,7 +46,7 @@ class DockerCEVPCTemplate(AWSBaseTemplate):
                 for param in params:
                     new_params.append(param)
                     if param == "EnableCloudWatchLogs":
-                        new_params.append("EnableCloudStor")
+                        new_params.append("EnableCloudStorEfs")
                 new_groups.append({
                     "Label": {"default": "Swarm Properties"},
                     "Parameters": new_params
@@ -66,21 +66,25 @@ class DockerCEVPCTemplate(AWSBaseTemplate):
         resources.add_resource_efs(self.template)
         resources.add_resource_mount_targets(self.template)
         conditions.add_condition_EFSSupported(self.template)
-        conditions.add_condition_CloudStor_selected(self.template)
-        conditions.add_condition_InstallCloudStor(self.template)
+        conditions.add_condition_CloudStorEFS_selected(self.template)
+        conditions.add_condition_InstallCloudStorEFSPreReqs(self.template)
+
+    def iam(self):
+        super(DockerCEVPCTemplate, self).iam()
+        resources.add_resource_iam_cloudstor_ebs_policy(self.template)
 
     def common_userdata_head(self):
         """ The Head of the userdata script, this is where
         you would declare all of your shell variables"""
         data = [
             "export ENABLE_EFS='",
-            If("InstallCloudStor", 'yes', 'no'), "'\n",
+            If("InstallCloudStorEFSPreReqs", '1', '0'), "'\n",
 
             "export EFS_ID_REGULAR='",
-            If("InstallCloudStor", Ref("FileSystemGP"), ''), "'\n",
+            If("InstallCloudStorEFSPreReqs", Ref("FileSystemGP"), ''), "'\n",
 
             "export EFS_ID_MAXIO='",
-            If("InstallCloudStor", Ref("FileSystemMaxIO"), ''), "'\n",
+            If("InstallCloudStorEFSPreReqs", Ref("FileSystemMaxIO"), ''), "'\n",
         ]
         return data
 

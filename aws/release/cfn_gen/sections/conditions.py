@@ -17,10 +17,10 @@ def add_condition_hasonly2AZs(template):
         )
 
 
-def add_condition_CloudStor_selected(template):
+def add_condition_CloudStorEFS_selected(template):
     template.add_condition(
-        "CloudStorSelected",
-        Equals(Ref("EnableCloudStor"), "yes")
+        "CloudStorEfsSelected",
+        Equals(Ref("EnableCloudStorEfs"), "yes")
         )
 
 
@@ -33,12 +33,12 @@ def add_condition_EFSSupported(template):
     )
 
 
-def add_condition_InstallCloudStor(template):
+def add_condition_InstallCloudStorEFSPreReqs(template):
     template.add_condition(
-        "InstallCloudStor",
+        "InstallCloudStorEFSPreReqs",
         And(
             Condition("EFSSupported"),
-            Condition("CloudStorSelected"),
+            Condition("CloudStorEfsSelected"),
         )
     )
 

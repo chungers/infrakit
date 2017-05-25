@@ -137,11 +137,11 @@ def add_parameter_enable_cloudwatch_logs(template, default=None):
     return ('EnableCloudWatchLogs', {"default": "Use Cloudwatch for container logging?"})
 
 
-def add_parameter_enable_cloudstor(template):
+def add_parameter_enable_cloudstor_efs(template):
     template.add_parameter(Parameter(
-        'EnableCloudStor',
+        'EnableCloudStorEfs',
         Type='String',
         Default='no',
         AllowedValues=["no", "yes"],
-        Description="Enable CloudStor, if available in your region"))
-    return ('EnableCloudStor', {"default": "Enable CloudStor"})
+        Description="Create CloudStor EFS mount targets"))
+    return ('EnableCloudStorEfs', {"default": "Create EFS prerequsities for CloudStor?"})

@@ -231,6 +231,63 @@ def add_resource_iam_swarm_api_policy(template):
     ))
 
 
+def add_resource_iam_cloudstor_ebs_policy(template):
+    """
+    "CloudstorEBSPolicy": {
+        "DependsOn": "ProxyRole",
+        "Type": "AWS::IAM::Policy",
+        "Properties": {
+        "PolicyName": "cloudstor-ebs-policy",
+        "PolicyDocument": {
+            "Version" : "2012-10-17",
+            "Statement": [ {
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:AttachVolume",
+                    "ec2:DetachVolume",
+                    "ec2:CreateVolume",
+                    "ec2:DeleteVolume",
+                    "ec2:DescribeVolumes",
+                    "ec2:DescribeVolumeStatus",
+                    "ec2:CreateSnapshot",
+                    "ec2:DeleteSnapshot",
+                    "ec2:DescribeSnapshots"
+                ],
+                "Resource": "*"
+            } ]
+        },
+        "Roles": [ {
+            "Ref": "ProxyRole"
+        } ]
+            }
+    },
+    """
+    template.add_resource(PolicyType(
+        "CloudstorEBSPolicy",
+        DependsOn="ProxyRole",
+        PolicyName="cloudstor-ebs-policy",
+        Roles=[Ref("ProxyRole")],
+        PolicyDocument={
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:AttachVolume",
+                    "ec2:DetachVolume",
+                    "ec2:CreateVolume",
+                    "ec2:DeleteVolume",
+                    "ec2:DescribeVolumes",
+                    "ec2:DescribeVolumeStatus",
+                    "ec2:CreateSnapshot",
+                    "ec2:DeleteSnapshot",
+                    "ec2:DescribeSnapshots"
+                ],
+                "Resource": "*"
+            }],
+        }
+    ))
+
+
 def add_resource_iam_log_policy(template, extra_roles=None):
     """
     "SwarmLogPolicy": {
