@@ -23,7 +23,7 @@ endif
 
 # Check if MOBY_COMMIT has been defined via env
 ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
+	MOBY_COMMIT := ca0f165212985991a5f232fb123ef88dc80abd77
 endif
 
 # Check if DOCKER_VERSION has been set
