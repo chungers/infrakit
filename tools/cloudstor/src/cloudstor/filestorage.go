@@ -27,11 +27,11 @@ type azfsDriver struct {
 }
 
 const (
-	cifsOptionVersion  = "vers=2.1"
-	cifsOptionFileMode = "file_mode=0777"
-	cifsOptionDirMode  = "dir_mode=0777"
-	cifsOptionUID      = "uid=0"
-	cifsOptionGID      = "gid=0"
+	cifsOptionVersion   = "vers=2.1"
+	cifsDefaultFileMode = "0777"
+	cifsDefaultDirMode  = "0777"
+	cifsDefaultUID      = "0"
+	cifsDefaultGID      = "0"
 )
 
 func newAZFSDriver(accountName, accountKey, metadataRoot, storageEndpoint string) (*azfsDriver, error) {
@@ -92,6 +92,31 @@ func (v *azfsDriver) Create(req volume.Request) (resp volume.Response) {
 		share = fmt.Sprintf("%x", md5.Sum([]byte(req.Name)))
 		volMeta.Options.Share = share
 	}
+
+	filemode := req.Options["filemode"]
+	if filemode == "" {
+		filemode = cifsDefaultFileMode
+	}
+	volMeta.Options.FileMode = fmt.Sprintf("file_mode=%s", filemode)
+
+	dirmode := req.Options["dirmode"]
+	if dirmode == "" {
+		dirmode = cifsDefaultDirMode
+	}
+	volMeta.Options.DirMode = fmt.Sprintf("dir_mode=%s", dirmode)
+
+	uid := req.Options["uid"]
+	if uid == "" {
+		uid = cifsDefaultUID
+	}
+	volMeta.Options.UID = fmt.Sprintf("uid=%s", uid)
+
+	gid := req.Options["gid"]
+	if gid == "" {
+		gid = cifsDefaultGID
+	}
+	volMeta.Options.GID = fmt.Sprintf("gid=%s", gid)
+
 	logctx.Debug("request accepted")
 
 	s := v.cl.GetShareReference(volMeta.Options.Share)
@@ -288,13 +313,18 @@ func azfsMount(accountName, accountKey, storageBase, mountPath string, options V
 		cifsOptionVersion,
 		fmt.Sprintf("username=%s", accountName),
 		fmt.Sprintf("password=%s", accountKey),
-		cifsOptionFileMode,
-		cifsOptionDirMode,
-		cifsOptionUID,
-		cifsOptionGID,
+		options.FileMode,
+		options.DirMode,
+		options.UID,
+		options.GID,
 	}
 
+	logctx := log.WithFields(log.Fields{
+		"operation": "mount",
+	})
+
 	cmd := exec.Command("mount", "-t", "cifs", mountURI, mountPath, "-o", strings.Join(opts, ","))
+	logctx.Debug(fmt.Sprintf("mount cmd:%s", cmd))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("mount failed: %v\noutput=%q", err, out)
@@ -302,9 +332,6 @@ func azfsMount(accountName, accountKey, storageBase, mountPath string, options V
 
 	cmd = exec.Command("mount")
 	out, err = cmd.CombinedOutput()
-	logctx := log.WithFields(log.Fields{
-		"operation": "mount",
-	})
 	logctx.Debug(fmt.Sprintf("mount output=%s", out))
 
 	return nil
