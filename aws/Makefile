@@ -26,6 +26,11 @@ ifneq ($(MOBY_COMMIT),)
 	AMI_S3_PATH := $(AMI_S3_PATH)/$(MOBY_COMMIT)
 endif
 
+ifneq ($(JENKINS_BUILD),)
+	# Append Jenkins build number for the release
+	AMI_S3_PATH := $(AMI_S3_PATH)/${BUILD_NUMBER}
+endif
+
 ifeq ($(RELEASE),1)
 	MAKE_AMI_PUBLIC = yes
 endif
@@ -73,6 +78,10 @@ clean-stack:
 
 release: buildtools
 	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
+ifeq ($(EDITIONS_VERSION),)
+	@echo "\033[31m Error - No version found!!!!!\033[0m"
+	exit 1
+endif
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
 		-e AWS_SECRET_ACCESS_KEY \
