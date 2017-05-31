@@ -243,6 +243,7 @@ def add_resource_iam_cloudstor_ebs_policy(template):
             "Statement": [ {
                 "Effect": "Allow",
                 "Action": [
+                    "ec2:CreateTags",
                     "ec2:AttachVolume",
                     "ec2:DetachVolume",
                     "ec2:CreateVolume",
