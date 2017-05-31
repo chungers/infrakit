@@ -6,7 +6,7 @@ properties(
 )
 
 
-wrappedNode(label: "docker") {
+wrappedNode(label: "docker && ubuntu-1604-aufs-test") {
   deleteDir()
   checkout scm
   stage(name: "build JSON templates") {
