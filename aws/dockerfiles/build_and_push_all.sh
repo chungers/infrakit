@@ -31,7 +31,7 @@ function test () {
 echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
 mkdir -p $ROOT_DIR/$AWS_TARGET_PATH
 
-for IMAGE in shell init guide ddc-init cloud meta dtr-init
+for IMAGE in shell init guide ddc-init cloud meta
 do
 	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
 	echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
