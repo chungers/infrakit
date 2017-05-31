@@ -1,11 +1,15 @@
 .PHONY: alb-controller
 
-default: alb-controller
+default: azupgrade alb-controller
 	VERSION="$(AZURE_TAG_VERSION)" ./build_and_push_all.sh
 
 agent:
 	make -C walinuxagent clean
 	make -C walinuxagent push TAG="$(AZURE_TAG_VERSION)"
+
+azupgrade:
+	make -C upgrade clean
+	make -C upgrade push TAG="$(AZURE_TAG_VERSION)"
 
 alb-controller:
 	cd alb-controller/files/container && \
