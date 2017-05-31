@@ -5,6 +5,9 @@ set -e
 NAMESPACE="${NAMESPACE:-docker4x}"
 TAG_VERSION="${AZURE_TAG_VERSION:-latest}"
 
+## expects EDITIONS_DOCKER_VERSION in YY.MM.X format
+UPGRADE_TAG="${EDITIONS_DOCKER_VERSION:0:5}-latest"
+
 CURR_DIR=`pwd`
 ROOT_DIR="${ROOT_DIR:-$CURR_DIR}"
 DEFAULT_PATH="dist/azure/nightly/$TAG_VERSION"
@@ -69,6 +72,14 @@ if [ "${DOCKER_PUSH}" -eq 1 ]; then
 	docker push "${NAMESPACE}/create-sp-azure:latest"
 fi
 
+# Build upgrade-azure passing in the necessary env vars
+docker build --pull -t docker4x/upgrade-azure:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
+# Ensure that the upgrade image has :YY.MM-latest tag as well so that 
+# upgrade.sh in shell can easily refer to it
+docker tag "${NAMESPACE}/upgrade-azure:${TAG_VERSION}" "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
+if [ "${DOCKER_PUSH}" -eq 1 ]; then
+	docker push "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
+fi
 
 # build and push cloudstor plugin
 tar zxf cloudstor-rootfs.tar.gz
