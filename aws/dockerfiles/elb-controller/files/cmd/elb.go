@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/editions/pkg/loadbalancer"
 	"github.com/docker/editions/pkg/loadbalancer/aws"
@@ -90,6 +91,7 @@ func elbCommand() *cobra.Command {
 		ExtPort     uint32
 		BackendPort uint32
 		Protocol    string
+		Certificate string
 	})
 
 	publishCmd := &cobra.Command{
@@ -107,6 +109,7 @@ func elbCommand() *cobra.Command {
 				Port:             publishOptions.BackendPort,
 				Protocol:         loadbalancer.ProtocolFromString(publishOptions.Protocol),
 				LoadBalancerPort: publishOptions.ExtPort,
+				Certificate:      &publishOptions.Certificate,
 			})
 			if err != nil {
 				return err
@@ -118,6 +121,7 @@ func elbCommand() *cobra.Command {
 	publishCmd.Flags().Uint32Var(&publishOptions.ExtPort, "ext_port", 80, "External port")
 	publishCmd.Flags().Uint32Var(&publishOptions.BackendPort, "backend_port", 30000, "Backend port")
 	publishCmd.Flags().StringVar(&publishOptions.Protocol, "protocol", "http", "Protocol: http|https|tcp|tls")
+	publishCmd.Flags().StringVar(&publishOptions.Certificate, "certificate", "", "AWS ACM certificate ARN")
 
 	unpublishPort := uint32(80)
 	unpublishCmd := &cobra.Command{

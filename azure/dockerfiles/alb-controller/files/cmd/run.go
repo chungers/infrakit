@@ -35,6 +35,7 @@ func runCommand() *cobra.Command {
 	}
 
 	defaultLBName := ""
+	certLabel := ""
 
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -166,7 +167,7 @@ func runCommand() *cobra.Command {
 
 					}
 					return hostMapping
-				}, options)
+				}, options, certLabel)
 
 			poller, err := loadbalancer.NewServicePoller(client, time.Duration(interval)*time.Second).
 				AddService("elb-rule", loadbalancer.AnyServices, actionExposePublishedPorts).

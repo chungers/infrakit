@@ -1,14 +1,15 @@
 package main
 
 import (
+	"io/ioutil"
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/editions/pkg/loadbalancer"
 	"github.com/docker/editions/pkg/loadbalancer/aws"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"time"
 )
 
 func runCommand() *cobra.Command {
@@ -17,6 +18,7 @@ func runCommand() *cobra.Command {
 	elbConfig := ""
 	interval := 3
 	forceLeader := false
+	certLabel := "com.docker.aws.lb.arn"
 
 	options := loadbalancer.Options{
 		RemoveListeners:   true,
@@ -142,7 +144,7 @@ func runCommand() *cobra.Command {
 
 					}
 					return hostMapping
-				}, options)
+				}, options, certLabel)
 
 			poller, err := loadbalancer.NewServicePoller(client, time.Duration(interval)*time.Second).
 				AddService("elb-rule", loadbalancer.AnyServices, actionExposePublishedPorts).
