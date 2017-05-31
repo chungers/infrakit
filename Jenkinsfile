@@ -5,8 +5,9 @@ properties(
   ]
 )
 
-
-wrappedNode(label: "docker && ubuntu-1604-aufs-test") {
+// Un-comment once Jenkins changes are in place
+// wrappedNode(label: "docker-stable && ubuntu && aufs") {
+wrappedNode(label: "ubuntu-1604-aufs-test") {
   deleteDir()
   checkout scm
   stage(name: "build JSON templates") {
