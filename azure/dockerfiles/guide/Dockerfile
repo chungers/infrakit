@@ -19,8 +19,6 @@ ADD files/vacuum.sh /usr/bin
 ADD files/azparameters.py /usr/bin
 ADD files/azutils.py /usr/bin
 ADD files/azupgrade_log_cfg.json /etc
-ADD files/azupgrade.py /usr/bin
-ADD files/azupg_listener_log_cfg.json /etc
 ADD files/azupg_listener.py /usr/bin
 ADD files/kick_azupg_listener.sh /usr/bin
 ADD files/azrejoin_log_cfg.json /etc

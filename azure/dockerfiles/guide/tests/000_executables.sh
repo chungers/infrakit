@@ -10,7 +10,6 @@ test -x /usr/bin/buoy
 test -x /usr/bin/buoy.sh 
 test -x /usr/bin/refresh.sh
 test -x /usr/bin/azutils.py 
-test -x /usr/bin/azupgrade.py
 test -x /usr/bin/azupg_listener.py 
 test -x /usr/bin/kick_azupg_listener.sh
 test -x /usr/bin/azrejoin.py 
