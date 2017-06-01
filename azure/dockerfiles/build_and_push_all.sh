@@ -78,6 +78,7 @@ docker build --pull -t docker4x/upgrade-azure:${TAG_VERSION} --build-arg VERSION
 # upgrade.sh in shell can easily refer to it
 docker tag "${NAMESPACE}/upgrade-azure:${TAG_VERSION}" "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
 if [ "${DOCKER_PUSH}" -eq 1 ]; then
+	docker push "${NAMESPACE}/upgrade-azure:${TAG_VERSION}"
 	docker push "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
 fi
 
