@@ -16,5 +16,6 @@ RUN mkdir -p /var/log/docker/
 ADD files/upgrade.sh /usr/bin/upgrade.sh
 ADD files/azupgrade.py /opt/azupgrade.py
 ADD files/azupgrade_log_cfg.json /opt/azupgrade_log_cfg.json
+ADD files/azendpt.py /opt/azendpt.py
 RUN chmod 755 /usr/bin/upgrade.sh /opt/azupgrade.py
 CMD ["/usr/bin/upgrade.sh"]

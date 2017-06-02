@@ -479,7 +479,7 @@ def main():
 
     docker_client = Client(base_url='unix://var/run/docker.sock', version="1.25")
 
-    resource_client = ResourceManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    resource_client = ResourceManagementClient(cred, SUB_ID, api_version='2016-09-01', base_url=RESOURCE_MANAGER_ENDPOINT)
     storage_client = StorageManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     compute_client = ComputeManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     # the default API version for the REST APIs for Network points to 2016-06-01

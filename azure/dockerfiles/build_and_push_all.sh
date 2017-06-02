@@ -36,7 +36,7 @@ function test () {
 }
 
 #copy in common files that apply across containers
-for IMAGE in init guide ddc-init logger
+for IMAGE in init guide ddc-init logger upgrade
 do
 	cp common/* ${IMAGE}/files/
 done
