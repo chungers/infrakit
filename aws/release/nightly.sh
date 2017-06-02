@@ -24,7 +24,7 @@ AMI_OUT_FILE="ami_id_${DAY}.out"
 export TAG_KEY="aws-nightly-${DAY}-${HASH}"
 
 AMI_BUCKET="docker-ci-editions"
-AMI_URL="aws/ami_id.out"
+AMI_URL="ami/ami_id.out"
 
 # git update
 cd $BUILD_HOME/code/editions/
@@ -68,7 +68,7 @@ then
     # there are no AMI's ready skip.
      exit 1
 fi
-echo "AMI: $AMI_ID is availble in $AMI_SRC_REGION"
+echo "AMI: $AMI_ID is available in $AMI_SRC_REGION"
 
 
 DOCKER_AWS_ACCOUNT_URL=https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt
@@ -76,7 +76,7 @@ DOCKER_AWS_ACCOUNT_URL=https://s3.amazonaws.com/docker-for-aws/data/docker_accou
 cd $BUILD_HOME/code/editions/aws/release
 
 # run release
-./new_run_release.sh -d $DOCKER_VERSION -e $EDITIONS_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
+./run_release.sh -d $DOCKER_VERSION -e $EDITIONS_VERSION -a $AMI_ID -r $AMI_SOURCE_REGION -c nightly -l $DOCKER_AWS_ACCOUNT_URL -u cloud-nightly -p no
 
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
