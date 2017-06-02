@@ -114,6 +114,7 @@ nightly:
 	$(TOOLSRUN) build_index.py
 
 template: buildtools
+	@echo "\033[0;1;34m++ Using bucket: $(AMI_S3_BUCKET) and path of: $(AMI_S3_PATH)/ami_id.out \033[0m"
 	@echo "\033[0;1;34m++ Create AWS template of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
 	docker run \
 		-e AWS_ACCESS_KEY_ID \
