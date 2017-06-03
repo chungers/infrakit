@@ -1,13 +1,13 @@
 #!/bin/bash
 
 set -e
-# run by calling ./run_release.sh docker_version edition_version ami_id ami_src_region
+# run by calling ./run_release.sh docker_version EDITIONS_VERSION ami_id ami_src_region
 export PYTHONUNBUFFERED=1
 # prehook
 
 BUILD_NUMBER=${BUILD_NUMBER:-24}
 DOCKER_VERSION=
-EDITION_TAG=
+EDITIONS_VERSION=
 AMI_ID=
 AMI_SRC_REGION=
 CHANNEL=
@@ -51,7 +51,7 @@ do
              DOCKER_VERSION=$OPTARG
              ;;
          e)
-             EDITION_TAG=$OPTARG
+             EDITIONS_VERSION=$OPTARG
              ;;
          a)
              AMI_ID=$OPTARG
@@ -78,7 +78,7 @@ do
      esac
 done
 
-if [[ -z $DOCKER_VERSION ]] || [[ -z $EDITION_TAG ]] || [[ -z $AMI_ID ]] || [[ -z $AMI_SRC_REGION ]]
+if [[ -z $DOCKER_VERSION ]] || [[ -z $EDITIONS_VERSION ]] || [[ -z $AMI_ID ]] || [[ -z $AMI_SRC_REGION ]]
 then
      usage
      exit 1
@@ -101,7 +101,7 @@ echo "Getting started with the release...."
 echo "== Parameters =="
 echo "BUILD_NUMBER=$BUILD_NUMBER"
 echo "DOCKER_VERSION=$DOCKER_VERSION"
-echo "EDITION_TAG=$EDITION_TAG"
+echo "EDITIONS_VERSION=$EDITIONS_VERSION"
 echo "AMI_ID=$AMI_ID"
 echo "AMI_SRC_REGION=$AMI_SRC_REGION"
 echo "CHANNEL=$CHANNEL"
@@ -118,11 +118,13 @@ cd cfn_gen
 docker build -t docker4x/cfngen -f Dockerfile .
 
 echo "== run the docker image =="
+echo "Using: EDITIONS_VERSION=$EDITIONS_VERSION \n AMI_ID=$AMI_ID \n AMI_SRC_REGION=$AMI_SRC_REGION \n CHANNEL=$CHANNEL"
+
 # run the image
 docker run -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
 -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
 -e DOCKER_VERSION=$DOCKER_VERSION \
--e EDITION_TAG=$EDITION_TAG \
+-e EDITIONS_VERSION=$EDITIONS_VERSION \
 -e AMI_ID=$AMI_ID \
 -e AMI_SRC_REGION=$AMI_SRC_REGION \
 -e CHANNEL="$CHANNEL" \
