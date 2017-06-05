@@ -26,6 +26,13 @@ from azure.storage.queue import QueueService
 from azutils import *
 from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
+################################################################
+## Expected execution environment: editions_guide container   ##
+## The upgrade container packaging this file does not exec it ##
+## Dockerfile for editions_guide container needs to have all  ##
+## dependencies for azupgrade.py to run properly              ##
+################################################################
+
 LOG_CFG_FILE = "/etc/azupgrade_log_cfg.json"
 LOG = logging.getLogger("azupg")
 
@@ -406,16 +413,16 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
         if HAS_DDC:
                 checkDDC(docker_client, node_hostname)
 
-            subprocess.check_output(["docker", "node", "demote", node_id])
-            sleep(10)
+        subprocess.check_output(["docker", "node", "demote", node_id])
+        sleep(10)
 
-            # If node was a leader, update IP of new leader
-            # (after demotion of previous leader) in table
-            if leader:
-                LOG.info("Previous Leader demoted. Update leader IP address")
-                leader_ip = get_swarm_leader_ip(docker_client)
-                update_leader_tbl(tbl_svc, SWARM_TABLE, LEADER_PARTITION,
-                                        LEADER_ROW, leader_ip)
+        # If node was a leader, update IP of new leader
+        # (after demotion of previous leader) in table
+        if leader:
+            LOG.info("Previous Leader demoted. Update leader IP address")
+            leader_ip = get_swarm_leader_ip(docker_client)
+            update_leader_tbl(tbl_svc, SWARM_TABLE, LEADER_PARTITION,
+                                    LEADER_ROW, leader_ip)
 
         subprocess.check_output(["docker", "node", "rm", "--force", node_id])
 
@@ -472,7 +479,7 @@ def main():
 
     docker_client = Client(base_url='unix://var/run/docker.sock', version="1.25")
 
-    resource_client = ResourceManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    resource_client = ResourceManagementClient(cred, SUB_ID, api_version='2016-09-01', base_url=RESOURCE_MANAGER_ENDPOINT)
     storage_client = StorageManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     compute_client = ComputeManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
     # the default API version for the REST APIs for Network points to 2016-06-01

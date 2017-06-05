@@ -18,8 +18,6 @@ ADD bin/buoy /usr/bin
 ADD files/vacuum.sh /usr/bin
 ADD files/azparameters.py /usr/bin
 ADD files/azutils.py /usr/bin
-ADD files/azupgrade_log_cfg.json /etc
-ADD files/azupgrade.py /usr/bin
 ADD files/azupg_listener_log_cfg.json /etc
 ADD files/azupg_listener.py /usr/bin
 ADD files/kick_azupg_listener.sh /usr/bin
@@ -34,7 +32,7 @@ COPY files/entry.sh /entry.sh
 RUN chmod 755 /entry.sh \
     /usr/bin/azparameters.py /usr/bin/vacuum.sh \
     /usr/bin/buoy /usr/bin/buoy.sh /usr/bin/refresh.sh \
-    /usr/bin/azutils.py /usr/bin/azupgrade.py \
+    /usr/bin/azutils.py \
     /usr/bin/azupg_listener.py /usr/bin/kick_azupg_listener.sh \
     /usr/bin/azrejoin.py /usr/bin/kick_azrejoin_listener.sh \
     /usr/bin/aznodewatch.py /usr/bin/kick_aznodewatch.sh
