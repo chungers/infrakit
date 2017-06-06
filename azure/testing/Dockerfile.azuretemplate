@@ -1,0 +1,6 @@
+FROM python:3.6-alpine
+
+COPY files/stg_account_arm_template.py / 
+RUN chmod 755 /stg_account_arm_template.py
+
+ENTRYPOINT ["python", "/stg_account_arm_template.py"]
