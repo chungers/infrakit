@@ -156,8 +156,11 @@ def main():
             print(u"Uploading templates.. \n")
             s3_url = upload_rg_template(release_channel, ce_template_name, base_url)
             s3_ee_url = upload_rg_template(release_channel, ee_template_name, ee_url)
-            s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
             s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
+            s3_cloud_url = ""
+            if platform_config['PUBLIC_PLATFORM']:
+                s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
+            
             print(u"Uploaded ARM \n\t URL={0} \n\t EE_URL={1} \n\t CLOUD_URL={2} \n\t DDC_URL={3} \n".format(s3_url, s3_ee_url, s3_cloud_url, s3_ddc_url))
 
     print(u"Finshed.. \n")
