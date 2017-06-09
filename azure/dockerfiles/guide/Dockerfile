@@ -28,6 +28,7 @@ ADD files/aznodewatch_log_cfg.json /etc
 ADD files/aznodewatch.py /usr/bin
 ADD files/kick_aznodewatch.sh /usr/bin
 ADD files/azendpt.py /usr/bin
+ADD files/dockerutils.py /usr/bin
 COPY files/entry.sh /entry.sh
 RUN chmod 755 /entry.sh \
     /usr/bin/azparameters.py /usr/bin/vacuum.sh \

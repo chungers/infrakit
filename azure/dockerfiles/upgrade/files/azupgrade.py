@@ -24,6 +24,7 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
 from azure.storage.queue import QueueService
 from azutils import *
+from dockerutils import *
 from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 ################################################################
@@ -77,6 +78,7 @@ VMSS_ROLE_MAPPING = {
     MGR_VMSS_NAME: 'manager',
     WRK_VMSS_NAME: 'worker'
 }
+
 
 # update description on DTR table storage
 def set_upgrade_desc(sa_key, desc):
@@ -351,14 +353,19 @@ def update_deployment_template(template_url, resource_client):
 
     LOG.info("Finished updating deployment: {}".format(latest_deployment.name))
 
-
 def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_svc):
 
     global LAST_MANAGER_NODE_ID
 
+    # tmp lookup table for nic.id -> ip address used for populating other tables
     nic_id_table = {}
-    vm_ip_table = {}
+    # tmp lookup table for ip -> instance_id used for populating other tables
+    vm_tmp_table = {}
+
+    # vm id lookup table for instance_id -> docker node id
     vm_id_table = {}
+    # vm ip lookup table for instance_id -> node pvt IP
+    vm_ip_table = {}
 
     # Map Azure VMSS instance IDs to swarm node IDs using NIC and IP address
     nics = network_client.network_interfaces.list_virtual_machine_scale_set_network_interfaces(
@@ -376,17 +383,19 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
         LOG.debug("Enumerate NICs of VM: {} in VMSS {}".format(vm.instance_id, vmss_name))
         for nic in vm.network_profile.network_interfaces:
             if nic.id in nic_id_table:
-                LOG.debug("IP Address of NIC: {}".format(nic_id_table[nic.id]))
-                vm_ip_table[nic_id_table[nic.id]] = vm.instance_id
+                ip = nic_id_table[nic.id]
+                LOG.debug("IP Address of NIC: {}".format(ip))
+                vm_tmp_table[ip] = vm.instance_id
+                vm_ip_table[vm.instance_id] = ip
 
     nodes = docker_client.nodes(filters={'role': VMSS_ROLE_MAPPING[vmss_name]})
     for node in nodes:
         node_ip = node['Status']['Addr']
         LOG.debug("Swarm Node ID: {} IP: {}".format(node['ID'], node_ip))
-        if node_ip not in vm_ip_table:
+        if node_ip not in vm_tmp_table:
             LOG.error("Node IP {} not found in list of VM IPs".format(node_ip))
             return
-        vm_id_table[vm_ip_table[node_ip]] = node['ID']
+        vm_id_table[vm_tmp_table[node_ip]] = node['ID']
 
     # at this point all sanity checks and metadata gathering should be complete
     # beyond this point it's hard to recover from any missing data/errors
@@ -410,21 +419,29 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
             except KeyError:
                 leader = False
 
-        if HAS_DDC:
+            if HAS_DDC:
                 checkDDC(docker_client, node_hostname)
 
-        subprocess.check_output(["docker", "node", "demote", node_id])
-        sleep(10)
+            cmdout = subprocess.check_output(["docker", "node", "demote", node_id])
+            LOG.info("docker node demote output: {}".format(cmdout))
+            sleep(10)
 
-        # If node was a leader, update IP of new leader
-        # (after demotion of previous leader) in table
-        if leader:
-            LOG.info("Previous Leader demoted. Update leader IP address")
-            leader_ip = get_swarm_leader_ip(docker_client)
-            update_leader_tbl(tbl_svc, SWARM_TABLE, LEADER_PARTITION,
+            cmdout = subprocess.check_output(["docker", "node", "ls"])
+            LOG.info("docker node ls output: {}".format(cmdout))
+
+            # If node was a leader, update IP of new leader
+            # (after demotion of previous leader) in table
+            if leader:
+                LOG.info("Previous Leader demoted. Update leader IP address")
+                leader_ip = get_swarm_leader_ip(docker_client)
+                update_leader_tbl(tbl_svc, SWARM_TABLE, LEADER_PARTITION,
                                     LEADER_ROW, leader_ip)
 
-        subprocess.check_output(["docker", "node", "rm", "--force", node_id])
+        cmdout = subprocess.check_output(["docker", "node", "rm", "--force", node_id])
+        LOG.info("docker node rm output: {}".format(cmdout))
+
+        cmdout = subprocess.check_output(["docker", "node", "ls"])
+        LOG.info("docker node ls output: {}".format(cmdout))
 
         LOG.info("Update OS info started for VMSS node: {}".format(vm.instance_id))
         async_vmss_update = compute_client.virtual_machine_scale_sets.update_instances(
@@ -432,21 +449,37 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
         wait_with_status(async_vmss_update, "Waiting for VM OS info update to complete ...")
         LOG.info("Update OS info completed for VMSS node: {}".format(vm.instance_id))
 
+        cmdout = subprocess.check_output(["docker", "node", "ls"])
+        LOG.info("docker node ls output: {}".format(cmdout))
+
         LOG.info("Reimage started for VMSS node: {}".format(vm.instance_id))
         async_vmss_update = compute_client.virtual_machine_scale_set_vms.reimage(
                                             RG_NAME, vmss_name, vm.instance_id)
-        wait_with_status(async_vmss_update, "Waiting for VM reimage to complete ...")
+        while True:
+            if async_vmss_update.done():
+                break
+            LOG.info("Waiting for VM reimage to complete ...")
+            sleep(10)
+            # During the reimage phase, Azure spins up multiple nodes even 
+            # if overprovision is explicitly set to false on the VMSS
+            # Check for these nodes and remove them from swarm so that the 
+            # successful node can get the token from metadata server
+            remove_overprovisioned_nodes(docker_client, node_hostname, LOG)
         LOG.info("Reimage completed for VMSS node: {}".format(vm.instance_id))
 
-        node_booting = True
-        while node_booting:
-            sleep(10)
+        # Check for overprovisioned nodes blocking the successful node once again
+        # in case we did not detect/clean up above.
+        remove_overprovisioned_nodes(docker_client, node_hostname, LOG)
+
+        node_ready = False
+        while not node_ready:
             LOG.info("Waiting for VMSS node:{} to boot and join back in swarm".format(
                     vm.instance_id))
+            sleep(10)
             for node in docker_client.nodes():
                 try:
-                    if node['Description']['Hostname'] == node_hostname:
-                        node_booting = False
+                    if (node['Description']['Hostname'] == node_hostname) and (node['Status']['State'] == DOCKER_NODE_STATUS_READY):
+                        node_ready = True
                         break
                 except KeyError:
                     # When a member is joining, sometimes things
