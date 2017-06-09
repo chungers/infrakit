@@ -16,6 +16,7 @@ aws/dockerfiles/*/bin/
 aws/dockerfiles/elb-controller/container/bin/*
 azure/dockerfiles/*/bin/
 azure/dockerfiles/*/files/azendpt.py
+azure/dockerfiles/*/files/dockerutils.py
 azure/dockerfiles/alb-controller/container/bin/*
 gcp/dockerfiles/files/bin/*
 tools/*/bin/*

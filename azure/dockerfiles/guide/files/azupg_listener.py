@@ -18,6 +18,7 @@ from azure.mgmt.storage.models import StorageAccountCreateParameters
 from azure.storage.table import TableService, Entity
 from azure.storage.queue import QueueService
 from azutils import *
+from dockerutils import *
 from azendpt import AZURE_PLATFORMS, AZURE_DEFAULT_ENV
 
 SUB_ID = os.environ['ACCOUNT_ID']
@@ -87,7 +88,7 @@ def notify_workers_to_rejoin_swarm(compute_client, network_client, qsvc):
     qsvc.delete_queue(REJOIN_MSG_QUEUE)
 
 
-def upgrade_azure_node(compute_client, instance_id):
+def upgrade_azure_node(compute_client, docker_client, instance_id, node_hostname):
     LOG.info("Initiating update for instance:{}".format(instance_id))
     async_vmss_update = compute_client.virtual_machine_scale_sets.update_instances(
                                             RG_NAME, MGR_VMSS_NAME, instance_id)
@@ -97,8 +98,20 @@ def upgrade_azure_node(compute_client, instance_id):
     LOG.info("Reimage started for VMSS node: {}".format(instance_id))
     async_vmss_update = compute_client.virtual_machine_scale_set_vms.reimage(
                                             RG_NAME, MGR_VMSS_NAME, instance_id)
-    wait_with_status(async_vmss_update, "Waiting for VM reimage to complete ...")
+    while True:
+        if async_vmss_update.done():
+            break
+        LOG.info("Waiting for VM reimage to complete ...")
+        sleep(10)
+        # During the reimage phase, Azure spins up multiple nodes even 
+        # if overprovision is explicitly set to false on the VMSS
+        # Check for these nodes and remove them from swarm so that the 
+        # successful node can get the token from metadata server
+        remove_overprovisioned_nodes(docker_client, node_hostname, LOG)
     LOG.info("Reimage completed for VMSS node: {}".format(instance_id))
+    # Check for overprovisioned nodes blocking the successful node once again
+    # in case we did not detect/clean up above.
+    remove_overprovisioned_nodes(docker_client, node_hostname, LOG)
 
 
 def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, storage_key, tbl_svc):
@@ -173,17 +186,17 @@ def upgrade_mgr_node(node_id, docker_client, compute_client, network_client, sto
     subprocess.check_output(["docker", "node", "rm", "--force", node_id])
 
     # call the core Azure APIs to upgrade the node
-    upgrade_azure_node(compute_client, instance_id)
+    upgrade_azure_node(compute_client, docker_client, instance_id, node_hostname)
 
-    node_booting = True
-    while node_booting:
+    node_ready = False
+    while not node_ready:
         sleep(10)
         LOG.info("Waiting for VMSS node:{} to boot and join back in swarm".format(
                 instance_id))
         for node in docker_client.nodes():
             try:
-                if node['Description']['Hostname'] == node_hostname:
-                    node_booting = False
+                if (node['Description']['Hostname'] == node_hostname) and (node['Status']['State'] == DOCKER_NODE_STATUS_READY):
+                    node_ready = True
                     break
             except KeyError:
                 # When a member is joining, sometimes things
@@ -260,7 +273,7 @@ def main():
             tbl_svc.delete_table(SWARM_TABLE)
             # directly call the core azure upgrade node since there is a single manager
             LOG.info("Upgrade single leader node")
-            upgrade_azure_node(compute_client, get_single_manager_instance_id(compute_client))
+            upgrade_azure_node(compute_client, docker_client, get_single_manager_instance_id(compute_client))
             LOG.info("Notify workers to leave and rejoin swarm")
             notify_workers_to_rejoin_swarm(compute_client, network_client, qsvc)
             delete_queue = True
