@@ -10,7 +10,8 @@
 
 {{ $gcpImage := flag "gcp-plugin" "string" "Image of the plugin" |  cond $gcp | prompt "What's the GCP plugin image?" "string" "infrakit/gcp" }}
 
-{{ $project := var "/project" }}
+{{/* if the var is set by another script, use it; otherwise read from the flag or prompt */}}
+{{ $project := var "/project" | flag "gcp-project" "string" "Project name" | prompt "What's the id of the GCP project?" "string" "testproject" }}
 
 {{ if $gcp }}
 
