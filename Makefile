@@ -23,7 +23,7 @@ endif
 
 # Check if MOBY_COMMIT has been defined via env
 ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := a3e6ca5317034b7402da02689b92bca71c5aaea5
+	MOBY_COMMIT := ef91e6873f2ac7fa3ff9b65c9fe2365fa594764a
 endif
 
 # Check if DOCKER_VERSION has been set
@@ -60,11 +60,6 @@ ifeq ($(BUILD),)
 	BUILD := 1
 endif
 
-# Check if MOBY_COMMIT has been defined
-ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := 55c4ad6622608ec593959e52be8c20767454b616
-endif
-
 ## Jenkins ENV
 ifeq ($(JENKINS_BUILD),)
 	BUILD_NUMBER ?= manual-$(shell date +"%s")
@@ -90,6 +85,7 @@ AWS_AMI_LIST := https://s3.amazonaws.com/docker-for-aws/data/ami/$(DOCKER_VERSIO
 #### Azure Specific VARS
 VHD_SKU := docker-ce
 VHD_VERSION := 1.0.6
+CONTAINER_NAME := mobylinux
 # stage offer will have the -preview 
 VHD_OFFER_ID := docker-ce
 EE_VHD_SKU := docker-ee
