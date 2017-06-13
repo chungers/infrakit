@@ -146,7 +146,7 @@ def add_resource_manager_autoscalegroup(template, create_vpc,
         ],
         LaunchConfigurationName=Ref(launch_config_name),
         MinSize=0,
-        MaxSize=5,
+        MaxSize=6,  # needs to be 6 so that you can upgrade when you have 5 managers.
         DesiredCapacity=Ref("ManagerSize"),
         VPCZoneIdentifier=[
             If("HasOnly2AZs",
