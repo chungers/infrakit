@@ -234,7 +234,7 @@ def add_resource_iam_swarm_api_policy(template):
 def add_resource_iam_cloudstor_ebs_policy(template):
     """
     "CloudstorEBSPolicy": {
-        "DependsOn": "ProxyRole",
+        "DependsOn": ["ProxyRole", "WorkerRole" ],
         "Type": "AWS::IAM::Policy",
         "Properties": {
         "PolicyName": "cloudstor-ebs-policy",
@@ -259,15 +259,18 @@ def add_resource_iam_cloudstor_ebs_policy(template):
         },
         "Roles": [ {
             "Ref": "ProxyRole"
-        } ]
+        },{
+            "Ref": "WorkerRole"
+        }]
             }
     },
     """
+    roles = [Ref("ProxyRole"), Ref("WorkerRole")]
     template.add_resource(PolicyType(
         "CloudstorEBSPolicy",
-        DependsOn="ProxyRole",
+        DependsOn=["ProxyRole", "WorkerRole"],
         PolicyName="cloudstor-ebs-policy",
-        Roles=[Ref("ProxyRole")],
+        Roles=roles,
         PolicyDocument={
             "Version": "2012-10-17",
             "Statement": [{
