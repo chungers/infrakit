@@ -81,7 +81,7 @@ build-dir:
 build-buoy:
 	make -C ../tools/buoy build
 
-build-cloudstor:
+build-cloudstor: build-dir
 	if [ ! -e build/cloudstor-rootfs.tar.gz ]; then          \
 	    make -C ../tools/cloudstor build;                          \
 	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz build/;\

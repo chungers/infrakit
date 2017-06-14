@@ -11,9 +11,9 @@ for test in /tests/*_*.sh; do
   ${test}
 
   if [ $? -eq 0 ]; then
-    printf "\r${GREEN}[PASS]${NORMAL} ${test}\n"
+    printf "${GREEN}[PASS]${NORMAL} ${test}\n"
   else
-    printf "\r${RED}[FAIL]${NORMAL} ${test}\n"
+    printf "${RED}[FAIL]${NORMAL} ${test}\n"
     exit 1
   fi
 done

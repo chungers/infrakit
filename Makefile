@@ -136,21 +136,21 @@ templates:
 ## Container images targets
 dockerimages: tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) dockerimages-aws EDITIONS_VERSION=$(AWS_TAG_VERSION)
-	$(MAKE) dockerimages-azure EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-	$(MAKE) dockerimages-gcp EDITIONS_VERSION=$(GCP_TAG_VERSION)
+	$(MAKE) dockerimages-aws
+	$(MAKE) dockerimages-azure
+	$(MAKE) dockerimages-gcp
 
 dockerimages-aws: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
-	$(MAKE) -C aws/dockerfiles
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AWS_TAG_VERSION}\033[0m"
+	$(MAKE) -C aws/dockerfiles EDITIONS_VERSION=$(AWS_TAG_VERSION)
 
 dockerimages-azure: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
-	$(MAKE) -C azure/dockerfiles
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AZURE_TAG_VERSION}\033[0m"
+	$(MAKE) -C azure/dockerfiles EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 dockerimages-gcp: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
-	$(MAKE) -C gcp build-cloudstor build-images
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${GCP_TAG_VERSION}\033[0m"
+	$(MAKE) -C gcp build-cloudstor build-images EDITIONS_VERSION=$(GCP_TAG_VERSION)
 
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
