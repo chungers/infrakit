@@ -1,6 +1,7 @@
 .PHONY: elb-controller
 
-default: elb-controller
+# default: elb-controller
+default:
 	VERSION="$(AWS_TAG_VERSION)" ./build_and_push_all.sh
 
 elb-controller:

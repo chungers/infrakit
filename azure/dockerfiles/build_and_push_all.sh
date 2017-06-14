@@ -14,9 +14,9 @@ DEFAULT_PATH="dist/azure/nightly/$TAG_VERSION"
 AZURE_TARGET_PATH="${AZURE_TARGET_PATH:-$DEFAULT_PATH}"
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AZURE_TARGET_PATH"
-# verify rw
-docker run --rm -v $ROOT_DIR:/data alpine sh -c 'chmod +rwx -R /data/dist'
-mkdir -p $ROOT_DIR/$AZURE_TARGET_PATH
+# Create directory and make sure to chmod it
+docker run --rm -v $ROOT_DIR:/data alpine sh -c "mkdir -p /data/$AWS_TARGET_PATH && chmod +rwx -R /data/dist"
+
 
 
 # Test all images built

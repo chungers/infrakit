@@ -29,9 +29,8 @@ function test () {
 }
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
-# verify rw
-docker run --rm -v $ROOT_DIR:/data alpine sh -c 'chmod +rwx -R /data/dist'
-mkdir -p $ROOT_DIR/$AWS_TARGET_PATH
+# Create directory and make sure to chmod it
+docker run --rm -v $ROOT_DIR:/data alpine sh -c "mkdir -p /data/$AWS_TARGET_PATH && chmod +rwx -R /data/dist"
 
 for IMAGE in shell init guide ddc-init cloud meta
 do
