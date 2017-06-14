@@ -110,17 +110,17 @@ build-templates: build-dir test
 	rm -f ./build/templates/Docker.jinja.bak
 
 $(DOCKERFILE_DIRS):
-ifeq ($(call last,$@),"lb-controller")
-	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@) -k container
-else
-	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@)
-endif
+	if [ "$(call last,$@)" = "lb-controller" ]; then \
+		DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@) -k container; \
+	else \
+	 DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@); \
+	fi
 
 build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	docker save \
 		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)) \
 		--output ./build/images.tar
-	if [ $(DOCKER_PUSH) -eq 1 ]; then \
+	if [ "$(DOCKER_PUSH)" = true ]; then \
 		docker push $(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)); \
 	fi
 	cp ./build/images.tar $(ROOT_DIR)/$(GCP_TARGET_PATH)/images.tar

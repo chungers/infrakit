@@ -34,7 +34,7 @@ container:
 	mkdir -p ${CURDIR}/bin
 	docker container cp lb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
 	-docker rm -fv lb-controller-build
-	docker build -t $(DOCKER_IMAGE) $(DOCKER_REPO):latest .
+	docker build -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest .
 ifeq (${DOCKER_PUSH},true)
 	docker push $(DOCKER_IMAGE)
 ifeq ($(DOCKER_TAG_LATEST),true)
