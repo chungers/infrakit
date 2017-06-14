@@ -163,7 +163,7 @@ define build_cp_tool
 	mkdir -p gcp/dockerfiles/$(3)
 	cp tools/$(1)/$(2) aws/dockerfiles/$(3)
 	cp tools/$(1)/$(2) azure/dockerfiles/$(3)
-	if [ $(2) == 'guide' ]; then
+	if [ "$(2)" = "guide" ]; then
 		cp tools/$(1)/$(2) gcp/dockerfiles/$(3);
 	fi;
 endef
