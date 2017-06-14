@@ -11,7 +11,7 @@ FULL_IMAGE_NAME=$NAMESPACE/$IMAGE_NAME
 ./build.sh
 
 docker build -t $FULL_IMAGE_NAME:$TAG_VERSION -f Dockerfile .
-if [ ${DOCKER_PUSH} -eq 1 ]; then
+if [ "${DOCKER_PUSH}" = true ]; then
     docker push $FULL_IMAGE_NAME:$TAG_VERSION
 
     if [[ "$DOCKER_TAG_LATEST" == "yes" ]] ; then

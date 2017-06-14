@@ -2,7 +2,7 @@
 
 BUILD_NUMBER ?= 0
 NAMESPACE ?= docker4x
-DOCKER_PUSH ?= 0
+DOCKER_PUSH ?= false
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
 EDITIONS_VERSION ?= dev
 IMAGE_VERSION ?= $(shell whoami)-dev
@@ -91,7 +91,7 @@ build-cloudstor:
 	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)" || true;   \
 	docker plugin create "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)" ./plugin; \
 	rm -rf ./plugin;                                                             \
-	if [ $(DOCKER_PUSH) -eq 1 ]; then                                            \
+	if [ "$(DOCKER_PUSH)" = true ]; then                                            \
 	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)";        \
 	fi;                                                                          \
 	cd ..

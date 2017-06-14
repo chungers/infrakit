@@ -51,7 +51,7 @@ do
 		docker save "${FINAL_IMAGE}" > "${ROOT_DIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
 	fi
 	test ${IMAGE}
-	if [ ${DOCKER_PUSH} -eq 1 ]; then
+	if [ "${DOCKER_PUSH}" = true ]; then
 		docker push "${FINAL_IMAGE}"
 	fi
 done
@@ -60,7 +60,7 @@ done
 docker build --pull -t docker4x/agent-azure:${TAG_VERSION} -f walinuxagent/Dockerfile walinuxagent
 echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
 docker save "docker4x/agent-azure:${TAG_VERSION}" > "${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
-if [ ${DOCKER_PUSH} -eq 1 ]; then
+if [ "${DOCKER_PUSH}" = true ]; then
 	docker push "docker4x/agent-azure:${TAG_VERSION}"
 fi
 
@@ -77,7 +77,7 @@ docker build --pull -t docker4x/upgrade-azure:${TAG_VERSION} --build-arg VERSION
 # Ensure that the upgrade image has :YY.MM-latest tag as well so that 
 # upgrade.sh in shell can easily refer to it
 docker tag "${NAMESPACE}/upgrade-azure:${TAG_VERSION}" "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
-if [ "${DOCKER_PUSH}" -eq 1 ]; then
+if [ "${DOCKER_PUSH}" = true ]; then
 	docker push "${NAMESPACE}/upgrade-azure:${TAG_VERSION}"
 	docker push "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
 fi
@@ -87,6 +87,6 @@ tar zxf cloudstor-rootfs.tar.gz
 docker plugin rm -f "${NAMESPACE}/cloudstor:${TAG_VERSION}" || true
 docker plugin create "${NAMESPACE}/cloudstor:${TAG_VERSION}" ./plugin
 rm -rf ./plugin
-if [ ${DOCKER_PUSH} -eq 1 ]; then
+if [ "${DOCKER_PUSH}" = true ]; then
 	docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
 fi

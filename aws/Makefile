@@ -31,7 +31,7 @@ ifneq ($(JENKINS_BUILD),)
 	AMI_S3_PATH := $(AMI_S3_PATH)/${BUILD_NUMBER}
 endif
 
-ifeq ($(RELEASE),1)
+ifeq ($(RELEASE),true)
 	MAKE_AMI_PUBLIC = yes
 endif
 

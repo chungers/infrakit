@@ -47,7 +47,7 @@ define push_to_s3
 		--acl public-read \
 		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},jenkins_build=$(BUILD_NUMBER)
 	# Update the latest endpoint for nightly
-	@if [ "${RELEASE}" -eq 0 ]; then \
+	@if [ "${RELEASE}" = true ]; then \
 		docker run --rm \
 			-v $(CURDIR)/cloud/$(1):/tmp \
 			-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \

@@ -7,6 +7,6 @@ VERSION="${VERSION:-latest}"
 FINAL_IMAGE="${NAMESPACE}/sanity:${VERSION}"
 
 docker build --pull -t "${FINAL_IMAGE}" -f "Dockerfile" .
-if [ ${DOCKER_PUSH} -eq 1 ]; then
+if [ ${DOCKER_PUSH} = true ]; then
 	docker push "${FINAL_IMAGE}"
 fi

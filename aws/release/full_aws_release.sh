@@ -95,7 +95,7 @@ export MOBY_COMMIT=$(echo $EDITIONS_META | jq -r '.moby_commit')
 export AMI_SRC_REGION=us-west-2
 export HUB_LOGIN_ID=$(docker info | grep Username)
 export AWS_TARGET_PATH="dist/aws/$CHANNEL/$EDITIONS_VERSION"
-export RELEASE=1
+export RELEASE=true
 
 echo "------"
 echo "Getting started with the release...."

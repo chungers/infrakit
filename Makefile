@@ -1,5 +1,5 @@
 ifeq ($(EDITIONS_TAG),)
-	EDITIONS_TAG := ce-rc1
+	EDITIONS_TAG := ce-rc4
 endif
 
 ifeq ($(EDITIONS_DOCKER_VERSION),)
@@ -7,10 +7,10 @@ ifeq ($(EDITIONS_DOCKER_VERSION),)
 endif
 
 ifeq ($(RELEASE),)
-	RELEASE := 0
+	RELEASE := false
 endif
 
-ifeq ($(RELEASE),0)
+ifeq ($(RELEASE),false)
 	ifdef JENKINS_BUILD
 		DAY := $(shell date +"%m_%d_%Y")
 		EDITIONS_TAG := $(EDITIONS_TAG)-$(DAY)
@@ -32,7 +32,7 @@ ifeq ($(DOCKER_VERSION),)
 endif
 
 ifeq ($(DOCKER_PUSH),)
-	DOCKER_PUSH := 0
+	DOCKER_PUSH := false
 endif
 
 # Push final image output to S3 bucket
@@ -52,7 +52,7 @@ endif
 
 # Check if DOCKER_EXPERIMENTAL has been defined
 ifeq ($(DOCKER_EXPERIMENTAL),)
-	DOCKER_EXPERIMENTAL := 1
+	DOCKER_EXPERIMENTAL := false
 endif
 
 # Check if BUILD has been defined

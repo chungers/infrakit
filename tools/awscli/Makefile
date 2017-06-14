@@ -7,7 +7,7 @@ build:
 	docker build -t ${NAMESPACE}/awscli:${VERSION} .
 
 push:
-ifeq (${DOCKER_PUSH},1)
+ifeq (${DOCKER_PUSH},true)
 	docker push ${NAMESPACE}/awscli:${VERSION}
 endif
 

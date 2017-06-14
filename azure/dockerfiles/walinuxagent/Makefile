@@ -9,7 +9,7 @@ build:
 	docker build -t docker4x/agent-azure:$(TAG) .
 
 push: build
-ifeq (${DOCKER_PUSH},1)
+ifeq (${DOCKER_PUSH},true)
 	docker push docker4x/agent-azure:$(TAG)
 	docker inspect -f '{{index .RepoDigests 0}}' docker4x/agent-azure:$(TAG) | sed 's/docker4x\/agent-azure@sha256://' >sha256.out
 endif

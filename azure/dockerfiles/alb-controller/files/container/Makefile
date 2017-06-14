@@ -30,7 +30,7 @@ bin/loadbalancer:
 	docker cp alb-controller-build:/go/bin/loadbalancer ${CURDIR}/bin
 	-docker rm alb-controller-build
 	docker build --pull -t $(DOCKER_IMAGE) -t $(DOCKER_REPO):latest .
-ifeq (${DOCKER_PUSH},1)
+ifeq (${DOCKER_PUSH},true)
 	docker push ${DOCKER_IMAGE}
 ifeq (${DOCKER_TAG_LATEST},true)
 	docker push ${DOCKER_REPO}:latest

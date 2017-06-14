@@ -41,7 +41,7 @@ do
 		docker save "${FINAL_IMAGE}" > "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 	fi
 	test ${IMAGE}
-	if [ "${DOCKER_PUSH}" -eq 1 ]; then
+	if [ "${DOCKER_PUSH}" = true ]; then
 		docker push "${FINAL_IMAGE}"
 	fi
 done
@@ -51,6 +51,6 @@ tar zxf cloudstor-rootfs.tar.gz
 docker plugin rm -f "${NAMESPACE}/cloudstor:${TAG_VERSION}" || true
 docker plugin create "${NAMESPACE}/cloudstor:${TAG_VERSION}" ./plugin
 rm -rf ./plugin
-if [ ${DOCKER_PUSH} -eq 1 ]; then
+if [ "${DOCKER_PUSH}" = true ]; then
 	docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
 fi

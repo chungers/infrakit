@@ -44,7 +44,7 @@ cd ..
 rm -rf docker docker.tgz
 echo "Docker version = $DOCKER_VERSION"
 
-export DOCKER_EXPERIMENTAL=0
+export DOCKER_EXPERIMENTAL=false
 export TAG_KEY=$DOCKER_VERSION
 export DOCKER_BIN_URL=$BIN_URL
 MOBY_ROOT="/home/ubuntu/code/moby-master/alpine"

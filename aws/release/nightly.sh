@@ -37,7 +37,7 @@ export DOCKER_VERSION=$(echo $EDITIONS_META | jq -r '.docker_version')
 export MOBY_COMMIT=$(echo $EDITIONS_META | jq -r '.moby_commit')
 export AWS_TARGET_PATH="dist/aws/$CHANNEL/$AWS_TAG_VERSION"
 
-export RELEASE=1
+export RELEASE=true
 
 AMI_SOURCE_REGION=us-west-2
 
