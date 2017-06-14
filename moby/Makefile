@@ -92,6 +92,7 @@ endif
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${MOBY_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz
 		mkdir -p cloud/gcp
 		echo "docker-for-gcp-images/${MOBY_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
+		$(MAKE) -C ../gcp save BUILD_NUMBER=$(GCP_BUILD_NUMBER) FORCE_GSUTIL_AUTH=0
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,gcp,bdi,$(BDI_OUT),$(GCP_TAG_VERSION))
 endif
@@ -204,7 +205,6 @@ vhdartifact:
 	@echo "\033[32m++ $@\033[0m"
 	-docker volume create --name vhdartifact
 
-
 aws.img:
 	tar cf - -C packages/aws etc dockerimages -C ../.. | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
@@ -233,6 +233,7 @@ build/gcp/initrd.img: src/initrd.img gce.img
 
 build/gcp/gce.img.tar.gz: build/gcp/initrd.img
 	tar cf - -C build/gcp/ initrd.img -C ../ vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
+	cp build/gcp/gce.img.tar.gz ../gcp/build
 
 clean:
 	@echo "\033[32m++ $@\033[0m"

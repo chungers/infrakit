@@ -13,7 +13,7 @@ cp vmlinuz64 ../build/
 popd
 rm -rf tmp
 
-# Bundle the docker images if we're deploying to Marketplace
+# Bundle ALL docker images if we're deploying to Marketplace
 if [ "$LOAD_IMAGES" == "true" ]; then
   echo "++ Check if AWS images exists at $ROOT_DIR/$AWS_TARGET_PATH/"
 	if [ -e "$ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
@@ -26,6 +26,7 @@ if [ "$LOAD_IMAGES" == "true" ]; then
 		cp $ROOT_DIR/$AZURE_TARGET_PATH/*.tar packages/azure/dockerimages/
 	fi
 else
+	# Only include the shell container
   echo "++ Check if shell exists at $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar"
 	if [ -e "$ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
 		echo "++ Copying Docker Shell image: from $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar to packages/aws/dockerimages/"
@@ -36,4 +37,10 @@ else
 		echo "++ Copying Docker Agent image: from $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar to packages/azure/dockerimages/"
 		cp $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar packages/azure/dockerimages/
 	fi
+fi
+
+echo "++ Check if GCP images exists at $ROOT_DIR/$GCP_TARGET_PATH/images.tar"
+if [ -e "$ROOT_DIR/$GCP_TARGET_PATH/images.tar" ]; then
+	echo "++ Copying GCP Docker image: from $ROOT_DIR/$GCP_TARGET_PATH/images.tar to packages/gcp/dockerimages/"
+	cp $ROOT_DIR/$GCP_TARGET_PATH/images.tar packages/gcp/dockerimages/
 fi

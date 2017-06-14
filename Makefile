@@ -93,6 +93,11 @@ EE_VHD_VERSION := 1.0.1
 # stage offer will have the -preview 
 EE_OFFER_ID := docker-ee
 
+
+#### GCP Specific VARS
+GCP_BUILD_NUMBER := 3
+
+
 export
 
 ROOT_DIR := ${CURDIR}
@@ -101,6 +106,7 @@ AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_TAG_VERSION)
 AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
 AWS_TARGET_PATH := dist/aws/$(CHANNEL)/$(AWS_TAG_VERSION)
 AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
+GCP_TARGET_PATH := dist/gcp/$(CHANNEL)/$(GCP_TAG_VERSION)
 
 export
 
@@ -114,9 +120,9 @@ endif
 
 ## Release and Nightly rely on the AMI/VHD Jenkins Metadata to get the Editions & Docker version
 release: 
-	$(MAKE) -C aws release
-	$(MAKE) -C azure release
-	# $(MAKE) -C gcp release
+	$(MAKE) aws-release
+	$(MAKE) azure-release
+	$(MAKE) gcp-release
 
 nightly:
 	$(MAKE) aws-nightly
@@ -125,21 +131,29 @@ nightly:
 templates:
 	$(MAKE) azure-template
 	$(MAKE) aws-template
+	$(MAKE) gcp-template
 
 ## Container images targets
 dockerimages: tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) dockerimages-aws EDITIONS_VERSION=$(AWS_TAG_VERSION)
 	$(MAKE) dockerimages-azure EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+	$(MAKE) dockerimages-gcp EDITIONS_VERSION=$(GCP_TAG_VERSION)
 
 dockerimages-aws: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
 	$(MAKE) -C aws/dockerfiles
 
 dockerimages-azure: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
 	$(MAKE) -C azure/dockerfiles
 
+dockerimages-gcp: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
+	$(MAKE) -C gcp build-cloudstor build-images
+
 dockerimages-walinuxagent:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
 	$(MAKE) -C azure walinuxagent TAG="$(AZURE_TAG_VERSION)"
 
 define build_cp_tool
@@ -149,7 +163,9 @@ define build_cp_tool
 	mkdir -p gcp/dockerfiles/$(3)
 	cp tools/$(1)/$(2) aws/dockerfiles/$(3)
 	cp tools/$(1)/$(2) azure/dockerfiles/$(3)
-	cp tools/$(1)/$(2) gcp/dockerfiles/$(3)
+	if [ $(2) == 'guide' ]; then
+		cp tools/$(1)/$(2) gcp/dockerfiles/$(3);
+	fi;
 endef
 
 define clean_plugin_tool
@@ -252,6 +268,15 @@ aws-template:
 aws-nightly:
 	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C aws nightly
+
+## GCP Targets
+
+gcp-template:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	$(MAKE) -C gcp build-templates BUILD_NUMBER=$(GCP_BUILD_NUMBER)
+
+gcp-release:
+	$(MAKE) -C gcp release BUILD_NUMBER=$(GCP_BUILD_NUMBER) EDITIONS_VERSION=$(GCP_TAG_VERSION)
 
 ## Golang targets
 # Package list

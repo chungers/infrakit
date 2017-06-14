@@ -5,7 +5,6 @@ NAMESPACE ?= docker4x
 DOCKER_PUSH ?= false
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
 EDITIONS_VERSION ?= dev
-IMAGE_VERSION ?= $(shell whoami)-dev
 BUILDS_BUCKET ?= gs://docker-for-gcp-builds
 TEMPLATES_BUCKET ?= gs://docker-for-gcp-templates
 TESTS ?= all
@@ -77,22 +76,23 @@ test:
 
 build-dir:
 	mkdir -p build
+	mkdir -p $(ROOT_DIR)/$(GCP_TARGET_PATH)
 
 build-buoy:
 	make -C ../tools/buoy build
 
 build-cloudstor:
-	if [ ! -e dockerfiles/cloudstor-rootfs.tar.gz ]; then          \
+	if [ ! -e build/cloudstor-rootfs.tar.gz ]; then          \
 	    make -C ../tools/cloudstor build;                          \
-	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz dockerfiles/;\
+	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz build/;\
 	fi
-	cd dockerfiles;                                                              \
+	cd build;                                                              \
 	tar zxvf cloudstor-rootfs.tar.gz;                                            \
-	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)" || true;   \
-	docker plugin create "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)" ./plugin; \
+	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)" || true;   \
+	docker plugin create "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)" ./plugin; \
 	rm -rf ./plugin;                                                             \
 	if [ "$(DOCKER_PUSH)" = true ]; then                                            \
-	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(IMAGE_VERSION)";        \
+	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)";        \
 	fi;                                                                          \
 	cd ..
 
@@ -110,12 +110,16 @@ build-templates: build-dir test
 	rm -f ./build/templates/Docker.jinja.bak
 
 $(DOCKERFILE_DIRS):
-	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp make -C dockerfiles/$(call last,$@)
+	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@)
 
 build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	docker save \
-		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp) \
+		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)) \
 		--output ./build/images.tar
+	if [ $(DOCKER_PUSH) -eq 1 ]; then \
+		docker push $(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)); \
+	fi
+	cp ./build/images.tar $(ROOT_DIR)/$(GCP_TARGET_PATH)/images.tar
 
 build: build-moby build-cloudstor build-images build-templates
 
