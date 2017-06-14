@@ -110,7 +110,11 @@ build-templates: build-dir test
 	rm -f ./build/templates/Docker.jinja.bak
 
 $(DOCKERFILE_DIRS):
+ifeq ($(call last,$@),"lb-controller")
+	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@) -k container
+else
 	DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@)
+endif
 
 build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	docker save \

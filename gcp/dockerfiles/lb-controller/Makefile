@@ -14,6 +14,9 @@ govendor:
 
 clean:
 	rm -rf bin
+	docker rmi -f ${DOCKER_IMAGE} >/dev/null 2>&1 || true
+	docker rmi -f ${DOCKER_REPO}:latest >/dev/null 2>&1 || true
+	-docker rm lb-controller-build
 
 # This target runs inside the container
 build-in-container: govendor
@@ -30,4 +33,11 @@ container:
 	docker container run --name lb-controller-build lb-controller:build
 	mkdir -p ${CURDIR}/bin
 	docker container cp lb-controller-build:/go/build/loadbalancer ${CURDIR}/bin
-	docker build -t $(DOCKER_IMAGE) .
+	-docker rm -fv lb-controller-build
+	docker build -t $(DOCKER_IMAGE) $(DOCKER_REPO):latest .
+ifeq (${DOCKER_PUSH},true)
+	docker push $(DOCKER_IMAGE)
+ifeq ($(DOCKER_TAG_LATEST),true)
+	docker push $(DOCKER_REPO):latest
+endif
+endif
