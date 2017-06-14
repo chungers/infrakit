@@ -30,7 +30,11 @@ function test () {
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
 # Create directory and make sure to chmod it
-docker run --rm -v $ROOT_DIR:/data alpine sh -c "mkdir -p /data/$AWS_TARGET_PATH && chmod +rwx -R /data/dist"
+mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
+if [ $? ]; then
+	docker run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
+	mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
+fi
 
 for IMAGE in shell init guide ddc-init cloud meta
 do
@@ -39,7 +43,7 @@ do
 	docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
 	if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
 		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-		docker save "${FINAL_IMAGE}" > "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
+		docker save "${FINAL_IMAGE}" --output "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
 	fi
 	test ${IMAGE}
 	if [ "${DOCKER_PUSH}" = true ]; then
