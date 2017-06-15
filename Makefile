@@ -134,7 +134,7 @@ templates:
 	$(MAKE) gcp-template
 
 ## Container images targets
-dockerimages: tools
+dockerimages: clean tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) dockerimages-aws
 	$(MAKE) dockerimages-azure
@@ -172,6 +172,8 @@ define clean_plugin_tool
 	-rm -f aws/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f azure/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f gcp/dockerfiles/cloudstor-rootfs.tar.gz
+	-rm -Rf gcp/dockerfiles/meta
+	-rm -Rf gcp/dockerfiles/init
 endef
 
 ## General tools targets
