@@ -131,14 +131,14 @@ nightly:
 templates:
 	$(MAKE) azure-template
 	$(MAKE) aws-template
-	$(MAKE) gcp-template
+	# $(MAKE) gcp-template
 
 ## Container images targets
 dockerimages: clean tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) dockerimages-aws
 	$(MAKE) dockerimages-azure
-	$(MAKE) dockerimages-gcp
+	# $(MAKE) dockerimages-gcp
 
 dockerimages-aws: tools
 	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AWS_TAG_VERSION}\033[0m"
