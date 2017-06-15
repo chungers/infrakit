@@ -23,7 +23,7 @@ endif
 
 # Check if MOBY_COMMIT has been defined via env
 ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := ef91e6873f2ac7fa3ff9b65c9fe2365fa594764a
+	MOBY_COMMIT := 36ab369660c0ab1c83d0b5a82864ae5b93a5c096
 endif
 
 # Check if DOCKER_VERSION has been set
@@ -122,7 +122,7 @@ endif
 release: 
 	$(MAKE) aws-release
 	$(MAKE) azure-release
-	$(MAKE) gcp-release
+	# $(MAKE) gcp-release
 
 nightly:
 	$(MAKE) aws-nightly
