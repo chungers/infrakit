@@ -237,7 +237,7 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 
 azure-release:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) -C azure/release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+	$(MAKE) -C azure release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 $(AZURE_TARGET_TEMPLATE):
 	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
