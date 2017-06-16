@@ -8,27 +8,11 @@ echo $PATH
 PATH=$PATH:/usr/local/bin
 echo $PATH
 DAY=$(date +"%m_%d_%Y")
-HASH=$(curl -f -s https://master.dockerproject.org/commit)
-if [[ -z $HASH ]]
-then
-   echo "No valid HASH $HASH"
-   HASH="NOHASHAVAILABLE"
-fi
-export AWS_ACCESS_KEY_ID=$(cat ~/.aws/credentials | grep aws_access_key_id | cut -f2 -d= | sed -e 's/^[ \t]*//')
-export AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/credentials | grep aws_secret_access_key | cut -f2 -d= | sed -e 's/^[ \t]*//')
-export PYTHONUNBUFFERED=1
-export CHANNEL="nightly"
+AMI_BUCKET="docker-ci-editions"
+AMI_URL="ami/ami_id.out"
 BUILD_HOME="/home/ubuntu"
 AMI_OUT_DIR="$BUILD_HOME/out"
 AMI_OUT_FILE="ami_id_${DAY}.out"
-export TAG_KEY="aws-nightly-${DAY}-${HASH}"
-
-AMI_BUCKET="docker-ci-editions"
-AMI_URL="ami/ami_id.out"
-
-# git update
-cd $BUILD_HOME/code/editions/
-git pull
 
 # get docker version
 EDITIONS_META=$(aws s3api --no-sign-request get-object --bucket $AMI_BUCKET --key ${AMI_URL} docker.out | jq -r '.Metadata')
@@ -36,6 +20,20 @@ export EDITIONS_VERSION=$(echo $EDITIONS_META | jq -r '.editions_version')
 export DOCKER_VERSION=$(echo $EDITIONS_META | jq -r '.docker_version')
 export MOBY_COMMIT=$(echo $EDITIONS_META | jq -r '.moby_commit')
 export AWS_TARGET_PATH="dist/aws/$CHANNEL/$AWS_TAG_VERSION"
+
+
+export AWS_ACCESS_KEY_ID=$(cat ~/.aws/credentials | grep aws_access_key_id | cut -f2 -d= | sed -e 's/^[ \t]*//')
+export AWS_SECRET_ACCESS_KEY=$(cat ~/.aws/credentials | grep aws_secret_access_key | cut -f2 -d= | sed -e 's/^[ \t]*//')
+export PYTHONUNBUFFERED=1
+export CHANNEL="nightly"
+
+export TAG_KEY="aws-nightly-${DAY}-${MOBY_COMMIT}"
+
+
+
+# git update
+cd $BUILD_HOME/code/editions/
+git pull
 
 export RELEASE=true
 
