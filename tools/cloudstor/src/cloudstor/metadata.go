@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	recognizedOptions = []string{"share", "perfmode", "size", "backing", "uid", "gid", "filemode", "dirmode"}
+	recognizedOptions = []string{"share", "perfmode", "size", "uid", "gid", "filemode", "dirmode"}
 )
 
 type volumeMetadata struct {
@@ -24,8 +24,6 @@ type volumeMetadata struct {
 type VolumeOptions struct {
 	Share    string `json:"share"`
 	Size     string `json:"size"`
-	PerfMode string `json:"perfmode"`
-	Backing  string `json:"backing"`
 	UID      string `json:"uid"`
 	GID      string `json:"gid"`
 	FileMode string `json:"filemode"`
@@ -62,8 +60,6 @@ func (m *metadataDriver) Validate(meta map[string]string) (volumeMetadata, error
 	}
 	opts.Share = meta["share"]
 	opts.Size = meta["size"]
-	opts.PerfMode = meta["perfmode"]
-	opts.Backing = meta["backing"]
 	opts.FileMode = meta["filemode"]
 	opts.DirMode = meta["dirmode"]
 	opts.UID = meta["uid"]
