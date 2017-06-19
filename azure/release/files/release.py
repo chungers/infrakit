@@ -113,7 +113,7 @@ def main():
     print("Create ARM templates..")
     
     for platform, platform_config in AZURE_PLATFORMS.items():
-        ce_template_name = u"Docker" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        ce_template_name = u"Docker{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'base'
         base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_addon, CFN_TEMPLATE, ce_template_name,
@@ -122,7 +122,7 @@ def main():
                         platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
                         platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
-        ee_template_name = u"Docker-EE" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        ee_template_name = u"Docker-ee{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'base'
         ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_addon, CFN_TEMPLATE, ee_template_name,
@@ -132,7 +132,7 @@ def main():
                         platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
         if platform_config['PUBLIC_PLATFORM']:
-            cloud_template_name = u"Docker-Cloud" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+            cloud_template_name = u"Docker-cloud{}".format(platform_config['TEMPLATE_SUFFIX'])
             edition_addon = 'cloud'
             cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url,
@@ -140,7 +140,7 @@ def main():
                                  platform_config['PORTAL_ENDPOINT'],
                                  cloud_template_name)
 
-        ddc_template_name = u"Docker-DDC" + platform_config['TEMPLATE_SUFFIX'] + TEMPLATE_EXTENSION
+        ddc_template_name = u"Docker-ddc{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'ddc'
         ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url, ddc_template_name, 
@@ -156,11 +156,10 @@ def main():
             print(u"Uploading templates.. \n")
             s3_url = upload_rg_template(release_channel, ce_template_name, base_url)
             s3_ee_url = upload_rg_template(release_channel, ee_template_name, ee_url)
-            s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
             s3_cloud_url = ""
             if platform_config['PUBLIC_PLATFORM']:
                 s3_cloud_url = upload_rg_template(release_channel, cloud_template_name, cloud_url)
-            
+            s3_ddc_url = upload_rg_template(release_channel, ddc_template_name, ddc_url)
             print(u"Uploaded ARM \n\t URL={0} \n\t EE_URL={1} \n\t CLOUD_URL={2} \n\t DDC_URL={3} \n".format(s3_url, s3_ee_url, s3_cloud_url, s3_ddc_url))
 
     print(u"Finshed.. \n")

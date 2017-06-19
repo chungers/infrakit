@@ -50,28 +50,34 @@ def upload_rg_template(release_channel, arm_template_name, tempfile, arm_type=''
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(ARM_S3_BUCKET_NAME)
-    channel = release_channel
-    if MOBY_COMMIT:
-        channel = u"{}/{}".format(channel, MOBY_COMMIT)
-    s3_path = u"azure/{}/{}".format(channel, arm_template_name)
-    latest_name = "latest.json"
+    s3_base_path = u"azure/{}/{}".format(release_channel, MOBY_COMMIT)
+    s3_path_build = u"{}/{}/{}.tmpl".format(s3_base_path, JENKINS_BUILD, arm_template_name)
+    s3_path = u"{}/{}.tmpl".format(s3_base_path, arm_template_name)
+    latest_name = "latest.tmpl"
     if arm_type:
-        latest_name = "{}-latest.json".format(arm_type)
+        latest_name = "{}-latest.tmpl".format(arm_type)
 
     s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
-    s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
+    s3_full_url = u"{}/{}".format(s3_host_name, s3_path_build)
 
     s3conn = boto.connect_s3(ARM_AWS_ACCESS_KEY_ID, ARM_AWS_SECRET_ACCESS_KEY)
     bucket = s3conn.get_bucket(ARM_S3_BUCKET_NAME)
 
-    print(u"Upload template to {} in {} s3 bucket".format(s3_path, ARM_S3_BUCKET_NAME))
-    key = bucket.new_key(s3_path)
+    # Upload template to commit + build number folder
+    print(u"Upload ARM template to {} in {} s3 bucket".format(s3_path_build, ARM_S3_BUCKET_NAME))
+    key = bucket.new_key(s3_path_build)
     key.set_metadata("Content-Type", "application/json")
     key.set_contents_from_filename(tempfile)
     key.set_acl("public-read")
 
+    # Copy to the commit root folder as well
+    print(u"Copy template from {} to {} s3 bucket".format(s3_path_build, s3_path))
+    srckey = bucket.get_key(s3_path_build)
+    dstkey = bucket.new_key(s3_path)
+    srckey.copy(CFN_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+
     if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
-        print("This is a nightly build, update the latest.json file.")
+        print("This is a nightly build, update the latest.tmpl file.")
         print(u"Upload ARM template to {} in {} s3 bucket".format(
             s3_path_latest, ARM_S3_BUCKET_NAME))
         key = bucket.new_key(s3_path_latest)
@@ -84,10 +90,10 @@ def upload_rg_template(release_channel, arm_template_name, tempfile, arm_type=''
 def publish_rg_template(release_channel, docker_for_azure_version):
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(ARM_S3_BUCKET_NAME)
-    s3_path = u"azure/{}/{}.json".format(release_channel, docker_for_azure_version)
+    s3_path = u"azure/{}/{}".format(release_channel, docker_for_azure_version)
 
-    print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_azure_version, release_channel))
-    latest_name = "latest.json"
+    print(u"Update the latest.tmpl file to the release of {} in {} channel.".format(docker_for_azure_version, release_channel))
+    latest_name = "latest.tmpl"
     s3_path_latest = u"azure/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path_latest)
 
@@ -134,13 +140,13 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
         custom_data = buildCustomData('custom-data.sh')
 
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ')]'
-
+    
     outdir = u"dist/azure/{}/{}".format(release_channel, docker_for_azure_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outfile = u"{}/{}".format(outdir, arm_template_name)
+    outfile = u"{}/{}.tmpl".format(outdir, arm_template_name)
 
     with open(outfile, 'w') as outf:
         json.dump(data, outf, indent=4, sort_keys=True)

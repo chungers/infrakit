@@ -20,12 +20,13 @@ CFN_S3_BUCKET_NAME = os.getenv('UPLOAD_S3_BUCKET', 'docker-for-aws')
 CFN_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 CFN_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
 MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
+JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
 
 
 # file with list of aws account_ids
 ACCOUNT_LIST_FILE_URL = u"https://s3.amazonaws.com/docker-for-aws/data/accounts.txt"
 DOCKER_AWS_ACCOUNT_URL = "https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt"
-AMI_LIST_PATH = u"ami/{}/ami_list.json"
+AMI_LIST_PATH = u"ami/{}{}/ami_list.json"
 
 
 def str2bool(v):
@@ -115,7 +116,7 @@ def get_account_list(account_file_url):
 
 def generate_ami_list_url():
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT)
+    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT,'')
     return u"{}/{}".format(s3_host_name, s3_path)
 
 def get_ami_list(ami_list_url):
@@ -184,7 +185,7 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
 	
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT)
+    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT,'/'+JENKINS_BUILD)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
     print(u"Upload ami list json template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -197,8 +198,16 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
     key.set_metadata("arch", "aws")
     key.set_metadata("channel", release_channel)
     key.set_metadata("moby_commit", MOBY_COMMIT)
+    key.set_metadata("jenkins_build", JENKINS_BUILD)
     key.set_contents_from_string(ami_list_json)
     key.set_acl("public-read")
+
+    # upload to Jenkins build as well
+    s3_path_latest = AMI_LIST_PATH.format(MOBY_COMMIT,'')
+    print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
+    srckey = bucket.get_key(s3_path)
+    dstkey = bucket.new_key(s3_path_latest)
+    srckey.copy(CFN_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
 
     return s3_full_url
 
@@ -207,28 +216,34 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(CFN_S3_BUCKET_NAME)
-    channel = release_channel
-    if MOBY_COMMIT:
-        channel = u"{}/{}".format(channel, MOBY_COMMIT)
-    s3_path = u"aws/{}/{}.json".format(channel, u"Docker{}".format(cloudformation_template_name[cloudformation_template_name.find("-aws"):]))
-    latest_name = "latest.json"
+    s3_base_path = u"aws/{}/{}".format(release_channel, MOBY_COMMIT)
+    s3_path_build = u"{}/{}/{}.tmpl".format(s3_base_path, JENKINS_BUILD, cloudformation_template_name)
+    s3_path = u"{}/{}.tmpl".format(s3_base_path, cloudformation_template_name)
+    latest_name = "latest.tmpl"
     if cfn_type:
-        latest_name = "{}-latest.json".format(cfn_type)
+        latest_name = "{}-latest.tmpl".format(cfn_type)
 
     s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
-    s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
+    s3_full_url = u"{}/{}".format(s3_host_name, s3_path_build)
 
     s3conn = boto.connect_s3(CFN_AWS_ACCESS_KEY_ID, CFN_AWS_SECRET_ACCESS_KEY)
     bucket = s3conn.get_bucket(CFN_S3_BUCKET_NAME)
 
-    print(u"Upload Cloudformation template to {} in {} s3 bucket".format(s3_path, CFN_S3_BUCKET_NAME))
-    key = bucket.new_key(s3_path)
+    # Upload template to commit + build number folder
+    print(u"Upload Cloudformation template to {} in {} s3 bucket".format(s3_path_build, CFN_S3_BUCKET_NAME))
+    key = bucket.new_key(s3_path_build)
     key.set_metadata("Content-Type", "application/json")
     key.set_contents_from_filename(tempfile)
     key.set_acl("public-read")
 
+    # Copy to the commit root folder as well
+    print(u"Copy template from {} to {} s3 bucket".format(s3_path_build, s3_path))
+    srckey = bucket.get_key(s3_path_build)
+    dstkey = bucket.new_key(s3_path)
+    srckey.copy(CFN_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+
     if release_channel == 'nightly' or release_channel == 'cloud-nightly':
-        print("This is a nightly build, update the latest.json file.")
+        print("This is a nightly build, update the latest.tmpl file.")
         print(u"Upload Cloudformation template to {} in {} s3 bucket".format(
             s3_path_latest, CFN_S3_BUCKET_NAME))
         key = bucket.new_key(s3_path_latest)
@@ -242,10 +257,10 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
 def publish_cfn_template(release_channel, docker_for_aws_version):
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(CFN_S3_BUCKET_NAME)
-    s3_path = u"aws/{}/{}.json".format(release_channel, docker_for_aws_version)
+    s3_path = u"aws/{}/{}.tmpl".format(release_channel, docker_for_aws_version)
 
-    print(u"Update the latest.json file to the release of {} in {} channel.".format(docker_for_aws_version, release_channel))
-    latest_name = "latest.json"
+    print(u"Update the latest.tmpl file to the release of {} in {} channel.".format(docker_for_aws_version, release_channel))
+    latest_name = "latest.tmpl"
     s3_path_latest = u"aws/{}/{}".format(release_channel, latest_name)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path_latest)
 
@@ -264,14 +279,13 @@ def create_cfn_template(template_class, amis, release_channel,
                         edition_addon, cfn_name,
                         cfn_type=None):
 
-    cloudformation_template_name = u"{}.json".format(cfn_name)
     curr_path = os.path.dirname(__file__)
 
-    outdir = u'dist/aws/{}'.format(release_channel)
+    outdir = u'dist/aws/{}/{}'.format(release_channel, docker_for_aws_version)
     # if the directory doesn't exist, create it.
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    outfile = u"{}/{}".format(outdir, cloudformation_template_name)
+    outfile = u"{}/{}.tmpl".format(outdir, cfn_name)
 
     aws_template = template_class(
         docker_version, docker_for_aws_version,

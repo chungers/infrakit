@@ -118,24 +118,24 @@ def main():
 
     print("Create CloudFormation template..")
 
-    cfn_name = docker_for_aws_version
+    cfn_name = u"Docker"
     base_url = create_cfn_template(DockerCEVPCTemplate, ami_list, release_channel,
                                  docker_version, docker_for_aws_version, edition_addon, cfn_name)
 
-    no_vpc_cfn_name = "{}-no-vpc".format(docker_for_aws_version)
+    no_vpc_cfn_name = "{}-no-vpc".format(cfn_name)
     base_url_no_vpc = create_cfn_template(DockerCEVPCExistingTemplate, ami_list, release_channel,
                                         docker_version, docker_for_aws_version,
                                         edition_addon, no_vpc_cfn_name,
                                         cfn_type="no-vpc")
 
-    docker_ee_cfn_name = u"{}-ee".format(docker_for_aws_version)
+    docker_ee_cfn_name = u"{}-ee".format(cfn_name)
     docker_ee_release_channel = u"{}-ee".format(release_channel)
     docker_ee_base_url = create_cfn_template(DockerEEVPCTemplate, ami_list,
                                            docker_ee_release_channel,
                                            docker_version, docker_for_aws_version, edition_addon,
                                            docker_ee_cfn_name)
 
-    docker_ee_no_vpc_cfn_name = "{}-no-vpc-ee".format(docker_for_aws_version)
+    docker_ee_no_vpc_cfn_name = "{}-no-vpc-ee".format(cfn_name)
     docker_ee_base_url_no_vpc = create_cfn_template(DockerEEVPCExistingTemplate,
                                                   ami_list,
                                                   docker_ee_release_channel,
@@ -143,14 +143,14 @@ def main():
                                                   edition_addon, docker_ee_no_vpc_cfn_name,
                                                   cfn_type="no-vpc")
 
-    cloud_cfn_name = "{}-cloud".format(docker_for_aws_version)
+    cloud_cfn_name = "{}-Cloud".format(cfn_name)
     edition_addon = 'cloud'
     cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
                                        release_cloud_channel,
                                        docker_version, docker_for_aws_version, 
                                        edition_addon, cloud_cfn_name)
 
-    cloud_no_vpc_cfn_name = "{}-no-vpc-cloud".format(docker_for_aws_version)
+    cloud_no_vpc_cfn_name = "{}-Cloud-no-vpc".format(cfn_name)
     cloud_url_no_vpc = create_cfn_template(CloudVPCExistingTemplate,
                                               ami_list, release_cloud_channel,
                                               docker_version, docker_for_aws_version,
@@ -158,28 +158,28 @@ def main():
 
     # DDC
     ddc_channel = "{}-ddc".format(release_channel)
-    ddc_cfn_name = "{}-ddc".format(docker_for_aws_version)
+    ddc_cfn_name = "{}-ddc".format(cfn_name)
     edition_addon = 'ddc'
     ddc_url = create_cfn_template(DDCVPCTemplate, ami_list,
                                      ddc_channel,
                                      docker_version, docker_for_aws_version,
                                      edition_addon, ddc_cfn_name)
 
-    ddc_no_vpc_cfn_name = "{}-no-vpc-ddc".format(docker_for_aws_version)
+    ddc_no_vpc_cfn_name = "{}-ddc-no-vpc".format(cfn_name)
     ddc_url_no_vpc = create_cfn_template(DDCVPCExistingTemplate,
                                             ami_list, ddc_channel,
                                             docker_version, docker_for_aws_version,
                                             edition_addon, ddc_no_vpc_cfn_name, cfn_type="no-vpc")
 
     # DDC-Dev
-    ddc_dev_cfn_name = "{}-ddc-dev".format(docker_for_aws_version)
+    ddc_dev_cfn_name = "{}-ddc-dev".format(cfn_name)
     edition_addon = 'ddc-dev'
     ddc_dev_url = create_cfn_template(DDCDevVPCTemplate, ami_list,
                                          ddc_channel,
                                          docker_version, docker_for_aws_version,
                                          edition_addon, ddc_dev_cfn_name)
 
-    ddc_dev_no_vpc_cfn_name = "{}-no-vpc-ddc-dev".format(docker_for_aws_version)
+    ddc_dev_no_vpc_cfn_name = "{}-ddc-dev-no-vpc".format(cfn_name)
     ddc_dev_url_no_vpc = create_cfn_template(DDCDevVPCExistingTemplate,
                                                 ami_list, ddc_channel,
                                                 docker_version, docker_for_aws_version,

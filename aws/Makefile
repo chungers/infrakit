@@ -57,6 +57,7 @@ TOOLS := docker4x/tools:latest
 TOOLSRUN := docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $(TOOLS) python
 
 CFNGEN := docker4x/cfngen:latest
+CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e CHANNEL_CLOUD="${CHANNEL}-cloud" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e MOBY_COMMIT=${MOBY_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -v ${ROOT_DIR}/dist:/home/docker/dist 
 
 export
 
@@ -82,24 +83,11 @@ ifeq ($(EDITIONS_VERSION),)
 	@echo "\033[31m Error - No version found!!!!!\033[0m"
 	exit 1
 endif
-	docker run --rm \
-		-e AWS_ACCESS_KEY_ID \
-		-e AWS_SECRET_ACCESS_KEY \
-		-e DOCKER_VERSION="${DOCKER_VERSION}" \
-		-e EDITIONS_VERSION="${EDITIONS_VERSION}" \
-		-e AMI_ID="${AMI_ID}" \
-		-e AMI_SRC_REGION="${AMI_SRC_REGION}" \
-		-e CHANNEL="${CHANNEL}" \
-		-e CHANNEL_CLOUD="${CHANNEL}-cloud" \
-		-e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" \
-		-e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" \
-		-e FLAGS="--upload" \
+	$(CFNRUN) -e FLAGS="--upload" \
 		-e UPLOAD_S3_BUCKET="${STAGE_S3_BUCKET}" \
 		-e UPLOAD_S3_KEY="${AWS_STAGE_ACCESS_KEY_ID}" \
 		-e UPLOAD_S3_SECRET="${AWS_STAGE_SECRET_ACCESS_KEY}" \
-		-e MOBY_COMMIT=${MOBY_COMMIT}/${BUILD_NUMBER} \
-		-v ${CURDIR}/cfn_gen/outputs:/home/docker/outputs \
-		docker4x/cfngen
+		$(CFNGEN)
 
 nightly:
 	@echo "\033[0;1;34m++ Start nightly release\033[0m"
@@ -116,17 +104,7 @@ nightly:
 template: buildtools
 	@echo "\033[0;1;34m++ Using bucket: $(AMI_S3_BUCKET) and path of: $(AMI_S3_PATH)/ami_id.out \033[0m"
 	@echo "\033[0;1;34m++ Create AWS template of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
-	docker run \
-		-e AWS_ACCESS_KEY_ID \
-		-e AWS_SECRET_ACCESS_KEY \
-		-e DOCKER_VERSION="${DOCKER_VERSION}" \
-		-e EDITIONS_VERSION="${EDITIONS_VERSION}" \
-		-e CHANNEL="${CHANNEL}" \
-		-e CHANNEL_CLOUD="${CHANNEL}-cloud" \
-		-e MOBY_COMMIT \
-		-e FLAGS="--template" \
-		-v ${ROOT_DIR}/dist:/home/docker/dist \
-		docker4x/cfngen
+	$(CFNRUN) -e FLAGS="--template" $(CFNGEN)
 
 buildtools: clean
 	-mkdir -p tmp/ $(ROOT_DIR)/dist/
