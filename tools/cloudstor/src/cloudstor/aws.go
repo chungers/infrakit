@@ -587,7 +587,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 		return fmt.Errorf("Invalid volume size: %v", err)
 	}
 
-	vol, err := v.createEBSCore(req.Name, "", "", szGB, false)
+	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, false)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return err
@@ -773,10 +773,20 @@ func (v *awsDriver) removeEBS(req volume.Request) error {
 		return err
 	}
 	volumeID := *vol.VolumeId
-	err = v.detachEBS(volumeID)
-	if err != nil {
-		logctx.Error(fmt.Sprintf("DetachVolume failed: %v", err))
-		return err
+
+	detach := false
+	for _, attachment := range vol.Attachments {
+		if *attachment.State != ec2.AttachmentStatusDetached {
+			detach = true
+		}
+	}
+
+	if detach {
+		err := v.detachEBS(volumeID)
+		if err != nil {
+			logctx.Error(fmt.Sprintf("DetachVolume failed: %v", err))
+			return err
+		}
 	}
 
 	volDelete := &ec2.DeleteVolumeInput{
