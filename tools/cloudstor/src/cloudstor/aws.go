@@ -1,9 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"crypto/md5"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -47,7 +48,6 @@ const (
 
 type awsDriver struct {
 	m            sync.Mutex
-	meta         *metadataDriver
 	cl           *ec2.EC2
 	az           string
 	instanceID   string
@@ -62,8 +62,18 @@ type metaData struct {
 	InstanceId string `json:"instanceId,omitempty"`
 }
 
+type awsVol struct {
+	backingType string
+	efsType     string
+}
+
 func newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot, stackID string, efsSupported bool) (*awsDriver, error) {
-	cl := ec2.New(session.New(&aws.Config{}))
+	sess, err := session.NewSession(aws.NewConfig().WithLogLevel(aws.LogDebugWithRequestRetries | aws.LogDebugWithRequestErrors))
+	if err != nil {
+		return nil, fmt.Errorf("Error initializing session: %v", err)
+	}
+
+	cl := ec2.New(sess)
 
 	md, err := fetchAWSMetaData()
 	if err != nil {
@@ -96,15 +106,9 @@ func newAWSDriver(efsIDRegular, efsIDMaxIO, metadataRoot, stackID string, efsSup
 		return nil, fmt.Errorf("error creating EBS mount point: %v", err)
 	}
 
-	metaDriver, err := newMetadataDriver(metadataRoot)
-	if err != nil {
-		return nil, fmt.Errorf("cannot initialize metadata driver: %v", err)
-	}
-
 	stackIDmd5 := fmt.Sprintf("%x", md5.Sum([]byte(stackID)))
 
 	v := &awsDriver{
-		meta:         metaDriver,
 		cl:           cl,
 		az:           md.AvailZone,
 		region:       md.Region,
@@ -143,13 +147,6 @@ func (v *awsDriver) Create(req volume.Request) (resp volume.Response) {
 		"name":      req.Name,
 		"options":   req.Options})
 
-	volMeta, err := v.meta.Validate(req.Options)
-	if err != nil {
-		resp.Err = fmt.Sprintf("error validating metadata: %v", err)
-		logctx.Error(resp.Err)
-		return
-	}
-
 	// default to EFS when EFS supported (since it has less restrictions)
 	// otherwise default to EBS
 	voltype := req.Options["backing"]
@@ -165,17 +162,12 @@ func (v *awsDriver) Create(req volume.Request) (resp volume.Response) {
 		logctx.Error(resp.Err)
 		return
 	}
-	volMeta.Options.Backing = voltype
 
 	logctx.Debug("request accepted")
 
+	var err error
 	if voltype == backingTypeShared {
 		err = v.createEFS(req)
-		if req.Options["perfmode"] == perfmodeMaxIO {
-			volMeta.Options.PerfMode = perfmodeMaxIO
-		} else {
-			volMeta.Options.PerfMode = perfmodeRegIO
-		}
 	} else {
 		err = v.createEBS(req)
 	}
@@ -185,13 +177,6 @@ func (v *awsDriver) Create(req volume.Request) (resp volume.Response) {
 		return
 	}
 
-	volMeta.CreatedAt = time.Now().UTC()
-	// Save volume metadata
-	if err := v.meta.Set(req.Name, volMeta); err != nil {
-		resp.Err = fmt.Sprintf("error saving metadata: %v", err)
-		logctx.Error(resp.Err)
-		return
-	}
 	return
 }
 
@@ -205,18 +190,19 @@ func (v *awsDriver) Path(req volume.Request) (resp volume.Response) {
 	})
 	logctx.Debug("request accepted")
 
-	meta, err := v.meta.Get(req.Name)
+	vol, err := v.getAWSVolume(req.Name)
 	if err != nil {
-		resp.Err = fmt.Sprintf("could not fetch metadata: %v", err)
+		resp.Err = fmt.Sprintf("could not fetch volume: %v", err)
 		logctx.Error(resp.Err)
 		return
 	}
 
-	if meta.Options.Backing == backingTypeShared {
-		resp.Mountpoint = v.pathForEFSVolume(req.Name, meta.Options.PerfMode)
-	} else {
+	if vol.backingType == backingTypeLocal {
 		resp.Mountpoint = v.pathForEBSVolume(req.Name)
+	} else {
+		resp.Mountpoint = v.pathForEFSVolume(req.Name, vol.efsType)
 	}
+
 	return
 }
 
@@ -230,16 +216,14 @@ func (v *awsDriver) Mount(req volume.MountRequest) (resp volume.Response) {
 	})
 	logctx.Debug("request accepted")
 
-	meta, err := v.meta.Get(req.Name)
+	vol, err := v.getAWSVolume(req.Name)
 	if err != nil {
-		resp.Err = fmt.Sprintf("could not fetch metadata: %v", err)
+		resp.Err = fmt.Sprintf("could not fetch volume: %v", err)
 		logctx.Error(resp.Err)
 		return
 	}
 
-	if meta.Options.Backing == backingTypeShared {
-		resp.Mountpoint = v.pathForEFSVolume(req.Name, meta.Options.PerfMode)
-	} else {
+	if vol.backingType == backingTypeLocal {
 		mountPath, err := v.mountEBS(req)
 		if err != nil {
 			resp.Err = fmt.Sprintf("error mounting volume: %v", err)
@@ -247,7 +231,10 @@ func (v *awsDriver) Mount(req volume.MountRequest) (resp volume.Response) {
 			return
 		}
 		resp.Mountpoint = mountPath
+	} else {
+		resp.Mountpoint = v.pathForEFSVolume(req.Name, vol.efsType)
 	}
+
 	return
 }
 
@@ -262,23 +249,22 @@ func (v *awsDriver) Unmount(req volume.UnmountRequest) (resp volume.Response) {
 
 	logctx.Debug("request accepted")
 
-	meta, err := v.meta.Get(req.Name)
+	vol, err := v.getAWSVolume(req.Name)
 	if err != nil {
-		resp.Err = fmt.Sprintf("could not fetch metadata: %v", err)
+		resp.Err = fmt.Sprintf("could not fetch volume: %v", err)
 		logctx.Error(resp.Err)
 		return
 	}
 
-	if meta.Options.Backing == backingTypeShared {
-		return
-	} else {
+	if vol.backingType == backingTypeLocal {
 		path := v.pathForEBSVolume(req.Name)
+		// we do not support multiple mounts so this is okay.
+		// need to reference count mounts if do want multiple mounts
 		if err := unmount(path); err != nil {
 			resp.Err = fmt.Sprintf("unmount failed: %v", err)
 			logctx.Error(resp.Err)
 			return
 		}
-		logctx.Debug("unmount successful")
 	}
 	return
 }
@@ -293,16 +279,15 @@ func (v *awsDriver) Remove(req volume.Request) (resp volume.Response) {
 	})
 	logctx.Debug("request accepted")
 
-	meta, err := v.meta.Get(req.Name)
+	vol, err := v.getAWSVolume(req.Name)
 	if err != nil {
-		resp.Err = fmt.Sprintf("could not fetch metadata: %v", err)
+		resp.Err = fmt.Sprintf("could not fetch volume: %v", err)
 		logctx.Error(resp.Err)
 		return
 	}
-	path := meta.VolPath
 
-	if meta.Options.Backing == backingTypeShared {
-		err = v.removeEFS(path)
+	if vol.backingType == backingTypeShared {
+		err = v.removeEFS(v.pathForEFSVolume(req.Name, vol.efsType))
 	} else {
 		err = v.removeEBS(req)
 	}
@@ -311,14 +296,6 @@ func (v *awsDriver) Remove(req volume.Request) (resp volume.Response) {
 		logctx.Error(resp.Err)
 		return
 	}
-
-	logctx.Debug("removing volume metadata")
-	if err := v.meta.Delete(req.Name); err != nil {
-		resp.Err = err.Error()
-		logctx.Error(resp.Err)
-		return
-	}
-
 	return
 }
 
@@ -331,7 +308,18 @@ func (v *awsDriver) Get(req volume.Request) (resp volume.Response) {
 	})
 	logctx.Debug("request accepted")
 
-	resp.Volume = v.volumeEntry(req.Name)
+	vol, err := v.getAWSVolume(req.Name)
+	if err != nil {
+		resp.Err = fmt.Sprintf("could not fetch volume: %v", err)
+		logctx.Error(resp.Err)
+		return
+	}
+
+	if vol.backingType == backingTypeShared {
+		resp.Volume = &volume.Volume{Name: req.Name, Mountpoint: v.pathForEFSVolume(req.Name, vol.efsType)}
+	} else {
+		resp.Volume = &volume.Volume{Name: req.Name, Mountpoint: v.pathForEBSVolume(req.Name)}
+	}
 	return
 }
 
@@ -344,26 +332,74 @@ func (v *awsDriver) List(req volume.Request) (resp volume.Response) {
 	})
 	logctx.Debug("request accepted")
 
-	vols, err := v.meta.List()
+	volsEBS, err := v.getEBSVolumesByStack()
 	if err != nil {
-		logctx.Error("failed to list managed volumes: %v", err)
+		logctx.Error(fmt.Sprintf("Failed to get volumes attached to instance: %v", err))
 		return
 	}
 
-	for _, vn := range vols {
-		resp.Volumes = append(resp.Volumes, v.volumeEntry(vn))
+	nametbl := map[string]bool{}
+	for _, vol := range volsEBS {
+		for _, tag := range vol.Tags {
+			if *tag.Key == "CloudstorVolumeName" {
+				name := *tag.Value
+				if seen := nametbl[name]; !seen {
+					nametbl[name] = true
+					resp.Volumes = append(resp.Volumes, &volume.Volume{Name: name, Mountpoint: v.pathForEBSVolume(name)})
+				}
+			}
+		}
 	}
+
+	if v.efsSupported {
+		files, err := ioutil.ReadDir(mountPointRegular)
+		if err != nil {
+			logctx.Error(fmt.Sprintf("Failed to get regular EFS volumes: %v", err))
+			return
+		}
+		for _, file := range files {
+			name := file.Name()
+			if file.IsDir() {
+				resp.Volumes = append(resp.Volumes, &volume.Volume{Name: name, Mountpoint: v.pathForEFSVolume(name, perfmodeRegIO)})
+			}
+		}
+
+		files, err = ioutil.ReadDir(mountPointMaxIO)
+		if err != nil {
+			logctx.Error(fmt.Sprintf("Failed to get MaxIO EFS volumes: %v", err))
+			return
+		}
+		for _, file := range files {
+			name := file.Name()
+			if file.IsDir() {
+				resp.Volumes = append(resp.Volumes, &volume.Volume{Name: name, Mountpoint: v.pathForEFSVolume(name, perfmodeMaxIO)})
+			}
+		}
+	}
+
 	logctx.Debugf("response has %d items", len(resp.Volumes))
 	return
 }
 
-func (v *awsDriver) volumeEntry(name string) *volume.Volume {
-	meta, err := v.meta.Get(name)
-	if err != nil {
-		log.Error("could not fetch metadata: %v", err)
-		return nil
+func (v *awsDriver) getAWSVolume(name string) (*awsVol, error) {
+	if v.efsSupported {
+		_, err := os.Stat(v.pathForEFSVolume(name, perfmodeRegIO))
+		if err == nil {
+			return &awsVol{backingType: backingTypeShared, efsType: perfmodeRegIO}, nil
+		}
+
+		_, err = os.Stat(v.pathForEFSVolume(name, perfmodeMaxIO))
+		if err == nil {
+			return &awsVol{backingType: backingTypeShared, efsType: perfmodeMaxIO}, nil
+		}
 	}
-	return &volume.Volume{Name: name, Mountpoint: meta.VolPath}
+
+	_, err := v.getEBSByName(name)
+	if err == nil {
+		return &awsVol{backingType: backingTypeLocal, efsType: ""}, nil
+	}
+
+	return nil, fmt.Errorf("Volume Not Found")
 }
 
 func (v *awsDriver) pathForEFSVolume(name, perfmode string) string {
@@ -551,7 +587,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 		return fmt.Errorf("Invalid volume size: %v", err)
 	}
 
-	vol, err := v.createEBSCore(req.Name, "", "", szGB, false)
+	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, false)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return err
@@ -737,10 +773,20 @@ func (v *awsDriver) removeEBS(req volume.Request) error {
 		return err
 	}
 	volumeID := *vol.VolumeId
-	err = v.detachEBS(volumeID)
-	if err != nil {
-		logctx.Error(fmt.Sprintf("DetachVolume failed: %v", err))
-		return err
+
+	detach := false
+	for _, attachment := range vol.Attachments {
+		if *attachment.State != ec2.AttachmentStatusDetached {
+			detach = true
+		}
+	}
+
+	if detach {
+		err := v.detachEBS(volumeID)
+		if err != nil {
+			logctx.Error(fmt.Sprintf("DetachVolume failed: %v", err))
+			return err
+		}
 	}
 
 	volDelete := &ec2.DeleteVolumeInput{
@@ -980,6 +1026,24 @@ func (v *awsDriver) getEBSByName(volumeName string) (*ec2.Volume, error) {
 		return nil, fmt.Errorf("Volume not found")
 	}
 	return resp.Volumes[0], nil
+}
+
+func (v *awsDriver) getEBSVolumesByStack() ([]*ec2.Volume, error) {
+	input := &ec2.DescribeVolumesInput{
+		DryRun: aws.Bool(false),
+		Filters: []*ec2.Filter{
+			{
+				Name:   aws.String("tag:StackID"),
+				Values: []*string{aws.String(v.stackID)},
+			},
+		},
+	}
+
+	resp, err := v.cl.DescribeVolumes(input)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Volumes, nil
 }
 
 func (v *awsDriver) getCloudstorVolumesByAttachment(instanceID string) ([]*ec2.Volume, error) {
