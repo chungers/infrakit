@@ -1,5 +1,5 @@
 ifeq ($(EDITIONS_TAG),)
-	EDITIONS_TAG := ce-rc4
+	EDITIONS_TAG := ce-rc5
 endif
 
 ifeq ($(EDITIONS_DOCKER_VERSION),)
@@ -23,7 +23,7 @@ endif
 
 # Check if MOBY_COMMIT has been defined via env
 ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := 36ab369660c0ab1c83d0b5a82864ae5b93a5c096
+	MOBY_COMMIT := 2df5315970475d092a71ce43a3868f39d72c51b3
 endif
 
 # Check if DOCKER_VERSION has been set
@@ -47,7 +47,7 @@ endif
 
 # Check if CHANNEL has been defined
 ifeq ($(CHANNEL),)
-	CHANNEL := edge
+	CHANNEL := test
 endif
 
 # Check if DOCKER_EXPERIMENTAL has been defined
@@ -71,8 +71,8 @@ AWS_TAG_VERSION := $(DOCKER_VERSION)-aws$(BUILD)
 AZURE_TAG_VERSION := $(DOCKER_VERSION)-azure$(BUILD)
 GCP_TAG_VERSION := $(DOCKER_VERSION)-gcp$(BUILD)
 REGION := us-west-2
-CHANNEL_DDC := alpha
-CHANNEL_CLOUD := alpha
+CHANNEL_DDC := test
+CHANNEL_CLOUD := test
 EDITION_ADDON := base
 
 #### AWS Specific VARS
