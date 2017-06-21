@@ -87,6 +87,7 @@ release:
 		-e UPLOAD_S3_KEY="${AWS_STAGE_ACCESS_KEY_ID}" \
 		-e UPLOAD_S3_SECRET="${AWS_STAGE_SECRET_ACCESS_KEY}" \
 		-e MOBY_COMMIT=${MOBY_COMMIT}/${BUILD_NUMBER} \
+		-e JENKINS_BUILD=${BUILD_NUMBER} \
 		-v ${ROOT_DIR}/dist/:/home/docker/dist/ \
 		azure-release \
 		--upload \

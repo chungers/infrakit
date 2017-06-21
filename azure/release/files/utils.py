@@ -19,6 +19,7 @@ ARM_S3_BUCKET_NAME = os.getenv('UPLOAD_S3_BUCKET', 'docker-for-azure')
 ARM_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 ARM_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
 MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
+JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
 
 
 def str2bool(v):
