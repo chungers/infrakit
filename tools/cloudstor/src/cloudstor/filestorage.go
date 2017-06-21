@@ -28,10 +28,12 @@ type azfsDriver struct {
 
 const (
 	cifsOptionVersion   = "vers=2.1"
+	cifsOptionSymlinks  = "mfsymlinks"
 	cifsDefaultFileMode = "0777"
 	cifsDefaultDirMode  = "0777"
 	cifsDefaultUID      = "0"
 	cifsDefaultGID      = "0"
+	metadataShare       = "cloudstor-metadata"
 )
 
 func newAZFSDriver(accountName, accountKey, metadataRoot, storageEndpoint string) (*azfsDriver, error) {
@@ -44,17 +46,40 @@ func newAZFSDriver(accountName, accountKey, metadataRoot, storageEndpoint string
 		return nil, fmt.Errorf("error creating azure client: %v", err)
 	}
 
-	metaDriver, err := newMetadataDriver(metadataRoot)
+	if err := os.MkdirAll(mountPoint, 0755); err != nil {
+		return nil, fmt.Errorf("error creating mount point: %v", err)
+	}
+
+	// create a file share for storing volume metadata so that all nodes can access it
+	fsclient := storageClient.GetFileService()
+	s := fsclient.GetShareReference(metadataShare)
+	if _, err := s.CreateIfNotExists(); err != nil {
+		return nil, fmt.Errorf("error creating azure metadata file share: %v", err)
+	}
+
+	// mount the metadata share and provide the path to metadata driver
+	metadataPath := mountPoint + "/" + metadataShare
+	if err := os.MkdirAll(metadataPath, 0755); err != nil {
+		return nil, fmt.Errorf("could not create mount point: %v", err)
+	}
+
+	var opts VolumeOptions
+	opts.Share = metadataShare
+	opts.FileMode = fmt.Sprintf("file_mode=%s", cifsDefaultFileMode)
+	opts.DirMode = fmt.Sprintf("dir_mode=%s", cifsDefaultDirMode)
+	opts.UID = fmt.Sprintf("uid=%s", cifsDefaultUID)
+	opts.GID = fmt.Sprintf("gid=%s", cifsDefaultGID)
+	if err := azfsMount(accountName, accountKey, storageBase, metadataPath, opts); err != nil {
+		return nil, err
+	}
+
+	metaDriver, err := newMetadataDriver(metadataPath)
 	if err != nil {
 		return nil, fmt.Errorf("cannot initialize metadata driver: %v", err)
 	}
 
-	if err := os.MkdirAll(mountPoint, 0755); err != nil {
-		return nil, fmt.Errorf("Error creating mount point: %v", err)
-	}
-
 	return &azfsDriver{
-		cl:          storageClient.GetFileService(),
+		cl:          fsclient,
 		meta:        metaDriver,
 		accountName: accountName,
 		accountKey:  accountKey,
@@ -317,6 +342,7 @@ func azfsMount(accountName, accountKey, storageBase, mountPath string, options V
 		options.DirMode,
 		options.UID,
 		options.GID,
+		cifsOptionSymlinks,
 	}
 
 	logctx := log.WithFields(log.Fields{
