@@ -28,6 +28,7 @@ type azfsDriver struct {
 
 const (
 	cifsOptionVersion   = "vers=2.1"
+	cifsOptionSymlinks  = "mfsymlinks"
 	cifsDefaultFileMode = "0777"
 	cifsDefaultDirMode  = "0777"
 	cifsDefaultUID      = "0"
@@ -341,6 +342,7 @@ func azfsMount(accountName, accountKey, storageBase, mountPath string, options V
 		options.DirMode,
 		options.UID,
 		options.GID,
+		cifsOptionSymlinks,
 	}
 
 	logctx := log.WithFields(log.Fields{
