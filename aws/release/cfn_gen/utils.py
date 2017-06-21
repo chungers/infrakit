@@ -207,7 +207,7 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
     print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
     srckey = bucket.get_key(s3_path)
     dstkey = bucket.new_key(s3_path_latest)
-    srckey.copy(CFN_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+    srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
 
     return s3_full_url
 
