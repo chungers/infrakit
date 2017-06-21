@@ -40,7 +40,7 @@ def main():
         auth_uri=ACTIVE_DIRECTORY_ENDPOINT
     )
 
-    resource_client = ResourceManagementClient(cred, SUB_ID, base_url=RESOURCE_MANAGER_ENDPOINT)
+    resource_client = ResourceManagementClient(cred, SUB_ID, api_version='2016-09-01', base_url=RESOURCE_MANAGER_ENDPOINT)
     print(get_tag_value(resource_client, args.tag_name))
 
 if __name__ == "__main__":
