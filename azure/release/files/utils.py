@@ -22,6 +22,7 @@ MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
 JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
 
 
+
 def str2bool(v):
   return v.lower() in ("yes", "true", "t", "1")
 
@@ -75,7 +76,7 @@ def upload_rg_template(release_channel, arm_template_name, tempfile, arm_type=''
     print(u"Copy template from {} to {} s3 bucket".format(s3_path_build, s3_path))
     srckey = bucket.get_key(s3_path_build)
     dstkey = bucket.new_key(s3_path)
-    srckey.copy(CFN_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+    srckey.copy(ARM_S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
 
     if release_channel == 'nightly' or release_channel == 'ddc-nightly'  or release_channel == 'cloud-nightly':
         print("This is a nightly build, update the latest.tmpl file.")
