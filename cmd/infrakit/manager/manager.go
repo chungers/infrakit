@@ -6,13 +6,16 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/docker/infrakit/cmd/infrakit/base"
 	"github.com/docker/infrakit/pkg/cli"
 	"github.com/docker/infrakit/pkg/discovery"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/manager"
+	manager_cli "github.com/docker/infrakit/pkg/manager/cli"
 	"github.com/docker/infrakit/pkg/plugin"
+	group_cli "github.com/docker/infrakit/pkg/plugin/group/cli"
 	"github.com/docker/infrakit/pkg/rpc/client"
 	group_rpc "github.com/docker/infrakit/pkg/rpc/group"
 	manager_rpc "github.com/docker/infrakit/pkg/rpc/manager"
@@ -92,6 +95,47 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 	pretend := cmd.PersistentFlags().Bool("pretend", false, "Don't actually make changes; explain where appropriate")
 
 	templateFlags, toJSON, fromJSON, processTemplate := base.TemplateProcessor(plugins)
+
+	///////////////////////////////////////////////////////////////////////////////////
+	// up
+
+	runGroupPlugin := group_cli.Command()
+	runManager := manager_cli.Command()
+
+	up := &cobra.Command{
+		Use:   "up",
+		Short: "Up starts up the group controller and a manager",
+
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			errors := make(chan error)
+			wg := sync.WaitGroup{}
+
+			go func() {
+				wg.Add(1)
+				if err := runGroupPlugin.Execute(); err != nil {
+					errors <- err
+				}
+			}()
+			go func() {
+				wg.Add(1)
+				if err := runManager.Execute(); err != nil {
+					errors <- err
+				}
+			}()
+
+			go func() {
+				wg.Wait()
+				close(errors)
+			}()
+
+			return <-errors
+		},
+	}
+	up.Flags().AddFlagSet(runGroupPlugin.PersistentFlags())
+	up.Flags().AddFlagSet(runGroupPlugin.Flags())
+	up.Flags().AddFlagSet(runManager.PersistentFlags())
+	up.Flags().AddFlagSet(runManager.Flags())
 
 	///////////////////////////////////////////////////////////////////////////////////
 	// commit
@@ -317,7 +361,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 	}
 	change.AddCommand(changeList, changeGet)
 
-	cmd.AddCommand(commit, inspect, change)
+	cmd.AddCommand(up, commit, inspect, change)
 
 	return cmd
 }

@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"os"
@@ -20,7 +20,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func main() {
+// Command returns the cobra command for running the group plugin
+func Command() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   os.Args[0],
@@ -30,7 +31,7 @@ func main() {
 	logLevel := cmd.Flags().Int("log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
 	pollInterval := cmd.Flags().Duration("poll-interval", 10*time.Second, "Group polling interval")
 	maxParallelNum := cmd.Flags().Uint("max-parallel", 0, "Max number of parallel instance operation (create, delete). (Default: 0 = no limit)")
-	cmd.RunE = func(c *cobra.Command, args []string) error {
+	cmd.RunE = func(_ *cobra.Command, args []string) error {
 
 		cli.SetLogLevel(*logLevel)
 
@@ -115,11 +116,5 @@ func main() {
 		return nil
 	}
 
-	cmd.AddCommand(cli.VersionCommand())
-
-	err := cmd.Execute()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
+	return cmd
 }

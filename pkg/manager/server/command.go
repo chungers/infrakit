@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"flag"
@@ -41,7 +41,8 @@ type config struct {
 	pluginName string //This is the name of the stateless group plugin that the manager will proxy for.
 }
 
-func main() {
+// Command returns the cobra command
+func Command() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   filepath.Base(os.Args[0]),
@@ -76,11 +77,7 @@ func main() {
 		etcdEnvironment(buildConfig),
 	)
 
-	err := cmd.Execute()
-	if err != nil {
-		logrus.Error(err)
-		os.Exit(1)
-	}
+	return cmd
 }
 
 type metadataModel struct {
