@@ -169,8 +169,8 @@ In this case you can launch Docker for Azure directly from a VHD in a storage
 account, such as the one in the Moby build output line shown above.
 
 To do this, you can generate and invoke a version of the "master" template which
-launches from a storage account instead of from the Azure marketplace using the
-`stg_account_arm_template.py` script.  This is all available using the `make
+launches from a storage account instead of from the Azure marketplace using a
+docker container which contains  the `stg_account_arm_template.py` script.  This is all available using the `make
 dev` command and specifying the `VHD` variable to the Makefile.  For instance:
 
 ```console
