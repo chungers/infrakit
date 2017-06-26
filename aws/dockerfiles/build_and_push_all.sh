@@ -64,8 +64,8 @@ do
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"
-    if ! docker_tag_exists ${FINAL_IMAGE}; then
-      echo "+++ \033[31mError - Final Image tag not found! ${FINAL_IMAGE}\033[0m"
+    if ! docker_tag_exists "${FINAL_IMAGE}"; then
+      echo -e "+++ \033[31mError - Final Image tag not found! ${FINAL_IMAGE}\033[0m"
       exit 1
     fi
   fi

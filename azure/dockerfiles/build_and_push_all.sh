@@ -74,6 +74,10 @@ do
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"
+    if ! docker_tag_exists "${FINAL_IMAGE}"; then
+      echo -e "+++ \033[31mError - Final Image tag not found! ${FINAL_IMAGE}\033[0m"
+      exit 1
+    fi
   fi
 done
 
@@ -83,8 +87,8 @@ echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AZURE_TARGET_PAT
 docker save "docker4x/agent-azure:${TAG_VERSION}" --output "${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
 if [ "${DOCKER_PUSH}" = true ]; then
   docker push "docker4x/agent-azure:${TAG_VERSION}"
-  if ! docker_tag_exists ${FINAL_IMAGE}; then
-    echo "+++ \033[31mError - Final Image tag not found! ${FINAL_IMAGE}\033[0m"
+  if ! docker_tag_exists "${FINAL_IMAGE}"; then
+    echo -e "+++ \033[31mError - Final Image tag not found! ${FINAL_IMAGE}\033[0m"
     exit 1
   fi
 fi
