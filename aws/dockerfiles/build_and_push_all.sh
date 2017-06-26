@@ -11,44 +11,64 @@ DEFAULT_PATH="dist/aws/nightly/$TAG_VERSION"
 AWS_TARGET_PATH="${AWS_TARGET_PATH:-$DEFAULT_PATH}"
 
 # Test all images built
-function test () {
-	if [ -z "$1" ]
-	then
+function check_image () {
+  if [ -z "$1" ]
+  then
      echo "Image to test is needed"
-		 exit 1
-	fi
-	IMAGE=${1}
-	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
-	echo -e "+++ \033[1mTesting\033[0m \033[4m${FINAL_IMAGE}\033[0m"
-	docker container run --rm \
-		-v ${CURR_DIR}/${IMAGE}/tests:/tests \
-		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v /usr/bin/docker:/usr/bin/docker \
-		--entrypoint sh \
-		${FINAL_IMAGE} /tests/run.sh
+     exit 1
+  fi
+  TAG=${1#*:}
+  NAMESPACE_IMAGE=${1%:*}
+  IMAGE=${NAMESPACE_IMAGE#*/}
+  FOLDER=${IMAGE%*-aws} 
+  echo -e "+++ \033[1mTesting\033[0m \033[4m${1}\033[0m"
+  docker container run --rm \
+    -v ${CURR_DIR}/${FOLDER}/tests:/tests \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /usr/bin/docker:/usr/bin/docker \
+    --entrypoint sh \
+    ${FINAL_IMAGE} /tests/run.sh
+}
+
+function docker_tag_exists() {
+  if [ -z "$1" ]
+  then
+     echo "Image to test is needed"
+     exit 1
+  fi
+  TAG=${1#*:}
+  NAMESPACE_IMAGE=${1%:*}
+  IMAGE=${NAMESPACE_IMAGE#*/}
+  FOLDER=${IMAGE%*-aws}
+  EXISTS=$(curl -f -slSL https://hub.docker.com/v2/repositories/${NAMESPACE_IMAGE}/tags/?page_size=10000 | jq -r "[.results | .[] | .name == \"${TAG}\"] | any")
+  test $EXISTS = true
 }
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
 # Create directory and make sure to chmod it
 mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
 if [ $? ]; then
-	docker run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
-	mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
+  docker run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
+  mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
 fi
 
 for IMAGE in shell init guide ddc-init cloud meta
 do
-	FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
-	echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
-	docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
-	if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
-		echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-		docker save "${FINAL_IMAGE}" --output "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-	fi
-	test ${IMAGE}
-	if [ "${DOCKER_PUSH}" = true ]; then
-		docker push "${FINAL_IMAGE}"
-	fi
+  FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
+  echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
+  docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
+  if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
+    echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
+    docker save "${FINAL_IMAGE}" --output "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
+  fi
+  check_image ${FINAL_IMAGE}
+  if [ "${DOCKER_PUSH}" = true ]; then
+    docker push "${FINAL_IMAGE}"
+    if ! docker_tag_exists ${FINAL_IMAGE}; then
+      echo "+++ \033[31mError - Final Image tag not found! ${FINAL_IMAGE}\033[0m"
+      exit 1
+    fi
+  fi
 done
 
 # build and push cloudstor plugin
@@ -57,5 +77,5 @@ docker plugin rm -f "${NAMESPACE}/cloudstor:${TAG_VERSION}" || true
 docker plugin create "${NAMESPACE}/cloudstor:${TAG_VERSION}" ./plugin
 rm -rf ./plugin
 if [ "${DOCKER_PUSH}" = true ]; then
-	docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
+  docker plugin push "${NAMESPACE}/cloudstor:${TAG_VERSION}"
 fi
