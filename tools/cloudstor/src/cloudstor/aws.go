@@ -44,6 +44,7 @@ const (
 	retryInterval                 = 10 * time.Second
 	snapshotLoopInterval          = 300 * time.Second
 	snapshotLoopIterationInterval = 10 * time.Second
+	volumeTypeProvisionedIOPS     = "io1"
 )
 
 type awsDriver struct {
@@ -587,7 +588,15 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 		return fmt.Errorf("Invalid volume size: %v", err)
 	}
 
-	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, false)
+	var iops int64
+	if req.Options["ebstype"] == volumeTypeProvisionedIOPS {
+		iops, err = strconv.ParseInt(req.Options["iops"], 10, 64)
+		if err != nil {
+			return fmt.Errorf("Invalid volume IOPs specified for io1: %v", err)
+		}
+	}
+
+	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, iops, false)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return err
@@ -617,7 +626,7 @@ func (v *awsDriver) createEBSFromSnapshot(volname string) (*ec2.Volume, error) {
 	}
 	logctx.Infof(fmt.Sprintf("Snapshot created of volume in original AZ: %v", snap))
 
-	vol, err := v.createEBSCore(volname, "", *snap.SnapshotId, 0, false)
+	vol, err := v.createEBSCore(volname, "", *snap.SnapshotId, 0, 0, false)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return nil, err
@@ -802,7 +811,7 @@ func (v *awsDriver) removeEBS(req volume.Request) error {
 	return nil
 }
 
-func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, volumeSize int64, encrypted bool) (*ec2.Volume, error) {
+func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, volumeSize, volumeIOPs int64, encrypted bool) (*ec2.Volume, error) {
 	nametag := &ec2.TagSpecification{
 		ResourceType: aws.String(ec2.ResourceTypeVolume),
 		Tags:         []*ec2.Tag{},
@@ -838,6 +847,10 @@ func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, vol
 
 	if volumeSize != 0 {
 		volCreate.Size = aws.Int64(int64(volumeSize))
+	}
+
+	if volumeIOPs != 0 {
+		volCreate.Iops = aws.Int64(int64(volumeIOPs))
 	}
 
 	volCreate.TagSpecifications = append(
