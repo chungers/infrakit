@@ -32,7 +32,7 @@ const (
 	nfsOptionTimeout              = "timeo=600"
 	nfsOptionRetransmit           = "retrans=2"
 	nfsOptionHardlink             = "hard"
-	backingTypeLocal              = "local"
+	backingTypeRelocatable        = "relocatable"
 	backingTypeShared             = "shared"
 	perfmodeMaxIO                 = "maxio"
 	perfmodeRegIO                 = "regio"
@@ -155,13 +155,20 @@ func (v *awsDriver) Create(req volume.Request) (resp volume.Response) {
 		if v.efsSupported {
 			voltype = backingTypeShared
 		} else {
-			voltype = backingTypeLocal
+			voltype = backingTypeRelocatable
 		}
 	}
-	if !strings.EqualFold(voltype, backingTypeLocal) && !strings.EqualFold(voltype, backingTypeShared) {
+	if !strings.EqualFold(voltype, backingTypeRelocatable) && !strings.EqualFold(voltype, backingTypeShared) {
 		resp.Err = fmt.Sprintf("invalid backing type specified: %q", voltype)
 		logctx.Error(resp.Err)
 		return
+	}
+
+	if voltype == backingTypeShared && !v.efsSupported {
+		resp.Err = fmt.Sprintf("EFS support necessary for backing type: %q", voltype)
+		logctx.Error(resp.Err)
+		return
+
 	}
 
 	logctx.Debug("request accepted")
@@ -198,7 +205,7 @@ func (v *awsDriver) Path(req volume.Request) (resp volume.Response) {
 		return
 	}
 
-	if vol.backingType == backingTypeLocal {
+	if vol.backingType == backingTypeRelocatable {
 		resp.Mountpoint = v.pathForEBSVolume(req.Name)
 	} else {
 		resp.Mountpoint = v.pathForEFSVolume(req.Name, vol.efsType)
@@ -224,7 +231,7 @@ func (v *awsDriver) Mount(req volume.MountRequest) (resp volume.Response) {
 		return
 	}
 
-	if vol.backingType == backingTypeLocal {
+	if vol.backingType == backingTypeRelocatable {
 		mountPath, err := v.mountEBS(req)
 		if err != nil {
 			resp.Err = fmt.Sprintf("error mounting volume: %v", err)
@@ -257,7 +264,7 @@ func (v *awsDriver) Unmount(req volume.UnmountRequest) (resp volume.Response) {
 		return
 	}
 
-	if vol.backingType == backingTypeLocal {
+	if vol.backingType == backingTypeRelocatable {
 		path := v.pathForEBSVolume(req.Name)
 		// we do not support multiple mounts so this is okay.
 		// need to reference count mounts if do want multiple mounts
@@ -397,7 +404,7 @@ func (v *awsDriver) getAWSVolume(name string) (*awsVol, error) {
 
 	_, err := v.getEBSByName(name)
 	if err == nil {
-		return &awsVol{backingType: backingTypeLocal, efsType: ""}, nil
+		return &awsVol{backingType: backingTypeRelocatable, efsType: ""}, nil
 	}
 
 	return nil, fmt.Errorf("Volume Not Found")
