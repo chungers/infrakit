@@ -22,7 +22,7 @@ AZURE_PLATFORMS = {
     },
     "GOV" : {
         "PORTAL_ENDPOINT"                   : u"portal.azure.us",
-        "TEMPLATE_SUFFIX"                   : u"-gov",
+        "TEMPLATE_SUFFIX"                   : u"-Gov",
         "PUBLIC_PLATFORM"                   : False,
         "STORAGE_ENDPOINT"                  : u"core.usgovcloudapi.net",
         "STORAGE_BLOB_SUFFIX"               : u".blob.core.usgovcloudapi.net",
@@ -122,7 +122,7 @@ def main():
                         platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
                         platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
-        ee_template_name = u"Docker-ee{}".format(platform_config['TEMPLATE_SUFFIX'])
+        ee_template_name = u"Docker-EE{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'base'
         ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_addon, CFN_TEMPLATE, ee_template_name,
@@ -132,7 +132,7 @@ def main():
                         platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
 
         if platform_config['PUBLIC_PLATFORM']:
-            cloud_template_name = u"Docker-cloud{}".format(platform_config['TEMPLATE_SUFFIX'])
+            cloud_template_name = u"Docker-Cloud{}".format(platform_config['TEMPLATE_SUFFIX'])
             edition_addon = 'cloud'
             cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url,
@@ -140,7 +140,7 @@ def main():
                                  platform_config['PORTAL_ENDPOINT'],
                                  cloud_template_name)
 
-        ddc_template_name = u"Docker-ddc{}".format(platform_config['TEMPLATE_SUFFIX'])
+        ddc_template_name = u"Docker-DDC{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'ddc'
         ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url, ddc_template_name, 
