@@ -27,7 +27,8 @@ azure/release/tmp
 tools/buoy/bin/buoy
 tools/metaserver/bin/metaserver
 # Don't checkin the binary generated
-common/cloudstor/cloudstor
+tools/cloudstor/plugin/
+*/*/cloudstor-rootfs.tar.gz
 *~
 *#
 .#*

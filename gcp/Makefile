@@ -1,5 +1,8 @@
 # Copyright 2016 Docker Inc. All rights reserved.
 
+# include common Makefile vars
+include ../Makefile.variable
+
 BUILD_NUMBER ?= 0
 NAMESPACE ?= docker4x
 DOCKER_PUSH ?= false
@@ -76,7 +79,9 @@ test:
 
 build-dir:
 	mkdir -p build
+ifdef ($(GCP_TARGET_PATH))
 	mkdir -p $(ROOT_DIR)/$(GCP_TARGET_PATH)
+endif
 
 build-buoy:
 	make -C ../tools/buoy build
@@ -123,7 +128,9 @@ build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	if [ "$(DOCKER_PUSH)" = true ]; then \
 		docker push $(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)); \
 	fi
+ifdef ($(GCP_TARGET_PATH))
 	cp ./build/images.tar $(ROOT_DIR)/$(GCP_TARGET_PATH)/images.tar
+endif
 
 build: build-moby build-cloudstor build-images build-templates
 

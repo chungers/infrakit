@@ -1,3 +1,6 @@
+# include common Makefile vars
+include ../Makefile.variable
+
 USER := default
 STACK := editionstest
 STACK_NAME := $(USER)-$(STACK)
@@ -7,14 +10,6 @@ INSTANCE_TYPE := t2.micro
 MANAGER_INSTANCE_TYPE := t2.small
 CLUSTER_SIZE := 1
 DEV := 0
-
-ifeq ($(ROOT_DIR),)
-	ROOT_DIR := ${CURDIR}
-endif
-
-ifeq ($(BUILD),)
-	BUILD := 1
-endif
 
 AMI_S3_BUCKET := docker-ci-editions
 AMI_S3_PATH := ami
