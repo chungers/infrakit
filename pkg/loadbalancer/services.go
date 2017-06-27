@@ -154,7 +154,17 @@ func configureL4(elb Driver, listeners []*listener, options Options) error {
 
 			l, err := newListener("delete", instancePort, fmt.Sprintf("%v://:%d", protocol, lbPort), cert)
 			if err == nil {
-				toRemove = append(toRemove, l)
+				if lbPort == 7 {
+					// port 7 is special, we need to keep it around.
+					// on ELBs we need to have at least 1 listener or else it gets messed up
+					// Port 7 is the one we add at the begining, keeping it around.
+					// Long term, we should only keep around if it is the last one.
+					// If there are other listeners we can remove.
+					log.Infoln("keeping protocol=", protocol, "port=", lbPort, "instancePort=", instancePort)
+				} else {
+					// remove this listener
+					toRemove = append(toRemove, l)
+				}
 			} else {
 				log.Warningln("error deleting listener protocol=", protocol,
 					"lbPort=", lbPort, "instancePort=", instancePort)
