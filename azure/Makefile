@@ -71,8 +71,8 @@ VHD_SRC_REGION := us-west-2
 
 STAGE_S3_BUCKET := editions-stage-us-east-1-150610-005505
 
-ifneq ($(MOBY_COMMIT),)
-	VHD_S3_PATH := $(VHD_S3_PATH)/$(MOBY_COMMIT)
+ifneq ($(EDITIONS_COMMIT),)
+	VHD_S3_PATH := $(VHD_S3_PATH)/$(EDITIONS_COMMIT)
 endif
 
 ifeq ($(VHD_URL),)

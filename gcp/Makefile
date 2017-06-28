@@ -89,7 +89,6 @@ build-buoy:
 build-cloudstor: build-dir
 	if [ ! -e build/cloudstor-rootfs.tar.gz ]; then          \
 	    make -C ../tools/cloudstor build;                          \
-	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz build/;\
 	fi
 	cd build;                                                              \
 	tar zxvf cloudstor-rootfs.tar.gz;                                            \
@@ -99,6 +98,7 @@ build-cloudstor: build-dir
 	if [ "$(DOCKER_PUSH)" = true ]; then                                            \
 	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)";        \
 	fi;                                                                          \
+	cp ../tools/cloudstor/cloudstor-rootfs.tar.gz build/;\
 	cd ..
 
 build-moby: build-images

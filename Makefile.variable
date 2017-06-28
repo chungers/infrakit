@@ -61,9 +61,15 @@ ifeq ($(BUILD),)
 endif
 
 ## Jenkins ENV
-ifeq ($(JENKINS_BUILD),)
-	BUILD_NUMBER ?= manual-$(shell date +"%s")
-	BUILD_TAG ?= jenkins-editions-$(BUILD_NUMBER)
+ifeq ($(BUILD_NUMBER),)
+	ifeq ($(JENKINS_BUILD),)
+		BUILD_NUMBER ?= manual-$(shell date +"%s")
+		BUILD_TAG ?= jenkins-editions-$(BUILD_NUMBER)
+	endif
+endif
+
+ifeq ($(EDITIONS_COMMIT),)
+	EDITIONS_COMMIT := $(shell git rev-parse --verify HEAD)
 endif
 
 NAMESPACE := docker4x

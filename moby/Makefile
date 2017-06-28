@@ -33,9 +33,9 @@ define push_to_s3
 		-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
-		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(BUILD_NUMBER)/$(3) \
+		s3://docker-ci-editions/$(2)/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/$(3) \
 		--acl public-read \
-		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},jenkins_build=$(BUILD_NUMBER)
+		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},editions_commit=$(EDITIONS_COMMIT),jenkins_build=$(BUILD_NUMBER)
 	# Update latest for that commit
 		docker run --rm \
 		-v $(CURDIR)/cloud/$(1):/tmp \
@@ -43,9 +43,9 @@ define push_to_s3
 		-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 		docker4x/awscli:latest s3 cp \
 		/tmp/$(3) \
-		s3://docker-ci-editions/$(2)/${MOBY_COMMIT}/$(3) \
+		s3://docker-ci-editions/$(2)/${EDITIONS_COMMIT}/$(3) \
 		--acl public-read \
-		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},jenkins_build=$(BUILD_NUMBER)
+		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},editions_commit=$(EDITIONS_COMMIT),jenkins_build=$(BUILD_NUMBER)
 	# Update the latest endpoint for nightly
 	@if [ "${RELEASE}" = true ]; then \
 		docker run --rm \
@@ -56,7 +56,7 @@ define push_to_s3
 			/tmp/$(3) \
 			s3://docker-ci-editions/$(2)/$(3) \
 			--acl public-read \
-			--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},jenkins_build=$(BUILD_NUMBER); \
+			--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},editions_commit=$(EDITIONS_COMMIT),jenkins_build=$(BUILD_NUMBER); \
 	fi
 endef
 
@@ -89,9 +89,9 @@ endif
 		--volumes-from gsutil-moby-config \
 		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
-		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${MOBY_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz
+		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz
 		mkdir -p cloud/gcp
-		echo "docker-for-gcp-images/${MOBY_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
+		echo "docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
 		$(MAKE) -C ../gcp save BUILD_NUMBER=$(GCP_BUILD_NUMBER) FORCE_GSUTIL_AUTH=0
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,gcp,bdi,$(BDI_OUT),$(GCP_TAG_VERSION))
