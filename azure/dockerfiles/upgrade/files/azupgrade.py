@@ -396,9 +396,9 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
             LOG.error("Node IP {} not found in list of VM IPs".format(node_ip))
             return
         vm_id_table[vm_tmp_table[node_ip]] = node['ID']
-
     # at this point all sanity checks and metadata gathering should be complete
     # beyond this point it's hard to recover from any missing data/errors
+    vms = compute_client.virtual_machine_scale_set_vms.list(RG_NAME, vmss_name)
     for vm in vms:
         node_id = vm_id_table[vm.instance_id]
         LOG.info("Accessing VM: {} in VMSS {}".format(vm.instance_id, vmss_name))
