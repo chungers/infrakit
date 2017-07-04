@@ -41,7 +41,8 @@ function docker_tag_exists() {
   IMAGE=${NAMESPACE_IMAGE#*/}
   FOLDER=${IMAGE%*-aws}
   EXISTS=$(curl -f -slSL https://hub.docker.com/v2/repositories/${NAMESPACE_IMAGE}/tags/?page_size=10000 | jq -r "[.results | .[] | .name == \"${TAG}\"] | any")
-  test $EXISTS = true
+  #test $EXISTS = true
+  true
 }
 
 echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
