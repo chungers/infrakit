@@ -250,7 +250,7 @@ def create_rg_cloud_template(release_channel, docker_version,
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outfile = u"{}/{}".format(outdir, arm_template_name)
+    outfile = u"{}/{}.tmpl".format(outdir, arm_template_name)
 
     with open(outfile, 'w') as outf:
         json.dump(data, outf, indent=4, sort_keys=True)
@@ -538,7 +538,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    outfile = u"{}/{}".format(outdir, arm_template_name)
+    outfile = u"{}/{}.tmpl".format(outdir, arm_template_name)
 
     with open(outfile, 'w') as outf:
         json.dump(data, outf, indent=4, sort_keys=True)
