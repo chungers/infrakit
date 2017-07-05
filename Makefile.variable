@@ -1,9 +1,9 @@
 ifeq ($(EDITIONS_TAG),)
-	EDITIONS_TAG := ce-rc5
+	EDITIONS_TAG := ce-rc1
 endif
 
 ifeq ($(EDITIONS_DOCKER_VERSION),)
-	EDITIONS_DOCKER_VERSION := 17.06.0
+	EDITIONS_DOCKER_VERSION := 17.07.0
 endif
 
 ifeq ($(RELEASE),)
