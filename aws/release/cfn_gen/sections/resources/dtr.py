@@ -144,9 +144,9 @@ def add_resource_ddc_dtr_lb(template, create_vpc, extra_listeners=None):
         HealthCheck=HealthCheck(
             Target="HTTPS:12391/health",
             HealthyThreshold="2",
-            UnhealthyThreshold="4",
-            Interval="10",
-            Timeout="2",
+            UnhealthyThreshold="10",
+            Interval="300",
+            Timeout="10",
         ),
         Listeners=listener_list,
         CrossZone=True,

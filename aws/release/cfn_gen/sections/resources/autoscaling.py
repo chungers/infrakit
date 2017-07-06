@@ -272,7 +272,7 @@ def add_resource_worker_autoscalegroup(template, launch_config_name):
         ),
         CreationPolicy=CreationPolicy(
             ResourceSignal=ResourceSignal(
-                Timeout='PT2H',
+                Timeout='PT20M',
                 Count=Ref("ClusterSize")
                 )
         )
