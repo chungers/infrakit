@@ -102,7 +102,9 @@ EE_OFFER_ID := docker-ee
 #### GCP Specific VARS
 GCP_BUILD_NUMBER := 3
 
-ROOT_DIR := ${CURDIR}
+ifeq ($(RELEASE),)
+	ROOT_DIR := ${CURDIR}
+endif
 
 AZURE_TARGET_PATH := dist/azure/$(CHANNEL)/$(AZURE_TAG_VERSION)
 AZURE_TARGET_TEMPLATE := $(AZURE_TARGET_PATH)/Docker.tmpl
