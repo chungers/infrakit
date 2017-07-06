@@ -1,25 +1,31 @@
 package main
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
 	"flag"
+	"github.com/docker/editions/tools/buoy/pkg/buoy"
 	"os"
 	"regexp"
 	"strings"
-
-	"github.com/segmentio/analytics-go"
 )
 
 // NA represents the default for all non-passed flags
 const NA = "n/a"
 
-func computeHmac256(message string, secret string) string {
-	key := []byte(secret)
-	h := hmac.New(sha256.New, key)
-	h.Write([]byte(message))
-	return base64.StdEncoding.EncodeToString(h.Sum(nil))
+// given the docker for iaas version get the channel
+func getChannel(version string) *string {
+	r := regexp.MustCompile("^(?:azure|aws|gcp)-v\\d+.\\d+.\\d+-([0-9a-z-]+)")
+	matched := r.FindStringSubmatch(version)
+	channel := "test"
+	if len(matched) > 1 {
+		if strings.Contains(matched[1], "nightly") {
+			channel = "nightly"
+		} else if strings.Contains(matched[1], "beta") {
+			channel = "beta"
+		} else {
+			channel = "stable"
+		}
+	}
+	return &channel
 }
 
 func main() {
@@ -56,86 +62,35 @@ func main() {
 		edition = &editionEnv
 	}
 
-	// Hash the accountId so we don't know what it is.
-	hashedAccountID := computeHmac256(accountID, "ZQM7q96ar8g1y7Id")
-	clientCode := "jLwurYoMosZliChljnSNq7mCAOOd8Vnn"
-
-	client := analytics.New(clientCode)
-	client.Size = 1 // We only send one message at a time, no need to cache
+	buoyEvent := buoy.BuoyEvent{
+		AccountID:      accountID,
+		Region:         region,
+		Edition:        *edition,
+		EditionOS:      *editionOS,
+		EditionAddon:   *editionAddOn,
+		IaasProvider:   *iaasProvider,
+		SwarmID:        *swarmID,
+		NodeID:         *nodeID,
+		EditionVersion: *editionVersion,
+		Channel:        *channel}
 
 	if *event == "identify" {
-		client.Identify(&analytics.Identify{
-			UserId: hashedAccountID,
-			Traits: map[string]interface{}{
-				"region":        region,
-				"edition":       *edition,
-				"edition_os":    *editionOS,
-				"edition_addon": *editionAddOn,
-				"iaas_provider": *iaasProvider,
-			},
-		})
+		// identify the user
+		buoyEvent.Identify()
 	} else if *event == "swarm:init" {
-		client.Track(&analytics.Track{
-			Event:  "swarm:init",
-			UserId: hashedAccountID,
-			Properties: map[string]interface{}{
-				"swarm_id":        *swarmID,
-				"node_id":         *nodeID,
-				"region":          region,
-				"edition_version": *editionVersion,
-				"edition_addon":   *editionAddOn,
-				"channel":         *channel,
-				"iaas_provider":   *iaasProvider,
-			},
-		})
+		// swarm init event, do it on it's own so it doesn't get caught by the
+		// swarm: events below.
+		buoyEvent.Track("swarm:init")
 	} else if strings.HasPrefix(*event, "node:") {
-		client.Track(&analytics.Track{
-			Event:  *event,
-			UserId: hashedAccountID,
-			Properties: map[string]interface{}{
-				"swarm_id":        *swarmID,
-				"node_id":         *nodeID,
-				"region":          region,
-				"edition_version": *editionVersion,
-				"edition_addon":   *editionAddOn,
-				"channel":         *channel,
-				"iaas_provider":   *iaasProvider,
-			},
-		})
+		// node events
+		buoyEvent.Track(*event)
 	} else if strings.HasPrefix(*event, "swarm:") {
-		client.Track(&analytics.Track{
-			Event:  *event,
-			UserId: hashedAccountID,
-			Properties: map[string]interface{}{
-				"swarm_id":        *swarmID,
-				"node_id":         *nodeID,
-				"region":          region,
-				"service_count":   *numServices,
-				"manager_count":   *numManagers,
-				"worker_count":    *numWorkers,
-				"docker_version":  *dockerVersion,
-				"edition_version": *editionVersion,
-				"edition_addon":   *editionAddOn,
-				"channel":         *channel,
-				"iaas_provider":   *iaasProvider,
-			},
-		})
-	}
-	client.Close()
-}
+		// swarm events
+		buoyEvent.ServiceCount = *numServices
+		buoyEvent.ManagerCount = *numManagers
+		buoyEvent.WorkerCount = *numWorkers
+		buoyEvent.DockerVersion = *dockerVersion
 
-func getChannel(version string) *string {
-	r := regexp.MustCompile("^(?:azure|aws|gcp)-v\\d+.\\d+.\\d+-([0-9a-z-]+)")
-	matched := r.FindStringSubmatch(version)
-	channel := "test"
-	if len(matched) > 1 {
-		if strings.Contains(matched[1], "nightly") {
-			channel = "nightly"
-		} else if strings.Contains(matched[1], "beta") {
-			channel = "beta"
-		} else {
-			channel = "stable"
-		}
+		buoyEvent.Track(*event)
 	}
-	return &channel
 }

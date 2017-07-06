@@ -4,9 +4,10 @@ RUN apk add --update git bash
 RUN go get github.com/LK4D4/vndr
 
 ENV USER root
-WORKDIR /go/
-COPY . ./
+WORKDIR /go/src/buoy/vendor/github.com/docker/editions/tools/buoy/pkg/buoy
+COPY pkg/buoy ./
 WORKDIR /go/src/buoy
+COPY src/buoy ./
 RUN vndr
 RUN mkdir -p /go/bin
 RUN go vet
