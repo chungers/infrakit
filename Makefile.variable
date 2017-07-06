@@ -102,7 +102,7 @@ EE_OFFER_ID := docker-ee
 #### GCP Specific VARS
 GCP_BUILD_NUMBER := 3
 
-ifeq ($(RELEASE),)
+ifeq ($(ROOT_DIR),)
 	ROOT_DIR := ${CURDIR}
 endif
 
