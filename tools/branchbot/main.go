@@ -33,7 +33,7 @@ var (
 	labelPrefix      = "process/cherrypick-"
 	cherrypickLabels = []string{
 		labelPrefix + "17.03",
-		labelPrefix + "17.04",
+		labelPrefix + "17.06",
 	}
 	cherrypickCompleteLabel   = labelPrefix + "complete"
 	cherrypickImpossibleLabel = labelPrefix + "impossible"
@@ -114,6 +114,38 @@ func checkout(branch string, newBranch bool) error {
 		return err
 	}
 	return nil
+}
+
+func updateLabels(client *github.Client) error {
+	ctx := context.Background()
+
+	// find all labels that match the prefix
+	labels, _, err := client.Issues.ListLabels(ctx, githubUser, githubRepo, &github.ListOptions{
+		PerPage: 100,
+	})
+	if err != nil {
+		log.Print("Error trying to get issue labels: ", err)
+		return err
+	}
+
+	for _, label := range labels {
+		// check the prefix match
+		if strings.HasPrefix(*label.Name, labelPrefix) && !strings.HasSuffix(*label.Name, "complete") && !strings.HasSuffix(*label.Name, "impossible") && !inSlice(cherrypickLabels, *label.Name) {
+			// add to existing cherryPickLabels[]
+			cherrypickLabels = append(cherrypickLabels, *label.Name)
+		}
+	}
+
+	return nil
+}
+
+func inSlice(haystack []string, needle string) bool {
+	for _, item := range haystack {
+		if needle == item {
+			return true
+		}
+	}
+	return false
 }
 
 func cherrypick(sha string) (string, error) {
@@ -402,6 +434,10 @@ func main() {
 		// seems sound.
 		if _, err := git("remote", "prune", botRemote); err != nil {
 			log.Fatal("Error pruning remote: ", err)
+		}
+
+		if err := updateLabels(client); err != nil {
+			log.Print("Error updating cherrypick labels: ", err)
 		}
 
 		if err := checkCherrypickLabels(client); err != nil {
