@@ -20,9 +20,9 @@ GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:
 QEMU_IMAGE=mobylinux/qemu:0fb8c648e8ed9ef6b1ec449587aeab6c53872744@sha256:606f30d815102e73bc01c07915dc0d5f153b0252c63f5f0ed1e39621ec656eb5
 TAR2INITRD_IMAGE=mobylinux/tar2initrd:d5711601eb5b89de0f052d87365e18388ff3f1b5@sha256:58d377e65845f91400e173ce9fca93462f2f237947eef2b0d2c17bb4f2da5ee8
 TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa601811@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
+GCLOUD_IMAGE_TAG ?= sha256:fb904276e8a902ccd9564989d9222bdfbe37ffcd7f9989ca7e24b4019a9b4b6b
 
 export
-
 
 define push_to_s3
 	@echo "+ Pushing ${3} to ${1} with type ${2} - ${3}"
@@ -77,18 +77,18 @@ src/initrd.img:
 gcp-upload: build/gcp/gce.img.tar.gz
 	@echo "\033[32m++ $@\033[0m"
 ifeq ($(FORCE_GSUTIL_AUTH),1)
-	-docker rm gsutil-moby-config 2>/dev/null
-	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
+	-docker rm gsutil-config 2>/dev/null
+	docker run -it --name gsutil-config google/cloud-sdk@$(GCLOUD_IMAGE_TAG) gcloud auth login --brief --project=docker-for-gcp
 endif
 ifeq ($(JENKINS_BUILD),1)
 	@echo "++ Creating auth volume for Jenkins"
-	-docker rm gsutil-moby-config 2>/dev/null
-	docker run --name gsutil-moby-config -v $(AUTH_FILE):/auth.json google/cloud-sdk gcloud auth activate-service-account --key-file /auth.json
+	-docker rm gsutil-config 2>/dev/null
+	docker run --name gsutil-config -v $(AUTH_FILE):/auth.json google/cloud-sdk@$(GCLOUD_IMAGE_TAG) gcloud auth activate-service-account --key-file /auth.json
 endif
 	docker run --rm \
-		--volumes-from gsutil-moby-config \
+		--volumes-from gsutil-config \
 		-v $(CURDIR)/build/gcp/gce.img.tar.gz:/gce.img.tar.gz \
-		google/cloud-sdk \
+		google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz
 		mkdir -p cloud/gcp
 		echo "docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}

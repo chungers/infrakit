@@ -1,11 +1,13 @@
-FROM alpine:3.5
+# Switched to debian from alpine, due to bug in usermod: http://bugs.alpinelinux.org/issues/7390
+FROM debian:9 
 
-RUN apk add --update bash openssh ca-certificates sudo curl jq tar python py-setuptools shadow iproute2
+RUN apt-get update && apt-get install -y bash openssh-server ca-certificates sudo curl jq tar python python-setuptools iproute2 && rm -rf /var/lib/apt/lists/*
 
 CMD ["/entry.sh", "/usr/sbin/sshd", "-D", "-f", "/etc/ssh/sshd_config"]
 EXPOSE 22
 
-RUN groupadd google-sudoers -g 50
+# on debian GID is staff - mod to sudoers
+RUN groupmod -n google-sudoers -g 50 staff
 RUN mkdir -p /src \
   && cd /src \
   && (curl -sSL https://github.com/GoogleCloudPlatform/compute-image-packages/archive/c4793eaac79a1c83c2911e9abb3466e82542a0f8.tar.gz | tar zxv --strip=1) \

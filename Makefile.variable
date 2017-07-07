@@ -61,13 +61,12 @@ ifeq ($(BUILD),)
 endif
 
 ## Jenkins ENV
-ifeq ($(BUILD_NUMBER),)
-	ifeq ($(JENKINS_BUILD),)
-		BUILD_NUMBER ?= manual-$(shell date +"%s")
-		BUILD_TAG ?= jenkins-editions-$(BUILD_NUMBER)
-	endif
+ifeq ($(JENKINS_BUILD),)
+	BUILD_NUMBER ?= manual-$(shell date +"%s")
+	BUILD_TAG ?= jenkins-editions-$(BUILD_NUMBER)
 endif
 
+# Use our edition commit
 ifeq ($(EDITIONS_COMMIT),)
 	EDITIONS_COMMIT := $(shell git rev-parse --verify HEAD)
 endif

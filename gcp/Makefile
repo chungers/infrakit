@@ -3,15 +3,14 @@
 # include common Makefile vars
 include ../Makefile.variable
 
-BUILD_NUMBER ?= 0
 NAMESPACE ?= docker4x
 DOCKER_PUSH ?= false
 CLOUDSDK_CORE_PROJECT ?= docker-for-gcp
-EDITIONS_VERSION ?= dev
 BUILDS_BUCKET ?= gs://docker-for-gcp-builds
 TEMPLATES_BUCKET ?= gs://docker-for-gcp-templates
 TESTS ?= all
 DOCKERFILE_DIRS := $(wildcard dockerfiles/*/)
+VERSION=$(shell echo "$(DOCKER_VERSION)" | sed -e 's/^\([0-9][0-9]\)\.\([0-9][0-9]\)\.\([0-9]\).*/\1-\2-\3/g')
 
 # Stack properties
 DEPLOYMENT_NAME ?= docker
@@ -46,6 +45,10 @@ FORCE_GSUTIL_AUTH ?= 0
 
 define last
 $(lastword $(subst /, ,$1))
+endef
+
+define update
+	docker push $(NAMESPACE)/$(call basename,$(call last,$(1)))-gcp:$(GCP_TAG_VERSION);
 endef
 
 .PHONY: all auth revoke create delete release test build build-buoy build-cloudstor build-moby build-templates build-images gcloud-auth create-save-bucket save save-moby save-templates $(DOCKERFILE_DIRS) integration-tests
@@ -87,46 +90,45 @@ build-buoy:
 	make -C ../tools/buoy build
 
 build-cloudstor: build-dir
-	if [ ! -e build/cloudstor-rootfs.tar.gz ]; then          \
-	    make -C ../tools/cloudstor build;                          \
+	if [ ! -e build/cloudstor-rootfs.tar.gz ]; then \
+	    make -C ../tools/cloudstor rootfs; \
+	    cp ../tools/cloudstor/cloudstor-rootfs.tar.gz build/; \
 	fi
-	cd build;                                                              \
-	tar zxvf cloudstor-rootfs.tar.gz;                                            \
-	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)" || true;   \
-	docker plugin create "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)" ./plugin; \
-	rm -rf ./plugin;                                                             \
-	if [ "$(DOCKER_PUSH)" = true ]; then                                            \
-	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(EDITIONS_VERSION)";        \
-	fi;                                                                          \
-	cp ../tools/cloudstor/cloudstor-rootfs.tar.gz build/;\
-	cd ..
+	cd build; \
+	tar zxvf cloudstor-rootfs.tar.gz; \
+	docker plugin rm -f "$(NAMESPACE)/cloudstor-gcp:$(GCP_TAG_VERSION)" || true; \
+	docker plugin create "$(NAMESPACE)/cloudstor-gcp:$(GCP_TAG_VERSION)" ./plugin; \
+	rm -rf ./plugin; \
+	if [ "$(DOCKER_PUSH)" = true ]; then \
+	    docker plugin push "$(NAMESPACE)/cloudstor-gcp:$(GCP_TAG_VERSION)"; \
+	fi; \
 
-build-moby: build-images
-	make -C ../moby clean
-	mkdir -p ../moby/packages/gcp/dockerimages
-	cp ./build/images.tar ../moby/packages/gcp/dockerimages/
-	EDITIONS_VERSION=$(EDITIONS_VERSION) make -C ../moby build/gcp/gce.img.tar.gz
-	cp ../moby/build/gcp/gce.img.tar.gz ./build
+# build-moby: build-images
+# 	make -C ../moby clean
+# 	mkdir -p ../moby/packages/gcp/dockerimages
+# 	cp ./build/images.tar ../moby/packages/gcp/dockerimages/
+# 	make -C ../moby build/gcp/gce.img.tar.gz
+# 	cp ../moby/build/gcp/gce.img.tar.gz ./build
 
 build-templates: build-dir test
 	rm -Rf ./build/templates/*
 	cp -r ./templates ./build/
-	sed -i.bak "s/BUILD_NUMBER = '.*'/BUILD_NUMBER = '$(BUILD_NUMBER)'/" ./build/templates/Docker.jinja
+	sed -i.bak "s/BUILD_NUMBER = '.*'/BUILD_NUMBER = '$(GCP_BUILD_NUMBER)'/" ./build/templates/Docker.jinja
 	rm -f ./build/templates/Docker.jinja.bak
 
 $(DOCKERFILE_DIRS):
 	if [ "$(call last,$@)" = "lb-controller" ]; then \
-		DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@) -k container; \
+		DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(GCP_TAG_VERSION) make -C dockerfiles/$(call last,$@) -k container; \
 	else \
-	 DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(EDITIONS_VERSION) make -C dockerfiles/$(call last,$@); \
+		DOCKER_IMAGE=$(NAMESPACE)/$(call last,$@)-gcp:$(GCP_TAG_VERSION) make -C dockerfiles/$(call last,$@); \
 	fi
 
 build-images: build-dir build-buoy $(DOCKERFILE_DIRS)
 	docker save \
-		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)) \
+		$(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(GCP_TAG_VERSION)) \
 		--output ./build/images.tar
 	if [ "$(DOCKER_PUSH)" = true ]; then \
-		docker push $(foreach DIR,$(DOCKERFILE_DIRS),$(NAMESPACE)/$(call basename,$(call last,$(DIR)))-gcp:$(EDITIONS_VERSION)); \
+		$(foreach DIR,$(DOCKERFILE_DIRS),$(call update,$(DIR))) \
 	fi
 ifdef ($(GCP_TARGET_PATH))
 	cp ./build/images.tar $(ROOT_DIR)/$(GCP_TARGET_PATH)/images.tar
@@ -144,15 +146,15 @@ create-save-bucket: gcloud-auth
 	$(GSUTIL) ls -b $(BUILDS_BUCKET) || gsutil mb $(BUILDS_BUCKET)
 
 save-moby: create-save-bucket
-	$(GSUTIL) -m cp /build/gce.img.tar.gz $(BUILDS_BUCKET)/$(BUILD_NUMBER)/
+	$(GSUTIL) -m cp /build/gce.img.tar.gz $(BUILDS_BUCKET)/$(GCP_BUILD_NUMBER)/
 
 save-templates: create-save-bucket
-	$(GSUTIL) -m rsync -r /build/templates $(BUILDS_BUCKET)/$(BUILD_NUMBER)/templates/
+	$(GSUTIL) -m rsync -r /build/templates $(BUILDS_BUCKET)/$(GCP_BUILD_NUMBER)/templates/
 
 save: save-moby save-templates
 
 retrieve-moby: build-dir gcloud-auth
-	$(GSUTIL) cp $(BUILDS_BUCKET)/$(BUILD_NUMBER)/gce.img.tar.gz ./build/
+	$(GSUTIL) cp $(BUILDS_BUCKET)/$(GCP_BUILD_NUMBER)/gce.img.tar.gz ./build/
 
 clean:
 	rm -Rf ./build
@@ -160,16 +162,18 @@ clean:
 
 retrieve: build-dir gcloud-auth
 	mkdir -p ./build
-	$(GSUTIL) -m cp -r $(BUILDS_BUCKET)/$(BUILD_NUMBER)/* ./build/
+	$(GSUTIL) -m cp -r $(BUILDS_BUCKET)/$(GCP_BUILD_NUMBER)/* ./build/
 
-# TODO: Should be on AWS
+# TODO: GA should then push to AWS
 release: gcloud-auth
-	echo Release build:$(BUILD_NUMBER) to version:$(EDITIONS_VERSION)
-	sed -i.bak "s/VERSION = '.*'/VERSION = '$(EDITIONS_VERSION)'/" ./build/templates/Docker.jinja
+	echo "Release build:$(GCP_BUILD_NUMBER) to editions_version:$(GCP_TAG_VERSION) version:$(VERSION)"
+	sed -i.bak "s/BUILD_NUMBER = '.*'/BUILD_NUMBER = '$(GCP_BUILD_NUMBER)'/" ./build/templates/Docker.jinja
+	sed -i.bak "s/VERSION = '.*'/VERSION = '$(VERSION)'/" ./build/templates/Docker.jinja
+	sed -i.bak "s/EDITIONS_VERSION = '.*'/EDITIONS_VERSION = '$(GCP_TAG_VERSION)'/" ./build/templates/Docker.jinja
 	rm -f ./build/templates/Docker.jinja.bak
-	$(GSUTIL) -m cp -a public-read -r ./build/templates/* $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
-	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(EDITIONS_VERSION)/
+	$(GSUTIL) -m cp -a public-read -r ./build/templates/* $(TEMPLATES_BUCKET)/$(GCP_TAG_VERSION)/
+	$(GSUTIL) -m setmeta -h "Cache-Control:private, max-age=0, no-transform" -r $(TEMPLATES_BUCKET)/$(GCP_TAG_VERSION)/
 
 integration-tests:
-	echo Run Integration tests from build $(BUILD_NUMBER)
+	echo Run Integration tests from build $(GCP_BUILD_NUMBER)
 	cd ${CURDIR}/integration; docker-compose build && docker-compose run e2e

@@ -30,17 +30,19 @@ To build the artifacts:
 
 To save those artifacts (not needed if releasing from local build):
 
-  $ BUILD_NUMBER=X make save
+  $ GCP_BUILD_NUMBER=X make save
 
 To run the integration tests:
 
   $ export GCLOUD_SERVICE_KEY="$(base64 path-to/docker-for-gcp-ci-048e1008c949.json)"
-  $ BUILD_NUMBER=X make integration-tests
+  $ GCP_BUILD_NUMBER=X make integration-tests
 
 To retrieve artifacts (not needed if releasing from local build):
 
-  $ BUILD_NUMBER=X make clean retrieve
+  $ GCP_BUILD_NUMBER=X make clean retrieve
 
 To release:
 
-  $ BUILD_NUMBER=X EDITIONS_VERSION=17.XX.Y-ce-gcpZZ make release
+  $ GCP_BUILD_NUMBER=X EDITIONS_VERSION=17.XX.Y-ce-gcpZZ make release
+
+To share the image with the public make sure to navigate to the bucket where the `gce.img.tar.gz` is stored and share it publicly

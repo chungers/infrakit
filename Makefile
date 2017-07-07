@@ -40,7 +40,7 @@ dockerimages-azure: tools
 
 dockerimages-gcp: tools
 	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${GCP_TAG_VERSION}\033[0m"
-	$(MAKE) -C gcp build-cloudstor build-images EDITIONS_VERSION=$(GCP_TAG_VERSION)
+	$(MAKE) -C gcp build-cloudstor build-images
 
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
@@ -50,10 +50,10 @@ define build_cp_tool
 	$(MAKE) -C tools/$(1)
 	mkdir -p aws/dockerfiles/$(3)
 	mkdir -p azure/dockerfiles/$(3)
-	mkdir -p gcp/dockerfiles/$(3)
 	cp tools/$(1)/$(2) aws/dockerfiles/$(3)
 	cp tools/$(1)/$(2) azure/dockerfiles/$(3)
-	if [ "$(3)" = "guide/bin" ]; then \
+	if [ "$(2)" = "bin/guide" ]; then \
+		mkdir -p gcp/dockerfiles/$(3) \
 		cp tools/$(1)/$(2) gcp/dockerfiles/$(3); \
 	fi
 endef
@@ -87,19 +87,20 @@ tools/awscli/image:
 	$(MAKE) -C tools/awscli
 
 ## Moby targets
-moby/cloud/azure/vhd_blob_url.out: moby
+moby/cloud/azure/vhd_blob_url.out: clean moby
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
-moby/cloud/aws/ami_id.out: moby
+moby/cloud/aws/ami_id.out: clean moby
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
-moby/build/gcp/gce.img.tar.gz: moby
+moby/build/gcp/gce.img.tar.gz: clean moby
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) -C moby gcp-upload
+	$(MAKE) -C moby build/gcp/gce.img.tar.gz
+	$(MAKE) -C gcp save-moby
 
 moby/build/aws/initrd.img:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
@@ -165,10 +166,11 @@ aws-nightly:
 
 gcp-template:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) -C gcp build-templates BUILD_NUMBER=$(GCP_BUILD_NUMBER)
+	$(MAKE) -C gcp build-templates
 
-gcp-release:
-	$(MAKE) -C gcp release BUILD_NUMBER=$(GCP_BUILD_NUMBER) EDITIONS_VERSION=$(GCP_TAG_VERSION)
+gcp-release: gcp-template
+	$(MAKE) -C gcp save-templates
+	$(MAKE) -C gcp release
 
 
 e2e:

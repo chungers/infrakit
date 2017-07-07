@@ -11,7 +11,7 @@ function metadata {
 # This function will regenerating the host key whenever the IP address
 # changes. This applies the first time the instance is booted, and each time
 # the disk is used to boot a new instance.
-# See https://github.com/GoogleCloudPlatform/compute-image-packages/blob/14a50a6217a39e1f50f2ebade802cf76500a673a/google_compute_engine/instance_setup/instance_setup.py#L133
+# See https://github.com/GoogleCloudPlatform/compute-image-packages/blob/master/google_compute_engine/instance_setup/instance_setup.py#L133
 
 # Read the instance id from the metadata server
 INSTANCE_ID=$(metadata 'instance/id')

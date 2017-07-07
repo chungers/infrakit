@@ -7,6 +7,7 @@ template = env.get_template(sys.argv[1])
 print template.render({
     'properties': {
         'version': 'latest',
+        'editions_version': 'latest',
         'managerCount': 3,
         'workerCount': 1,
         'zone': 'europe-west1-d',
