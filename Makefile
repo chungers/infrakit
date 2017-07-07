@@ -170,6 +170,12 @@ gcp-template:
 gcp-release:
 	$(MAKE) -C gcp release BUILD_NUMBER=$(GCP_BUILD_NUMBER) EDITIONS_VERSION=$(GCP_TAG_VERSION)
 
+
+e2e:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	#$(MAKE) -C aws/testing
+	$(MAKE) -C azure/testing
+
 ## Golang targets
 # Package list
 PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
