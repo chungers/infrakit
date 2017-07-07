@@ -8,6 +8,8 @@ echo "Initialize logging for guide daemons"
 ln -s /proc/1/fd/1 /var/log/docker/refresh.log
 ln -s /proc/1/fd/1 /var/log/docker/watcher.log
 ln -s /proc/1/fd/1 /var/log/docker/cleanup.log
+ln -s /proc/1/fd/1 /var/log/docker/bouncer.log
+ln -s /proc/1/fd/1 /var/log/docker/vacuum.log
 
 # start cron
 /usr/sbin/crond -f -l 9 -L /var/log/cron.log

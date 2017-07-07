@@ -7,11 +7,12 @@ if [ "$NODE_TYPE" == "worker" ] ; then
     exit 0
 fi
 
-IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
-if [[ "$IS_LEADER" != "true" ]]; then
-    # not the leader, no need to continue.
-    exit 0
-fi
+# sleep for a random time between 1 and 60 seconds
+# this is because this runs on all managers and we don't want to step on
+# each other
+# we run on all managers incase the quorum gets messed up, and the current
+# leader is having issue.
+sleep $[ ( $RANDOM % 60 )  + 1 ]
 
 DOWN_LIST=$(docker node inspect $(docker node ls --filter role=manager -q) | jq -r '.[] | select(.ManagerStatus.Reachability != "reachable") | .ManagerStatus.Addr | split(":")[0]')
 
