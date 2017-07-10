@@ -40,7 +40,9 @@ else
 fi
 
 echo "++ Check if GCP images exists at $ROOT_DIR/$GCP_TARGET_PATH/images.tar"
-cp ../gcp/build/images.tar packages/gcp/dockerimages/
+if [ -e ../gcp/build/images.tar ]; then
+	cp ../gcp/build/images.tar packages/gcp/dockerimages/
+fi
 if [ -e "$ROOT_DIR/$GCP_TARGET_PATH/images.tar" ]; then
 	echo "++ Copying GCP Docker image: from $ROOT_DIR/$GCP_TARGET_PATH/images.tar to packages/gcp/dockerimages/"
 	cp $ROOT_DIR/$GCP_TARGET_PATH/images.tar packages/gcp/dockerimages/
