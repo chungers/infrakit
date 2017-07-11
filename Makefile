@@ -12,7 +12,7 @@ endif
 release: 
 	$(MAKE) aws-release
 	$(MAKE) azure-release
-	$(MAKE) gcp-release
+	#$(MAKE) gcp-release
 
 nightly:
 	$(MAKE) aws-nightly
