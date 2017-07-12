@@ -580,7 +580,7 @@ func (v *awsDriver) createEBS(req volume.Request) error {
 		return nil
 	}
 	// volume exists in another AZ
-	_, err := v.createEBSFromSnapshot(req.Name)
+	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
 	return err
 }
 
@@ -613,7 +613,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 	return nil
 }
 
-func (v *awsDriver) createEBSFromSnapshot(volname string) (*ec2.Volume, error) {
+func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64) (*ec2.Volume, error) {
 	/*
 		For volume create in different AZ:
 		1. Create a new snapshot of volume, wait to complete.
@@ -633,7 +633,11 @@ func (v *awsDriver) createEBSFromSnapshot(volname string) (*ec2.Volume, error) {
 	}
 	logctx.Infof(fmt.Sprintf("Snapshot created of volume in original AZ: %v", snap))
 
-	vol, err := v.createEBSCore(volname, "", *snap.SnapshotId, 0, 0, false)
+	// Reset Iops to 0 if not io1 as EC2 complains otherwise
+	if ebstype != volumeTypeProvisionedIOPS {
+		iops = 0
+	}
+	vol, err := v.createEBSCore(volname, ebstype, *snap.SnapshotId, 0, iops, false)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return nil, err
@@ -722,7 +726,7 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 				}
 			} else {
 				// volume exists in another AZ - transfer it to current AZ
-				vol, err = v.createEBSFromSnapshot(req.Name)
+				vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
 				if err != nil {
 					logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
 					return "", err
