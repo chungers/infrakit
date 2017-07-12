@@ -12,6 +12,7 @@ RUN mkdir -p /home/docker
 ADD release/build_index.py /home/docker
 ADD release/cfn_audit.py /home/docker
 ADD release/cleanup.py /home/docker
+ADD release/cleanLogs.py /home/docker
 ADD release/notify.py /home/docker
 ADD test /home/docker/test/
 RUN chmod 755 /home/docker/*

@@ -90,6 +90,7 @@ nightly:
 	MAKE_AMI_PUBLIC=no $(MAKE) release
 	@echo "\033[0;1;34m++ Run cleanup, remove things that are more than X days old.\033[0m"
 	$(TOOLSRUN) cleanup.py
+	$(TOOLSRUN) cleanLogs.py
 	@echo "\033[0;1;34m++ sleep to help with API throttle limits\033[0m"
 	sleep 60
 	$(MAKE) test
