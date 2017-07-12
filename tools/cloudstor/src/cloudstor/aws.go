@@ -574,12 +574,27 @@ func (v *awsDriver) createEBS(req volume.Request) error {
 		logctx.Infof("Volume does not exist. Create fresh EBS")
 		return v.createEBSNew(req)
 	}
+	// these code paths are highly unlikely since if a volume is created
+	// once it should always enumerate on all nodes and docker should not
+	// try to re-create the same volume again.
 	if *vol.AvailabilityZone == v.az {
 		// volume already exists in AZ
 		logctx.Infof("Volume already exists in AZ")
 		return nil
 	}
-	// volume exists in another AZ
+	// volume exists in another AZ - detach first
+	detach := false
+	for _, attachment := range vol.Attachments {
+		if *attachment.State != ec2.AttachmentStatusDetached {
+			detach = true
+		}
+	}
+	if detach {
+		if err := v.detachEBS(*vol.VolumeId); err != nil {
+			// best effort detach - don't bail right now.
+			logctx.Error(fmt.Sprintf("Failed to detach volume: %v. Continue ..", err))
+		}
+	}
 	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
 	return err
 }
@@ -644,12 +659,6 @@ func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64) (
 	}
 	logctx.Infof(fmt.Sprintf("Volume creation in new AZ succeeded: %v", vol))
 
-	err = v.detachEBS(*snap.VolumeId)
-	if err != nil {
-		logctx.Error(fmt.Sprintf("DetachVolume failed: %v", err))
-		return nil, err
-	}
-
 	logctx.Debug("Delete old version of volume in original AZ")
 	volDelete := &ec2.DeleteVolumeInput{
 		DryRun:   aws.Bool(false),
@@ -658,10 +667,11 @@ func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64) (
 
 	_, err = v.cl.DeleteVolume(volDelete)
 	if err != nil {
-		logctx.Error(fmt.Sprintf("DeleteVolume failed: %v", err))
-		return nil, err
+		// best effort delete - don't bail on failure
+		logctx.Error(fmt.Sprintf("DeleteVolume failed: %v. Continue ..", err))
+	} else {
+		logctx.Infof("Old Volume deleted")
 	}
-	logctx.Infof("Old Volume deleted")
 
 	snaps, err := v.getSnapshotsOfEBS(*snap.VolumeId)
 	if err != nil {
@@ -676,7 +686,8 @@ func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64) (
 		}
 		_, err = v.cl.DeleteSnapshot(snapdel)
 		if err != nil {
-			logctx.Error(fmt.Sprintf("Failed to delete snapshot: %v", err))
+			// best effort delete - don't bail on failure
+			logctx.Error(fmt.Sprintf("Failed to delete snapshot: %v. Continue ..", err))
 			continue
 		}
 	}
@@ -718,19 +729,19 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 		}
 
 		if detach {
-			if *vol.AvailabilityZone == v.az {
-				// volume exists in same AZ
-				if err := v.detachEBS(*vol.VolumeId); err != nil {
-					logctx.Error(fmt.Sprintf("Failed to detach volume: %v", err))
-					return "", err
-				}
-			} else {
-				// volume exists in another AZ - transfer it to current AZ
-				vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
-				if err != nil {
-					logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
-					return "", err
-				}
+			// volume exists in same AZ
+			if err := v.detachEBS(*vol.VolumeId); err != nil {
+				// best effort detach - don't bail right now.
+				logctx.Error(fmt.Sprintf("Failed to detach volume: %v. Continue ..", err))
+			}
+		}
+
+		if *vol.AvailabilityZone != v.az {
+			// volume exists in another AZ - transfer it to current AZ
+			vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
+			if err != nil {
+				logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
+				return "", err
 			}
 		}
 
