@@ -24,6 +24,7 @@ def add_resource_manager_upgrade_hook(template):
         AutoScalingGroupName=Ref("ManagerAsg"),
         LifecycleTransition="autoscaling:EC2_INSTANCE_TERMINATING",
         NotificationTargetARN=GetAtt("SwarmSQS", "Arn"),
+        HeartbeatTimeout="600",
         RoleARN=GetAtt("ProxyRole", "Arn")
     ))
 
@@ -47,6 +48,7 @@ def add_resource_worker_upgrade_hook(template):
         AutoScalingGroupName=Ref("NodeAsg"),
         LifecycleTransition="autoscaling:EC2_INSTANCE_TERMINATING",
         NotificationTargetARN=GetAtt("SwarmSQS", "Arn"),
+        HeartbeatTimeout="600",
         RoleARN=GetAtt("WorkerRole", "Arn")
     ))
 
