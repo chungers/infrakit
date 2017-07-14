@@ -109,3 +109,24 @@ def add_output_vpcid(template):
         Description="Use this as the VPC for configuring Private Hosted Zones",
         Value=Ref("Vpc")
     ))
+
+
+def add_output_security_groups(template):
+    """
+    Output the security groups Ids
+    """
+    template.add_output(Output(
+        "ManagerSecurityGroupID",
+        Description="SecurityGroup ID of ManagerVpcSG",
+        Value=Ref("ManagerVpcSG")
+    ))
+    template.add_output(Output(
+        "SwarmWideSecurityGroupID",
+        Description="SecurityGroup ID of SwarmWideSG",
+        Value=Ref("SwarmWideSG")
+    ))
+    template.add_output(Output(
+        "NodeSecurityGroupID",
+        Description="SecurityGroup ID of NodeVpcSG",
+        Value=Ref("NodeVpcSG")
+    ))
