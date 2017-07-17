@@ -10,8 +10,9 @@ USER := $(shell whoami)
 NEWGROUP := editions-$(USER)-$(TIMESTAMP)
 NEWDDCGROUP := editions-ddc-$(USER)-$(TIMESTAMP)
 REGION := centralus
-STG_ACCOUNT := dockereditions
-VHD := "http://$(STG_ACCOUNT).blob.core.windows.net/mobylinux/a8d9a06d709c2f7e294b0474c0222eb7-mobylinux.vhd"
+STG_ACCOUNT := testeditions
+BLOB_NAME := e80dce710481fca5caac0c530e5dd429-jenkins-docker-editions-release-master-331-mobylinux.vhd
+VHD := "http://$(STG_ACCOUNT).blob.core.windows.net/mobylinux/$(BLOB_NAME)"
 AD_APP_ID := ""
 AD_APP_SECRET := ""
 SSH_PUBKEY := ""
@@ -47,6 +48,13 @@ dev: clean azstgcontainer
 
 azstgcontainer:
 	docker build . -f /testing/Dockerfile.azuretemplate --tag $(AZURE_CONTAINER) 
+
+dupblob:
+ifeq ($(AZURE_STORAGE_KEY),)
+	echo "AZURE_STORAGE_KEY env needs to be set from edition blob storage account"
+	exit 1
+endif
+	make -C dockerfiles/xplatcli copy_blob
 
 clean:
 	azure group delete $(OLDGROUP) -q --nowait || true
