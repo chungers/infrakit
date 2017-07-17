@@ -21,7 +21,7 @@ CLEAN="false"
 
 
 #1 Generate SSH key
-ssh-keygen -N '' -f /root/.ssh/id_rsa  -t rsa -b 2048
+ssh-keygen -N '' -f ~/.ssh/id_rsa  -t rsa -b 2048
 SSH=$(cat ~/.ssh/id_rsa.pub) 
 
 #Timeout set for checking if deployment succeeded
@@ -176,7 +176,7 @@ wait 10 60s ssh
 
 #Pull and run a docker container with a few tests
 #Official version of the end to end test from docker hub
-ssh -o StrictHostKeyChecking=no -p $PORT docker@$ip '/usr/local/bin/docker run -v /var/run/docker.sock:/var/run/docker.sock dockerswarm/e2e'
+ssh -o StrictHostKeyChecking=no -p $PORT docker@$ip '/usr/local/bin/docker run -v /var/run/docker.sock:/var/run/docker.sock dockere2e/tests'
 
 #If the clean flag was specified delete the resource group that was created
 if [ "$CLEAN" == "true" ]; then	
