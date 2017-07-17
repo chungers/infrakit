@@ -17,6 +17,9 @@ UCP_PORT=8443
 DTR_SEQ_ID=0
 IMAGE_LIST_ARGS=''
 
+echo "APP_ID=$APP_ID"
+echo "TENANT_ID=$TENANT_ID"
+echo "ACCOUNT_ID=$ACCOUNT_ID"
 echo "PATH=$PATH"
 echo "ROLE=$ROLE"
 echo "REGION=$REGION"
@@ -50,6 +53,9 @@ if [[ $? -ne 0 ]]
 then
 	exit 0
 fi
+
+echo "Set the active subscription to: $ACCOUNT_ID"
+az account set --subscription $ACCOUNT_ID
 
 COUNTER=0
 while :
