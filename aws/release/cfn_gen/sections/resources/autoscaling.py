@@ -1,5 +1,6 @@
 from troposphere import FindInMap, GetAtt, Ref, If, Join
-from troposphere.autoscaling import LifecycleHook, AutoScalingGroup, LaunchConfiguration
+from troposphere.autoscaling import (
+    LifecycleHook, AutoScalingGroup, LaunchConfiguration, MetricsCollection)
 from troposphere.policies import (
     AutoScalingRollingUpdate, UpdatePolicy, CreationPolicy, ResourceSignal)
 from troposphere.ec2 import BlockDeviceMapping, EBSBlockDevice
@@ -150,6 +151,9 @@ def add_resource_manager_autoscalegroup(template, create_vpc,
         MinSize=0,
         MaxSize=6,  # needs to be 6 so that you can upgrade when you have 5 managers.
         DesiredCapacity=Ref("ManagerSize"),
+        MetricsCollection=[MetricsCollection(
+            Granularity="1Minute",
+        ), ],
         VPCZoneIdentifier=[
             If("HasOnly2AZs",
                Join(",", [Ref("PubSubnetAz1"), Ref("PubSubnetAz2")]),
@@ -255,6 +259,9 @@ def add_resource_worker_autoscalegroup(template, launch_config_name):
         LaunchConfigurationName=Ref(launch_config_name),
         MinSize=0,
         MaxSize=1000,
+        MetricsCollection=[MetricsCollection(
+            Granularity="1Minute",
+        ), ],
         DesiredCapacity=Ref("ClusterSize"),
         VPCZoneIdentifier=[
             If("HasOnly2AZs",
