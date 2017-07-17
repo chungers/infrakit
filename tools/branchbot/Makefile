@@ -1,4 +1,4 @@
-BB_TAG := 0.0.36
+BB_TAG := 0.0.37
 BB_IMAGE := editions/branchbot
 
 default: branchbot
@@ -8,7 +8,7 @@ branchbot: main.go Dockerfile.build
 	docker run --rm $(BB_IMAGE)-build >branchbot
 	chmod +x branchbot
 
-dockerimage: branchbot Dockerfile
+dockerimage: Dockerfile
 	docker build -t $(BB_IMAGE):$(BB_TAG) .
 
 push: dockerimage

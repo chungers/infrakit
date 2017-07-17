@@ -1,7 +1,19 @@
+FROM golang:1.7-alpine as builder
+
+RUN apk add --update --no-cache git
+RUN go get -u github.com/LK4D4/vndr
+COPY . /go/src/github.com/docker/editions/tools/branchbot
+WORKDIR /go/src/github.com/docker/editions/tools/branchbot
+RUN vndr
+RUN ["go", "install", "github.com/docker/editions/tools/branchbot"]
+
+
+
 FROM alpine
 
 RUN apk add --update --no-cache git openssh
-COPY ./branchbot /go/bin/branchbot
+COPY --from=builder /go/bin/branchbot /go/bin/branchbot
+RUN chmod +x /go/bin/branchbot
 RUN adduser -D branchbot
 WORKDIR /home/branchbot
 RUN mkdir .ssh
