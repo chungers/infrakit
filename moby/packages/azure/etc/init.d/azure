@@ -82,6 +82,7 @@ start()
 		-v /usr/bin/docker:/usr/local/bin/docker:ro \
 		-v /mnt:/mnt \
 		-v /etc:/etc \
+		-v /var/etc/docker:/var/etc/docker \
 		-v /var/etc/ssh:/etc/ssh \
 		-v /var/etc/hostname:/etc/hostname \
 		-v /var/home:/home \
