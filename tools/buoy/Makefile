@@ -1,5 +1,5 @@
 DOCKER_IMAGE_NAME := buoy
-DOCKER_CONTAINER_NAME := ${DOCKER_IMAGE_NAME}-build-container
+DOCKER_CONTAINER_NAME := ${DOCKER_IMAGE_NAME}-build-container_$(shell date +"%s")
 
 default: build
 
