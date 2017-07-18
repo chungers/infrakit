@@ -79,6 +79,10 @@ cd $BUILD_HOME/code/editions/aws/release
 # run cleanup, remove things that are more than X days old.
 python cleanup.py
 
+# run clean logs to delete cloudwatch log groups that have no associated
+# stack
+python cleanLogs.py
+ 
 # run s3_cleanup, remove buckets left over from DDC testing.
 python ../common/s3_cleanup.py
 
