@@ -394,7 +394,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                         "access": "Allow",
                         "description": "Allow UCP",
                         "destinationAddressPrefix": "*",
-                        "destinationPortRange": "8443",
+                        "destinationPortRange": "12390",
                         "direction": "Inbound",
                         "priority": 207,
                         "protocol": "Tcp",
@@ -408,7 +408,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                         "access": "Allow",
                         "description": "Allow DTR",
                         "destinationAddressPrefix": "*",
-                        "destinationPortRange": "443",
+                        "destinationPortRange": "12391",
                         "direction": "Inbound",
                         "priority": 208,
                         "protocol": "Tcp",
@@ -456,7 +456,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                     {
                         "name": "ucpLbRule",
                         "properties": {
-                            "backendPort": 8443,
+                            "backendPort": 12390,
                             "enableFloatingIP": False,
                             "frontendIPConfiguration": {
                                 "id": "[variables('lbSSHFrontEndIPConfigID')]"
@@ -467,15 +467,15 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                             "frontendPort": 443,
                             "idleTimeoutInMinutes": 5,
                             "probe": {
-                                "id": "[concat(variables('lbSSHID'),'/probes/ucp')]"
+                                "id": "[concat(variables('lbSSHID'),'/probes/ucp443')]"
                             },
                             "protocol": "tcp"
                         }
                     },
                     {
-                        "name": "dtrLbRule",
+                        "name": "dtrLbRuleHTTPS",
                         "properties": {
-                            "backendPort": 443,
+                            "backendPort": 12391,
                             "enableFloatingIP": False,
                             "frontendIPConfiguration": {
                                 "id": "[variables('lbDTRFrontEndIPConfigID')]"
@@ -486,7 +486,26 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                             "frontendPort": 443,
                             "idleTimeoutInMinutes": 5,
                             "probe": {
-                                "id": "[concat(variables('lbSSHID'),'/probes/dtr')]"
+                                "id": "[concat(variables('lbSSHID'),'/probes/dtr443')]"
+                            },
+                            "protocol": "tcp"
+                        }
+                    },
+                    {
+                        "name": "dtrLbRuleHTTP",
+                        "properties": {
+                            "backendAddressPool": {
+                                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
+                            },
+                            "backendPort": 12392,
+                            "enableFloatingIP": false,
+                            "frontendIPConfiguration": {
+                                "id": "[variables('lbDTRFrontEndIPConfigID')]"
+                            },
+                            "frontendPort": 80,
+                            "idleTimeoutInMinutes": 5,
+                            "probe": {
+                                "id": "[concat(variables('lbSSHID'),'/probes/dtr80')]"
                             },
                             "protocol": "tcp"
                         }
@@ -496,20 +515,29 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             properties.update(loadbalancing_rules)
             new_probe = [
                 {
-                    "name": "ucp",
+                    "name": "ucp443",
                     "properties": {
                         "intervalInSeconds": 10,
                         "numberOfProbes": 2,
-                        "port": 8443,
+                        "port": 12390,
                         "protocol": "tcp"
                     }
                 },
                 {
-                    "name": "dtr",
+                    "name": "dtr443",
                     "properties": {
                         "intervalInSeconds": 10,
                         "numberOfProbes": 2,
-                        "port": 443,
+                        "port": 12391,
+                        "protocol": "tcp"
+                    }
+                },
+                {
+                    "name": "dtr80",
+                    "properties": {
+                        "intervalInSeconds": 10,
+                        "numberOfProbes": 2,
+                        "port": 12392,
                         "protocol": "tcp"
                     }
                 }
