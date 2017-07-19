@@ -24,7 +24,7 @@ const (
 
 	// TODO(nathanleclaire): Should include all editions maintainers, just didn't want to
 	// spam before the bot was fully ready.
-	maintainers = "@nathanleclaire @FrenchBen @ddebroy @kencochrane "
+	maintainers = "@FrenchBen @ddebroy @kencochrane "
 )
 
 var (
