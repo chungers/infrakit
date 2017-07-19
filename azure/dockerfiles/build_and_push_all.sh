@@ -58,12 +58,12 @@ function docker_tag_exists() {
 }
 
 #copy in common files that apply across containers
-for IMAGE in init guide ddc-init logger upgrade
+for IMAGE in init guide ddc-init logger upgrade lookup
 do
   cp common/* ${IMAGE}/files/
 done
 
-for IMAGE in init guide create-sp ddc-init cloud logger meta
+for IMAGE in init guide create-sp ddc-init cloud logger meta lookup
 do
   FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${TAG_VERSION}"
   echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
