@@ -43,9 +43,11 @@ RUN mkdir /daemons && \
 
 COPY /walinuxagent-entrypoint.sh /daemons/walinuxagent-entrypoint.sh
 COPY /supervisord.conf /opt/supervisord.conf
+COPY /upgrade.sh /usr/bin/upgrade.sh
 
 RUN chmod +x /usr/sbin/waagent && \
     ln -sf /dev/stdout /var/log/waagent.log
+RUN chmod +x /usr/bin/upgrade.sh
 
 ENTRYPOINT ["supervisord"]
 CMD ["--configuration", "/opt/supervisord.conf"]
