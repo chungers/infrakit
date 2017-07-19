@@ -55,7 +55,7 @@ then
 fi
 
 echo "Set the active subscription to: $ACCOUNT_ID"
-az account set --subscription $ACCOUNT_ID
+azure account set $ACCOUNT_ID
 
 COUNTER=0
 while :
