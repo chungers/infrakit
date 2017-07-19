@@ -22,6 +22,9 @@ echo "ClientAliveInterval 180" >>/etc/ssh/sshd_config
 rm /usr/bin/awk
 ln -s /usr/bin/gawk /usr/bin/awk
 
+# Updated apk packages and add sudo to sync with host
+apk --update add sudo
+
 echo '
 CHFN_RESTRICT    rwh
 DEFAULT_HOME     yes
