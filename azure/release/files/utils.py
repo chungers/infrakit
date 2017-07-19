@@ -322,6 +322,8 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             }
         }
         parameters.update(new_parameters)
+        # Let DDC handle the logs
+        del parameters["enableExtLogs"]
 
     variables = data.get('variables')
     if variables:

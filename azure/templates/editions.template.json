@@ -182,6 +182,17 @@
       "metadata": {
         "description": "Cleans up unused images, containers, networks and volumes"
       }
+    },
+    "enableExtLogs": {
+      "type": "string",
+      "defaultValue": "yes",
+      "allowedValues": [
+          "yes",
+          "no"
+      ],
+      "metadata": {
+        "description": "Stores container logs in storage container on azure"
+      }
     }
   },
   "variables": {

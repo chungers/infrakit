@@ -113,7 +113,20 @@ start()
 		sleep 5
 	done
 
-	cat <<EOF >/etc/docker/daemon.json
+	# pull our lookup tool
+	docker pull docker4x/lookup-azure:$DOCKER_FOR_IAAS_VERSION
+
+	ENABLE=docker run --rm -it -e ACCOUNT_ID -e TENANT_ID -e APP_ID -e APP_SECRET -e GROUP_NAME docker4x/lookup-azure:$DOCKER_FOR_IAAS_VERSION enableExtLogs
+	
+	if [ $? -eq 1 ]
+	then
+		einfo "No logging preference can be determined"
+		ENABLE="no"
+	fi
+
+	if [ "$ENABLE" = "yes" ]
+	then
+		cat <<EOF >/etc/docker/daemon.json
 {
 	"log-driver": "syslog",
 	"log-opts": {
@@ -123,8 +136,9 @@ start()
 }
 EOF
 
-	# Ensure correct hostname according to Azure and reload daemon config
-	service docker restart
+		# Ensure correct hostname according to Azure and reload daemon config
+		service docker restart
+	fi
 
 	. /var/lib/waagent/CustomData
 
