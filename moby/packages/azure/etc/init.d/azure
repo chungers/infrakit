@@ -113,19 +113,26 @@ start()
 		sleep 5
 	done
 
+	ebegin "Pulling Azure lookup tool"
+	ENABLE="no"
 	# pull our lookup tool
 	docker pull docker4x/lookup-azure:$DOCKER_FOR_IAAS_VERSION
+	PULLED=$?
+	eend $PULLED
 
-	ENABLE=docker run --rm -it -e ACCOUNT_ID -e TENANT_ID -e APP_ID -e APP_SECRET -e GROUP_NAME docker4x/lookup-azure:$DOCKER_FOR_IAAS_VERSION enableExtLogs
-	
-	if [ $? -eq 1 ]
+	ebegin "Checking external logging config"
+	if [ $PULLED -eq 0 ]
 	then
-		einfo "No logging preference can be determined"
-		ENABLE="no"
+		ENABLE=$(docker run --rm -it -e ACCOUNT_ID -e TENANT_ID -e APP_ID -e APP_SECRET -e GROUP_NAME docker4x/lookup-azure:$DOCKER_FOR_IAAS_VERSION enableExtLogs)
+		if [ $? -eq 1 ]
+		then
+			einfo "No logging preference can be determined"
+		fi
 	fi
 
 	if [ "$ENABLE" = "yes" ]
 	then
+		einfo "Update daemon for External logging"
 		cat <<EOF >/etc/docker/daemon.json
 {
 	"log-driver": "syslog",
@@ -139,6 +146,7 @@ EOF
 		# Ensure correct hostname according to Azure and reload daemon config
 		service docker restart
 	fi
+	eend $?
 
 	. /var/lib/waagent/CustomData
 
