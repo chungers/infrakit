@@ -76,7 +76,7 @@ case "$1" in
 		BLOBNAME=${BLOBNAME:-$(head -c 200m "/tmp/mobylinux.vhd" | md5sum | awk '{ print $1; }')-${JOBNAME}-mobylinux.vhd}
 		BLOB_URL="https://${AZURE_STG_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${BLOBNAME}"
 
-		arrowecho "Uploading VHD to ${BLOBURL}..."
+		arrowecho "Uploading VHD to ${BLOB_URL}..."
 
 		azure-vhd-utils upload \
 			--localvhdpath "/tmp/mobylinux.vhd" \
