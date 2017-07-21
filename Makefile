@@ -62,8 +62,15 @@ define clean_plugin_tool
 	-rm -f aws/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f azure/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f gcp/dockerfiles/cloudstor-rootfs.tar.gz
+	-rm -f gcp/dockerfiles/guide/cloudstor-rootfs.tar.gz
 	-rm -Rf gcp/dockerfiles/meta
 	-rm -Rf gcp/dockerfiles/init
+	-rm -Rf aws/dockerfiles/init/bin
+	-rm -Rf aws/dockerfiles/guide/bin
+	-rm -Rf aws/dockerfiles/meta/bin
+	-rm -Rf azure/dockerfiles/init/bin
+	-rm -Rf azure/dockerfiles/guide/bin
+	-rm -Rf azure/dockerfiles/meta/bin
 endef
 
 ## General tools targets
