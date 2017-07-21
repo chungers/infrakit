@@ -500,7 +500,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                                 "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
                             },
                             "backendPort": 12392,
-                            "enableFloatingIP": false,
+                            "enableFloatingIP": False,
                             "frontendIPConfiguration": {
                                 "id": "[variables('lbDTRFrontEndIPConfigID')]"
                             },
