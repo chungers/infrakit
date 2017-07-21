@@ -275,7 +275,7 @@ def aws2az_data():
         },
         "eu-central-1": {
             "Name": "Frankfurt",
-            "EFSSupport": "no",
+            "EFSSupport": "yes",
             "LambdaSupport": "yes",
             "NumAZs": "2",
             "AZ0": "0",
