@@ -45,13 +45,13 @@ func TestListenerSSLCertNoPort(t *testing.T) {
 	l, err := newListener("foo", 30000, "tcp://:443", &cert)
 	require.NoError(t, err)
 
-	require.Equal(t, TCP, l.protocol())
+	require.Equal(t, SSL, l.protocol())
 	require.Equal(t, uint32(443), l.extPort())
 	require.Equal(t, uint32(30000), l.SwarmPort)
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &cert, l.CertASN())
-	require.Equal(t, []uint32{443}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
 	r := l.asRoute()
 	require.Equal(t, SSL, r.Protocol)
 	require.Equal(t, &cert, r.Certificate)
@@ -67,7 +67,7 @@ func TestListenerSSLCertNoPort(t *testing.T) {
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &cert, l.CertASN())
-	require.Equal(t, []uint32{443}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
 	r = l.asRoute()
 	require.Equal(t, TCP, r.Protocol)
 	require.Equal(t, &cert, r.Certificate)
@@ -82,7 +82,7 @@ func TestListenerSSLCertNoPort(t *testing.T) {
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, emptyCert, l.CertASN())
-	require.Equal(t, []uint32{443}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
 	r = l.asRoute()
 	require.Equal(t, TCP, r.Protocol)
 	require.Equal(t, emptyCert, r.Certificate)
@@ -99,34 +99,51 @@ func TestListenerSSLCertWithPorts(t *testing.T) {
 	l, err := newListener("foo", 30000, "tcp://:443", &certOnePort)
 	require.NoError(t, err)
 
-	require.Equal(t, TCP, l.protocol())
+	require.Equal(t, SSL, l.protocol())
 	require.Equal(t, uint32(443), l.extPort())
 	require.Equal(t, uint32(30000), l.SwarmPort)
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &asn, l.CertASN())
-	require.Equal(t, []uint32{443}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
 	r := l.asRoute()
 	require.Equal(t, SSL, r.Protocol)
+	require.Equal(t, asn, *r.Certificate)
+
+	certOnePortProtocol1 := asn + "@HTTPS:443"
+	// has cert and port is 443, so it should be HTTPS.
+	l, err = newListener("foo", 30000, "tcp://:443", &certOnePortProtocol1)
+	require.NoError(t, err)
+
+	require.Equal(t, HTTPS, l.protocol())
+	require.Equal(t, uint32(443), l.extPort())
+	require.Equal(t, uint32(30000), l.SwarmPort)
+	require.Equal(t, "foo", l.Service)
+	require.Equal(t, "default", l.host())
+	require.Equal(t, &asn, l.CertASN())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: HTTPS}}, l.CertPorts())
+	r = l.asRoute()
+	require.Equal(t, HTTPS, r.Protocol)
 	require.Equal(t, asn, *r.Certificate)
 
 	// has cert with port 442, this should be SSL.
 	l, err = newListener("foo", 30000, "tcp://:442", &certOnePort2)
 	require.NoError(t, err)
 
-	require.Equal(t, TCP, l.protocol())
+	require.Equal(t, SSL, l.protocol())
 	require.Equal(t, uint32(442), l.extPort())
 	require.Equal(t, uint32(30000), l.SwarmPort)
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &asn, l.CertASN())
-	require.Equal(t, []uint32{442}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 442, PortProtocol: SSL}}, l.CertPorts())
 	r = l.asRoute()
 	require.Equal(t, SSL, r.Protocol)
 	require.Equal(t, asn, *r.Certificate)
 
-	// cert has 2 ports, 442 is one of them, assume SSL
-	l, err = newListener("foo", 30000, "tcp://:442", &certTwoPorts)
+	certOnePortProtocol2 := asn + "@SSL:443"
+	// has cert with port 442, this should be SSL.
+	l, err = newListener("foo", 30000, "tcp://:442", &certOnePortProtocol2)
 	require.NoError(t, err)
 
 	require.Equal(t, TCP, l.protocol())
@@ -135,7 +152,71 @@ func TestListenerSSLCertWithPorts(t *testing.T) {
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &asn, l.CertASN())
-	require.Equal(t, []uint32{443, 442}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
+	r = l.asRoute()
+	require.Equal(t, TCP, r.Protocol)
+	require.Equal(t, asn, *r.Certificate)
+
+	// cert has 2 ports, 442 is one of them, assume SSL
+	l, err = newListener("foo", 30000, "tcp://:442", &certTwoPorts)
+	require.NoError(t, err)
+
+	require.Equal(t, SSL, l.protocol())
+	require.Equal(t, uint32(442), l.extPort())
+	require.Equal(t, uint32(30000), l.SwarmPort)
+	require.Equal(t, "foo", l.Service)
+	require.Equal(t, "default", l.host())
+	require.Equal(t, &asn, l.CertASN())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}, PortDetail{Port: 442, PortProtocol: SSL}}, l.CertPorts())
+	r = l.asRoute()
+	require.Equal(t, SSL, r.Protocol)
+	require.Equal(t, asn, *r.Certificate)
+
+	// cert has 2 ports, 442 is one of them, assume SSL
+	certTwoPorts2Protocol1 := asn + "@HTTPS:443,442"
+	l, err = newListener("foo", 30000, "tcp://:442", &certTwoPorts2Protocol1)
+	require.NoError(t, err)
+
+	require.Equal(t, SSL, l.protocol())
+	require.Equal(t, uint32(442), l.extPort())
+	require.Equal(t, uint32(30000), l.SwarmPort)
+	require.Equal(t, "foo", l.Service)
+	require.Equal(t, "default", l.host())
+	require.Equal(t, &asn, l.CertASN())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: HTTPS}, PortDetail{Port: 442, PortProtocol: SSL}}, l.CertPorts())
+	r = l.asRoute()
+	require.Equal(t, SSL, r.Protocol)
+	require.Equal(t, asn, *r.Certificate)
+
+	// cert with 2 ports, 442 is HTTPS and 443 is SSL
+	certTwoPorts2Protocol2 := asn + "@443,HTTPS:442"
+	// cert has 2 ports, 442 is one of them, assume SSL
+	l, err = newListener("foo", 30000, "tcp://:442", &certTwoPorts2Protocol2)
+	require.NoError(t, err)
+
+	require.Equal(t, HTTPS, l.protocol())
+	require.Equal(t, uint32(442), l.extPort())
+	require.Equal(t, uint32(30000), l.SwarmPort)
+	require.Equal(t, "foo", l.Service)
+	require.Equal(t, "default", l.host())
+	require.Equal(t, &asn, l.CertASN())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}, PortDetail{Port: 442, PortProtocol: HTTPS}}, l.CertPorts())
+	r = l.asRoute()
+	require.Equal(t, HTTPS, r.Protocol)
+	require.Equal(t, asn, *r.Certificate)
+
+	// cert with 2 ports, but protocol is bad for one, assume SSL for that one.
+	certTwoPorts2ProtocolBad := asn + "@443,BAD:442"
+	l, err = newListener("foo", 30000, "tcp://:442", &certTwoPorts2ProtocolBad)
+	require.NoError(t, err)
+
+	require.Equal(t, SSL, l.protocol())
+	require.Equal(t, uint32(442), l.extPort())
+	require.Equal(t, uint32(30000), l.SwarmPort)
+	require.Equal(t, "foo", l.Service)
+	require.Equal(t, "default", l.host())
+	require.Equal(t, &asn, l.CertASN())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}, PortDetail{Port: 442, PortProtocol: SSL}}, l.CertPorts())
 	r = l.asRoute()
 	require.Equal(t, SSL, r.Protocol)
 	require.Equal(t, asn, *r.Certificate)
@@ -150,22 +231,23 @@ func TestListenerSSLCertWithPorts(t *testing.T) {
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &asn, l.CertASN())
-	require.Equal(t, []uint32{443}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
+
 	r = l.asRoute()
 	require.Equal(t, TCP, r.Protocol)
 	require.Equal(t, asn, *r.Certificate)
 
-	// cert but no port, assume port 443
+	// cert but no port, assume port 443 and SSL
 	l, err = newListener("foo", 30000, "tcp://:443", &certEmptyPorts)
 	require.NoError(t, err)
 
-	require.Equal(t, TCP, l.protocol())
+	require.Equal(t, SSL, l.protocol())
 	require.Equal(t, uint32(443), l.extPort())
 	require.Equal(t, uint32(30000), l.SwarmPort)
 	require.Equal(t, "foo", l.Service)
 	require.Equal(t, "default", l.host())
 	require.Equal(t, &asn, l.CertASN())
-	require.Equal(t, []uint32{443}, l.CertPorts())
+	require.Equal(t, []PortDetail{PortDetail{Port: 443, PortProtocol: SSL}}, l.CertPorts())
 	r = l.asRoute()
 	require.Equal(t, SSL, r.Protocol)
 	require.Equal(t, asn, *r.Certificate)

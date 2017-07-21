@@ -18,6 +18,11 @@ type listener struct {
 	Certificate   *string
 }
 
+type PortDetail struct {
+	Port         uint32
+	PortProtocol Protocol
+}
+
 func newListener(service string, swarmPort uint32, urlStr string, cert *string) (*listener, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
@@ -55,14 +60,14 @@ func (l *listener) CertASN() *string {
 }
 
 // Get the ports that are associated with the certificate from the service label
-func (l *listener) CertPorts() []uint32 {
+func (l *listener) CertPorts() []PortDetail {
 	if l.Certificate == nil {
 		// if we have not Certificate then return 443
-		return []uint32{443}
+		return []PortDetail{PortDetail{Port: uint32(443), PortProtocol: SSL}}
 	}
 	parts := strings.Split(*l.Certificate, "@")
 	if len(parts) > 1 {
-		var finalPorts = []uint32{}
+		var finalPorts = []PortDetail{}
 		ports := strings.Split(parts[1], ",")
 		log.Infoln("ports ", ports)
 		if len(ports) > 0 {
@@ -70,11 +75,35 @@ func (l *listener) CertPorts() []uint32 {
 			for _, port := range ports {
 				log.Infoln("port: ", port)
 				if port != "" {
-					j, err := strconv.ParseUint(port, 10, 32)
-					if err != nil {
-						log.Infoln("Can't convert to int: ", port, "; error=", err)
+					var parsePort uint64
+					var proc Protocol
+					// check if there is protocal HTTPS:443, SSL:443, etc
+					if strings.Contains(port, ":") {
+						log.Infoln("Found a ':', look for protocol")
+						portProc := strings.Split(port, ":")
+						// 0 = protocal, 1 = port
+						pPort, err := strconv.ParseUint(portProc[1], 10, 32)
+						if err != nil {
+							log.Infoln("Can't convert to int: ", port, "; error=", err)
+						}
+						parsePort = pPort
+						proto := strings.ToUpper(portProc[0])
+						if protocolCheck(proto) {
+							proc = Protocol(proto)
+						} else {
+							log.Infoln("Protocol: ", proto, " is not SSL or HTTPS, defaulting to SSL")
+							proc = SSL
+						}
+					} else {
+						pPort, err := strconv.ParseUint(port, 10, 32)
+						if err != nil {
+							log.Infoln("Can't convert to int: ", port, "; error=", err)
+						}
+						parsePort = pPort
+						proc = SSL
 					}
-					finalPorts = append(finalPorts, uint32(j))
+					log.Infoln("port: ", parsePort, " protocol: ", proc)
+					finalPorts = append(finalPorts, PortDetail{Port: uint32(parsePort), PortProtocol: proc})
 				}
 			}
 		}
@@ -84,12 +113,12 @@ func (l *listener) CertPorts() []uint32 {
 			// asn:blah@
 			// an at symbol but no ports after, if that is the case
 			// default to 443.
-			finalPorts = append(finalPorts, uint32(443))
+			finalPorts = append(finalPorts, PortDetail{Port: uint32(443), PortProtocol: SSL})
 		}
 		return finalPorts
 	} else {
 		// if there is no port, default to 443
-		return []uint32{443}
+		return []PortDetail{PortDetail{Port: uint32(443), PortProtocol: SSL}}
 	}
 }
 
@@ -140,12 +169,16 @@ func (l *listener) protocol() Protocol {
 		scheme = l.URL.Scheme
 	}
 
+	ports := l.CertPorts()
+	port := l.extPort()
+
 	// check if this should be SSL because it has a certificate.
-	if l.Certificate != nil && intInSlice(l.extPort(), l.CertPorts()) {
-		log.Infoln("port ", l.extPort(), " Is in ", l.CertPorts())
-		scheme = string(SSL)
+	found, index := portInList(port, ports)
+	if l.Certificate != nil && found {
+		log.Infoln("port ", port, " Is in ", ports, " index: ", index)
+		return ports[index].PortProtocol
 	} else {
-		log.Infoln("cert is nil, or port ", l.extPort(), " Is NOT in ", l.CertPorts())
+		log.Infoln("cert is nil, or port ", port, " Is NOT in ", ports)
 	}
 
 	return ProtocolFromString(scheme)
@@ -208,11 +241,35 @@ func addListenerToHostMap(m map[string][]*listener, l *listener) {
 	m[host] = append(m[host], l)
 }
 
+// check if given port is in the list of PortDetail's
+// if found return the item from the list.
+func portInList(port uint32, list []PortDetail) (bool, int) {
+	for i, b := range list {
+		if b.Port == port {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
+// return true if the given int is in the provided slice
 func intInSlice(a uint32, list []uint32) bool {
 	for _, b := range list {
 		if b == a {
 			return true
 		}
+	}
+	return false
+}
+
+// check the protocol value, make sure it is valid.
+func protocolCheck(proto string) bool {
+	validProtocolValues := map[string]bool{
+		"HTTPS": true,
+		"SSL":   true,
+	}
+	if validProtocolValues[proto] {
+		return true
 	}
 	return false
 }

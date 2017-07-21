@@ -128,7 +128,11 @@ func (p *elbDriver) Publish(route loadbalancer.Route) (loadbalancer.Result, erro
 	}
 	instanceProtocol := aws.String(string(route.Protocol))
 	if route.Protocol == loadbalancer.SSL {
+		// SSL needs to point to TCP internally
 		instanceProtocol = aws.String(string(loadbalancer.TCP))
+	} else if route.Protocol == loadbalancer.HTTPS {
+		// HTTPS has to point to HTTP internally
+		instanceProtocol = aws.String(string(loadbalancer.HTTP))
 	}
 
 	listener := &elb.Listener{
