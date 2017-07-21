@@ -19,7 +19,7 @@ S3_BUCKET_NAME = os.getenv('S3_BUCKET', 'docker-ci-editions')
 CFN_S3_BUCKET_NAME = os.getenv('UPLOAD_S3_BUCKET', 'docker-for-aws')
 CFN_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 CFN_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
-MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
+EDITIONS_COMMIT = os.getenv('EDITIONS_COMMIT',"unknown-editions-commit")
 JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
 
 
@@ -116,7 +116,7 @@ def get_account_list(account_file_url):
 
 def generate_ami_list_url():
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT,'')
+    s3_path = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
     return u"{}/{}".format(s3_host_name, s3_path)
 
 def get_ami_list(ami_list_url):
@@ -185,7 +185,7 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
 	
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = AMI_LIST_PATH.format(MOBY_COMMIT,'/'+JENKINS_BUILD)
+    s3_path = AMI_LIST_PATH.format(EDITIONS_COMMIT,'/'+JENKINS_BUILD)
     s3_full_url = u"{}/{}".format(s3_host_name, s3_path)
     print(u"Upload ami list json template to {} in {} s3 bucket".format(s3_path, S3_BUCKET_NAME))
     s3conn = boto.connect_s3(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
@@ -197,13 +197,13 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
     key.set_metadata("docker_version", docker_version)
     key.set_metadata("arch", "aws")
     key.set_metadata("channel", release_channel)
-    key.set_metadata("moby_commit", MOBY_COMMIT)
+    key.set_metadata("editions_commit", EDITIONS_COMMIT)
     key.set_metadata("jenkins_build", JENKINS_BUILD)
     key.set_contents_from_string(ami_list_json)
     key.set_acl("public-read")
 
     # upload to Jenkins build as well
-    s3_path_latest = AMI_LIST_PATH.format(MOBY_COMMIT,'')
+    s3_path_latest = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
     print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
     srckey = bucket.get_key(s3_path)
     dstkey = bucket.new_key(s3_path_latest)
@@ -216,7 +216,7 @@ def upload_cfn_template(release_channel, cloudformation_template_name,
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(CFN_S3_BUCKET_NAME)
-    s3_base_path = u"aws/{}/{}".format(release_channel, MOBY_COMMIT)
+    s3_base_path = u"aws/{}/{}".format(release_channel, EDITIONS_COMMIT)
     s3_path_build = u"{}/{}/{}.tmpl".format(s3_base_path, JENKINS_BUILD, cloudformation_template_name)
     s3_path = u"{}/{}.tmpl".format(s3_base_path, cloudformation_template_name)
     latest_name = "latest.tmpl"
