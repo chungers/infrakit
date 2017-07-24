@@ -22,9 +22,6 @@ echo "ClientAliveInterval 180" >>/etc/ssh/sshd_config
 rm /usr/bin/awk
 ln -s /usr/bin/gawk /usr/bin/awk
 
-# Updated apk packages and add sudo to sync with host
-apk --update add sudo
-
 echo '
 CHFN_RESTRICT    rwh
 DEFAULT_HOME     yes
@@ -57,3 +54,6 @@ UMASK            022
 USERGROUPS_ENAB yes' >/etc/login.defs
 
 /usr/sbin/waagent -daemon -verbose
+
+# Updated apk packages and add sudo to sync with host
+apk --update add sudo

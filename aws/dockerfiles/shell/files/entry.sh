@@ -21,9 +21,6 @@ stop() {
     echo "Done."
 }
 
-# Updated apk packages and add sudo to sync with host
-apk --update add sudo
-
 echo "Running $@"
 if [ "$(basename $1)" == "$DAEMON" ]; then
     trap stop SIGINT SIGTERM
@@ -34,3 +31,6 @@ if [ "$(basename $1)" == "$DAEMON" ]; then
 else
     exec "$@"
 fi
+
+# Updated apk packages and add sudo to sync with host
+apk --update add sudo
