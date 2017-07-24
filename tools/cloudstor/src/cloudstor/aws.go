@@ -595,6 +595,18 @@ func (v *awsDriver) createEBS(req volume.Request) error {
 			logctx.Error(fmt.Sprintf("Failed to detach volume: %v. Continue ..", err))
 		}
 	}
+
+	// volume type may be nil if magnetic - so reinitialize
+	if vol.VolumeType == nil {
+		var voltype = ""
+		vol.VolumeType = &voltype
+	}
+	// iops may be nil if non io1 volume - so reinitialize
+	if vol.Iops == nil {
+		var iops int64
+		iops = 0
+		vol.Iops = &iops
+	}
 	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
 	return err
 }
@@ -738,6 +750,19 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 
 		if *vol.AvailabilityZone != v.az {
 			// volume exists in another AZ - transfer it to current AZ
+
+			// volume type may be nil if magnetic - so reinitialize
+			if vol.VolumeType == nil {
+				var voltype = ""
+				vol.VolumeType = &voltype
+			}
+
+			// iops may be nil if non io1 volume - so reinitialize
+			if vol.Iops == nil {
+				var iops int64
+				iops = 0
+				vol.Iops = &iops
+			}
 			vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
 			if err != nil {
 				logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
