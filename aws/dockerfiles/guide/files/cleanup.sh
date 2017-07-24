@@ -30,6 +30,8 @@ COUNT="${COUNT:-0}"
 for((i=0;i<$COUNT;i++)); do
     BODY=$(echo $MESSAGES | jq -r '.Messages['${i}'].Body')
     RECEIPT=$(echo $MESSAGES | jq --raw-output '.Messages['${i}'] .ReceiptHandle')
+    echo "Drain NodeID=$BODY"
+    docker node update --availability drain $BODY
     echo "Remove NodeID=$BODY"
     docker node rm --force $BODY
     RESULT=$?

@@ -44,6 +44,7 @@ for I in $DOWN_LIST; do
         NODE_ID=$(docker node inspect $(docker node ls --filter role=manager -q) | jq --arg I $I -r '.[] | select(.ManagerStatus.Addr | split(":")[0] == $I) | .ID')
         echo "$I is NODE_ID=$NODE_ID, demote and remove from swarm"
         docker node demote $NODE_ID
+        docker node update --availability drain $NODE_ID
         docker node rm $NODE_ID
         echo "$NODE_ID [$I] Should be removed now"
     else
