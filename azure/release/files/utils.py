@@ -18,7 +18,7 @@ S3_BUCKET_NAME = os.getenv('S3_BUCKET', 'docker-ci-editions')
 ARM_S3_BUCKET_NAME = os.getenv('UPLOAD_S3_BUCKET', 'docker-for-azure')
 ARM_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 ARM_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
-MOBY_COMMIT = os.getenv('MOBY_COMMIT',"unknown-moby-commit")
+EDITIONS_COMMIT = os.getenv('EDITIONS_COMMIT',"unknown-editions-commit")
 JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
 
 
@@ -52,7 +52,7 @@ def upload_rg_template(release_channel, arm_template_name, tempfile, arm_type=''
 
     # upload to s3, make public, return s3 URL
     s3_host_name = u"https://{}.s3.amazonaws.com".format(ARM_S3_BUCKET_NAME)
-    s3_base_path = u"azure/{}/{}".format(release_channel, MOBY_COMMIT)
+    s3_base_path = u"azure/{}/{}".format(release_channel, EDITIONS_COMMIT)
     s3_path_build = u"{}/{}/{}.tmpl".format(s3_base_path, JENKINS_BUILD, arm_template_name)
     s3_path = u"{}/{}.tmpl".format(s3_base_path, arm_template_name)
     latest_name = "latest.tmpl"
