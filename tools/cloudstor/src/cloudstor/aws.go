@@ -45,6 +45,7 @@ const (
 	snapshotLoopInterval          = 300 * time.Second
 	snapshotLoopIterationInterval = 10 * time.Second
 	volumeTypeProvisionedIOPS     = "io1"
+	ebsTagParameterPrefix         = "ebs_tag_"
 )
 
 type awsDriver struct {
@@ -595,7 +596,28 @@ func (v *awsDriver) createEBS(req volume.Request) error {
 			logctx.Error(fmt.Sprintf("Failed to detach volume: %v. Continue ..", err))
 		}
 	}
-	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
+
+	// volume type may be nil if magnetic - so reinitialize
+	if vol.VolumeType == nil {
+		var voltype = ""
+		vol.VolumeType = &voltype
+	}
+	// iops may be nil if non io1 volume - so reinitialize
+	if vol.Iops == nil {
+		var iops int64
+		iops = 0
+		vol.Iops = &iops
+	}
+
+	var ebstags = make(map[string]string)
+	for _, tag := range vol.Tags {
+		if tag.Value == nil {
+			ebstags[*tag.Key] = ""
+		} else {
+			ebstags[*tag.Key] = *tag.Value
+		}
+	}
+	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops, ebstags)
 	return err
 }
 
@@ -618,7 +640,16 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 		}
 	}
 
-	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, iops, false)
+	var ebstags = make(map[string]string)
+	for option, value := range req.Options {
+		if strings.HasPrefix(option, ebsTagParameterPrefix) {
+			ebstags[strings.TrimPrefix(option, ebsTagParameterPrefix)] = value
+		}
+	}
+	ebstags["CloudstorVolumeName"] = req.Name
+	ebstags["StackID"] = v.stackID
+
+	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, iops, false, ebstags)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return err
@@ -628,7 +659,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 	return nil
 }
 
-func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64) (*ec2.Volume, error) {
+func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64, ebstags map[string]string) (*ec2.Volume, error) {
 	/*
 		For volume create in different AZ:
 		1. Create a new snapshot of volume, wait to complete.
@@ -652,7 +683,11 @@ func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64) (
 	if ebstype != volumeTypeProvisionedIOPS {
 		iops = 0
 	}
-	vol, err := v.createEBSCore(volname, ebstype, *snap.SnapshotId, 0, iops, false)
+
+	ebstags["CloudstorVolumeName"] = volname
+	ebstags["StackID"] = v.stackID
+
+	vol, err := v.createEBSCore(volname, ebstype, *snap.SnapshotId, 0, iops, false, ebstags)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return nil, err
@@ -738,7 +773,25 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 
 		if *vol.AvailabilityZone != v.az {
 			// volume exists in another AZ - transfer it to current AZ
-			vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops)
+
+			// volume type may be nil if magnetic - so reinitialize
+			if vol.VolumeType == nil {
+				var voltype = ""
+				vol.VolumeType = &voltype
+			}
+
+			// iops may be nil if non io1 volume - so reinitialize
+			if vol.Iops == nil {
+				var iops int64
+				iops = 0
+				vol.Iops = &iops
+			}
+
+			var ebstags = make(map[string]string)
+			for _, tag := range vol.Tags {
+				ebstags[*tag.Key] = *tag.Value
+			}
+			vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops, ebstags)
 			if err != nil {
 				logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
 				return "", err
@@ -833,25 +886,20 @@ func (v *awsDriver) removeEBS(req volume.Request) error {
 	return nil
 }
 
-func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, volumeSize, volumeIOPs int64, encrypted bool) (*ec2.Volume, error) {
-	nametag := &ec2.TagSpecification{
+func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, volumeSize, volumeIOPs int64, encrypted bool, ebstags map[string]string) (*ec2.Volume, error) {
+	ebsTagSpec := &ec2.TagSpecification{
 		ResourceType: aws.String(ec2.ResourceTypeVolume),
 		Tags:         []*ec2.Tag{},
 	}
 
-	nametag.Tags = append(
-		nametag.Tags,
-		&ec2.Tag{
-			Key:   aws.String("CloudstorVolumeName"),
-			Value: &volumeName,
-		})
-
-	nametag.Tags = append(
-		nametag.Tags,
-		&ec2.Tag{
-			Key:   aws.String("StackID"),
-			Value: &v.stackID,
-		})
+	for tag, value := range ebstags {
+		ebsTagSpec.Tags = append(
+			ebsTagSpec.Tags,
+			&ec2.Tag{
+				Key:   aws.String(tag),
+				Value: aws.String(value),
+			})
+	}
 
 	volCreate := &ec2.CreateVolumeInput{
 		AvailabilityZone:  aws.String(v.az),
@@ -877,7 +925,7 @@ func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, vol
 
 	volCreate.TagSpecifications = append(
 		volCreate.TagSpecifications,
-		nametag)
+		ebsTagSpec)
 
 	vol, err := v.cl.CreateVolume(volCreate)
 	if err != nil {
