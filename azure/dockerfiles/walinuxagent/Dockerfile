@@ -39,7 +39,8 @@ RUN mkdir /daemons && \
     rm /entry.sh && \
     mv /etc/ssl/openssl.cnf /opt/openssl.cnf && \
     mv /etc/ssh/sshd_config /opt/sshd_config && \
-    mv /etc/motd /opt/motd
+    mv /etc/motd /opt/motd && \
+    cp /etc/logrotate.d/waagent.logrotate /opt/waagent.logrotate
 
 COPY /walinuxagent-entrypoint.sh /daemons/walinuxagent-entrypoint.sh
 COPY /supervisord.conf /opt/supervisord.conf

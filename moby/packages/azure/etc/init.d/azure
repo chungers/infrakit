@@ -78,6 +78,7 @@ start()
 		--uts host \
 		--label com.docker.editions.system \
 		--restart unless-stopped \
+		--log-opt max-size=50m \
 		-e DOCKER_FOR_IAAS_VERSION \
 		-v /usr/bin/docker:/usr/local/bin/docker:ro \
 		-v /mnt:/mnt \
