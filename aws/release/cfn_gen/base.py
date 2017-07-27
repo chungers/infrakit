@@ -72,6 +72,7 @@ class AWSBaseTemplate(object):
     def add_conditions(self):
         conditions.add_condition_create_log_resources(self.template)
         conditions.add_condition_hasonly2AZs(self.template)
+        conditions.add_condition_EBSOptimized(self.template)
 
     def add_mapping_version(self):
         mappings.add_mapping_version(
@@ -137,6 +138,9 @@ class AWSBaseTemplate(object):
         self.add_to_parameters(
             parameters.add_parameter_enable_system_prune(self.template))
         self.add_parameter_cloudwatch_logs()
+
+        self.add_to_parameters(
+            parameters.add_parameter_enable_ebs_optimized(self.template))
 
     def add_outputs(self):
         outputs.add_output_managers(self.template)

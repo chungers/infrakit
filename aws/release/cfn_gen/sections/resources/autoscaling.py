@@ -432,6 +432,7 @@ def add_resource_manager_launch_config(template, user_data, launch_config_name="
         InstanceType=Ref("ManagerInstanceType"),
         AssociatePublicIpAddress=True,
         IamInstanceProfile=Ref("ProxyInstanceProfile"),
+        EbsOptimized=If("EBSOptimized", "true", "false"),
     ))
 
 
@@ -561,4 +562,5 @@ def add_resource_worker_launch_config(template, user_data, launch_config_name="N
         InstanceType=Ref("InstanceType"),
         AssociatePublicIpAddress=True,
         IamInstanceProfile=Ref("WorkerInstanceProfile"),
+        EbsOptimized=If("EBSOptimized", "true", "false"),
     ))
