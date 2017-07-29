@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -44,6 +45,8 @@ const (
 	retryInterval                 = 10 * time.Second
 	snapshotLoopInterval          = 300 * time.Second
 	snapshotLoopIterationInterval = 10 * time.Second
+	maxSnapAttempts               = 10
+	snapAttemptIntervalMaxSeconds = 15
 	volumeTypeProvisionedIOPS     = "io1"
 	ebsTagParameterPrefix         = "ebs_tag_"
 )
@@ -1040,9 +1043,21 @@ func (v *awsDriver) snapEBS(volumeName string) (*ec2.Snapshot, error) {
 		DryRun:   aws.Bool(false),
 	}
 
-	snap, err := v.cl.CreateSnapshot(snapcreate)
-	if err != nil {
-		err = fmt.Errorf("Failed to create snapshot %v", err)
+	// snapshot creation may fail typically due to SnapshotCreationPerVolumeRateExceeded
+	var snap *ec2.Snapshot
+	var attempts int
+	for attempts = 0; attempts < maxSnapAttempts; attempts++ {
+		snap, err = v.cl.CreateSnapshot(snapcreate)
+		if err == nil {
+			break
+		}
+		logctx.Debug(fmt.Sprintf("Snapshot creation encountered errors: %v. Retrying ...", err))
+		s1 := rand.NewSource(time.Now().UnixNano())
+		r1 := rand.New(s1)
+		time.Sleep(time.Duration(r1.Intn(snapAttemptIntervalMaxSeconds)) * time.Second)
+	}
+	if attempts == maxSnapAttempts {
+		err = fmt.Errorf("Failed to create snapshot after several attempts. Aborting")
 		return nil, err
 	}
 
