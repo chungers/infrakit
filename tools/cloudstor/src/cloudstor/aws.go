@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -44,6 +45,8 @@ const (
 	retryInterval                 = 10 * time.Second
 	snapshotLoopInterval          = 300 * time.Second
 	snapshotLoopIterationInterval = 10 * time.Second
+	maxSnapAttempts               = 10
+	snapAttemptIntervalMaxSeconds = 15
 	volumeTypeProvisionedIOPS     = "io1"
 	ebsTagParameterPrefix         = "ebs_tag_"
 )
@@ -617,7 +620,7 @@ func (v *awsDriver) createEBS(req volume.Request) error {
 			ebstags[*tag.Key] = *tag.Value
 		}
 	}
-	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops, ebstags)
+	_, err := v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Encrypted, *vol.Iops, ebstags)
 	return err
 }
 
@@ -640,6 +643,14 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 		}
 	}
 
+	encrypted := false
+	if _, ok := req.Options["encrypted"]; ok {
+		encrypted, err = strconv.ParseBool(req.Options["encrypted"])
+		if err != nil {
+			return fmt.Errorf("Invalid encryption option: %v", err)
+		}
+	}
+
 	var ebstags = make(map[string]string)
 	for option, value := range req.Options {
 		if strings.HasPrefix(option, ebsTagParameterPrefix) {
@@ -649,7 +660,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 	ebstags["CloudstorVolumeName"] = req.Name
 	ebstags["StackID"] = v.stackID
 
-	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, iops, false, ebstags)
+	vol, err := v.createEBSCore(req.Name, req.Options["ebstype"], "", szGB, iops, encrypted, ebstags)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return err
@@ -659,7 +670,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 	return nil
 }
 
-func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64, ebstags map[string]string) (*ec2.Volume, error) {
+func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, encrypted bool, iops int64, ebstags map[string]string) (*ec2.Volume, error) {
 	/*
 		For volume create in different AZ:
 		1. Create a new snapshot of volume, wait to complete.
@@ -687,7 +698,7 @@ func (v *awsDriver) createEBSFromSnapshot(volname, ebstype string, iops int64, e
 	ebstags["CloudstorVolumeName"] = volname
 	ebstags["StackID"] = v.stackID
 
-	vol, err := v.createEBSCore(volname, ebstype, *snap.SnapshotId, 0, iops, false, ebstags)
+	vol, err := v.createEBSCore(volname, ebstype, *snap.SnapshotId, 0, iops, encrypted, ebstags)
 	if err != nil {
 		logctx.Error(fmt.Sprintf("Failed to create volume in new AZ: %v", err))
 		return nil, err
@@ -791,7 +802,7 @@ func (v *awsDriver) mountEBS(req volume.MountRequest) (string, error) {
 			for _, tag := range vol.Tags {
 				ebstags[*tag.Key] = *tag.Value
 			}
-			vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Iops, ebstags)
+			vol, err = v.createEBSFromSnapshot(req.Name, *vol.VolumeType, *vol.Encrypted, *vol.Iops, ebstags)
 			if err != nil {
 				logctx.Error(fmt.Sprintf("Failed to transfer volume to az: %v", err))
 				return "", err
@@ -906,6 +917,8 @@ func (v *awsDriver) createEBSCore(volumeName, volumeType, snapshotID string, vol
 		DryRun:            aws.Bool(false),
 		TagSpecifications: []*ec2.TagSpecification{},
 	}
+
+	volCreate.Encrypted = aws.Bool(encrypted)
 
 	if snapshotID != "" {
 		volCreate.SnapshotId = aws.String(snapshotID)
@@ -1029,9 +1042,21 @@ func (v *awsDriver) snapEBS(volumeName string) (*ec2.Snapshot, error) {
 		DryRun:   aws.Bool(false),
 	}
 
-	snap, err := v.cl.CreateSnapshot(snapcreate)
-	if err != nil {
-		err = fmt.Errorf("Failed to create snapshot %v", err)
+	// snapshot creation may fail typically due to SnapshotCreationPerVolumeRateExceeded
+	var snap *ec2.Snapshot
+	var attempts int
+	for attempts = 0; attempts < maxSnapAttempts; attempts++ {
+		snap, err = v.cl.CreateSnapshot(snapcreate)
+		if err == nil {
+			break
+		}
+		logctx.Debug(fmt.Sprintf("Snapshot creation encountered errors: %v. Retrying ...", err))
+		s1 := rand.NewSource(time.Now().UnixNano())
+		r1 := rand.New(s1)
+		time.Sleep(time.Duration(r1.Intn(snapAttemptIntervalMaxSeconds)) * time.Second)
+	}
+	if attempts == maxSnapAttempts {
+		err = fmt.Errorf("Failed to create snapshot after several attempts. Aborting")
 		return nil, err
 	}
 
