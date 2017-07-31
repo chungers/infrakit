@@ -23,6 +23,12 @@ templates:
 	$(MAKE) aws-template
 	# $(MAKE) gcp-template
 
+e2e:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	$(MAKE) aws-e2e 
+	$(MAKE) azure-e2e 
+
+
 ## Container images targets
 dockerimages: clean tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
@@ -152,6 +158,9 @@ azure-nightly:
 	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C azure nightly
 
+azure-e2e:
+	$(MAKE) -C azure/testing
+
 ## AWS Targets
 aws-release:
 	@echo "\033[32m+ $@\033[0m"
@@ -169,6 +178,9 @@ aws-nightly:
 	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C aws nightly
 
+aws-e2e:
+	$(MAKE) -C aws/test
+
 ## GCP Targets
 
 gcp-template:
@@ -179,11 +191,6 @@ gcp-release: gcp-template
 	$(MAKE) -C gcp save-templates
 	$(MAKE) -C gcp release
 
-
-e2e:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	#$(MAKE) -C aws/testing
-	$(MAKE) -C azure/testing
 
 ## Golang targets
 # Package list
