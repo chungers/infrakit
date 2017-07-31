@@ -643,8 +643,7 @@ func (v *awsDriver) createEBSNew(req volume.Request) error {
 		}
 	}
 
-	var encrypted bool
-	encrypted = false
+	encrypted := false
 	if _, ok := req.Options["encrypted"]; ok {
 		encrypted, err = strconv.ParseBool(req.Options["encrypted"])
 		if err != nil {
