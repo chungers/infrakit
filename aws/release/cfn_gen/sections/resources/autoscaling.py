@@ -56,7 +56,8 @@ def add_resource_worker_upgrade_hook(template):
 
 def add_resource_manager_autoscalegroup(template, create_vpc,
                                         launch_config_name, lb_list,
-                                        health_check_grace_period=300):
+                                        health_check_grace_period=300,
+                                        timeout=None):
     """
     "ManagerAsg" : {
         "DependsOn" : ["SwarmDynDBTable", "PubSubnetAz1",
@@ -114,6 +115,9 @@ def add_resource_manager_autoscalegroup(template, create_vpc,
        }
     },
     """
+    if timeout is None:
+        timeout='PT20M'
+    
     elb_ref_list = []
     for lb in lb_list:
         elb_ref_list.append(Ref(lb))
@@ -164,7 +168,7 @@ def add_resource_manager_autoscalegroup(template, create_vpc,
         HealthCheckGracePeriod=health_check_grace_period,
         UpdatePolicy=UpdatePolicy(
             AutoScalingRollingUpdate=AutoScalingRollingUpdate(
-                PauseTime='PT20M',
+                PauseTime=timeout,
                 MinInstancesInService=Ref("ManagerSize"),
                 MaxBatchSize='1',
                 WaitOnResourceSignals=True
@@ -172,14 +176,14 @@ def add_resource_manager_autoscalegroup(template, create_vpc,
         ),
         CreationPolicy=CreationPolicy(
             ResourceSignal=ResourceSignal(
-                Timeout='PT20M',
+                Timeout=timeout,
                 Count=Ref("ManagerSize")
                 )
         )
     ))
 
 
-def add_resource_worker_autoscalegroup(template, launch_config_name):
+def add_resource_worker_autoscalegroup(template, launch_config_name, timeout=None):
     """
     "NodeAsg" : {
         "DependsOn" : "ManagerAsg",
@@ -236,6 +240,9 @@ def add_resource_worker_autoscalegroup(template, launch_config_name):
        }
     },
     """
+    if create_timeout is None:
+        create_timeout='PT20M'
+    
     template.add_resource(AutoScalingGroup(
         "NodeAsg",
         DependsOn="ManagerAsg",
@@ -273,7 +280,7 @@ def add_resource_worker_autoscalegroup(template, launch_config_name):
         HealthCheckGracePeriod=300,
         UpdatePolicy=UpdatePolicy(
             AutoScalingRollingUpdate=AutoScalingRollingUpdate(
-                PauseTime='PT1H',
+                PauseTime=timeout,
                 MinInstancesInService=Ref("ClusterSize"),
                 MaxBatchSize='1',
                 WaitOnResourceSignals=True
@@ -281,7 +288,7 @@ def add_resource_worker_autoscalegroup(template, launch_config_name):
         ),
         CreationPolicy=CreationPolicy(
             ResourceSignal=ResourceSignal(
-                Timeout='PT20M',
+                Timeout=timeout,
                 Count=Ref("ClusterSize")
                 )
         )

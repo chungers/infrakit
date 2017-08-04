@@ -189,3 +189,50 @@ def add_resource_ddc_ucp_lb(template, create_vpc, extra_listeners=None):
             {'Key': "Name", 'Value': Join("-", [Ref("AWS::StackName"), "ELB-UCP"])}
         ]
     ))
+
+def add_resource_ddc_dtr_lb(template, create_vpc, extra_listeners=None):
+    """
+        Add the DTR LB
+    """
+    if create_vpc:
+        depends = ["AttachGateway", "DTRLoadBalancerSG",
+                   "PubSubnetAz1", "PubSubnetAz2", "PubSubnetAz3"]
+    else:
+        depends = ["DTRLoadBalancerSG"]
+
+    listener_list = []
+    listener_list.append(Listener(
+        LoadBalancerPort="443",
+        InstancePort="12391",
+        Protocol="TCP"
+    ),Listener(
+        LoadBalancerPort="80",
+        InstancePort="12392",
+        Protocol="TCP"
+    ),)
+    if extra_listeners:
+        listener_list.extend(extra_listeners)
+
+    template.add_resource(LoadBalancer(
+        "DTRLoadBalancer",
+        DependsOn=depends,
+        ConnectionSettings=ConnectionSettings(IdleTimeout=1800),
+        Subnets=If("HasOnly2AZs",
+                   [Ref("PubSubnetAz1"), Ref("PubSubnetAz2")],
+                   [Ref("PubSubnetAz1"), Ref("PubSubnetAz2"),
+                    Ref("PubSubnetAz3")]),
+        HealthCheck=HealthCheck(
+            Target="HTTPS:12391/health",
+            HealthyThreshold="2",
+            UnhealthyThreshold="10",
+            Interval="300",
+            Timeout="10",
+        ),
+        Listeners=listener_list,
+        CrossZone=True,
+        SecurityGroups=[Ref("DTRLoadBalancerSG")],
+        Tags=[
+            {'Key': "Name",
+             'Value': Join("-", [Ref("AWS::StackName"), "ELB-DTR"])}
+        ]
+    ))

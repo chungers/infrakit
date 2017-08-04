@@ -94,7 +94,7 @@ CONTAINER_NAME := mobylinux
 # stage offer will have the -preview 
 VHD_OFFER_ID := docker-ce
 EE_VHD_SKU := docker-ee
-EE_VHD_VERSION := 1.0.1
+EE_VHD_VERSION := 1.0.5
 # stage offer will have the -preview 
 EE_OFFER_ID := docker-ee
 

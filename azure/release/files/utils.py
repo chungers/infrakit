@@ -271,6 +271,8 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     with open(arm_template) as data_file:
         data = json.load(data_file)
 
+    # Update managers to 3,5,7
+
     # Updated custom data for Managers and Workers
     if public_platform:
         # for the Public Azure platform, all API endpoints/urls have defaults
@@ -334,19 +336,22 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
             "lbDTRFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/dtrlbfrontend')]",
             "lbDTRName": "dtrLoadBalancer",
+            "ucpTag": "2.1.5",
+            "dtrTag": "2.2.7",
             "lbDTRPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbDTRName'),  '-public-ip')]",
             "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
             "ucpLbPublicIpDnsName": "[concat('ucplb-', variables('groupName'))]",
             "dtrLbPublicIpDnsName": "[concat('dtrlb-', variables('groupName'))]",
-            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '" + resource_mgr_vm_suffix + "')]",
-            "ucplbname": "[concat(variables('ucpLbPublicIpDnsName'), '.', variables('storageLocation'), '" + resource_mgr_vm_suffix + "')]",
-            "dtrlbname": "[concat(variables('dtrLbPublicIpDnsName'), '.', variables('storageLocation'), '" + resource_mgr_vm_suffix + "')]",
+            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]",
+            "ucplbname": "[concat(variables('ucpLbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]",
+            "dtrlbname": "[concat(variables('dtrLbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]",
             "lbpublicIPAddress1": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbSSHPublicIPAddressName'))]",
             "lbpublicIPAddress2": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbDTRPublicIPAddressName'))]",
             "dtrStorageAccount": "[concat(uniqueString(concat(resourceGroup().id, variables('storageAccountSuffix'))), 'dtr')]"
         }
         variables.update(new_variables)
-        variables["lbSSHFrontEndIPConfigID"] = "[concat(variables('lbSSHID'),'/frontendIPConfigurations/default')]"
+        variables["lbSSHFrontEndIPConfigID"] = "[concat(variables('lbSSHID'),'/frontendIPConfigurations/ucplbfrontend')]"
+        variables["subnetPrefix"] = "172.31.0.0/24"
     resources = data.get('resources')
     # Add DTR Storage Account
     dtr_resources = [
@@ -405,7 +410,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                     }
                 },
                 {
-                    "name": "dtr",
+                    "name": "dtr443",
                     "properties": {
                         "access": "Allow",
                         "description": "Allow DTR",
@@ -413,6 +418,20 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                         "destinationPortRange": "12391",
                         "direction": "Inbound",
                         "priority": 208,
+                        "protocol": "Tcp",
+                        "sourceAddressPrefix": "*",
+                        "sourcePortRange": "*"
+                    }
+                },
+                {
+                    "name": "dtr80",
+                    "properties": {
+                        "access": "Allow",
+                        "description": "Allow DTR",
+                        "destinationAddressPrefix": "*",
+                        "destinationPortRange": "12392",
+                        "direction": "Inbound",
+                        "priority": 209,
                         "protocol": "Tcp",
                         "sourceAddressPrefix": "*",
                         "sourcePortRange": "*"
@@ -496,13 +515,13 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
                     {
                         "name": "dtrLbRuleHTTP",
                         "properties": {
-                            "backendAddressPool": {
-                                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
-                            },
                             "backendPort": 12392,
                             "enableFloatingIP": False,
                             "frontendIPConfiguration": {
                                 "id": "[variables('lbDTRFrontEndIPConfigID')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[concat(variables('lbSSHID'), '/backendAddressPools/default')]"
                             },
                             "frontendPort": 80,
                             "idleTimeoutInMinutes": 5,

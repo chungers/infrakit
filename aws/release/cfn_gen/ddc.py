@@ -1,4 +1,5 @@
 from os import path
+from os import getenv
 from troposphere import (
     Parameter, Ref, Output, GetAtt, Join, FindInMap, Base64)
 
@@ -8,10 +9,10 @@ from sections import resources
 from sections import parameters
 from sections import constants
 
-DTR_TAG = '2.2.4'
-UCP_TAG = '2.1.3'
-UCP_INIT_TAG = '17.03.1-ce-aws1'
-DTR_INIT_TAG = '17.03.1-ce-aws1'
+DTR_TAG = '2.2.7'
+UCP_TAG = '2.1.5'
+UCP_INIT_TAG = getenv('UCP_INIT_TAG', '17.06.1-ce-aws1')
+DTR_INIT_TAG = getenv('DTR_INIT_TAG', '17.06.1-ce-aws1')
 
 
 class DDCVPCTemplate(DockerEEVPCTemplate):
@@ -39,14 +40,16 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         parameter_groups.append(
             {"Label": {"default": "DDC Properties"},
              "Parameters": ["DDCUsernameSet", "DDCPasswordSet",
-                            "License", "DTRDiskType", "DTRDiskSize"]}
+                            "License"]}
         )
         return parameter_groups
 
     def add_parameter_instancetype(self):
         self.add_to_parameters(
             parameters.add_parameter_instancetype(
-                self.template))
+                self.template,
+                default_instance_type='t2.large',
+                instance_types=constants.DDC_WORKER_INSTANCE_TYPES))
 
     def add_parameter_manager_instancetype(self):
         self.add_to_parameters(
@@ -73,8 +76,6 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         self.add_ddc_license()
         self.add_ddc_username()
         self.add_ddc_password()
-        self.add_to_parameters(resources.dtr_disk_type(self.template))
-        self.add_to_parameters(resources.dtr_disk_size(self.template))
 
     def add_ddc_license(self):
         self.template.add_parameter(Parameter(
@@ -143,56 +144,21 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         super(DDCVPCTemplate, self).s3()
         resources.add_s3_dtr_bucket(self.template)
 
-    def iam_dyn(self):
-        # overridable for DTR role
-        extra_roles = [Ref("DTRRole"), ]
-        resources.add_resource_iam_dyn_policy(
-            self.template, extra_roles=extra_roles)
-
-    def iam_sqs(self):
-        # overridable for DTR role
-        extra_roles = [Ref("DTRRole"), ]
-        resources.add_resource_iam_sqs_policy(
-            self.template, extra_roles=extra_roles)
-        resources.add_resource_iam_sqs_cleanup_policy(
-            self.template, extra_roles=extra_roles)
-
-    def iam_autoscale(self):
-        # overridable for DTR role
-        extra_roles = [Ref("DTRRole"), ]
-        resources.add_resource_iam_autoscale_policy(
-            self.template, extra_roles=extra_roles)
-
-    def iam_log(self):
-        # overridable for DTR role
-        extra_roles = [Ref("DTRRole"), ]
-        resources.add_resource_iam_log_policy(
-            self.template, extra_roles=extra_roles)
-
     def iam(self):
         super(DDCVPCTemplate, self).iam()
         resources.add_resource_s3_ddc_bucket_policy(self.template)
-        resources.dtr_iam_role(self.template)
-        resources.iam_dtr_instance_profile(self.template)
 
     def autoscaling_managers(self, manager_launch_config_name):
         """ Overrides the base method, to include the two DDC ELBs"""
-        lb_list = ["ExternalLoadBalancer", "UCPLoadBalancer"]
+        lb_list = ["ExternalLoadBalancer", "UCPLoadBalancer", "DTRLoadBalancer"]
         resources.add_resource_manager_autoscalegroup(
             self.template, self.create_vpc, manager_launch_config_name,
-            lb_list, health_check_grace_period=1200)
+            lb_list, health_check_grace_period=1200, timeout='PT1H')
 
-    def autoscaling(self):
-        super(DDCVPCTemplate, self).autoscaling()
-        resources.dtr_node_upgrade_hook(self.template)
-
-        dtr_launch_config_name = u'DTRLaunchConfig{}'.format(
-            self.flat_edition_version_upper)
-        resources.dtr_autoscalegroup(
-            self.template, dtr_launch_config_name)
-        resources.dtr_asg_launch_config(
-            self.template, self.dtr_userdata(),
-            launch_config_name=dtr_launch_config_name)
+    def autoscaling_workers(self, worker_launch_config_name):
+        """ Overrides the base method, to include the create timeout"""
+        resources.add_resource_worker_autoscalegroup(
+            self.template, worker_launch_config_name, timeout='PT1H')
 
     def load_balancer(self):
         super(DDCVPCTemplate, self).load_balancer()
@@ -256,20 +222,6 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         orig_data = super(DDCVPCTemplate, self).worker_userdata_body()
         data = self.common_userdata_body()
         return orig_data + data
-
-    def dtr_userdata(self):
-        script_dir = path.dirname(__file__)
-        dtr_path = path.relpath("data/dtr/common_userdata.sh")
-        dtr_file_path = path.join(script_dir, dtr_path)
-        data = resources.userdata_from_file(dtr_file_path)
-        # get the parent classes userdata body, not this one, it has ddc code.
-        header = self.userdata_header()
-        head = super(DDCVPCTemplate, self).worker_userdata_head(
-            instance_name="DTRAsg")
-        is_dtr = ["export IS_DTR='yes'\n", ]
-        body = super(DDCVPCTemplate, self).worker_userdata_body()
-        full_data = header + head + is_dtr + body + data
-        return Base64(Join("", full_data))
 
 
 class DDCVPCExistingTemplate(DDCVPCTemplate, DockerEEVPCExistingTemplate):

@@ -102,7 +102,7 @@ def get_desc(sa_key):
     global SA_DTR_NAME, DTR_TBL_NAME
     tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
     if not tbl_svc.exists(DTR_TBL_NAME):
-        return False
+        return None
     try:
         replicaids = tbl_svc.query_entities(DTR_TBL_NAME, filter="PartitionKey eq 'dtrreplicas'", select='description')
 	for replicaid in replicaids:
@@ -110,7 +110,24 @@ def get_desc(sa_key):
                 	print("{}".format(replicaid.description))
 			return replicaid.description
     except:
-        return False
+        print("exception getting description")
+        return None
+
+def get_nodename(sa_key, id):
+    global SA_DTR_NAME, DTR_TBL_NAME
+    tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
+    if not tbl_svc.exists(DTR_TBL_NAME):
+        return None
+    try:
+       replicaids = tbl_svc.query_entities(DTR_TBL_NAME, filter="PartitionKey eq 'dtrreplicas'")
+       for replicaid in replicaids:
+               if replicaid.replica_id == id:
+                       print("{}".format(replicaid.node_name))
+                       return replicaid.node_name
+    except:
+        print("exception getting node name")
+        return None
+
 
 def print_id(sa_key):
     global SA_DTR_NAME, DTR_TBL_NAME
@@ -152,17 +169,16 @@ def add_id(sa_key, id):
         print("exception while inserting DTR ID")
         return False
 
-def delete_id(sa_key, replica_id):
+def delete_id(sa_key, id):
     global DTR_TBL_NAME, SA_DTR_NAME
     tbl_svc = TableService(account_name=SA_DTR_NAME, account_key=sa_key, endpoint_suffix=STORAGE_ENDPOINT)
-    dtr_id = {'PartitionKey': 'dtrreplicas', 'RowKey': replica_id}
     try:
         # this upsert operation should always succeed
-        tbl_svc.delete_entity(DTR_TBL_NAME, dtr_id)
-        print("successfully deleted replica-id")
+        tbl_svc.delete_entity(DTR_TBL_NAME, 'dtrreplicas', id)
+        print("successfully deleted replica ID {}".format(id))
         return True
     except:
-        print("exception while deleting replica-id")
+        print("exception while deleting replica-id {}".format(id))
         return False
 
 
@@ -193,6 +209,8 @@ def main():
     add_id_parser = subparsers.add_parser('add-id', help='Insert DTR SEQ ID to table specified in env var DTR_TBL_NAME')
     add_id_parser.add_argument('id', help='update DTR SEQ ID to table specified in env var DTR_TBL_NAME')
     get_desc_parser = subparsers.add_parser('get-desc', help='Get desc from table specified in env var DTR_TBL_NAME')
+    get_nodename_parser = subparsers.add_parser('get-nodename', help='Get nodename from table specified in env var DTR_TBL_NAME')
+    get_nodename_parser.add_argument('id', help='Replica Id of the leader')
     delete_id_parser = subparsers.add_parser('delete-id', help='Insert DTR Replica info to table specified in env var DTR_TBL_NAME')
     delete_id_parser.add_argument('id', help='Replica Id of the leader')
     get_mgr_nodes_parser = subparsers.add_parser('get-mgr-nodes', help='Get VMSS manager node count')
@@ -217,6 +235,8 @@ def main():
         print_id(key)
     elif args.action == 'get-desc':
         get_desc(key)
+    elif args.action == 'get-nodename':
+        get_nodename(key, args.id)
     elif args.action == 'get-ids':
         get_replica_ids(key)
     elif args.action == 'get-mgr-nodes':

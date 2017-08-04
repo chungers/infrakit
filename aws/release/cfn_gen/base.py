@@ -308,6 +308,10 @@ class AWSBaseTemplate(object):
         resources.add_resource_manager_autoscalegroup(
             self.template, self.create_vpc, manager_launch_config_name,
             lb_list)
+    
+    def autoscaling_workers(self, worker_launch_config_name):
+        resources.add_resource_worker_autoscalegroup(
+            self.template, worker_launch_config_name)
 
     def autoscaling(self):
         # scaling groups
@@ -324,8 +328,7 @@ class AWSBaseTemplate(object):
         # worker
         worker_launch_config_name = u'NodeLaunchConfig{}'.format(
             self.flat_edition_version_upper)
-        resources.add_resource_worker_autoscalegroup(
-            self.template, worker_launch_config_name)
+        self.autoscaling_workers(worker_launch_config_name)
         resources.add_resource_worker_launch_config(
             self.template, self.worker_userdata(),
             launch_config_name=worker_launch_config_name)

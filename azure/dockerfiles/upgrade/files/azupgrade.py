@@ -54,12 +54,11 @@ DTR_PARTITION_NAME = 'dtrreplicas'
 LAST_MANAGER_NODE_ID = ''
 PRODUCTION_HUB_NAMESPACE = 'docker'
 HUB_NAMESPACE = 'docker'
-UCP_HUB_TAG = '2.0.2'
-DTR_HUB_TAG = '2.1.0'
+UCP_HUB_TAG = '2.1.5'
+DTR_HUB_TAG = '2.2.7'
 UCP_IMAGE = '%s/ucp:%s' % (HUB_NAMESPACE,UCP_HUB_TAG)
 DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
-DTR_PORT = 443
-UCP_PORT = 8443
+UCP_HTTPS_PORT=12390
 
 RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
 ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
@@ -148,7 +147,7 @@ def checkUCP(client):
             Manager_IP = node['Status']['Addr']
             LOG.info("Manager IP: {}".format(Manager_IP))
             # Checking if UCP is up and running
-            UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_PORT)
+            UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_HTTPS_PORT)
             LOG.info("{}".format(UCP_URL))
             ssl._create_default_https_context = ssl._create_unverified_context
             try:

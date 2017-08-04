@@ -31,6 +31,7 @@ ifeq ($(RELEASE),true)
 endif
 
 ifeq ($(AMI_ID),)
+	# Get Edition MetaData
 	EDITIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(AMI_S3_BUCKET) --key $(AMI_S3_PATH)/ami_id.out docker.out | jq -r '.Metadata' > metadata.json )
 	EDITIONS_VERSION := $(shell jq -r '.editions_version' metadata.json)
 	DOCKER_VERSION := $(shell jq -r '.docker_version' metadata.json)
@@ -52,7 +53,7 @@ TOOLS := docker4x/tools:latest
 TOOLSRUN := docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $(TOOLS) python
 
 CFNGEN := docker4x/cfngen:latest
-CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e CHANNEL_CLOUD="${CHANNEL}-cloud" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e EDITIONS_COMMIT=${EDITIONS_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -v ${ROOT_DIR}/dist:/home/docker/dist 
+CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e UCP_INIT_TAG="${EDITIONS_VERSION}" -e DTR_INIT_TAG="${EDITIONS_VERSION}" -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e CHANNEL_CLOUD="${CHANNEL}-cloud" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e EDITIONS_COMMIT=${EDITIONS_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -v ${ROOT_DIR}/dist:/home/docker/dist 
 
 export
 
@@ -96,6 +97,8 @@ nightly:
 	$(MAKE) test
 	@echo "\033[0;1;34m++ Rebuild the nightly index page.\033[0m"
 	$(TOOLSRUN) build_index.py
+	@echo "\033[0;1;34m++ Notify Slack of the results.\033[0m"
+	$(TOOLSRUN) notify.py
 
 template: buildtools
 	@echo "\033[0;1;34m++ Using bucket: $(AMI_S3_BUCKET) and path of: $(AMI_S3_PATH)/ami_id.out \033[0m"

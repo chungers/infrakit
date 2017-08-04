@@ -77,6 +77,14 @@ define clean_plugin_tool
 	-rm -Rf azure/dockerfiles/init/bin
 	-rm -Rf azure/dockerfiles/guide/bin
 	-rm -Rf azure/dockerfiles/meta/bin
+	# clean up common files copied
+	-rm -Rf azure/dockerfiles/alb-controller/files/container/bin/
+	-rm -f azure/dockerfiles/ddc-init/files/aztags.py
+	-rm -f azure/dockerfiles/guide/files/aztags.py
+	-rm -f azure/dockerfiles/init/files/aztags.py
+	-rm -f azure/dockerfiles/logger/files/aztags.py
+	-rm -f azure/dockerfiles/lookup/files/aztags.py
+	-rm -f azure/dockerfiles/upgrade/files/aztags.py
 endef
 
 ## General tools targets

@@ -14,7 +14,9 @@ UCP_HUB_TAG=${UCP_HUB_TAG-"2.0.1"}
 DTR_HUB_TAG=${DTR_HUB_TAG-"2.1.0"}
 UCP_IMAGE=${HUB_NAMESPACE}/ucp:${UCP_HUB_TAG}
 DTR_IMAGE=${HUB_NAMESPACE}/dtr:${DTR_HUB_TAG}
-DTR_PORT=8443
+UCP_HTTPS_PORT=12390
+DTR_HTTPS_PORT=12391
+DTR_HTTP_PORT=12392
 # also pass in DYNAMODB_TABLE
 
 if [ -e /tmp/.shutdown-init ]
@@ -57,7 +59,7 @@ checkUCP(){
         for I in $MANAGERS; do
             echo "Checking $I to see if UCP is up"
             # Checking if UCP is up and running
-            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I/_ping) -ne 200 ]] ; then
+            if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$I:$UCP_HTTPS_PORT/_ping) -ne 200 ]] ; then
                 echo "UCP on $I is NOT healty"
                 ALLGOOD='no'
             else
