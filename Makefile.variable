@@ -71,6 +71,21 @@ ifeq ($(EDITIONS_COMMIT),)
 	EDITIONS_COMMIT := $(shell git rev-parse --verify HEAD)
 endif
 
+ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
+	MOBY_IMG_NAME := mobylinux-ee.tgz
+	AMI_OUT := ami_id_ee.out
+	LOAD_IMAGES := true
+	VHD_OUT := vhd_ee_blob_url.out
+	BDI_OUT := bdi_ee_url.out
+	AZURE_STG_ACCOUNT_NAME=csedition
+else
+	MOBY_IMG_NAME := mobylinux-ce.tgz
+	AMI_OUT := ami_id.out
+	VHD_OUT := vhd_blob_url.out
+	BDI_OUT := bdi_url.out
+	AZURE_STG_ACCOUNT_NAME=edition
+endif
+
 NAMESPACE := docker4x
 AWS_TAG_VERSION := $(DOCKER_VERSION)-aws$(BUILD)
 AZURE_TAG_VERSION := $(DOCKER_VERSION)-azure$(BUILD)

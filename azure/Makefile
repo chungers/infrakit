@@ -84,12 +84,12 @@ ifneq ($(EDITIONS_COMMIT),)
 endif
 
 ifeq ($(VHD_URL),)
-	VHDTIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(VHD_S3_BUCKET) --key $(VHD_S3_PATH)/vhd_blob_url.out docker.out | jq -r '.Metadata' > metadata.json )
+	VHDTIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(VHD_S3_BUCKET) --key $(VHD_S3_PATH)/$(VHD_OUT) docker.out | jq -r '.Metadata' > metadata.json )
 	EDITIONS_VERSION := $(shell jq -r '.editions_version' metadata.json)
 	DOCKER_VERSION := $(shell jq -r '.docker_version' metadata.json)
 	MOBY_COMMIT := $(shell jq -r '.moby_commit' metadata.json)
 	CHANNEL := $(shell jq -r '.channel' metadata.json)
-	VHD_URL := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${VHD_S3_BUCKET}/${VHD_S3_PATH}/vhd_blob_url.out /tmp/vhd_blob_url.out && cat /tmp/vhd_blob_url.out)
+	VHD_URL := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${VHD_S3_BUCKET}/${VHD_S3_PATH}/$(VHD_OUT) /tmp/vhd_blob_url.out && cat /tmp/vhd_blob_url.out)
 	AZURE_TARGET_PATH = dist/azure/${CHANNEL}/${EDITIONS_VERSION}
 endif
 
