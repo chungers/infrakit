@@ -142,11 +142,6 @@ def add_resource_manager_security_group(template, use_ssh_cidr=False):
                 FromPort='7946',
                 ToPort='7946',
                 SourceSecurityGroupId=GetAtt("NodeVpcSG", "GroupId")),
-        ],
-        SecurityGroupEgress=[
-            SecurityGroupRule(
-                IpProtocol='50',
-                SourceSecurityGroupId=GetAtt("NodeVpcSG", "GroupId")),
         ]
     ))
 
@@ -197,9 +192,6 @@ def add_resource_worker_security_group(template, create_vpc):
                 IpProtocol='-1',
                 FromPort='0',
                 ToPort='65535',
-                CidrIp=cidr),
-            SecurityGroupRule(
-                IpProtocol='50',
                 CidrIp=cidr),
         ],
         SecurityGroupEgress=[
