@@ -7,11 +7,13 @@ ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	LOAD_IMAGES := true
 	VHD_OUT := vhd_ee_blob_url.out
 	BDI_OUT := bdi_ee_url.out
+	AZURE_STG_ACCOUNT_NAME=csedition
 else
 	MOBY_IMG_NAME := mobylinux-ce.tgz
 	AMI_OUT := ami_id.out
 	VHD_OUT := vhd_blob_url.out
 	BDI_OUT := bdi_url.out
+	AZURE_STG_ACCOUNT_NAME=edition
 endif
 
 MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
