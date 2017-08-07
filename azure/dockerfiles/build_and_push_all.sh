@@ -68,10 +68,6 @@ do
   FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${TAG_VERSION}"
   echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
   docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
-  if [ ${IMAGE} != "ddc-init" ] && [ "${IMAGE}" != "cloud" ]; then
-    echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
-    docker save "${FINAL_IMAGE}" --output "${ROOT_DIR}/${AZURE_TARGET_PATH}/${IMAGE}-azure.tar"
-  fi
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"
