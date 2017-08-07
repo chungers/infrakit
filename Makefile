@@ -148,7 +148,7 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# way to boot the Azure template.
 
 azure-release:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
 	$(MAKE) -C azure release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 $(AZURE_TARGET_TEMPLATE):
@@ -171,7 +171,7 @@ azure-e2e:
 
 ## AWS Targets
 aws-release:
-	@echo "\033[32m+ $@\033[0m"
+	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
 	$(MAKE) -C aws release
 
 $(AWS_TARGET_TEMPLATE):
