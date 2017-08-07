@@ -1,4 +1,4 @@
-include Makefile.variable
+include ../Makefile.variable
 
 ## Env vars
 FORCE_GSUTIL_AUTH ?= 0
