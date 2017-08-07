@@ -30,7 +30,7 @@ e2e:
 
 
 ## Container images targets
-dockerimages: clean tools
+dockerimages: deepclean tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) dockerimages-aws
 	$(MAKE) dockerimages-azure
@@ -228,10 +228,12 @@ clean:
 	$(MAKE) -C tools/cloudstor clean
 	$(MAKE) -C tools/swarm-exec clean
 	$(MAKE) -C moby clean
-	rm -rf dist/
-	rm -f $(AWS_TARGET_PATH)/*.tar
-	rm -f $(AZURE_TARGET_PATH)/*.tar
 	rm -f moby/cloud/azure/vhd_blob_url.out
 	rm -f moby/cloud/aws/ami_id.out
 	rm -f moby/cloud/aws/ami_id_ee.out
 	$(call clean_plugin_tool)
+
+deepclean: clean
+	rm -rf dist/
+	rm -f $(AWS_TARGET_PATH)/*.tar
+	rm -f $(AZURE_TARGET_PATH)/*.tar

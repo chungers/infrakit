@@ -80,6 +80,7 @@ ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	BDI_OUT := bdi_ee_url.out
 	AZURE_STG_ACCOUNT_NAME=csedition
 	EE := yes
+	MAKE_AMI_PUBLIC := no
 else
 	MOBY_IMG_NAME := mobylinux-ce.tgz
 	AMI_OUT := ami_id.out
@@ -88,6 +89,10 @@ else
 	BDI_OUT := bdi_url.out
 	AZURE_STG_ACCOUNT_NAME=edition
 	EE := no
+	MAKE_AMI_PUBLIC := no
+	ifeq ($(RELEASE),true)
+		MAKE_AMI_PUBLIC = yes
+	endif
 endif
 
 NAMESPACE := docker4x
@@ -100,7 +105,6 @@ CHANNEL_CLOUD := test
 EDITION_ADDON := base
 
 #### AWS Specific VARS
-MAKE_AMI_PUBLIC := no
 ACCOUNT_LIST_FILE_URL := https://s3.amazonaws.com/docker-for-aws/data/accounts.txt
 DOCKER_AWS_ACCOUNT_URL := https://s3.amazonaws.com/docker-for-aws/data/docker_accounts.txt
 AWS_AMI_LIST := https://s3.amazonaws.com/docker-for-aws/data/ami/$(DOCKER_VERSION)/ami_list.json

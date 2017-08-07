@@ -26,10 +26,6 @@ ifneq ($(JENKINS_BUILD),)
 	AMI_S3_PATH := $(AMI_S3_PATH)/${BUILD_NUMBER}
 endif
 
-ifeq ($(RELEASE),true)
-	MAKE_AMI_PUBLIC = yes
-endif
-
 ifeq ($(AMI_ID),)
 	# Get Edition MetaData
 	EDITIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(AMI_S3_BUCKET) --key $(AMI_S3_PATH)/$(AMI_OUT) docker.out | jq -r '.Metadata' > metadata.json )
