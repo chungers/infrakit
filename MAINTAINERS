@@ -12,10 +12,10 @@
 	[Org."Core maintainers"]
 		people = [
 			"kencochrane",
-			"nathanleclaire",
 			"ddebroy",
-			"dgageot",
-			"frenchben"
+			"frenchben",
+			"jose-bigio",
+			"corbin-coleman"
 		]
 
 [people]
@@ -24,17 +24,12 @@
 # All other sections should refer to people by their canonical key
 # in the people section.
 
-	# ADD YOURSELF HERE IN ALPHABETICAL ORDER
+# ADD YOURSELF HERE IN ALPHABETICAL ORDER
 
 	[people.ddebroy]
 	Name = "Deep Debroy"
 	Email = "deep.debroy@docker.com"
 	GitHub = "ddebroy"
-
-	[people.dgageot]
-	Name = "David Gageot"
-	Email = "david.gageot@docker.com"
-	GitHub = "dgageot"
 
 	[people.frenchben]
 	Name = "Ben Bonnefoy
@@ -46,7 +41,14 @@
 	Email = "ken.cochrane@docker.com"
 	GitHub = "kencochrane"
 
-	[people.nathanleclaire]
-	Name = "Nathan LeClaire"
-	Email = "nathan.leclaire@docker.com"
-	GitHub = "nathanleclaire"
+### Interns
+
+	[people.jose-bigio]
+	Name = "Jose Bigio"
+	Email = "jose.bigio@docker.com"
+	GitHub = "jose-bigio"
+
+	[people.corbin-coleman]
+	Name = "Corbin Coleman"
+	Email = "corbin.coleman@docker.com"
+	GitHub = "corbin-coleman"
