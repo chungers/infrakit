@@ -125,6 +125,12 @@ def get_ami_list(ami_list_url):
     response = urllib2.urlopen(ami_list_url)
     return json.load(response)
 
+def set_ee_ami_list(ami_id, ami_src_region=None):
+    if not ami_src_region:
+        ami_src_region = "us-east-1"
+    """ Given an ami for EE generate only 1 region for AMI """
+    response = {ami_src_region: { "HVM64": ami_id, "HVMG2": "NOT_SUPPORTED"}}
+    return json.dumps(response)
 
 def approve_accounts(ami_list, account_list):
     """ TODO: What happens if one of the accounts isn't valid. Should we have an AccountID

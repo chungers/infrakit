@@ -3,7 +3,7 @@ import json
 import argparse
 
 from utils import (
-    copy_amis, get_ami_list, get_account_list, set_ami_public, upload_ami_list, generate_ami_list_url,
+    copy_amis, get_ami_list, get_account_list, set_ami_public, upload_ami_list, generate_ami_list_url, set_ee_ami_list, 
     approve_accounts, ACCOUNT_LIST_FILE_URL, create_cfn_template, upload_cfn_template)
 
 from docker_ce import DockerCEVPCTemplate, DockerCEVPCExistingTemplate
@@ -47,6 +47,9 @@ def main():
     parser.add_argument("--share", 
                         dest='share_ami', default="yes",
                         help="Share the AWS AMI with provided account list")
+    parser.add_argument("--enterprise", 
+                        dest='is_ee', default="no",
+                        help="Build the Enterprise Edition")
     parser.add_argument("--template", action="store_true",
                         help="Generate the AWS template using moby commit AMI list")
 
@@ -64,11 +67,16 @@ def main():
     flat_editions_version = docker_for_aws_version.replace(" ", "")
     image_name = u"Moby Linux {} {}".format(docker_for_aws_version, release_channel)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
+    make_ee = False
+    if args.is_ee:
+        if args.is_ee.lower() == 'yes':
+            make_ee = True
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))
     print(u"docker_version={}".format(docker_version))
     print(u"docker_for_aws_version={}".format(docker_for_aws_version))
     print(u"edition_addon={}".format(edition_addon))
+    print(u"make_ee={}".format(make_ee))
     if args.template:
         ami_list = get_ami_list(generate_ami_list_url())
     else:
@@ -91,9 +99,12 @@ def main():
         if args.ami_id:
             ami_id = args.ami_id
 
-        print("Copy AMI to each region..")
-        ami_list = copy_amis(args.ami_id, args.ami_src_region,
-                        image_name, image_description, release_channel)
+        if make_ee:
+            ami_list = set_ee_ami_list(args.ami_id, args.ami_src_region)
+        else:
+            print("Copy AMI to each region..")
+            ami_list = copy_amis(args.ami_id, args.ami_src_region,
+                            image_name, image_description, release_channel)
         print(u"AMI copy complete. AMI List: \n{}".format(ami_list))
 
         ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)
