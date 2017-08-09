@@ -205,11 +205,12 @@ def add_resource_ddc_dtr_lb(template, create_vpc, extra_listeners=None):
         LoadBalancerPort="443",
         InstancePort="12391",
         Protocol="TCP"
-    ),Listener(
+    ))
+    listener_list.append(Listener(
         LoadBalancerPort="80",
         InstancePort="12392",
         Protocol="TCP"
-    ),)
+    ))
     if extra_listeners:
         listener_list.extend(extra_listeners)
 

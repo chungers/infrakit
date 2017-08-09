@@ -67,10 +67,21 @@ def main():
     flat_editions_version = docker_for_aws_version.replace(" ", "")
     image_name = u"Moby Linux {} {}".format(docker_for_aws_version, release_channel)
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
+    ami_id = ''
+    if args.ami_id:
+        ami_id = args.ami_id
+    
+    share_ami = ''
+    if args.share_ami:
+        share_ami = args.share_ami
+    
     make_ee = False
     if args.is_ee:
         if args.is_ee.lower() == 'yes':
             make_ee = True
+            # don't share AMI if it's EE
+            share_ami = "no"
+    
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))
     print(u"docker_version={}".format(docker_version))
@@ -95,10 +106,6 @@ def main():
                 make_ami_public = True
         print(u"make_ami_public={}".format(make_ami_public))
 
-        ami_id = ''
-        if args.ami_id:
-            ami_id = args.ami_id
-
         if make_ee:
             ami_list = set_ee_ami_list(args.ami_id, args.ami_src_region)
         else:
@@ -110,10 +117,6 @@ def main():
         ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)
         print("Upload AMI list to s3")
         upload_ami_list(ami_list_json, docker_for_aws_version, docker_version, release_channel)
-
-        share_ami = ''
-        if args.share_ami:
-            share_ami = args.share_ami
 
         if make_ami_public:
             print("Make AMI's public.")

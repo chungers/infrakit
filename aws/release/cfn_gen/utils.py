@@ -140,7 +140,6 @@ def approve_accounts(ami_list, account_list):
     """
     slice_count = 100
     for ami in ami_list:
-        print(u"Approve accounts for AMI: {}".format(ami))
         region = ami
         ami_id = ami_list.get(region).get('HVM64')
         print(u"Approve accounts for AMI: {} ; Region: {} ".format(ami_id, region))
