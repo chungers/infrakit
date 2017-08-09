@@ -12,8 +12,8 @@ endif
 
 ifeq ($(RELEASE),false)
 	ifdef JENKINS_BUILD
-		DAY := $(shell date +"%m_%d_%Y")
-		EDITIONS_TAG := $(EDITIONS_TAG)-$(DAY)
+		SHORT := $(shell git rev-parse --short HEAD)
+		EDITIONS_TAG := $(EDITIONS_TAG)-$(SHORT)
 		# If not a release in Jenkins then use the head of docker/editions.moby
 		MOBY_COMMIT := $(shell docker run --rm docker4x/mobyhead@sha256:823149afe4b4f2ee7ac45c7963193ae2274cb216760fb98631a3109aff05e4af)
 	else
