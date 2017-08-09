@@ -78,7 +78,7 @@ ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	LOAD_IMAGES := true
 	VHD_OUT := vhd_ee_blob_url.out
 	BDI_OUT := bdi_ee_url.out
-	AZURE_STG_ACCOUNT_NAME=csedition
+	AZURE_STG_ACCOUNT_NAME := csedition
 	EE := yes
 	MAKE_AMI_PUBLIC := no
 else
@@ -87,7 +87,7 @@ else
 	AMI_SRC_REGION := us-west-2
 	VHD_OUT := vhd_blob_url.out
 	BDI_OUT := bdi_url.out
-	AZURE_STG_ACCOUNT_NAME=edition
+	AZURE_STG_ACCOUNT_NAME := edition
 	EE := no
 	MAKE_AMI_PUBLIC := no
 	ifeq ($(RELEASE),true)
