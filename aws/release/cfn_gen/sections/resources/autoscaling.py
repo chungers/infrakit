@@ -240,8 +240,8 @@ def add_resource_worker_autoscalegroup(template, launch_config_name, timeout=Non
        }
     },
     """
-    if create_timeout is None:
-        create_timeout='PT20M'
+    if timeout is None:
+        timeout='PT20M'
     
     template.add_resource(AutoScalingGroup(
         "NodeAsg",
