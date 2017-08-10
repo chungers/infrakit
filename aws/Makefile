@@ -17,8 +17,10 @@ AMI_S3_PATH := ami
 
 STAGE_S3_BUCKET := editions-stage-us-east-1-150610-005505
 
-ifneq ($(EDITIONS_COMMIT),)
-	AMI_S3_PATH := $(AMI_S3_PATH)/$(EDITIONS_COMMIT)
+ifneq ($(EDITIONS_COMMIT), )
+	ifeq ($(TEST_JENKINS),)
+		AMI_S3_PATH := $(AMI_S3_PATH)/$(EDITIONS_COMMIT)
+	endif
 endif
 
 ifneq ($(JENKINS_BUILD),)
@@ -49,7 +51,7 @@ TOOLS := docker4x/tools:latest
 TOOLSRUN := docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $(TOOLS) python
 
 CFNGEN := docker4x/cfngen:latest
-CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e UCP_INIT_TAG="${EDITIONS_VERSION}" -e DTR_INIT_TAG="${EDITIONS_VERSION}" -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e CHANNEL_CLOUD="${CHANNEL}-cloud" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e EE="${EE}" -e EDITIONS_COMMIT=${EDITIONS_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -v ${ROOT_DIR}/dist:/home/docker/dist 
+CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e UCP_INIT_TAG="${EDITIONS_VERSION}" -e DTR_INIT_TAG="${EDITIONS_VERSION}" -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e CHANNEL_CLOUD="${CHANNEL}-cloud" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e EE="${EE}" -e EDITIONS_COMMIT=${EDITIONS_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -e TEST_JENKINS=$(TEST_JENKINS) -v ${ROOT_DIR}/dist:/home/docker/dist 
 
 export
 
@@ -103,7 +105,7 @@ template: buildtools
 
 buildtools: clean
 	-mkdir -p tmp/ $(ROOT_DIR)/dist/
-	@echo "\033[0;1;34m+++ Build cfngen image\033[0m"
+	@echo "\033[0;1;34m+++ Build cfngen image - Editions Commit: ${EDITIONS_COMMIT} - from $(AMI_S3_PATH)/$(AMI_OUT) \033[0m"
 	docker build -t $(CFNGEN) -f release/cfn_gen/Dockerfile release/cfn_gen
 	@echo "\033[0;1;34m+++ Build common tools image\033[0m"
 	docker build -t $(TOOLS) -f release/Dockerfile.tools .

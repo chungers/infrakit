@@ -21,6 +21,7 @@ CFN_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 CFN_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
 EDITIONS_COMMIT = os.getenv('EDITIONS_COMMIT',"unknown-editions-commit")
 JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
+TEST_JENKINS = os.getenv('TEST_JENKINS', None)
 
 
 # file with list of aws account_ids
@@ -116,7 +117,11 @@ def get_account_list(account_file_url):
 
 def generate_ami_list_url():
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
+    print("Checking tests: {}".format(TEST_JENKINS))
+    if TEST_JENKINS:
+        s3_path = u"ami/ami_list.json"
+    else:
+        s3_path = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
     return u"{}/{}".format(s3_host_name, s3_path)
 
 def get_ami_list(ami_list_url):
@@ -210,6 +215,13 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
 
     # upload to Jenkins build as well
     s3_path_latest = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
+    print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
+    srckey = bucket.get_key(s3_path)
+    dstkey = bucket.new_key(s3_path_latest)
+    srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+
+    # upload to latest endpoint as well
+    s3_path_latest = u"ami/ami_list.json"
     print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
     srckey = bucket.get_key(s3_path)
     dstkey = bucket.new_key(s3_path_latest)

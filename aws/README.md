@@ -90,4 +90,52 @@ You can also run the voting app:
 
 ## Cleanup
 
-When you are done with the swarm, please remember to destroy your it. You can do that from the CloudFormation stack list by selecting "Delete Stack".
+When you are done with the swarm, please remember to destroy it. You can do that from the CloudFormation stack list by selecting "Delete Stack".
+
+
+
+
+# AWS release script
+This script will take some parameters and then it will do the following.
+
+1. copy the AMI to the different regions
+2. share the image across the list of accounts
+3. generate a new CloudFormation template and upload to the `editions-stage-us-east-1-150610-005505` s3 bucket
+4. return the s3 url for the CloudFormation template, to be used in release notes, etc.
+
+
+## prerequisites
+1. Access to the distribution AWS account, and an IAM account with permissions on the `editions-stage-us-east-1-150610-005505` s3 bucket.
+2. Set Env variables for account referenced in 1.
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+3. Make sure the aws accountId file is up to date in s3. (https://s3.amazonaws.com/docker-for-aws/data/accounts.txt)
+
+
+## Running release script.
+
+1. Checkout the master branch from `https://github.com/docker/editions` and make sure local copy is up to date.
+2. Calling `make release` script, passing in correct variables. For example:
+
+    $ make release EDTIONS_COMMIT= RELEASE=
+
+    $ make release EDTIONS_COMMIT=1234567asdfghjkl RELEASE=true
+
+    EDTIONS_COMMIT will determine what AMI will be copied and what version of Docker will be published
+
+3. Look at the logs and find the CloudFormation s3 url, and give that to who needs it.
+4. Tag the code and push tags to github, and create release from tag.
+
+
+### Development Notes
+Here are notes that were used during development, some are still relevant so keeping here for now.
+
+Ideal setup:
+
+1. Given a git hash of editions download the AMI built and read metadata to get Docker version.
+2. Share that AMI across regions, return a dict of AMI IDs, store in s3
+   <EDITIONS_COMMIT>/ami_list.json
+   /ami_list.json
+3. Given the ami_list.json and an account_list.txt approve the AMI to the accounts.
+
+GET AMI_ID >> COPY_AMI >> LIST_OF_AMIS + List of Accounts >> PUBLISH_AMIS >> generate CFN >> upload CFN to S3

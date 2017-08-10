@@ -21,7 +21,7 @@ if [ -e "$ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar" ]; then
 	cp $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar packages/aws/dockerimages/
 else
 	echo "++ MISSING Docker Shell image: $ROOT_DIR/$AWS_TARGET_PATH/shell-aws.tar"
-	ls -ltr $ROOT_DIR/*
+	ls -ltr $ROOT_DIR/dist/*
 	exit 1
 fi
 echo "++ Check if agent exists at $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar"
@@ -30,7 +30,7 @@ if [ -e "$ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar" ]; then
 	cp $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar packages/azure/dockerimages/
 else
 	echo "++ MISSING Docker Agent image: $ROOT_DIR/$AZURE_TARGET_PATH/agent-azure.tar"
-	ls -ltr $ROOT_DIR/*
+	ls -ltr $ROOT_DIR/dist/*
 	exit 1
 fi
 
