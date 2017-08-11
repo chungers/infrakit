@@ -105,11 +105,13 @@ def add_parameter_manager_disk_size(template):
     return ('ManagerDiskSize', {"default": "Manager ephemeral storage volume size?"})
 
 
-def add_parameter_manager_disk_type(template):
+def add_parameter_manager_disk_type(template, default_disk_type=None):
+    if not default_disk_type:
+        default_disk_type = 'standard'
     template.add_parameter(Parameter(
         'ManagerDiskType',
         Type='String',
-        Default='standard',
+        Default=default_disk_type,
         AllowedValues=["standard", "gp2"],
         Description="Manager ephemeral storage volume type"))
     return ('ManagerDiskType', {"default": "Manager ephemeral storage volume type"})

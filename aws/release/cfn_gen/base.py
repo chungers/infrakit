@@ -106,6 +106,10 @@ class AWSBaseTemplate(object):
             parameters.add_parameter_manager_instancetype(
                 self.template))
 
+    def add_parameter_manager_disk_type(self):
+        self.add_to_parameters(
+            parameters.add_parameter_manager_disk_type(self.template))
+
     def add_parameter_manager_cluster_size(self):
         self.add_to_parameters(
             parameters.add_parameter_manager_size(self.template))
@@ -132,8 +136,7 @@ class AWSBaseTemplate(object):
 
         self.add_to_parameters(
             parameters.add_parameter_manager_disk_size(self.template))
-        self.add_to_parameters(
-            parameters.add_parameter_manager_disk_type(self.template))
+        self.add_parameter_manager_disk_type()
 
         self.add_to_parameters(
             parameters.add_parameter_enable_system_prune(self.template))

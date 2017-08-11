@@ -57,6 +57,12 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
                 self.template,
                 default_instance_type='m4.large',
                 instance_types=constants.DDC_INSTANCE_TYPES))
+    
+    def add_parameter_manager_disk_type(self):
+        self.add_to_parameters(
+            parameters.add_parameter_manager_disk_type(
+                self.template,
+                default_disk_type='gp2'))
 
     def add_parameter_manager_cluster_size(self):
         """ don't let them put only 1 swarm manager """
