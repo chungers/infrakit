@@ -502,7 +502,7 @@ else
   # DTR stuff here.
   # check to see if dtr is already installed. if not continue
   # Checking if DTR is already running. If it is , exit, if it's not install it.
-  if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$PRIVATE_IP:$DTR_PORT/health) -ne 200 ]]; then
+  if [[ $(curl --insecure --silent --output /dev/null --write-out '%{http_code}' https://$PRIVATE_IP:$DTR_HTTPS_PORT/health) -ne 200 ]]; then
     echo "install DTR"
 
     # Avoid installing DTR during upgrade process, causes issues
@@ -571,7 +571,7 @@ else
 
     echo "$AZURE_HOSTNAME node processing DTR"
 
-    docker run --rm "$DTR_IMAGE" join --replica-https-port "$DTR_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$AZURE_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
+    docker run --label com.docker.editions.system --rm "$DTR_IMAGE" join --replica-https-port "$DTR_HTTPS_PORT" --replica-http-port "$DTR_HTTP_PORT" --ucp-url https://$UCP_ELB_HOSTNAME --ucp-node "$AZURE_HOSTNAME" --ucp-username "$UCP_ADMIN_USER" --ucp-password "$UCP_ADMIN_PASSWORD" --ucp-insecure-tls --existing-replica-id $EXISTING_REPLICA_ID
 
     JOIN_RESULT=$?
     echo "   JOIN_RESULT=$JOIN_RESULT"
