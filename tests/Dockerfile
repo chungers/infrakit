@@ -10,4 +10,4 @@ RUN apk update && apk upgrade && \
 
 RUN go get -u github.com/linuxkit/rtf
 
-CMD ["rtf", "run"]
+ENTRYPOINT ["rtf", "run"]
