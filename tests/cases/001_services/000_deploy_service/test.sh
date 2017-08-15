@@ -15,7 +15,7 @@ trap clean_up EXIT
 docker service create --name "${NAME}" nginx
 NUM_REPLICAS=$(check_replicas "${NAME}" 1 5)
 
-[ "${NUM_REPLICAS}" = 1]
+[ "${NUM_REPLICAS}" = 1 ]
 docker service ls | assert_contains "${NAME}"
 
 exit 0
