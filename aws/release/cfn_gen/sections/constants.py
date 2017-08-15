@@ -10,7 +10,7 @@ DDC_INSTANCE_TYPES = [
 ]
 
 DDC_WORKER_INSTANCE_TYPES = [
-    "t2.medium", "t2.large", "t2.xlarge", "t2.2xlarge",
+    "t2.small", "t2.medium", "t2.large", "t2.xlarge", "t2.2xlarge",
 ] + DDC_INSTANCE_TYPES
 
 ALL_INSTANCE_TYPES = [

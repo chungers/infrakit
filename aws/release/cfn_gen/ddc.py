@@ -48,7 +48,7 @@ class DDCVPCTemplate(DockerEEVPCTemplate):
         self.add_to_parameters(
             parameters.add_parameter_instancetype(
                 self.template,
-                default_instance_type='t2.large',
+                default_instance_type='t2.small',
                 instance_types=constants.DDC_WORKER_INSTANCE_TYPES))
 
     def add_parameter_manager_instancetype(self):
