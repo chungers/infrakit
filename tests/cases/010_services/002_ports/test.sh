@@ -9,6 +9,11 @@ NAME="ping3"
 set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
+clean_up() {
+docker service rm "${NAME}" || true
+}
+trap clean_up EXIT
+
 # NAME replicas retries
 check_replicas() {
 REPLICAS=
@@ -28,10 +33,6 @@ done
 
 echo $REPLICAS
 
-#if [[ $REPLICAS != $2 ]]; then
-#    echo exiting with an error 
-#    exit 1
-#fi     
 }
 
 
@@ -52,8 +53,8 @@ EXPOSED_PORT=8000
 docker service update --publish-add $EXPOSED_PORT $NAME 
 
 # Check that port is available
-ACUTAL=$(docker service ls | grep $NAME | awk '{ print $6 }')
-assert_contains "Service has  ports exposed" $ACTUAL $EXPOSED_PORT
+ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }')
+echo $ACTUAL | assert_contains $EXPOSED_PORT 
 
 # Delete the port
 docker service update --publish-rm $EXPOSED_PORT $NAME 
@@ -61,3 +62,5 @@ docker service update --publish-rm $EXPOSED_PORT $NAME
 # Check that the port is not available
 ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }' | wc -w)
 assert_equals "service has no ports exposed" $ACTUAL 0  
+
+exit 0
