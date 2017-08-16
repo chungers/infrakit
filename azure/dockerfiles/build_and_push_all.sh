@@ -80,8 +80,6 @@ done
 
 # build and push walinuxagent image
 docker build --pull -t docker4x/agent-azure:${TAG_VERSION} -f walinuxagent/Dockerfile walinuxagent
-echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
-docker save "docker4x/agent-azure:${TAG_VERSION}" --output "${ROOT_DIR}/${AZURE_TARGET_PATH}/agent-azure.tar"
 if [ "${DOCKER_PUSH}" = true ]; then
   docker push "docker4x/agent-azure:${TAG_VERSION}"
   if ! docker_tag_exists "${FINAL_IMAGE}"; then

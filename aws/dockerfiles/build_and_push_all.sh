@@ -58,10 +58,6 @@ do
   FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
   echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
   docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
-  if [ ${IMAGE} = "shell" ]; then
-    echo -e "++ \033[1mSaving docker image to:\033[0m ${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-    docker save "${FINAL_IMAGE}" --output "${ROOT_DIR}/${AWS_TARGET_PATH}/${IMAGE}-aws.tar"
-  fi
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"

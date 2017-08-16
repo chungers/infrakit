@@ -32,21 +32,9 @@ e2e:
 ## Container images targets
 dockerimages: deepclean tools
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) dockerimages-aws
-	$(MAKE) dockerimages-azure
-	$(MAKE) dockerimages-gcp
-
-dockerimages-aws: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AWS_TAG_VERSION}\033[0m"
-	$(MAKE) -C aws/dockerfiles EDITIONS_VERSION=$(AWS_TAG_VERSION)
-
-dockerimages-azure: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AZURE_TAG_VERSION}\033[0m"
-	$(MAKE) -C azure/dockerfiles EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-
-dockerimages-gcp: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${GCP_TAG_VERSION}\033[0m"
-	$(MAKE) -C gcp build-cloudstor build-images
+	$(MAKE) aws-dockerimages
+	$(MAKE) azure-dockerimages
+	$(MAKE) gcp-dockerimages
 
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
@@ -139,7 +127,20 @@ moby:
 	$(MAKE) -C moby all
 
 ## Azure targets 
-azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
+azure-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AZURE_TAG_VERSION}\033[0m"
+	$(MAKE) -C azure/dockerfiles EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+
+azure-template:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	# "easy use" alias to generate latest version of template.
+	$(MAKE) $(AZURE_TARGET_TEMPLATE)
+
+azure-release:
+	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
+	$(MAKE) -C azure release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+
+azure-dev: azure azure/editions.json moby/cloud/azure/vhd_blob_url.out-dockerimages
 	# Temporarily going to continue to use azure/editions.json until the
 	# development workflow gets refactored to use only top-level Makefile
 	# for "running" in addition to "compiling".
@@ -147,17 +148,8 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# Until then, 'make dev' in azure/ dir with proper parameters is a good
 	# way to boot the Azure template.
 
-azure-release:
-	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
-	$(MAKE) -C azure release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-
 $(AZURE_TARGET_TEMPLATE):
 	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-
-azure-template:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	# "easy use" alias to generate latest version of template.
-	$(MAKE) $(AZURE_TARGET_TEMPLATE)
 
 azure/editions.json: azure-template
 	cp $(AZURE_TARGET_TEMPLATE) azure/editions.json
@@ -170,17 +162,21 @@ azure-e2e:
 	$(MAKE) -C azure/testing
 
 ## AWS Targets
+aws-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AWS_TAG_VERSION}\033[0m"
+	$(MAKE) -C aws/dockerfiles EDITIONS_VERSION=$(AWS_TAG_VERSION)
+
+aws-template:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	# "easy use" alias to generate latest version of template.
+	$(MAKE) $(AWS_TARGET_TEMPLATE)
+
 aws-release:
 	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
 	$(MAKE) -C aws release
 
 $(AWS_TARGET_TEMPLATE):
 	$(MAKE) -C aws template EDITIONS_VERSION=$(AWS_TAG_VERSION)
-
-aws-template:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	# "easy use" alias to generate latest version of template.
-	$(MAKE) $(AWS_TARGET_TEMPLATE)
 
 aws-nightly:
 	@echo "\033[32m+ $@\033[0m"
@@ -190,6 +186,9 @@ aws-e2e:
 	$(MAKE) -C aws/test
 
 ## GCP Targets
+gcp-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${GCP_TAG_VERSION}\033[0m"
+	$(MAKE) -C gcp build-cloudstor build-images
 
 gcp-template:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
@@ -198,6 +197,8 @@ gcp-template:
 gcp-release: gcp-template
 	$(MAKE) -C gcp save-templates
 	$(MAKE) -C gcp release
+
+
 
 
 ## Golang targets
