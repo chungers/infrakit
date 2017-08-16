@@ -3,9 +3,9 @@
 # Labels:
 
 set -e
-#. "${RT_PROJECT_ROOT}/_lib/lib.sh"
+. "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-docker build . -f _Dockerfile -t test_container
-#docker run --rm test_container "hello" | assert_contains "hello"
+docker build . -f Dockerfile -t test_container
+docker run --rm test_container "hello" | assert_contains "hello"
 
 exit 0

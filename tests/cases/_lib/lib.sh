@@ -3,6 +3,7 @@
 ## A library of shell functions
 ##
 
+
 # Make sure that all expected replicas are running
 # check_replicas SERVICE_NAME NUM_REPLICAS NUM_RETRIES
 check_replicas() {
@@ -26,6 +27,7 @@ echo $REPLICAS
 #    exit 1
 #fi
 }
+
 
 # Special return code to indicate that a test was cancelled
 RT_TEST_CANCEL=253
