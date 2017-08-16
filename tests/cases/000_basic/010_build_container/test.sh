@@ -7,6 +7,5 @@ set -e
 
 docker build . -f Dockerfile -t test_container
 docker run --rm test_container "hello" | assert_contains "hello"
-#docker run --rm test_container "hello" 
 
 exit 0

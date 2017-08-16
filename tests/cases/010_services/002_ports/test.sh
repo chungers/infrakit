@@ -9,6 +9,7 @@ NAME="ping3"
 set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
+
 clean_up() {
 docker service rm "${NAME}" || true
 }
@@ -56,11 +57,13 @@ docker service update --publish-add $EXPOSED_PORT $NAME
 ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }')
 echo $ACTUAL | assert_contains $EXPOSED_PORT 
 
+
 # Delete the port
 docker service update --publish-rm $EXPOSED_PORT $NAME 
 
 # Check that the port is not available
 ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }' | wc -w)
 assert_equals "service has no ports exposed" $ACTUAL 0  
+
 
 exit 0

@@ -6,8 +6,8 @@ COPY cases /tests/cases
 WORKDIR /tests/
 
 RUN apk update && apk upgrade && \
-    apk add --no-cache git 
-
+    apk add --no-cache git
+    
 RUN go get -u github.com/linuxkit/rtf
 
 ENTRYPOINT ["rtf", "run"]
