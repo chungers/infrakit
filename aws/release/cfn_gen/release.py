@@ -142,14 +142,14 @@ def main():
                                         edition_addon, no_vpc_cfn_name,
                                         cfn_type="no-vpc")
 
-    docker_ee_cfn_name = u"{}-ee".format(cfn_name)
+    docker_ee_cfn_name = u"{}-EE".format(cfn_name)
     docker_ee_release_channel = u"{}-ee".format(release_channel)
     docker_ee_base_url = create_cfn_template(DockerEEVPCTemplate, ami_list,
                                            docker_ee_release_channel,
                                            docker_version, docker_for_aws_version, edition_addon,
                                            docker_ee_cfn_name)
 
-    docker_ee_no_vpc_cfn_name = "{}-no-vpc-ee".format(cfn_name)
+    docker_ee_no_vpc_cfn_name = "{}-EE-no-vpc".format(cfn_name)
     docker_ee_base_url_no_vpc = create_cfn_template(DockerEEVPCExistingTemplate,
                                                   ami_list,
                                                   docker_ee_release_channel,
@@ -171,29 +171,29 @@ def main():
                                               edition_addon, cloud_no_vpc_cfn_name, cfn_type="no-vpc")
 
     # DDC
-    ddc_channel = "{}-ddc".format(release_channel)
-    ddc_cfn_name = "{}-ddc".format(cfn_name)
+    ddc_channel = "{}-DDC".format(release_channel)
+    ddc_cfn_name = "{}-DDC".format(cfn_name)
     edition_addon = 'ddc'
     ddc_url = create_cfn_template(DDCVPCTemplate, ami_list,
                                      ddc_channel,
                                      docker_version, docker_for_aws_version,
                                      edition_addon, ddc_cfn_name)
 
-    ddc_no_vpc_cfn_name = "{}-ddc-no-vpc".format(cfn_name)
+    ddc_no_vpc_cfn_name = "{}-DDC-no-vpc".format(cfn_name)
     ddc_url_no_vpc = create_cfn_template(DDCVPCExistingTemplate,
                                             ami_list, ddc_channel,
                                             docker_version, docker_for_aws_version,
                                             edition_addon, ddc_no_vpc_cfn_name, cfn_type="no-vpc")
 
     # DDC-Dev
-    ddc_dev_cfn_name = "{}-ddc-dev".format(cfn_name)
+    ddc_dev_cfn_name = "{}-DDC-dev".format(cfn_name)
     edition_addon = 'ddc-dev'
     ddc_dev_url = create_cfn_template(DDCDevVPCTemplate, ami_list,
                                          ddc_channel,
                                          docker_version, docker_for_aws_version,
                                          edition_addon, ddc_dev_cfn_name)
 
-    ddc_dev_no_vpc_cfn_name = "{}-ddc-dev-no-vpc".format(cfn_name)
+    ddc_dev_no_vpc_cfn_name = "{}-DDC-dev-no-vpc".format(cfn_name)
     ddc_dev_url_no_vpc = create_cfn_template(DDCDevVPCExistingTemplate,
                                                 ami_list, ddc_channel,
                                                 docker_version, docker_for_aws_version,
