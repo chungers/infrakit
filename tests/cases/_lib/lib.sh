@@ -27,7 +27,6 @@ echo $REPLICAS
 #fi
 }
 
-
 # Special return code to indicate that a test was cancelled
 RT_TEST_CANCEL=253
 
