@@ -36,9 +36,6 @@ ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }')
 echo $ACTUAL | assert_contains $EXPOSED_PORT 
 echo "Port was exposed"
 
-# Sleep so it works on Azure
-sleep 2s
-
 # Delete the port
 docker service update --detach=false --publish-rm $EXPOSED_PORT $NAME 
 
