@@ -14,4 +14,6 @@ RUN mkdir -p /tests/cases
 COPY cases /tests/cases
 WORKDIR /tests/
 
-ENTRYPOINT ["rtf", "run"]
+ENTRYPOINT ["rtf"]
+CMD ["help"]
+
