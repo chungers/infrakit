@@ -1,5 +1,6 @@
 FROM golang:1.8.3-alpine
 
+
 RUN apk update && apk upgrade && \
     apk add --no-cache git 
 
@@ -15,5 +16,4 @@ COPY cases /tests/cases
 WORKDIR /tests/
 
 ENTRYPOINT ["rtf"]
-CMD ["help"]
-
+CMD ["help]

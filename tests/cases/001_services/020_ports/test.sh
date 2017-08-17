@@ -18,6 +18,7 @@ trap clean_up EXIT
 # Deploy a service with no ports exposed
 docker service create --detach=false --replicas $REPS --name $NAME alpine ping docker.com
 
+
 # Check that the service is up and running (make this a library function later in some way or other)
 ACTUAL=$(check_replicas $NAME $REPS 10)
 echo "Acutal number of replicas $ACTUAL expected number of replicas $REPS"
@@ -29,7 +30,9 @@ assert_equals "service has no ports exposed" $ACTUAL 0
 
 # Expose a port
 EXPOSED_PORT=8000
+
 docker service update --detach=false --publish-add $EXPOSED_PORT $NAME 
+
 
 # Check that port is available
 ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }')
@@ -37,7 +40,9 @@ echo $ACTUAL | assert_contains $EXPOSED_PORT
 echo "Port was exposed"
 
 # Delete the port
+
 docker service update --detach=false --publish-rm $EXPOSED_PORT $NAME 
+
 
 # Check that the port is not available
 ACTUAL=$(docker service ls | grep $NAME | awk '{ print $6 }' | wc -w)

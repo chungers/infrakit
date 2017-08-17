@@ -15,14 +15,15 @@ For a full user guide refer to [USER_GUIDE.md](https://github.com/linuxkit/rtf/b
 The user guide provides more information about using labels for fine grain run control, describes general test writing guidelines, as well as additional features. 
 
 ### Quick Run
+The container runs `rtf help` standard and can be run like so:
+```
+make run
+```
 All the test will be in an easy to use container. To run the tests simply run:
 ```
-docker container run -v /usr/bin/docker:/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock corbincoleman/rtf run
+make run-tests
 ```
-All the rtf flags are available to use as well. As an example for more verbose output you can run the container like this:
+It can also be run with more verbose output
 ```
-docker container run -v /usr/bin/docker:/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock corbincoleman/rtf -vvv run
+make run-verbose
 ```
-
-### Deployment
-The set of test cases will be deployed from within one of the corresponding end to end test frameworks from within a container 

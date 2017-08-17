@@ -1,4 +1,3 @@
-
 NAMESPACE ?= docker4x
 IMAGE= $(NAMESPACE)/rtf
 DOCKER := /usr/bin/docker
