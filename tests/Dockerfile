@@ -16,4 +16,4 @@ COPY cases /tests/cases
 WORKDIR /tests/
 
 ENTRYPOINT ["rtf"]
-CMD ["help]
+CMD ["help"]

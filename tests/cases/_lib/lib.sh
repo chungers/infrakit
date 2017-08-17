@@ -160,17 +160,3 @@ assert_null() {
         assert_true "[ -z '${1:-}' ]"
     fi
 }
-
-# Some helper functions for windows
-
-# Run a Powershell command
-rt_ps_cmd() {
-    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -Command "$@"
-}
-
-# Run a Powershell script
-rt_ps_script() {
-    _script=$1
-    shift
-    powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File "$_script" "$@"
-}

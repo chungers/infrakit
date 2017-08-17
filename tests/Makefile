@@ -1,5 +1,5 @@
 NAMESPACE ?= docker4x
-IMAGE= $(NAMESPACE)/rtf
+IMAGE := $(NAMESPACE)/rtf
 DOCKER := /usr/bin/docker
 DOCKER_SOCK := /var/run/docker.sock
 RUN_RTF := docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) -t $(IMAGE)
