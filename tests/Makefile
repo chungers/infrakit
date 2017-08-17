@@ -1,4 +1,3 @@
-
 NAMESPACE ?= docker4x
 DOCKER := /usr/bin/docker
 DOCKER_SOCK := /var/run/docker.sock
@@ -18,3 +17,4 @@ run-vvv: build
 
 clean:
 	find . -name "*~" -type f -delete
+

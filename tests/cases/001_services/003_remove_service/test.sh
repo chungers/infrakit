@@ -1,6 +1,8 @@
 #!/bin/sh
 
+
 # Check to make sure a service can be removed properly
+
 set -e
 
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"

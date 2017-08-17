@@ -15,6 +15,7 @@ For a full user guide refer to [USER_GUIDE.md](https://github.com/linuxkit/rtf/b
 The user guide provides more information about using labels for fine grain run control, describes general test writing guidelines, as well as additional features. 
 
 ### Quick Run
+
 All the test will be in an easy to use container. To run the tests simply run:
 ```
 docker container run -v /usr/bin/docker:/usr/bin/docker -v /var/run/docker.sock:/var/run/docker.sock corbincoleman/rtf run
@@ -26,3 +27,5 @@ docker container run -v /usr/bin/docker:/usr/bin/docker -v /var/run/docker.sock:
 
 ### Deployment
 The set of test cases will be deployed from within one of the corresponding end to end test frameworks from within a container 
+Once installed to run a set of tests use `rtf run`
+
