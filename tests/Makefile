@@ -1,3 +1,4 @@
+
 NAMESPACE := corbincoleman
 DOCKER := /usr/bin/docker
 DOCKER_SOCK := /var/run/docker.sock
@@ -6,7 +7,7 @@ push: build
 	docker image push $(NAMESPACE)/rtf
 
 build:
-	docker build -t $(NAMEPSACE)/rtf .
+	docker build -t $(NAMESPACE)/rtf .
 
 run:
 	docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) $(NAMESPACE)/rtf run
