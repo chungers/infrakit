@@ -48,40 +48,6 @@ if [[ "$INSTALL_DDC" != "yes" ]] ; then
   exit 0
 fi
 
- 
-echo "Wait until Resource Group is complete"
-# Login via the service principal
-azure login -u "${APP_ID}" -p "${APP_SECRET}" --service-principal --tenant "${TENANT_ID}"
-if [[ $? -ne 0 ]]
-then
-  exit 0
-fi
-
-echo "Set the active subscription to: $ACCOUNT_ID"
-azure account set $ACCOUNT_ID
-
-COUNTER=0
-while :
-do
-  provisioning_state=$(azure group deployment list ${GROUP_NAME} --json | jq -r '.[0] | .properties.provisioningState')
-  if [ "$provisioning_state" == "Succeeded" ]
-  then
-    break
-  elif [ "$provisioning_state" == "Failed" ]
-  then
-    echo "Resource group provisioning failed"
-    exit 0
-  fi
-  echo "."
-  COUNTER=$((COUNTER + 1))
-  if [ $COUNTER -gt 10000 ]
-  then
-    echo "Resource group setup status unknown"
-    exit 0
-  fi
-done
-echo "Resource Group is complete, time to proceed."
-
 if [[ "${UCP_ORG}" == "dockerorcadev" ]] ; then
     IMAGE_LIST_ARGS="--image-version=dev:"
 fi
