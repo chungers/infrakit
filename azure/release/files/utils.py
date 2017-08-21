@@ -20,6 +20,8 @@ ARM_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 ARM_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
 EDITIONS_COMMIT = os.getenv('EDITIONS_COMMIT',"unknown-editions-commit")
 JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
+UCP_TAG = os.getenv('UCP_TAG',"2.2.0")
+DTR_TAG = os.getenv('DTR_TAG',"2.3.0")
 
 
 
@@ -342,8 +344,8 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
             "lbDTRFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/dtrlbfrontend')]",
             "lbDTRName": "dtrLoadBalancer",
-            "ucpTag": "2.1.5",
-            "dtrTag": "2.2.7",
+            "ucpTag": UCP_TAG,
+            "dtrTag": DTR_TAG,
             "lbDTRPublicIPAddressName": "[concat(variables('basePrefix'), '-', variables('lbDTRName'),  '-public-ip')]",
             "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
             "ucpLbPublicIpDnsName": "[concat('ucplb-', variables('groupName'))]",

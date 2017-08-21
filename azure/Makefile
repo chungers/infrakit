@@ -104,6 +104,8 @@ release:
 		-e UPLOAD_S3_SECRET="${AWS_STAGE_SECRET_ACCESS_KEY}" \
 		-e EDITIONS_COMMIT=${EDITIONS_COMMIT}/${BUILD_NUMBER} \
 		-e JENKINS_BUILD=${BUILD_NUMBER} \
+		-e UCP_TAG \
+		-e DTR_TAG \
 		-v ${ROOT_DIR}/dist/:/home/docker/dist/ \
 		azure-release \
 		--upload \

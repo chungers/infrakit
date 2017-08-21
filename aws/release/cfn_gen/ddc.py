@@ -9,10 +9,10 @@ from sections import resources
 from sections import parameters
 from sections import constants
 
-DTR_TAG = '2.2.7'
-UCP_TAG = '2.1.5'
 UCP_INIT_TAG = getenv('UCP_INIT_TAG', '17.06.1-ce-aws1')
 DTR_INIT_TAG = getenv('DTR_INIT_TAG', '17.06.1-ce-aws1')
+UCP_TAG = getenv('UCP_TAG',"2.2.0")
+DTR_TAG = getenv('DTR_TAG',"2.3.0")
 
 
 class DDCVPCTemplate(DockerEEVPCTemplate):
