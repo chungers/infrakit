@@ -29,7 +29,7 @@ AZURE_PLATFORMS = {
         "RESOURCE_MANAGER_ENDPOINT"         : u"https://management.usgovcloudapi.net/",
         "ACTIVE_DIRECTORY_ENDPOINT"         : u"https://login.microsoftonline.com/",
         "SERVICE_MANAGEMENT_ENDPOINT"       : u"https://management.core.usgovcloudapi.net/",
-        "RESOURCE_MANAGER_VM_SUFFIX"        : u"cloudapp.windowsazure.us"
+        "RESOURCE_MANAGER_VM_SUFFIX"        : u"cloudapp.usgovcloudapi.net"
     }
     # add more configs for Azure platforms like China, Germany, etc. Refer to:
     # https://github.com/Azure/go-autorest/blob/master/autorest/azure/environments.go
@@ -120,7 +120,8 @@ def main():
                         platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
                         platform_config['RESOURCE_MANAGER_ENDPOINT'], platform_config['STORAGE_BLOB_SUFFIX'], 
                         platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
-                        platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
+                        platform_config['SERVICE_MANAGEMENT_ENDPOINT'],
+                        platform_config['RESOURCE_MANAGER_VM_SUFFIX'])
 
         ee_template_name = u"Docker-EE{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'base'
@@ -129,7 +130,8 @@ def main():
                         platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
                         platform_config['RESOURCE_MANAGER_ENDPOINT'], platform_config['STORAGE_BLOB_SUFFIX'], 
                         platform_config['STORAGE_ENDPOINT'], platform_config['ACTIVE_DIRECTORY_ENDPOINT'],
-                        platform_config['SERVICE_MANAGEMENT_ENDPOINT'])
+                        platform_config['SERVICE_MANAGEMENT_ENDPOINT'],
+                        platform_config['RESOURCE_MANAGER_VM_SUFFIX'])
 
         if platform_config['PUBLIC_PLATFORM']:
             cloud_template_name = u"Docker-Cloud{}".format(platform_config['TEMPLATE_SUFFIX'])

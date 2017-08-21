@@ -228,6 +228,7 @@
     "vmssName": "swarm-worker-vmss",
     "lbSSHName": "externalSSHLoadBalancer",
     "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
+    "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
     "lbSSHBackendAddressPoolID": "[concat(variables('lbSSHID'),'/backendAddressPools/default')]",
     "lbSSHFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/default')]",
     "lbSSHNATPoolID": "[concat(variables('lbSSHID'),'/inboundNatPools/default')]",
@@ -522,6 +523,9 @@
       "name": "[variables('lbPublicIPAddressName')]",
       "location": "[variables('storageLocation')]",
       "properties": {
+        "dnsSettings": {
+            "domainNameLabel": "[variables('lbPublicIpDnsName')]"
+        },
         "publicIPAllocationMethod": "Static"
       },
       "tags": {
@@ -643,6 +647,10 @@
     "DefaultDNSTarget": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
+    },
+    "AppURL": {
+      "type": "String",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).dnsSettings.fqdn)]"
     },
     "SSH Targets": {
       "type": "string",

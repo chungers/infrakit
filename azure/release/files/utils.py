@@ -112,7 +112,7 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
                         docker_for_azure_version, edition_addon, arm_template,
                         arm_template_name, public_platform, portal_endpoint, 
                         resource_mgr_url, storage_suffix, storage_endpoint, 
-                        active_dir_url, svc_mgmt_url):
+                        active_dir_url, svc_mgmt_url, resource_mgr_vm_suffix):
     # check if file exists before opening.
     flat_edition_version = docker_for_azure_version.replace(" ", "").replace("_", "").replace("-", "")
     flat_edition_version_upper = flat_edition_version.capitalize()
@@ -142,6 +142,12 @@ def create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_v
         custom_data = buildCustomData('custom-data.sh')
 
     data['variables']['customData'] = '[concat(' + ', '.join(custom_data) + ')]'
+    variables = data.get('variables')
+    if variables:
+        new_variables = {
+            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]"
+        }
+        variables.update(new_variables)
     
     outdir = u"dist/azure/{}/{}".format(release_channel, docker_for_azure_version)
     # if the directory doesn't exist, create it.
@@ -342,7 +348,6 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
             "ucpLbPublicIpDnsName": "[concat('ucplb-', variables('groupName'))]",
             "dtrLbPublicIpDnsName": "[concat('dtrlb-', variables('groupName'))]",
-            "extlbname": "[concat(variables('lbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]",
             "ucplbname": "[concat(variables('ucpLbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]",
             "dtrlbname": "[concat(variables('dtrLbPublicIpDnsName'), '.', variables('storageLocation'), '.', '" + resource_mgr_vm_suffix + "')]",
             "lbpublicIPAddress1": "[resourceId('Microsoft.Network/publicIPAddresses',variables('lbSSHPublicIPAddressName'))]",
