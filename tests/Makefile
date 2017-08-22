@@ -11,10 +11,7 @@ build:
 	docker build -t $(IMAGE) .
 
 run: build
-	$(RUN_RTF)
-
-run-tests: build
-	$(RUN_RTF) run
+	$(RUN_RTF) run -v
 
 run-verbose: build
 	$(RUN_RTF) -vvv run
