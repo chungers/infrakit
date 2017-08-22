@@ -651,7 +651,7 @@
     },
     "AppURL": {
       "type": "String",
-      "value": "[concat('http://', reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).dnsSettings.fqdn)]"
+      "value": "[concat(reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).dnsSettings.fqdn)]"
     },
     "SSH Targets": {
       "type": "string",
