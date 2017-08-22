@@ -58,7 +58,7 @@ if [[ "$REGISTRY_PASSWORD" != "" ]] ; then
 fi
 
 #Download Docker UCP images
-images=$(docker run --label com.docker.editions.system --rm $UCP_IMAGE images --list $IMAGE_LIST_ARGS)
+images=$(docker run --label com.docker.editions.system --rm ${UCP_IMAGE} images --list $IMAGE_LIST_ARGS)
 for im in $images; do
     docker pull $im
 done
@@ -322,10 +322,10 @@ if [[ "$IS_LEADER" == "true" ]] && [[ "$IS_UCP_RUNNING" == "false" ]]  ; then
     echo "Run the UCP install script" 
     if [[ ${IS_VALID_LICENSE} -eq 1 ]];
     then 
-      docker run --label com.docker.editions.system --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock "$UCP_IMAGE" install --controller-port $UCP_HTTPS_PORT --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+      docker run --label com.docker.editions.system --rm --name ucp -v /tmp/docker/docker_subscription.lic:/config/docker_subscription.lic -v /var/run/docker.sock:/var/run/docker.sock ${UCP_IMAGE} install --controller-port $UCP_HTTPS_PORT --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
       echo "Finished installing UCP with license"
     else
-      docker run --label com.docker.editions.system --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock ${HUB_NAMESPACE}/ucp:${HUB_TAG} install --controller-port $UCP_HTTPS_PORT --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
+      docker run --label com.docker.editions.system --rm --name ucp -v /var/run/docker.sock:/var/run/docker.sock ${UCP_IMAGE} install --controller-port $UCP_HTTPS_PORT --san "$UCP_ELB_HOSTNAME" --external-service-lb "$APP_ELB_HOSTNAME" --admin-username "$UCP_ADMIN_USER" --admin-password "$UCP_ADMIN_PASSWORD" $IMAGE_LIST_ARGS
       echo "Finished installing UCP without license. Please upload your license in UCP and DTR UI. "
     fi
   else
