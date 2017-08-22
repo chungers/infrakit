@@ -1,6 +1,7 @@
 #!/bin/sh
+# SUMMARY: Check that all nodes are active by default
+# LABELS:
 
-# Check that all nodes are active by default
 set -e
 
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"

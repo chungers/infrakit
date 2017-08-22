@@ -1,6 +1,6 @@
 #!/bin/sh
-# Summary: Create a container from a docker file, and ensure it runs as expected 
-# Labels:
+# SUMMARY: Create a container from a docker file, and ensure it runs as expected
+# LABELS:
 
 set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
@@ -8,7 +8,7 @@ set -e
 IMAGE="test_container"
 
 clean_up() {
-docker rmi -f  $IMAGE 
+    docker rmi -f  $IMAGE 
 }
 trap clean_up EXIT
 

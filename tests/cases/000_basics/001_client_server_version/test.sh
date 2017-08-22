@@ -1,4 +1,6 @@
 #!/bin/sh
+# SUMMARY: Checks that the server and client Docker versions match
+# LABELS:
 
 set -e
 

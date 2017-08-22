@@ -1,7 +1,7 @@
 #!/bin/sh
+# SUMMARY: Create a basic service with only 1 replica
+# LABELS:
 
-
-# Create a basic service with only 1 replica
 set -e
 
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"

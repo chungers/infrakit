@@ -1,7 +1,6 @@
 #!/bin/sh
-
-
-# Check to make sure a service can be removed properly
+# SUMMARY: Check to make sure a service can be removed properly
+# LABELS:
 
 set -e
 
@@ -14,6 +13,6 @@ docker service create --detach=false --name "${NAME}" nginx
 docker service remove "${NAME}"
 
 # Check that there are no services running
-docker service ls | tail +2 | assert_empty
+docker service ls | grep "${NAME}" | assert_empty
 
 exit 0

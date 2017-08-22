@@ -1,6 +1,7 @@
 #!/bin/sh
+# SUMMARY: Check that the correct number of replicas are created
+# LABELS:
 
-# Make sure that the correct number of replicas were created
 set -e
 
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"

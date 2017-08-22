@@ -1,7 +1,6 @@
-#/bin/sh
-# Summary: Creates a service without an exposed port. Exposes a port and verifies that the service has that port exposed
-# Lables:
-
+#!/bin/sh
+# SUMMARY: Creates a service without an exposed port. Exposes a port and verifies that the service has that port exposed
+# LABELS:
 
 REPS=3
 NAME="ping3"
@@ -11,7 +10,7 @@ set -e
 
 
 clean_up() {
-docker service rm "${NAME}" || true
+    docker service rm "${NAME}" || true
 }
 trap clean_up EXIT
 

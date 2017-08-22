@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:3.6
 
 RUN apk add --update bash && rm -rf /var/cache/apk/*
 COPY test_file /usr/bin/test_file
