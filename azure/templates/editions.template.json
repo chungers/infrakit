@@ -213,6 +213,7 @@
       "version": "[variables('imageVersion')]"
     },
     "apiVersion": "2016-03-30",
+    "vmssApiVersion": "2017-03-30",
     "accountID": "[subscription().subscriptionId]",
     "groupName": "[resourceGroup().name]",
     "managerCount": "[parameters('managerCount')]",
@@ -324,7 +325,7 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "[variables('vmssApiVersion')]",
       "dependsOn": [
         "[variables('vnetID')]",
         "[variables('lbSSHID')]",
@@ -421,7 +422,7 @@
       "type": "Microsoft.Compute/virtualMachineScaleSets"
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "[variables('vmssApiVersion')]",
       "type": "Microsoft.Compute/virtualMachineScaleSets",
       "name": "[variables('vmssName')]",
       "location": "[variables('storageLocation')]",
