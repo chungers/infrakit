@@ -8,7 +8,7 @@ push: build
 	docker image push $(IMAGE)
 
 build:
-	docker build -t $(IMAGE) .
+	docker build --build-arg DOCKER_VERSION=$(DOCKER_VERSION) -t $(IMAGE) .
 
 run: build
 	$(RUN_RTF) run -v

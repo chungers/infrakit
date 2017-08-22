@@ -11,6 +11,9 @@ FROM alpine:latest
 
 COPY --from=0 /go/bin/rtf /usr/local/bin
 
+ARG DOCKER_VERSION
+ENV EXPECTED_VERSION ${DOCKER_VERSION}
+
 RUN mkdir -p /tests/cases
 COPY cases /tests/cases
 WORKDIR /tests/

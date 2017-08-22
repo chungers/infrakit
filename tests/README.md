@@ -15,15 +15,13 @@ For a full user guide refer to [USER_GUIDE.md](https://github.com/linuxkit/rtf/b
 The user guide provides more information about using labels for fine grain run control, describes general test writing guidelines, as well as additional features. 
 
 ### Quick Run
-The container runs `rtf help` standard and can be run like so:
+The tests only need to have a `DOCKER_VERSION` specified for them to run properly. It can be specified when using `make` to run the container.
 ```
-make run
+make run DOCKER_VERSION='your docker version'
 ```
-All the test will be in an easy to use container. To run the tests simply run:
+Making sure that `DOCKER_VERSION` is specified only effects the `expected_version` test. All other tests will run properly if this is left out from the `make` command. Adding the `DOCKER_VERSION` to the `make` command will use the variable as a `build ARG` when building the container. The `build ARG` is saved in the container in an environment variable called `EXPECTED_VERSION`.
+
+The tests can also be run with more verbose output. This will display all commands, stdout, and stderr messages ran/displayed while running each of the tests.
 ```
-make run-tests
-```
-It can also be run with more verbose output
-```
-make run-verbose
+make run-verbose DOCKER_VERSION='your docker version'
 ```
