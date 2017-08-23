@@ -2,6 +2,7 @@ NAMESPACE ?= docker4x
 IMAGE := $(NAMESPACE)/rtf
 DOCKER := /usr/bin/docker
 DOCKER_SOCK := /var/run/docker.sock
+DOCKER_VERSION ?= 17.06.1-ce
 RUN_RTF := docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) -t $(IMAGE)
 
 push: build
@@ -11,7 +12,7 @@ build:
 	docker build --build-arg DOCKER_VERSION=$(DOCKER_VERSION) -t $(IMAGE) .
 
 run: build
-	$(RUN_RTF) run -v
+	$(RUN_RTF) -v run
 
 run-verbose: build
 	$(RUN_RTF) -vvv run

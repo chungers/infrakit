@@ -15,7 +15,7 @@ For a full user guide refer to [USER_GUIDE.md](https://github.com/linuxkit/rtf/b
 The user guide provides more information about using labels for fine grain run control, describes general test writing guidelines, as well as additional features. 
 
 ### Quick Run
-The tests only need to have a `DOCKER_VERSION` specified for them to run properly. It can be specified when using `make` to run the container.
+The tests only need to have a `DOCKER_VERSION` specified for them to run properly. It can be specified when using `make` to run the container. If no `DOCKER_VERSION` is specified it will default to using `17.06.1-ce`.
 ```
 make run DOCKER_VERSION='your docker version'
 ```
