@@ -235,6 +235,7 @@ clean:
 	$(call clean_plugin_tool)
 
 deepclean: clean
+	-docker run --rm -v ${CURDIR}/dist/:/data -e UID=$(shell id -u) alpine sh -c 'chmod ugo+rw -R -v /data/; chown $${UID}:$${UID} -v -R /data/'
 	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
 	rm -f $(AZURE_TARGET_PATH)/*.tar
