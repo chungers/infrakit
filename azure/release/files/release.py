@@ -47,12 +47,6 @@ def main():
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
-    parser.add_argument('-u', '--channel_cloud',
-                        dest='channel_cloud', default="alpha",
-                        help="Cloud release channel (beta, alpha, rc, nightly)")
-    parser.add_argument('--channel_ddc',
-                        dest='channel_ddc', default="alpha",
-                        help="DDC release channel (beta, alpha, rc, nightly)")
     parser.add_argument('--vhd_sku',
                         dest='vhd_sku', default="docker-ce",
                         help="The Azure VHD SKU (i.e. docker-ce)")
@@ -80,8 +74,6 @@ def main():
     args = parser.parse_args()
 
     release_channel = args.channel
-    release_cloud_channel = args.channel_cloud
-    release_ddc_channel = args.channel_cloud
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
@@ -100,8 +92,6 @@ def main():
     image_description = u"The best OS for running Docker, version {}".format(moby_version)
     print("\n Variables")
     print(u"release_channel={}".format(release_channel))
-    print(u"release_cloud_channel={}".format(release_cloud_channel))
-    print(u"release_ddc_channel={}".format(release_ddc_channel))
     print(u"docker_version={}".format(docker_version))
     print(u"docker_for_azure_version={}".format(docker_for_azure_version))
     print(u"edition_addon={}".format(edition_addon))
@@ -136,7 +126,7 @@ def main():
         if platform_config['PUBLIC_PLATFORM']:
             cloud_template_name = u"Docker-Cloud{}".format(platform_config['TEMPLATE_SUFFIX'])
             edition_addon = 'cloud'
-            cloud_url = create_rg_cloud_template(release_cloud_channel, docker_version,
+            cloud_url = create_rg_cloud_template(release_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url,
                                  platform_config['STORAGE_BLOB_SUFFIX'],
                                  platform_config['PORTAL_ENDPOINT'],
@@ -144,7 +134,7 @@ def main():
 
         ddc_template_name = u"Docker-DDC{}".format(platform_config['TEMPLATE_SUFFIX'])
         edition_addon = 'ddc'
-        ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_ddc_channel, docker_version,
+        ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url, ddc_template_name, 
                                  platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
                                  platform_config['RESOURCE_MANAGER_ENDPOINT'], platform_config['STORAGE_BLOB_SUFFIX'], 

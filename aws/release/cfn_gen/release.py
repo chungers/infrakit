@@ -30,9 +30,6 @@ def main():
     parser.add_argument('-c', '--channel',
                         dest='channel', default="beta",
                         help="release channel (beta, alpha, rc, nightly)")
-    parser.add_argument('-u', '--channel_cloud',
-                        dest='channel_cloud', default="alpha",
-                        help="DDC release channel (beta, alpha, rc, nightly)")
     parser.add_argument('-l', '--account_list_url',
                         dest='account_list_url', default=ACCOUNT_LIST_FILE_URL,
                         help="The URL for the aws account list for ami approvals")
@@ -56,7 +53,6 @@ def main():
     args = parser.parse_args()
 
     release_channel = args.channel
-    release_cloud_channel = args.channel_cloud
     docker_version = args.docker_version
     # TODO change to something else? where to get moby version?
     moby_version = docker_version
@@ -160,13 +156,13 @@ def main():
     cloud_cfn_name = "{}-Cloud".format(cfn_name)
     edition_addon = 'cloud'
     cloud_url = create_cfn_template(CloudVPCTemplate, ami_list,
-                                       release_cloud_channel,
+                                       release_channel,
                                        docker_version, docker_for_aws_version, 
                                        edition_addon, cloud_cfn_name)
 
     cloud_no_vpc_cfn_name = "{}-Cloud-no-vpc".format(cfn_name)
     cloud_url_no_vpc = create_cfn_template(CloudVPCExistingTemplate,
-                                              ami_list, release_cloud_channel,
+                                              ami_list, release_channel,
                                               docker_version, docker_for_aws_version,
                                               edition_addon, cloud_no_vpc_cfn_name, cfn_type="no-vpc")
 

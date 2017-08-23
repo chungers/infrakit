@@ -309,25 +309,25 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     parameters = data.get('parameters')
     if parameters:
         new_parameters = {
-            "DDCUsername": {
+            "ddcUsername": {
                 "defaultValue": "admin",
                 "type": "String",
                 "metadata": {
-                    "description": "Please enter the username you want to use for Docker Datacenter."
+                    "description": "Please enter the username you want to use for Docker Enterprise Edition."
                 }
             },
-            "DDCPassword": {
+            "ddcPassword": {
                 "minLength": 8,
                 "maxLength": 40,
                 "type": "SecureString",
                 "metadata": {
-                    "description": "Please enter the password you want to use for Docker Datacenter."
+                    "description": "Please enter the password you want to use for Docker Enterprise Edition."
                 }
             },
-            "DDCLicense": {
-                "type": "SecureObject",
+            "ddcLicense": {
+                "type": "SecureString",
                 "metadata": {
-                    "description": "Upload your Docker Datacenter License Key"
+                    "description": "Upload your Docker Enterprise Edition License Key"
                 }
             }
         }
@@ -338,9 +338,9 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
     variables = data.get('variables')
     if variables:
         new_variables = {
-            "ddcUser": "[parameters('DDCUsername')]",
-            "ddcPass": "[parameters('DDCPassword')]",
-            "ddcLicense": "[base64(string(parameters('DDCLicense')))]",
+            "ddcUser": "[parameters('ddcUsername')]",
+            "ddcPass": "[parameters('ddcPassword')]",
+            "ddcLicense": "[base64(string(parameters('ddcLicense')))]",
             "DockerProviderTag": "8CF0E79C-DF97-4992-9B59-602DB544D354",
             "lbDTRFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/dtrlbfrontend')]",
             "lbDTRName": "dtrLoadBalancer",
@@ -395,7 +395,8 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
         #  Add Docker Provider tag to all resources
         tag_rule = {
             "tags": {
-                "provider": "[toUpper(variables('DockerProviderTag'))]"
+                "provider": "[toUpper(variables('DockerProviderTag'))]",
+                "channel": "[variables('channel')]"
             }
         }
         val.update(tag_rule)
