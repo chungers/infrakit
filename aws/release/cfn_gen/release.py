@@ -107,7 +107,7 @@ def main():
         else:
             print("Copy AMI to each region..")
             ami_list = copy_amis(args.ami_id, args.ami_src_region,
-                            image_name, image_description, release_channel)
+                            image_name, image_description, release_channel, docker_for_aws_version)
         print(u"AMI copy complete. AMI List: \n{}".format(ami_list))
 
         ami_list_json = json.dumps(ami_list, indent=4, sort_keys=True)

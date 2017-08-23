@@ -85,7 +85,7 @@ def wait_for_ami_to_be_available(conn, ami_id):
     return ami
 
 
-def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, release_channel):
+def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, release_channel, editions_version):
     """ Copy the given AMI to all target regions."""
     ami_list = {}
     for region in REGIONS:
@@ -96,7 +96,7 @@ def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, r
                                name=moby_image_name, description=moby_image_description)
         ami_list[region] = {"HVM64": image.image_id, "HVMG2": "NOT_SUPPORTED"}
 
-        con.create_tags(image.image_id, {'channel': release_channel, 'date': NOW_STRING})
+        con.create_tags(image.image_id, {'channel': release_channel, 'date': NOW_STRING, 'editions_version': editions_version})
 
     return ami_list
 

@@ -13,6 +13,7 @@ PROVIDER="aws"
 . "./common.sh"
 
 export AWS_DEFAULT_REGION=$(current_instance_region)
+arrowecho "CURRENT AWS REGION: $AWS_DEFAULT_REGION"
 
 # TODO(nathanleclaire): This device could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
