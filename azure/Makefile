@@ -115,8 +115,6 @@ release:
 		--vhd_version="$(VHD_VERSION)" \
 		--offer_id="$(VHD_OFFER_ID)" \
 		--channel="$(CHANNEL)" \
-		--channel_cloud="$(CHANNEL)-cloud" \
-		--channel_ddc="$(CHANNEL)-ddc" \
 		--ee_vhd_sku="$(EE_VHD_SKU)" \
 		--ee_vhd_version="$(EE_VHD_VERSION)" \
 		--ee_offer_id="$(EE_OFFER_ID)" \
