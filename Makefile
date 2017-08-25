@@ -96,17 +96,17 @@ tools/awscli/image:
 	$(MAKE) -C tools/awscli
 
 ## Moby targets
-moby/cloud/azure/vhd_blob_url.out: clean moby
+moby/vhd: clean moby
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
-moby/cloud/aws/ami_id.out: clean moby
+moby/ami: clean moby
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
-moby/build/gcp/gce.img.tar.gz: clean moby
+moby/bdi: clean moby
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	$(MAKE) -C moby build/gcp/gce.img.tar.gz
 	$(MAKE) -C gcp save-moby
