@@ -45,7 +45,6 @@ SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
 APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
-DTR_HUB_TAG = os.environ['DTR_HUB_TAG']
 
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
@@ -58,10 +57,8 @@ LAST_MANAGER_NODE_ID = ''
 PRODUCTION_HUB_NAMESPACE = 'docker'
 HUB_NAMESPACE = 'docker'
 
-DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
-DTR_PORT = 443
-UCP_PORT = 8443
-UCP_PORT_LEGACY = 12390
+UCP_HTTPS_PORT = 8443
+UCP_HTTPS_PORT_LEGACY = 12390
 
 RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
 ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
@@ -73,6 +70,8 @@ try:
     UCP_ADMIN_PASSWORD = os.environ['UCP_ADMIN_PASSWORD']
     UCP_ELB_HOSTNAME = os.environ['UCP_ELB_HOSTNAME']
     UCP_LICENSE = os.environ['UCP_LICENSE']
+    DTR_HUB_TAG = os.environ['DTR_HUB_TAG']
+    DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
     HAS_DDC = True
 except:
     pass
@@ -154,7 +153,7 @@ def get_dtr_storage_account(storage_client):
 
 # Checking if UCP is up and running
 def checkUCP(client):
-    global UCP_PORT
+    global UCP_HTTPS_PORT
     LOG.info("Checking to see if UCP is up and healthy")
     n = 0
     while n < 20:
@@ -177,7 +176,7 @@ def checkUCP(client):
                 UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_PORT_LEGACY)
                 try:
                     resp = urllib2.urlopen(UCP_URL)
-                    UCP_PORT = UCP_PORT_LEGACY
+                    UCP_HTTPS_PORT = UCP_HTTPS_PORT_LEGACY
                 except:
                     ALLGOOD = 'no'
             except urllib2.HTTPError, e:
@@ -192,7 +191,7 @@ def checkUCP(client):
             LOG.info("Not all healthy, rest and try again..")
             if n == 20:
                 # this will cause the Autoscale group to timeout, and leave this node in the swarm
-                # it will eventually be killed once the timeout it his. TODO: Do something about this.
+                # it will eventually be killed once the timeout it hits. TODO: Do something about this.
                 LOG.error("UCP failed status check after $n tries. Aborting...")
                 exit(0)
             sleep(30)
