@@ -13,12 +13,14 @@ DEV := 0
 
 AMI_S3_BUCKET := docker-ci-editions
 AMI_S3_PATH := ami
-AMI_SRC_REGION := us-west-2
+
 
 STAGE_S3_BUCKET := editions-stage-us-east-1-150610-005505
 
-ifneq ($(EDITIONS_COMMIT),)
-	AMI_S3_PATH := $(AMI_S3_PATH)/$(EDITIONS_COMMIT)
+ifneq ($(EDITIONS_COMMIT), )
+	ifeq ($(TEST_JENKINS),)
+		AMI_S3_PATH := $(AMI_S3_PATH)/$(EDITIONS_COMMIT)
+	endif
 endif
 
 ifneq ($(JENKINS_BUILD),)
@@ -26,17 +28,14 @@ ifneq ($(JENKINS_BUILD),)
 	AMI_S3_PATH := $(AMI_S3_PATH)/${BUILD_NUMBER}
 endif
 
-ifeq ($(RELEASE),true)
-	MAKE_AMI_PUBLIC = yes
-endif
-
 ifeq ($(AMI_ID),)
-	EDITIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(AMI_S3_BUCKET) --key $(AMI_S3_PATH)/ami_id.out docker.out | jq -r '.Metadata' > metadata.json )
+	# Get Edition MetaData
+	EDITIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(AMI_S3_BUCKET) --key $(AMI_S3_PATH)/$(AMI_OUT) docker.out | jq -r '.Metadata' > metadata.json )
 	EDITIONS_VERSION := $(shell jq -r '.editions_version' metadata.json)
 	DOCKER_VERSION := $(shell jq -r '.docker_version' metadata.json)
 	MOBY_COMMIT := $(shell jq -r '.moby_commit' metadata.json)
 	CHANNEL := $(shell jq -r '.channel' metadata.json)
-	AMI_ID := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${AMI_S3_BUCKET}/${AMI_S3_PATH}/ami_id.out /tmp/ami_id.out && cat /tmp/ami_id.out)
+	AMI_ID := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${AMI_S3_BUCKET}/${AMI_S3_PATH}/$(AMI_OUT) /tmp/ami_id.out && cat /tmp/ami_id.out)
 	AWS_TARGET_PATH = dist/aws/${CHANNEL}/${EDITIONS_VERSION}
 endif
 
@@ -52,7 +51,7 @@ TOOLS := docker4x/tools:latest
 TOOLSRUN := docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY $(TOOLS) python
 
 CFNGEN := docker4x/cfngen:latest
-CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e CHANNEL_CLOUD="${CHANNEL}-cloud" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e EDITIONS_COMMIT=${EDITIONS_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -v ${ROOT_DIR}/dist:/home/docker/dist 
+CFNRUN=docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e DOCKER_VERSION="${DOCKER_VERSION}" -e EDITIONS_VERSION="${EDITIONS_VERSION}" -e UCP_INIT_TAG="${EDITIONS_VERSION}" -e DTR_INIT_TAG="${EDITIONS_VERSION}" -e UCP_TAG -e DTR_TAG -e AMI_ID="${AMI_ID}" -e AMI_SRC_REGION="${AMI_SRC_REGION}" -e CHANNEL="${CHANNEL}" -e AWS_ACCOUNT_LIST_URL="${DOCKER_AWS_ACCOUNT_URL}" -e MAKE_AMI_PUBLIC="${MAKE_AMI_PUBLIC}" -e EE="${EE}" -e EDITIONS_COMMIT=${EDITIONS_COMMIT} -e JENKINS_BUILD=${BUILD_NUMBER} -e TEST_JENKINS=$(TEST_JENKINS) -v ${ROOT_DIR}/dist:/home/docker/dist 
 
 export
 
@@ -73,7 +72,7 @@ clean-stack:
 	aws cloudformation delete-stack --stack-name "$(STACK_NAME)"
 
 release: buildtools
-	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
+	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} - Editions Commit: ${EDITIONS_COMMIT} on CHANNEL: ${CHANNEL}\033[0m"
 ifeq ($(EDITIONS_VERSION),)
 	@echo "\033[31m Error - No version found!!!!!\033[0m"
 	exit 1
@@ -96,6 +95,8 @@ nightly:
 	$(MAKE) test
 	@echo "\033[0;1;34m++ Rebuild the nightly index page.\033[0m"
 	$(TOOLSRUN) build_index.py
+	@echo "\033[0;1;34m++ Notify Slack of the results.\033[0m"
+	$(TOOLSRUN) notify.py
 
 template: buildtools
 	@echo "\033[0;1;34m++ Using bucket: $(AMI_S3_BUCKET) and path of: $(AMI_S3_PATH)/ami_id.out \033[0m"
@@ -104,7 +105,7 @@ template: buildtools
 
 buildtools: clean
 	-mkdir -p tmp/ $(ROOT_DIR)/dist/
-	@echo "\033[0;1;34m+++ Build cfngen image\033[0m"
+	@echo "\033[0;1;34m+++ Build cfngen image - Editions Commit: ${EDITIONS_COMMIT} - from $(AMI_S3_PATH)/$(AMI_OUT) \033[0m"
 	docker build -t $(CFNGEN) -f release/cfn_gen/Dockerfile release/cfn_gen
 	@echo "\033[0;1;34m+++ Build common tools image\033[0m"
 	docker build -t $(TOOLS) -f release/Dockerfile.tools .

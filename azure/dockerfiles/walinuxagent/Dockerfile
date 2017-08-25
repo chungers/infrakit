@@ -1,5 +1,5 @@
-FROM docker4x/shell-aws@sha256:0bb4c4603891bd1128f5eed95467c096de24564a01911d5f53e9a49cc5a76a80
-# Created from aws-v1.13.0-1 tag
+FROM docker4x/shell-aws:compose@sha256:5e851a3ed38aa2c67244fcfafa4b4d9fae035bf73e8b7384f4c4fecc8e42cb64
+# Created from aws shell tag
 
 RUN apk add --no-cache --update \
         sfdisk \
@@ -39,7 +39,8 @@ RUN mkdir /daemons && \
     rm /entry.sh && \
     mv /etc/ssl/openssl.cnf /opt/openssl.cnf && \
     mv /etc/ssh/sshd_config /opt/sshd_config && \
-    mv /etc/motd /opt/motd
+    mv /etc/motd /opt/motd && \
+    cp /etc/logrotate.d/waagent.logrotate /opt/waagent.logrotate
 
 COPY /walinuxagent-entrypoint.sh /daemons/walinuxagent-entrypoint.sh
 COPY /supervisord.conf /opt/supervisord.conf

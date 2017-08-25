@@ -21,6 +21,7 @@ CFN_AWS_ACCESS_KEY_ID = os.getenv('UPLOAD_S3_KEY', AWS_ACCESS_KEY_ID)
 CFN_AWS_SECRET_ACCESS_KEY = os.getenv('UPLOAD_S3_SECRET', AWS_SECRET_ACCESS_KEY)
 EDITIONS_COMMIT = os.getenv('EDITIONS_COMMIT',"unknown-editions-commit")
 JENKINS_BUILD = os.getenv('JENKINS_BUILD',"unknown-jenkins-build")
+TEST_JENKINS = os.getenv('TEST_JENKINS', None)
 
 
 # file with list of aws account_ids
@@ -84,7 +85,7 @@ def wait_for_ami_to_be_available(conn, ami_id):
     return ami
 
 
-def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, release_channel):
+def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, release_channel, editions_version):
     """ Copy the given AMI to all target regions."""
     ami_list = {}
     for region in REGIONS:
@@ -95,7 +96,7 @@ def copy_amis(ami_id, ami_src_region, moby_image_name, moby_image_description, r
                                name=moby_image_name, description=moby_image_description)
         ami_list[region] = {"HVM64": image.image_id, "HVMG2": "NOT_SUPPORTED"}
 
-        con.create_tags(image.image_id, {'channel': release_channel, 'date': NOW_STRING})
+        con.create_tags(image.image_id, {'channel': release_channel, 'date': NOW_STRING, 'editions_version': editions_version})
 
     return ami_list
 
@@ -116,7 +117,11 @@ def get_account_list(account_file_url):
 
 def generate_ami_list_url():
     s3_host_name = u"https://{}.s3.amazonaws.com".format(S3_BUCKET_NAME)
-    s3_path = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
+    print("Checking tests: {}".format(TEST_JENKINS))
+    if TEST_JENKINS:
+        s3_path = u"ami/ami_list.json"
+    else:
+        s3_path = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
     return u"{}/{}".format(s3_host_name, s3_path)
 
 def get_ami_list(ami_list_url):
@@ -125,6 +130,13 @@ def get_ami_list(ami_list_url):
     response = urllib2.urlopen(ami_list_url)
     return json.load(response)
 
+def set_ee_ami_list(ami_id, ami_src_region=None):
+    if not ami_src_region:
+        ami_src_region = "us-east-1"
+    """ Given an ami for EE generate only 1 region for AMI """
+    response = {ami_src_region: { "HVM64": ami_id, "HVMG2": "NOT_SUPPORTED"}}
+    # return object not a string
+    return response
 
 def approve_accounts(ami_list, account_list):
     """ TODO: What happens if one of the accounts isn't valid. Should we have an AccountID
@@ -133,7 +145,6 @@ def approve_accounts(ami_list, account_list):
     """
     slice_count = 100
     for ami in ami_list:
-        print(u"Approve accounts for AMI: {}".format(ami))
         region = ami
         ami_id = ami_list.get(region).get('HVM64')
         print(u"Approve accounts for AMI: {} ; Region: {} ".format(ami_id, region))
@@ -204,6 +215,13 @@ def upload_ami_list(ami_list_json, editions_version, docker_version, release_cha
 
     # upload to Jenkins build as well
     s3_path_latest = AMI_LIST_PATH.format(EDITIONS_COMMIT,'')
+    print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
+    srckey = bucket.get_key(s3_path)
+    dstkey = bucket.new_key(s3_path_latest)
+    srckey.copy(S3_BUCKET_NAME, dstkey, preserve_acl=True, validate_dst_bucket=True)
+
+    # upload to latest endpoint as well
+    s3_path_latest = u"ami/ami_list.json"
     print(u"Copy AMI list from {} to {} s3 bucket".format(s3_path, s3_path_latest))
     srckey = bucket.get_key(s3_path)
     dstkey = bucket.new_key(s3_path_latest)

@@ -17,5 +17,6 @@ export PYTHONUNBUFFERED=1
 python /home/docker/release.py --docker_version="$DOCKER_VERSION" \
     --editions_version="$EDITIONS_VERSION" --ami_id="$AMI_ID" \
     --ami_src_region="$AMI_SRC_REGION" --channel="$CHANNEL" \
-    --channel_cloud="$CHANNEL_CLOUD" --account_list_url="$AWS_ACCOUNT_LIST_URL" \
-    --public="$MAKE_AMI_PUBLIC" $FLAGS
+    --account_list_url="$AWS_ACCOUNT_LIST_URL" \
+    --public="$MAKE_AMI_PUBLIC" --enterprise="$EE" \
+    $FLAGS

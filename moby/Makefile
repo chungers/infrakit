@@ -1,18 +1,7 @@
+include ../Makefile.variable
+
 ## Env vars
 FORCE_GSUTIL_AUTH ?= 0
-
-ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
-	MOBY_IMG_NAME := mobylinux-ee.tgz
-	AMI_OUT := ami_id_ee.out
-	LOAD_IMAGES := true
-	VHD_OUT := vhd_ee_blob_url.out
-	BDI_OUT := bdi_ee_url.out
-else
-	MOBY_IMG_NAME := mobylinux-ce.tgz
-	AMI_OUT := ami_id.out
-	VHD_OUT := vhd_blob_url.out
-	BDI_OUT := bdi_url.out
-endif
 
 MOBY_IMG_URL := s3://moby-ci-artifacts/ci.qa.aws.dckr.io/${MOBY_COMMIT}/${MOBY_IMG_NAME}
 REGEXTRACT_IMAGE=docker4x/regextract@sha256:a843d793ba6b83d4bb7d68102ca2c7dba0f985330581224e9afeacdbbf76b8db
@@ -46,8 +35,8 @@ define push_to_s3
 		s3://docker-ci-editions/$(2)/${EDITIONS_COMMIT}/$(3) \
 		--acl public-read \
 		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},editions_commit=$(EDITIONS_COMMIT),jenkins_build=$(BUILD_NUMBER)
-	# Update the latest endpoint for nightly
-	@if [ "${RELEASE}" = true ]; then \
+	# Update the latest endpoint for nightly and tests
+	@if [ "${EE}" = "no" ]; then \
 		docker run --rm \
 			-v $(CURDIR)/cloud/$(1):/tmp \
 			-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \

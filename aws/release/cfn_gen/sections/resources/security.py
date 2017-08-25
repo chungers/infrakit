@@ -120,6 +120,9 @@ def add_resource_manager_security_group(template, use_ssh_cidr=False):
                 ToPort='22',
                 CidrIp=ssh_cidr),
             SecurityGroupRule(
+                IpProtocol='50',
+                SourceSecurityGroupId=GetAtt("NodeVpcSG", "GroupId")),
+            SecurityGroupRule(
                 IpProtocol='tcp',
                 FromPort='2377',
                 ToPort='2377',
@@ -198,6 +201,9 @@ def add_resource_worker_security_group(template, create_vpc):
                 ToPort='0',
                 CidrIp="0.0.0.0/0"),
             SecurityGroupRule(
+                IpProtocol='50',
+                CidrIp="0.0.0.0/0"),
+            SecurityGroupRule(
                 IpProtocol='udp',
                 FromPort='0',
                 ToPort='65535',
@@ -246,6 +252,26 @@ def add_resource_ddc_ucp_lb_sg(template, create_vpc):
         "UCPLoadBalancerSG",
         VpcId=Ref("Vpc"),
         GroupDescription="UCP Load Balancer SecurityGroup",
+        SecurityGroupIngress=[SecurityGroupRule(
+            IpProtocol='tcp',
+            FromPort='443',
+            ToPort='443',
+            CidrIp="0.0.0.0/0",
+        )]
+    )
+    # have to do this, because DependsOn can't be None or ""
+    if create_vpc:
+        sg.DependsOn = "Vpc"
+    template.add_resource(sg)
+
+def add_resource_ddc_dtr_lb_sg(template, create_vpc):
+    """
+        DTR LB security group
+    """
+    sg = SecurityGroup(
+        "DTRLoadBalancerSG",
+        VpcId=Ref("Vpc"),
+        GroupDescription="DTR Load Balancer SecurityGroup",
         SecurityGroupIngress=[SecurityGroupRule(
             IpProtocol='tcp',
             FromPort='443',

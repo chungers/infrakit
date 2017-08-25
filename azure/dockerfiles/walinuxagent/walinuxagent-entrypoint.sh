@@ -8,6 +8,7 @@ cp /opt/waagent.conf /etc/waagent.conf
 cp /opt/sshd_config /etc/ssh/sshd_config
 cp /opt/openssl.cnf /etc/ssl/openssl.cnf
 cp /opt/motd /etc/motd
+cp /opt/waagent.logrotate /etc/logrotate.d/waagent.logrotate
 
 # TODO: Maybe this would be better done somewhere else, but this will get the
 # job done for now.

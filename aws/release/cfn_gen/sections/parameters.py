@@ -105,11 +105,13 @@ def add_parameter_manager_disk_size(template):
     return ('ManagerDiskSize', {"default": "Manager ephemeral storage volume size?"})
 
 
-def add_parameter_manager_disk_type(template):
+def add_parameter_manager_disk_type(template, default_disk_type=None):
+    if not default_disk_type:
+        default_disk_type = 'standard'
     template.add_parameter(Parameter(
         'ManagerDiskType',
         Type='String',
-        Default='standard',
+        Default=default_disk_type,
         AllowedValues=["standard", "gp2"],
         Description="Manager ephemeral storage volume type"))
     return ('ManagerDiskType', {"default": "Manager ephemeral storage volume type"})
@@ -145,3 +147,15 @@ def add_parameter_enable_cloudstor_efs(template):
         AllowedValues=["no", "yes"],
         Description="Create CloudStor EFS mount targets"))
     return ('EnableCloudStorEfs', {"default": "Create EFS prerequsities for CloudStor?"})
+
+
+def add_parameter_enable_ebs_optimized(template, default=None):
+    if not default:
+        default = 'no'
+    template.add_parameter(Parameter(
+        'EnableEbsOptimized',
+        Type='String',
+        Default=default,
+        AllowedValues=["no", "yes"],
+        Description="Specifies whether the launch configuration is optimized for EBS I/O"))
+    return ('EnableEbsOptimized', {"default": "Enable EBS I/O optimization?"})

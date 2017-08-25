@@ -661,3 +661,97 @@ def add_resource_iam_lambda_execution_role(template):
             }]
         },
     ))
+
+
+def add_resource_s3_ddc_bucket_policy(template):
+    """
+    "S3Policies": {
+            "DependsOn": "ProxyRole",
+            "Properties": {
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "s3:ListBucket",
+                                "s3:GetBucketLocation",
+                                "s3:ListBucketMultipartUploads"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        {
+                                            "Ref": "DDCBucket"
+                                        }
+                                    ]
+                                ]
+                            }
+                        },
+                        {
+                            "Action": [
+                                "s3:PutObject",
+                                "s3:GetObject",
+                                "s3:DeleteObject",
+                                "s3:ListMultipartUploadParts",
+                                "s3:AbortMultipartUpload"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        {
+                                            "Ref": "DDCBucket"
+                                        },
+                                        "/*"
+                                    ]
+                                ]
+                            }
+                        }
+                    ],
+                    "Version": "2012-10-17"
+                },
+                "PolicyName": "S3-DDC-Policy",
+                "Roles": [
+                    {
+                        "Ref": "ProxyRole"
+                    }
+                ]
+            },
+            "Type": "AWS::IAM::Policy"
+        }
+    """
+    template.add_resource(PolicyType(
+        "S3Policies",
+        DependsOn="ProxyRole",
+        PolicyName="S3-DDC-Policy",
+        Roles=[Ref("ProxyRole")],
+        PolicyDocument={
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                    "s3:ListBucket",
+                    "s3:GetBucketLocation",
+                    "s3:ListBucketMultipartUploads"
+                ],
+                "Resource": Join(
+                    "", ["arn:aws:s3:::", Ref("DDCBucket")])
+            }, {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:DeleteObject",
+                    "s3:ListMultipartUploadParts",
+                    "s3:AbortMultipartUpload"
+                ],
+                "Resource": Join(
+                    "", ["arn:aws:s3:::", Ref("DDCBucket"), "/*"])
+            }
+            ],
+        }
+    ))

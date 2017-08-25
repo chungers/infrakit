@@ -72,6 +72,7 @@ class AWSBaseTemplate(object):
     def add_conditions(self):
         conditions.add_condition_create_log_resources(self.template)
         conditions.add_condition_hasonly2AZs(self.template)
+        conditions.add_condition_EBSOptimized(self.template)
 
     def add_mapping_version(self):
         mappings.add_mapping_version(
@@ -105,6 +106,10 @@ class AWSBaseTemplate(object):
             parameters.add_parameter_manager_instancetype(
                 self.template))
 
+    def add_parameter_manager_disk_type(self):
+        self.add_to_parameters(
+            parameters.add_parameter_manager_disk_type(self.template))
+
     def add_parameter_manager_cluster_size(self):
         self.add_to_parameters(
             parameters.add_parameter_manager_size(self.template))
@@ -131,12 +136,14 @@ class AWSBaseTemplate(object):
 
         self.add_to_parameters(
             parameters.add_parameter_manager_disk_size(self.template))
-        self.add_to_parameters(
-            parameters.add_parameter_manager_disk_type(self.template))
+        self.add_parameter_manager_disk_type()
 
         self.add_to_parameters(
             parameters.add_parameter_enable_system_prune(self.template))
         self.add_parameter_cloudwatch_logs()
+
+        self.add_to_parameters(
+            parameters.add_parameter_enable_ebs_optimized(self.template))
 
     def add_outputs(self):
         outputs.add_output_managers(self.template)
@@ -304,6 +311,10 @@ class AWSBaseTemplate(object):
         resources.add_resource_manager_autoscalegroup(
             self.template, self.create_vpc, manager_launch_config_name,
             lb_list)
+    
+    def autoscaling_workers(self, worker_launch_config_name):
+        resources.add_resource_worker_autoscalegroup(
+            self.template, worker_launch_config_name)
 
     def autoscaling(self):
         # scaling groups
@@ -320,8 +331,7 @@ class AWSBaseTemplate(object):
         # worker
         worker_launch_config_name = u'NodeLaunchConfig{}'.format(
             self.flat_edition_version_upper)
-        resources.add_resource_worker_autoscalegroup(
-            self.template, worker_launch_config_name)
+        self.autoscaling_workers(worker_launch_config_name)
         resources.add_resource_worker_launch_config(
             self.template, self.worker_userdata(),
             launch_config_name=worker_launch_config_name)

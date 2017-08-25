@@ -23,24 +23,18 @@ templates:
 	$(MAKE) aws-template
 	# $(MAKE) gcp-template
 
-## Container images targets
-dockerimages: clean tools
+e2e:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) dockerimages-aws
-	$(MAKE) dockerimages-azure
-	$(MAKE) dockerimages-gcp
+	$(MAKE) aws-e2e 
+	$(MAKE) azure-e2e 
 
-dockerimages-aws: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AWS_TAG_VERSION}\033[0m"
-	$(MAKE) -C aws/dockerfiles EDITIONS_VERSION=$(AWS_TAG_VERSION)
 
-dockerimages-azure: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AZURE_TAG_VERSION}\033[0m"
-	$(MAKE) -C azure/dockerfiles EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-
-dockerimages-gcp: tools
-	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${GCP_TAG_VERSION}\033[0m"
-	$(MAKE) -C gcp build-cloudstor build-images
+## Container images targets
+dockerimages: deepclean tools
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	$(MAKE) aws-dockerimages
+	$(MAKE) azure-dockerimages
+	$(MAKE) gcp-dockerimages
 
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
@@ -71,6 +65,14 @@ define clean_plugin_tool
 	-rm -Rf azure/dockerfiles/init/bin
 	-rm -Rf azure/dockerfiles/guide/bin
 	-rm -Rf azure/dockerfiles/meta/bin
+	# clean up common files copied
+	-rm -Rf azure/dockerfiles/alb-controller/files/container/bin/
+	-rm -f azure/dockerfiles/ddc-init/files/aztags.py
+	-rm -f azure/dockerfiles/guide/files/aztags.py
+	-rm -f azure/dockerfiles/init/files/aztags.py
+	-rm -f azure/dockerfiles/logger/files/aztags.py
+	-rm -f azure/dockerfiles/lookup/files/aztags.py
+	-rm -f azure/dockerfiles/upgrade/files/aztags.py
 endef
 
 ## General tools targets
@@ -125,7 +127,20 @@ moby:
 	$(MAKE) -C moby all
 
 ## Azure targets 
-azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.out
+azure-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AZURE_TAG_VERSION}\033[0m"
+	$(MAKE) -C azure/dockerfiles EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+
+azure-template:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	# "easy use" alias to generate latest version of template.
+	$(MAKE) $(AZURE_TARGET_TEMPLATE)
+
+azure-release:
+	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
+	$(MAKE) -C azure release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+
+azure-dev: azure azure/editions.json moby/cloud/azure/vhd_blob_url.out-dockerimages
 	# Temporarily going to continue to use azure/editions.json until the
 	# development workflow gets refactored to use only top-level Makefile
 	# for "running" in addition to "compiling".
@@ -133,17 +148,8 @@ azure-dev: dockerimages-azure azure/editions.json moby/cloud/azure/vhd_blob_url.
 	# Until then, 'make dev' in azure/ dir with proper parameters is a good
 	# way to boot the Azure template.
 
-azure-release:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	$(MAKE) -C azure release EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-
 $(AZURE_TARGET_TEMPLATE):
 	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
-
-azure-template:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	# "easy use" alias to generate latest version of template.
-	$(MAKE) $(AZURE_TARGET_TEMPLATE)
 
 azure/editions.json: azure-template
 	cp $(AZURE_TARGET_TEMPLATE) azure/editions.json
@@ -152,24 +158,37 @@ azure-nightly:
 	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C azure nightly
 
-## AWS Targets
-aws-release:
-	@echo "\033[32m+ $@\033[0m"
-	$(MAKE) -C aws release
+azure-e2e:
+	$(MAKE) -C azure/testing
 
-$(AWS_TARGET_TEMPLATE):
-	$(MAKE) -C aws template EDITIONS_VERSION=$(AWS_TAG_VERSION)
+## AWS Targets
+aws-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${AWS_TAG_VERSION}\033[0m"
+	$(MAKE) -C aws/dockerfiles EDITIONS_VERSION=$(AWS_TAG_VERSION)
 
 aws-template:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AWS_TARGET_TEMPLATE)
 
+aws-release:
+	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
+	$(MAKE) -C aws release
+
+$(AWS_TARGET_TEMPLATE):
+	$(MAKE) -C aws template EDITIONS_VERSION=$(AWS_TAG_VERSION)
+
 aws-nightly:
 	@echo "\033[32m+ $@\033[0m"
 	$(MAKE) -C aws nightly
 
+aws-e2e:
+	$(MAKE) -C aws/test
+
 ## GCP Targets
+gcp-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${GCP_TAG_VERSION}\033[0m"
+	$(MAKE) -C gcp build-cloudstor build-images
 
 gcp-template:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
@@ -180,10 +199,7 @@ gcp-release: gcp-template
 	$(MAKE) -C gcp release
 
 
-e2e:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
-	#$(MAKE) -C aws/testing
-	$(MAKE) -C azure/testing
+
 
 ## Golang targets
 # Package list
@@ -213,10 +229,13 @@ clean:
 	$(MAKE) -C tools/cloudstor clean
 	$(MAKE) -C tools/swarm-exec clean
 	$(MAKE) -C moby clean
+	rm -f moby/cloud/azure/$(VHD_OUT)
+	rm -f moby/cloud/aws/$(AMI_OUT)
+	rm -f moby/cloud/gcp/$(BDI_OUT)
+	$(call clean_plugin_tool)
+
+deepclean: clean
+	-docker run --rm -v ${CURDIR}/dist/:/data -e UID=$(shell id -u) alpine sh -c 'chmod ugo+rw -R -v /data/; chown $${UID}:$${UID} -v -R /data/'
 	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
 	rm -f $(AZURE_TARGET_PATH)/*.tar
-	rm -f moby/cloud/azure/vhd_blob_url.out
-	rm -f moby/cloud/aws/ami_id.out
-	rm -f moby/cloud/aws/ami_id_ee.out
-	$(call clean_plugin_tool)

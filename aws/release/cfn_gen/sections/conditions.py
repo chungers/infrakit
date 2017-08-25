@@ -50,3 +50,10 @@ def add_condition_LambdaSupported(template):
             FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "LambdaSupport"),
             "yes")
     )
+
+
+def add_condition_EBSOptimized(template):
+    template.add_condition(
+        "EBSOptimized",
+        Equals(Ref("EnableEbsOptimized"), "yes")
+    )

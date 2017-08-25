@@ -57,6 +57,7 @@ DTR_PARTITION_NAME = 'dtrreplicas'
 LAST_MANAGER_NODE_ID = ''
 PRODUCTION_HUB_NAMESPACE = 'docker'
 HUB_NAMESPACE = 'docker'
+
 DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
 DTR_PORT = 443
 UCP_PORT = 8443
@@ -165,7 +166,7 @@ def checkUCP(client):
             Manager_IP = node['Status']['Addr']
             LOG.info("Manager IP: {}".format(Manager_IP))
             # Checking if UCP is up and running
-            UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_PORT)
+            UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_HTTPS_PORT)
             LOG.info("{}".format(UCP_URL))
             ssl._create_default_https_context = ssl._create_unverified_context
             try:

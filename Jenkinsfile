@@ -10,7 +10,7 @@ wrappedNode(label: "docker-edge && ubuntu && aufs") {
   deleteDir()
   checkout scm
   stage(name: "build JSON templates") {
-    sh("make templates")
+    sh("make templates TEST_JENKINS=true")
   }
   stage(name: "validate json files") {
     withTool("jq@1.5") {

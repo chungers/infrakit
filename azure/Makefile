@@ -84,17 +84,17 @@ ifneq ($(EDITIONS_COMMIT),)
 endif
 
 ifeq ($(VHD_URL),)
-	VHDTIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(VHD_S3_BUCKET) --key $(VHD_S3_PATH)/vhd_blob_url.out docker.out | jq -r '.Metadata' > metadata.json )
+	VHDTIONS_META := $(shell docker run --rm docker4x/awscli:latest s3api --no-sign-request get-object --bucket $(VHD_S3_BUCKET) --key $(VHD_S3_PATH)/$(VHD_OUT) docker.out | jq -r '.Metadata' > metadata.json )
 	EDITIONS_VERSION := $(shell jq -r '.editions_version' metadata.json)
 	DOCKER_VERSION := $(shell jq -r '.docker_version' metadata.json)
 	MOBY_COMMIT := $(shell jq -r '.moby_commit' metadata.json)
 	CHANNEL := $(shell jq -r '.channel' metadata.json)
-	VHD_URL := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${VHD_S3_BUCKET}/${VHD_S3_PATH}/vhd_blob_url.out /tmp/vhd_blob_url.out && cat /tmp/vhd_blob_url.out)
+	VHD_URL := $(shell docker run --rm -v /tmp:/tmp docker4x/awscli:latest s3 --quiet --no-sign-request cp s3://${VHD_S3_BUCKET}/${VHD_S3_PATH}/$(VHD_OUT) /tmp/vhd_blob_url.out && cat /tmp/vhd_blob_url.out)
 	AZURE_TARGET_PATH = dist/azure/${CHANNEL}/${EDITIONS_VERSION}
 endif
 
 release:
-	@echo "\033[0;1;34m++ Create Azure release of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
+	@echo "\033[0;1;34m++ Create Azure release of EDITIONS_VERSION: ${EDITIONS_VERSION} - Editions Commit: ${EDITIONS_COMMIT} on CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C release build
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
@@ -102,8 +102,10 @@ release:
 		-e UPLOAD_S3_BUCKET="${STAGE_S3_BUCKET}" \
 		-e UPLOAD_S3_KEY="${AWS_STAGE_ACCESS_KEY_ID}" \
 		-e UPLOAD_S3_SECRET="${AWS_STAGE_SECRET_ACCESS_KEY}" \
-		-e EDITIONS_COMMIT=${EDITIONS_COMMIT}/${BUILD_NUMBER} \
+		-e EDITIONS_COMMIT=${EDITIONS_COMMIT} \
 		-e JENKINS_BUILD=${BUILD_NUMBER} \
+		-e UCP_TAG \
+		-e DTR_TAG \
 		-v ${ROOT_DIR}/dist/:/home/docker/dist/ \
 		azure-release \
 		--upload \
@@ -113,8 +115,6 @@ release:
 		--vhd_version="$(VHD_VERSION)" \
 		--offer_id="$(VHD_OFFER_ID)" \
 		--channel="$(CHANNEL)" \
-		--channel_cloud="$(CHANNEL)-cloud" \
-		--channel_ddc="$(CHANNEL)-ddc" \
 		--ee_vhd_sku="$(EE_VHD_SKU)" \
 		--ee_vhd_version="$(EE_VHD_VERSION)" \
 		--ee_offer_id="$(EE_OFFER_ID)" \

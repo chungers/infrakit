@@ -213,6 +213,7 @@
       "version": "[variables('imageVersion')]"
     },
     "apiVersion": "2016-03-30",
+    "vmssApiVersion": "2017-03-30",
     "accountID": "[subscription().subscriptionId]",
     "groupName": "[resourceGroup().name]",
     "managerCount": "[parameters('managerCount')]",
@@ -228,6 +229,7 @@
     "vmssName": "swarm-worker-vmss",
     "lbSSHName": "externalSSHLoadBalancer",
     "lbSSHID": "[resourceId('Microsoft.Network/loadBalancers',variables('lbSSHName'))]",
+    "lbPublicIpDnsName": "[concat('applb-', variables('groupName'))]",
     "lbSSHBackendAddressPoolID": "[concat(variables('lbSSHID'),'/backendAddressPools/default')]",
     "lbSSHFrontEndIPConfigID": "[concat(variables('lbSSHID'),'/frontendIPConfigurations/default')]",
     "lbSSHNATPoolID": "[concat(variables('lbSSHID'),'/inboundNatPools/default')]",
@@ -324,7 +326,7 @@
       }
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "[variables('vmssApiVersion')]",
       "dependsOn": [
         "[variables('vnetID')]",
         "[variables('lbSSHID')]",
@@ -421,7 +423,7 @@
       "type": "Microsoft.Compute/virtualMachineScaleSets"
     },
     {
-      "apiVersion": "[variables('apiVersion')]",
+      "apiVersion": "[variables('vmssApiVersion')]",
       "type": "Microsoft.Compute/virtualMachineScaleSets",
       "name": "[variables('vmssName')]",
       "location": "[variables('storageLocation')]",
@@ -522,6 +524,9 @@
       "name": "[variables('lbPublicIPAddressName')]",
       "location": "[variables('storageLocation')]",
       "properties": {
+        "dnsSettings": {
+            "domainNameLabel": "[variables('lbPublicIpDnsName')]"
+        },
         "publicIPAllocationMethod": "Static"
       },
       "tags": {
@@ -643,6 +648,10 @@
     "DefaultDNSTarget": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).ipAddress]"
+    },
+    "AppURL": {
+      "type": "String",
+      "value": "[concat(reference(resourceId('Microsoft.Network/publicIPAddresses', variables('lbPublicIPAddressName'))).dnsSettings.fqdn)]"
     },
     "SSH Targets": {
       "type": "string",
