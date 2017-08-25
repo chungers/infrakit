@@ -229,9 +229,9 @@ clean:
 	$(MAKE) -C tools/cloudstor clean
 	$(MAKE) -C tools/swarm-exec clean
 	$(MAKE) -C moby clean
-	rm -f moby/cloud/azure/vhd_blob_url.out
-	rm -f moby/cloud/aws/ami_id.out
-	rm -f moby/cloud/aws/ami_id_ee.out
+	rm -f moby/cloud/azure/$(VHD_OUT)
+	rm -f moby/cloud/aws/$(AMI_OUT)
+	rm -f moby/cloud/gcp/$(BDI_OUT)
 	$(call clean_plugin_tool)
 
 deepclean: clean

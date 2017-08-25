@@ -73,20 +73,20 @@ endif
 
 ifeq ($(shell echo ${DOCKER_VERSION} | sed -ne '/-ee/p'), $(DOCKER_VERSION))
 	MOBY_IMG_NAME := mobylinux-ee.tgz
-	AMI_OUT := ami_id_ee.out
+	AMI_OUT := ami_id_ee.log
 	AMI_SRC_REGION := us-east-1
 	LOAD_IMAGES := true
-	VHD_OUT := vhd_ee_blob_url.out
-	BDI_OUT := bdi_ee_url.out
+	VHD_OUT := vhd_ee_blob_url.log
+	BDI_OUT := bdi_ee_url.log
 	AZURE_STG_ACCOUNT_NAME := csedition
 	EE := yes
 	MAKE_AMI_PUBLIC := no
 else
 	MOBY_IMG_NAME := mobylinux-ce.tgz
-	AMI_OUT := ami_id.out
+	AMI_OUT := ami_id.log
 	AMI_SRC_REGION := us-west-2
-	VHD_OUT := vhd_blob_url.out
-	BDI_OUT := bdi_url.out
+	VHD_OUT := vhd_blob_url.log
+	BDI_OUT := bdi_url.log
 	AZURE_STG_ACCOUNT_NAME := testeditions
 	EE := no
 	MAKE_AMI_PUBLIC := no
