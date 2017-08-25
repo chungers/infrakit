@@ -38,11 +38,14 @@ LOG_CFG_FILE = "/etc/azupgrade_log_cfg.json"
 LOG = logging.getLogger("azupg")
 
 APP_SECRET_PARAMETER_NAME_IN_TEMPLATE = 'adServicePrincipalAppSecret'
+DDC_PASSWORD_PARAMETER_NAME_IN_TEMPLATE = 'ddcPassword'
+DDC_LICENSE_PARAMETER_NAME_IN_TEMPLATE = 'ddcLicense'
 
 SUB_ID = os.environ['ACCOUNT_ID']
 TENANT_ID = os.environ['TENANT_ID']
 APP_ID = os.environ['APP_ID']
 APP_SECRET = os.environ['APP_SECRET']
+DTR_HUB_TAG = os.environ['DTR_HUB_TAG']
 
 RG_NAME = os.environ['GROUP_NAME']
 SA_NAME = os.environ['SWARM_INFO_STORAGE_ACCOUNT']
@@ -54,22 +57,21 @@ DTR_PARTITION_NAME = 'dtrreplicas'
 LAST_MANAGER_NODE_ID = ''
 PRODUCTION_HUB_NAMESPACE = 'docker'
 HUB_NAMESPACE = 'docker'
-UCP_HUB_TAG = '2.0.2'
-DTR_HUB_TAG = '2.1.0'
-UCP_IMAGE = '%s/ucp:%s' % (HUB_NAMESPACE,UCP_HUB_TAG)
 DTR_IMAGE = '%s/dtr:%s' % (HUB_NAMESPACE,DTR_HUB_TAG)
 DTR_PORT = 443
 UCP_PORT = 8443
+UCP_PORT_LEGACY = 12390
 
 RESOURCE_MANAGER_ENDPOINT = os.getenv('RESOURCE_MANAGER_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['RESOURCE_MANAGER_ENDPOINT'])
 ACTIVE_DIRECTORY_ENDPOINT = os.getenv('ACTIVE_DIRECTORY_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['ACTIVE_DIRECTORY_ENDPOINT'])
 STORAGE_ENDPOINT = os.getenv('STORAGE_ENDPOINT', AZURE_PLATFORMS[AZURE_DEFAULT_ENV]['STORAGE_ENDPOINT'])
 
 try:
-    SA_DTR_NAME = os.environ['DTR_STORAGE_ACCOUNT']
+    SA_DTR_NAME = ""
     UCP_ADMIN_USER = os.environ['UCP_ADMIN_USER']
     UCP_ADMIN_PASSWORD = os.environ['UCP_ADMIN_PASSWORD']
     UCP_ELB_HOSTNAME = os.environ['UCP_ELB_HOSTNAME']
+    UCP_LICENSE = os.environ['UCP_LICENSE']
     HAS_DDC = True
 except:
     pass
@@ -135,8 +137,23 @@ def delete_id(sa_key, replica_id):
         LOG.error("exception while deleting replica-id")
         return False
 
+def get_dtr_storage_account(storage_client):
+    storage_accs = storage_client.storage_accounts.list_by_resource_group(RG_NAME)
+    for storage_acc in storage_accs:
+        sa_name = storage_acc.name
+        LOG.info("looking for SA containing DTR table. Candidate: {}".format(sa_name))
+        if sa_name.endswith("dtr"):
+            storage_keys = storage_client.storage_accounts.list_keys(RG_NAME, sa_name)
+            storage_keys = {v.key_name: v.value for v in storage_keys.keys}
+            tbl_svc = TableService(account_name=sa_name, account_key=storage_keys['key1'], endpoint_suffix=STORAGE_ENDPOINT)
+            if tbl_svc.exists(DTR_TBL_NAME):
+                LOG.info("DTR table found in Storage Account {}".format(sa_name))
+                return sa_name
+    raise LookupError("Storage Account with DTR table not found")
+
 # Checking if UCP is up and running
 def checkUCP(client):
+    global UCP_PORT
     LOG.info("Checking to see if UCP is up and healthy")
     n = 0
     while n < 20:
@@ -155,7 +172,13 @@ def checkUCP(client):
                 resp = urllib2.urlopen(UCP_URL)
             except urllib2.URLError, e:
                 LOG.info("URLError {}".format(str(e.reason)))
-                ALLGOOD = 'no'
+                LOG.info("Try legacy UCP port {}".format(UCP_URL))
+                UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_PORT_LEGACY)
+                try:
+                    resp = urllib2.urlopen(UCP_URL)
+                    UCP_PORT = UCP_PORT_LEGACY
+                except:
+                    ALLGOOD = 'no'
             except urllib2.HTTPError, e:
                 LOG.info("HTTPError {}".format(str(e.code)))
                 ALLGOOD = 'no'
@@ -289,10 +312,6 @@ def update_deployment_template(template_url, resource_client):
     LOG.info("Updating Resource Group: {}".format(RG_NAME))
 
     deployments = resource_client.deployments.list(RG_NAME)
-    latest_timestamp = datetime.min
-    latest_deployment = None
-
-    deployments = resource_client.deployments.list(RG_NAME)
     latest_timestamp = datetime.min.replace(tzinfo=pytz.UTC)
     latest_deployment = None
 
@@ -346,6 +365,10 @@ def update_deployment_template(template_url, resource_client):
     # APP_SECRET is the only secure string parameter user populates now
     deployment_properties['parameters'][APP_SECRET_PARAMETER_NAME_IN_TEMPLATE] = \
         {'value': APP_SECRET}
+
+    if HAS_DDC:
+        deployment_properties['parameters'][DDC_PASSWORD_PARAMETER_NAME_IN_TEMPLATE] = {'value': UCP_ADMIN_PASSWORD}
+        deployment_properties['parameters'][DDC_LICENSE_PARAMETER_NAME_IN_TEMPLATE] = {'value': UCP_LICENSE}
 
     async_update = resource_client.deployments.create_or_update(
                         RG_NAME, latest_deployment.name, deployment_properties)
@@ -491,7 +514,6 @@ def update_vmss(vmss_name, docker_client, compute_client, network_client, tbl_sv
 
 
 def main():
-
     with open(LOG_CFG_FILE) as log_cfg_file:
         log_cfg = json.load(log_cfg_file)
         logging.config.dictConfig(log_cfg)
@@ -545,6 +567,10 @@ def main():
         LOG.info("https://portal.azure.com/#resource/subscriptions/{}/resourceGroups/{}/overview".format(
                 SUB_ID, RG_NAME))
         update_deployment_template(args.template_url, resource_client)
+
+        if HAS_DDC:
+            global SA_DTR_NAME
+            SA_DTR_NAME = get_dtr_storage_account(storage_client)
 
         # Update manager nodes (except the one this script is initiated from)
         LOG.info("Starting rolling upgrade of swarm manager nodes. This will take several minutes. You can follow the status of the upgrade below or from the Azure console using the URL below:")
