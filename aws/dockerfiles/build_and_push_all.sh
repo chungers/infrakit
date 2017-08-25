@@ -4,6 +4,7 @@ set -e
 # if there is an ENV with this name, use it, if not, default to these values.
 NAMESPACE="${NAMESPACE:-docker4x}"
 TAG_VERSION="${AWS_TAG_VERSION:-latest}"
+COMPOSE_VERSION="${COMPOSE_VERSION:-1.15.0}"
 
 CURR_DIR=`pwd`
 ROOT_DIR="${ROOT_DIR:-$CURR_DIR}"
@@ -57,7 +58,11 @@ for IMAGE in shell init guide ddc-init cloud meta
 do
   FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
   echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
-  docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
+  BUILD_ARGS=""
+  if [ "$IMAGE" = "shell" ]; then
+    BUILD_ARGS="--build-arg COMPOSE_VERSION=$COMPOSE_VERSION"
+  fi
+  docker build --pull -t "${FINAL_IMAGE}" $ARGS -f "${IMAGE}/Dockerfile" ${IMAGE}
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"
