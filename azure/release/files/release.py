@@ -104,7 +104,7 @@ def main():
     
     for platform, platform_config in AZURE_PLATFORMS.items():
         ce_template_name = u"Docker{}".format(platform_config['TEMPLATE_SUFFIX'])
-        edition_addon = 'base'
+        edition_addon = u"base{}".format(platform_config['TEMPLATE_SUFFIX'].lower())
         base_url = create_rg_template(vhd_sku, vhd_version, offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_addon, CFN_TEMPLATE, ce_template_name,
                         platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
@@ -114,7 +114,7 @@ def main():
                         platform_config['RESOURCE_MANAGER_VM_SUFFIX'])
 
         ee_template_name = u"Docker-EE{}".format(platform_config['TEMPLATE_SUFFIX'])
-        edition_addon = 'base'
+        edition_addon = u"base{}".format(platform_config['TEMPLATE_SUFFIX'].lower())
         ee_url = create_rg_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
                         docker_for_azure_version, edition_addon, CFN_TEMPLATE, ee_template_name,
                         platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
@@ -125,7 +125,7 @@ def main():
 
         if platform_config['PUBLIC_PLATFORM']:
             cloud_template_name = u"Docker-Cloud{}".format(platform_config['TEMPLATE_SUFFIX'])
-            edition_addon = 'cloud'
+            edition_addon = u"cloud{}".format(platform_config['TEMPLATE_SUFFIX'].lower())
             cloud_url = create_rg_cloud_template(release_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url,
                                  platform_config['STORAGE_BLOB_SUFFIX'],
@@ -133,7 +133,7 @@ def main():
                                  cloud_template_name)
 
         ddc_template_name = u"Docker-DDC{}".format(platform_config['TEMPLATE_SUFFIX'])
-        edition_addon = 'ddc'
+        edition_addon = u"ddc{}".format(platform_config['TEMPLATE_SUFFIX'].lower())
         ddc_url = create_rg_ddc_template(ee_vhd_sku, ee_vhd_version, ee_offer_id, release_channel, docker_version,
                                  docker_for_azure_version, edition_addon, base_url, ddc_template_name, 
                                  platform_config['PUBLIC_PLATFORM'], platform_config['PORTAL_ENDPOINT'],
