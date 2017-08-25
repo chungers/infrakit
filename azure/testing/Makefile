@@ -7,7 +7,7 @@
 #deployAzure.sh script run within the azure-e2e test container arguments are passed in to specify worker count, resource group, location
 #manager count, SPSECRET, SPID, template. This script deploys a swarm, and then runs another container which includes a set of tests
 
-VHDVAR=$(shell cat ${PWD}/tmp/vhd_blob_url.out) 
+VHDVAR=$(shell cat ${PWD}/tmp/vhd_blob_url.log) 
 
 #Set values or default values depending on what is passed in
 
@@ -93,7 +93,7 @@ default: setup
 
 #Get the VHD URL, and the latest template
 assets: 
-	docker run --rm -v ${PWD}/tmp:/tmp docker4x/awscli:latest s3 --no-sign-request cp $(VHD_PREFIX)/$(MOBY_COMMIT)/vhd_blob_url.out /tmp
+	docker run --rm -v ${PWD}/tmp:/tmp docker4x/awscli:latest s3 --no-sign-request cp $(VHD_PREFIX)/$(MOBY_COMMIT)/vhd_blob_url.log /tmp
 	curl  $(TEMPLATE_PREFIX)/azure/$(CHANNEL)/$(MOBY_COMMIT)/$(BUILDNUMBER)/Docker.tmpl >> tmp/$(INITIAL_TEMPLATE_FILE)  
 
 #Update the latest template with the VHD url
