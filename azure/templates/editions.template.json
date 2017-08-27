@@ -214,6 +214,7 @@
     },
     "apiVersion": "2016-03-30",
     "vmssApiVersion": "2017-03-30",
+    "storApiVersion": "2016-12-01",
     "accountID": "[subscription().subscriptionId]",
     "groupName": "[resourceGroup().name]",
     "managerCount": "[parameters('managerCount')]",
@@ -270,7 +271,7 @@
   },
   "resources": [
     {
-      "apiVersion": "2015-06-15",
+      "apiVersion": "[variables('storApiVersion')]",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[concat(variables('uniqueStringArray')[copyIndex()], variables('storageAccountSuffix'))]",
       "location": "[variables('storageLocation')]",
@@ -278,8 +279,9 @@
         "name": "storageLoop",
         "count": "[length(variables('uniqueStringArray'))]"
       },
-      "properties": {
-        "accountType": "Standard_LRS"
+      "kind": "Storage",
+      "sku": {
+          "name": "Standard_LRS"
       },
       "tags": {
           "provider": "[toUpper(variables('DockerProviderTag'))]",
@@ -287,12 +289,13 @@
       }
     },
     {
-      "apiVersion": "2015-06-15",
+      "apiVersion": "[variables('storApiVersion')]",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('swarmLogsStorageAccount')]",
       "location": "[variables('storageLocation')]",
-      "properties": {
-        "accountType": "Standard_LRS"
+      "kind": "Storage",
+      "sku": {
+          "name": "Standard_LRS"
       },
       "tags": {
           "provider": "[toUpper(variables('DockerProviderTag'))]",
