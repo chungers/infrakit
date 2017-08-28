@@ -12,6 +12,18 @@ parse_export_value()
     expval=$(grep $1= $CUSTOM_DATA_FILE | sed -e 's/export .[A-Z|_]*\=\"\(.*\)\"/\1/')
 }
 
+set_dtr_hub_tag()
+{
+    DTR_TAGS=$(docker ps --format "{{.Image}}" | grep docker/dtr-* | cut -d':' -f 2 | uniq | wc -l)
+    if [ $DTR_TAGS -ne 1 ]; then
+        echo "DTR Tags could not be determined based on DTR containers that are running: "
+        docker ps --format "{{.Image}}" | grep docker/dtr-*
+        echo "Please pass in the DTR version installed using DTR_VERSION parameter"
+        exit 1
+    fi
+    DTR_HUB_TAG=$(docker ps --format "{{.Image}}" | grep docker/dtr-* | cut -d':' -f 2 | uniq)
+}
+
 echo "Copying upgrade scripts ..."
 copy_file_to_guide /opt/azupgrade.py /usr/bin/azupgrade.py
 copy_file_to_guide /opt/azupgrade_log_cfg.json /etc/azupgrade_log_cfg.json
@@ -19,7 +31,12 @@ copy_file_to_guide /opt/azendpt.py /usr/bin/azendpt.py
 copy_file_to_guide /opt/aztags.py /usr/bin/aztags.py
 copy_file_to_guide /opt/dockerutils.py /usr/bin/dockerutils.py
 
-DTR_HUB_TAG=$(docker images --filter=reference='docker/dtr-*' --format "{{.Tag}}" | head -n 1)
+if [ -z "$DTR_VERSION" ]; then
+    set_dtr_hub_tag
+else
+    DTR_HUB_TAG=$DTR_VERSION
+fi
+
 DOCKER_EE=$(docker -v | grep "\-ee")
 
 if [ -z "$DTR_HUB_TAG" ] && [ -z "$DOCKER_EE" ]; then
