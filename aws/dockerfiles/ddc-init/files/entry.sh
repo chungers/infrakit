@@ -60,18 +60,20 @@ if [[ "$REGISTRY_PASSWORD" != "" ]] ; then
   docker login -u "${REGISTRY_USERNAME}" -p "${REGISTRY_PASSWORD}"
 fi
 
-images=$(docker run --label com.docker.editions.system  --rm "${UCP_ORG}/ucp:${UCP_TAG}" images --list $IMAGE_LIST_ARGS && docker run --rm $DTR_IMAGE images)
-for im in $images; do
-  docker pull $im
-done
-
 if [ "$NODE_TYPE" == "worker" ] ; then
    echo "Let AWS know this worker node is ready."
+   docker pull ${UCP_ORG}/ucp-agent:${UCP_TAG}
    cfn-signal --stack $STACK_NAME --resource $INSTANCE_NAME --region $REGION
    # nothing else left to do for workers, so exit.
    exit 0
 fi
 
+images=$(docker run --rm ${UCP_IMAGE} images --list $IMAGE_LIST_ARGS)
+for im in $images; do
+  docker pull $im &
+done
+wait
+echo "==> UCP download complete <=="
 
 # Checking if UCP is up and running
 checkUCP(){

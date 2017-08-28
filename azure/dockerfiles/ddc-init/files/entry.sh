@@ -57,23 +57,27 @@ if [[ "$REGISTRY_PASSWORD" != "" ]] ; then
     docker login -u "${REGISTRY_USERNAME}" -p "${REGISTRY_PASSWORD}"
 fi
 
+if [ "$NODE_TYPE" == "worker" ] ; then
+  # nothing left to do for workers, so exit.
+  docker pull ${UCP_ORG}/ucp-agent:${UCP_TAG}
+  exit 0
+fi
+
 #Download Docker UCP images
-images=$(docker run --label com.docker.editions.system --rm ${UCP_IMAGE} images --list $IMAGE_LIST_ARGS)
+images=$(docker run --rm ${UCP_IMAGE} images --list $IMAGE_LIST_ARGS)
 for im in $images; do
-    docker pull $im
+    docker pull $im &
 done
+wait
+echo "==> UCP download complete <=="
 
 #Download DTR images
 images=$(docker run --rm $DTR_IMAGE images)
 for im in $images; do
-    docker pull $im
+    docker pull $im &
 done
-
-
-if [ "$NODE_TYPE" == "worker" ] ; then
-  # nothing left to do for workers, so exit.
-  exit 0
-fi
+wait
+echo "==> DTR download complete <=="
 
 #Get vmss node count
 mgr_node_count=$(python dtrutils.py get-mgr-nodes)
