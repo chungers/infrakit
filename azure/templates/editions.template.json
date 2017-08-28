@@ -214,7 +214,7 @@
     },
     "apiVersion": "2016-03-30",
     "vmssApiVersion": "2017-03-30",
-    "storApiVersion": "2016-12-01",
+    "storageApiVersion": "2016-12-01",
     "accountID": "[subscription().subscriptionId]",
     "groupName": "[resourceGroup().name]",
     "managerCount": "[parameters('managerCount')]",
@@ -271,7 +271,7 @@
   },
   "resources": [
     {
-      "apiVersion": "[variables('storApiVersion')]",
+      "apiVersion": "[variables('storageApiVersion')]",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[concat(variables('uniqueStringArray')[copyIndex()], variables('storageAccountSuffix'))]",
       "location": "[variables('storageLocation')]",
@@ -289,7 +289,7 @@
       }
     },
     {
-      "apiVersion": "[variables('storApiVersion')]",
+      "apiVersion": "[variables('storageApiVersion')]",
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('swarmLogsStorageAccount')]",
       "location": "[variables('storageLocation')]",
