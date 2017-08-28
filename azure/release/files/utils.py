@@ -365,13 +365,14 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('dtrStorageAccount')]",
-            "apiVersion": "2015-06-15",
+            "apiVersion": "variables('storApiVersion')]",
             "location": "[variables('storageLocation')]",
             "tags": {
                 "provider": "[toUpper(variables('DockerProviderTag'))]"
             },
-            "properties": {
-                "accountType": "Standard_LRS"
+            "kind": "Storage",
+            "sku": {
+                "name": "Standard_LRS"
             }
         },
         {
@@ -400,6 +401,8 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
             }
         }
         val.update(tag_rule)
+        if 'properties' not in val:
+            continue
         properties = val['properties']
         if val['name'] == "[variables('managerNSGName')]":
             new_security_rule = [
