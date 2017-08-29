@@ -145,6 +145,10 @@ class AWSBaseTemplate(object):
         self.add_to_parameters(
             parameters.add_parameter_enable_ebs_optimized(self.template))
 
+        self.add_to_parameters(
+            parameters.add_parameter_enable_cloudstor_efs(self.template))
+
+
     def add_outputs(self):
         outputs.add_output_managers(self.template)
         outputs.add_output_dns_target(self.template)
@@ -232,6 +236,9 @@ class AWSBaseTemplate(object):
         # s3
         self.s3()
 
+        # EFS
+        self.efs()
+
     def vpc(self):
         if self.create_vpc:
             resources.add_resource_vpc(self.template)
@@ -279,6 +286,7 @@ class AWSBaseTemplate(object):
         resources.add_resource_iam_swarm_api_policy(self.template)
         resources.add_resource_iam_elb_policy(self.template)
         resources.add_resource_iam_instance_profile(self.template)
+        resources.add_resource_iam_cloudstor_ebs_policy(self.template)
 
         self.iam_dyn()
         self.iam_sqs()
@@ -346,6 +354,14 @@ class AWSBaseTemplate(object):
             resources.add_resource_az_info_function(self.template)
             resources.add_resource_iam_lambda_execution_role(self.template)
             conditions.add_condition_LambdaSupported(self.template)
+
+    def efs(self):
+        # efs
+        resources.add_resource_efs(self.template)
+        resources.add_resource_mount_targets(self.template)
+        conditions.add_condition_EFSSupported(self.template)
+        conditions.add_condition_CloudStorEFS_selected(self.template)
+        conditions.add_condition_InstallCloudStorEFSPreReqs(self.template)
 
     def generate_template(self):
         return self.template.to_json()

@@ -347,13 +347,8 @@ else
 fi
 
 # install and configure cloudstor plugin for Azure only if deploying from Edge and Stable channels for now.
-CHANNEL_TAG=$(aztags.py channel)
-if [ "$CHANNEL_TAG" == "edge" ] || [ "$CHANNEL_TAG" == "stable" ] ; then
-    echo " $CHANNEL_TAG channel. Install cloudstor ..."
-    install_cloudstor_plugin
-else
-    echo " Skip cloudstor installation"
-fi
+echo "Install cloudstor ..."
+install_cloudstor_plugin
 
 # show the results.
 echo "#================ docker info    ==="

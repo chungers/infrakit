@@ -62,18 +62,6 @@ class DockerEEVPCTemplate(AWSBaseTemplate):
         )
         return new_groups
 
-    def add_aws2az_mapping(self):
-        """ TODO: Remove this method when when EFS goes live on EE
-        We are overriding to disable in EE templates."""
-        data = mappings.aws2az_data()
-        data['eu-west-1']['EFSSupport'] = 'no'
-        data['us-east-1']['EFSSupport'] = 'no'
-        data['us-east-2']['EFSSupport'] = 'no'
-        data['us-west-2']['EFSSupport'] = 'no'
-        data['ap-southeast-2']['EFSSupport'] = 'no'
-
-        self.template.add_mapping('AWSRegion2AZ', data)
-
     def add_parameter_ssh_cidr(self):
         self.template.add_parameter(Parameter(
             'RemoteSSH',
