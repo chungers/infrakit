@@ -9,6 +9,7 @@ properties(
 wrappedNode(label: "docker-edge && ubuntu && aufs") {
   deleteDir()
   checkout scm
+	gitCommit()
   stage(name: "build JSON templates") {
     sh("make templates TEST_JENKINS=true")
   }
@@ -38,7 +39,7 @@ wrappedNode(label: "docker-edge && ubuntu && aufs") {
 
   stage(name: "trigger editions-release pipeline") {
     if (env.BRANCH_NAME == 'master') {
-        build job: '../editions-release/master', wait: false
+        build job: '../editions-release/master', wait: false, parameters: [string(name: 'EDITIONS_COMMIT', value: $GIT_COMMIT)]
     }
   }
 }
