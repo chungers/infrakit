@@ -173,7 +173,7 @@ def checkUCP(client):
             except urllib2.URLError, e:
                 LOG.info("URLError {}".format(str(e.reason)))
                 LOG.info("Try legacy UCP port {}".format(UCP_URL))
-                UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_PORT_LEGACY)
+                UCP_URL = 'https://%s:%s/_ping' %(Manager_IP, UCP_HTTPS_PORT_LEGACY)
                 try:
                     resp = urllib2.urlopen(UCP_URL)
                     UCP_HTTPS_PORT = UCP_HTTPS_PORT_LEGACY

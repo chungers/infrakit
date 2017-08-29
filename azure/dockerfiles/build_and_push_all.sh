@@ -96,13 +96,19 @@ if [ "${DOCKER_PUSH}" -eq 1 ]; then
   docker push "${NAMESPACE}/create-sp-azure:latest"
 fi
 
-# Build upgrade-azure passing in the necessary env vars
-docker build --pull -t docker4x/upgrade-azure:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
-# Ensure that the upgrade image has :YY.MM-latest tag as well so that 
-# upgrade.sh in shell can easily refer to it
-docker tag "${NAMESPACE}/upgrade-azure:${TAG_VERSION}" "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
+# Build upgrade-azure-core passing in the necessary env vars
+docker build --pull -t docker4x/upgrade-core-azure:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
+# Build upgrade-azure wrapper that will invoke upgrade-azure-core without users having to be aware of the Customdata mount
+docker build --pull -t docker4x/upgrade-azure:${UPGRADE_TAG} --build-arg TAG_VERSION=${TAG_VERSION} -f upgrade/Dockerfile.wrapper upgrade
+
+# Ensure that the upgrade image has :YY.MM-latest tag as well so that upgrade.sh in shell can easily refer to it
+docker tag "${NAMESPACE}/upgrade-azure-core:${TAG_VERSION}" "${NAMESPACE}/upgrade-azure-core:${UPGRADE_TAG}"
 if [ "${DOCKER_PUSH}" = true ]; then
-  docker push "${NAMESPACE}/upgrade-azure:${TAG_VERSION}"
+  # this is for advanced users/internal folks who may want to test upgrade to every Editions release
+  docker push "${NAMESPACE}/upgrade-azure-core:${TAG_VERSION}"
+  # this is for quick/easy reference to YY.MM.X-latest using the upgrade.sh wrapper
+  docker push "${NAMESPACE}/upgrade-azure-core:${UPGRADE_TAG}"
+  # this is mainly for 17.03/early 17.06 EE users who do not have upgrade.sh in the shell
   docker push "${NAMESPACE}/upgrade-azure:${UPGRADE_TAG}"
 fi
 
