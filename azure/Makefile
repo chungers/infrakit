@@ -95,6 +95,14 @@ endif
 
 release:
 	@echo "\033[0;1;34m++ Create Azure release of EDITIONS_VERSION: ${EDITIONS_VERSION} - Editions Commit: ${EDITIONS_COMMIT} on CHANNEL: ${CHANNEL}\033[0m"
+ifeq ($(EDITIONS_VERSION),)
+	@echo "\033[31m Error - No Azure Editions version found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
+	exit 1
+endif
+ifeq ($(CHANNEL),)
+	@echo "\033[31m Error - No Azure Channel found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
+	exit 1
+endif
 	$(MAKE) -C release build
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
