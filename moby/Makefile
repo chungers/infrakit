@@ -117,7 +117,7 @@ ami:
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
 		-e BUILD_TAG \
-		moby-ami:build bake >  ./cloud/aws/$(AMI_OUT)
+		moby-ami:build bake >  ./build/$(AMI_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,aws,ami,$(AMI_OUT),$(AWS_TAG_VERSION))
 endif
@@ -150,7 +150,7 @@ uploadvhd:
 		--rm \
 		-v vhdartifact:/tmp \
 		moby-azure:build \
-		uploadvhd >./cloud/azure/$(VHD_OUT)
+		uploadvhd >./build/$(VHD_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,azure,vhd,$(VHD_OUT),$(AZURE_TAG_VERSION))
 endif
