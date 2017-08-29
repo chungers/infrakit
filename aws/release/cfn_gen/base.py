@@ -360,8 +360,6 @@ class AWSBaseTemplate(object):
         resources.add_resource_efs(self.template)
         resources.add_resource_mount_targets(self.template)
         conditions.add_condition_EFSSupported(self.template)
-        conditions.add_condition_CloudStorEFS_selected(self.template)
-        conditions.add_condition_InstallCloudStorEFSPreReqs(self.template)
 
     def generate_template(self):
         return self.template.to_json()
