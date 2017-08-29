@@ -1,5 +1,5 @@
 ifeq ($(EDITIONS_TAG),)
-	EDITIONS_TAG := ce-rc3
+	EDITIONS_TAG := ce
 endif
 
 ifeq ($(EDITIONS_DOCKER_VERSION),)
@@ -23,7 +23,7 @@ endif
 
 # Check if MOBY_COMMIT has been defined via env
 ifeq ($(MOBY_COMMIT),)
-	MOBY_COMMIT := 2b0096b5f763058c8641e28d0ae50d420eed351a
+	MOBY_COMMIT := d3ff203d023f04eb2b20350c1c240539e4cd2339
 endif
 
 # Check if DOCKER_VERSION has been set
