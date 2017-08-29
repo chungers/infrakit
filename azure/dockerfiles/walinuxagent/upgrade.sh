@@ -2,7 +2,7 @@
 
 if [ "$#" -ne 1 ]; then
     echo "Target version tag missing"
-    echo "USAGE: upgrade.sh YY.MM.S-azureC"
+    echo "USAGE: upgrade.sh YY.MM.S-latest"
     exit
 fi
 
@@ -20,5 +20,6 @@ echo "Execute upgrade container for $VERSION_TAG"
  docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v /usr/bin/docker:/usr/bin/docker \
+    -v /var/lib/waagent/CustomData:/var/lib/waagent/CustomData \
     -ti \
-    docker4x/upgrade-azure:$VERSION_TAG
+    docker4x/upgrade-azure-core:$VERSION_TAG
