@@ -37,9 +37,9 @@ wrappedNode(label: "docker-edge && ubuntu && aufs") {
     }
   }
 
-  stage(name: "trigger editions-release pipeline") {
-    if (env.BRANCH_NAME == 'master') {
-        build job: '../editions-release/master', wait: false, parameters: [string(name: 'EDITIONS_COMMIT', value: $GIT_COMMIT)]
-    }
-  }
+  // stage(name: "trigger editions-release pipeline") {
+  //   if (env.BRANCH_NAME == 'master') {
+  //       build job: '../editions-release/master', wait: false, parameters: [string(name: 'EDITIONS_COMMIT', value: $GIT_COMMIT)]
+  //   }
+  // }
 }
