@@ -97,7 +97,7 @@ if [ "${DOCKER_PUSH}" -eq 1 ]; then
 fi
 
 # Build upgrade-azure-core passing in the necessary env vars
-docker build --pull -t docker4x/upgrade-core-azure:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
+docker build --pull -t docker4x/upgrade-azure-core:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
 # Build upgrade-azure wrapper that will invoke upgrade-azure-core without users having to be aware of the Customdata mount
 docker build --pull -t docker4x/upgrade-azure:${UPGRADE_TAG} --build-arg TAG_VERSION=${TAG_VERSION} -f upgrade/Dockerfile.wrapper upgrade
 
