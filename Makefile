@@ -24,14 +24,14 @@ templates:
 	# $(MAKE) gcp-template
 
 e2e:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) aws-e2e 
 	$(MAKE) azure-e2e 
 
 
 ## Container images targets
 dockerimages: deepclean tools
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) aws-dockerimages
 	$(MAKE) azure-dockerimages
 	$(MAKE) gcp-dockerimages
@@ -79,51 +79,51 @@ endef
 tools: tools/buoy/bin/buoy tools/metaserver/bin/metaserver tools/cloudstor/cloudstor-rootfs.tar.gz
 
 tools/buoy/bin/buoy:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(call build_cp_tool,buoy,bin/buoy,guide/bin)
 	$(call build_cp_tool,buoy,bin/buoy,init/bin)
 
 tools/metaserver/bin/metaserver:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(call build_cp_tool,metaserver,bin/metaserver,meta/bin)
 
 tools/cloudstor/cloudstor-rootfs.tar.gz:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(call build_cp_tool,cloudstor,cloudstor-rootfs.tar.gz,.)
 
 tools/awscli/image:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C tools/awscli
 
 ## Moby targets
 moby/vhd: clean moby
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AZURE_TAG_VERSION)"/' moby/packages/azure/etc/init.d/azure 
 	$(MAKE) -C moby uploadvhd
 
 moby/ami: clean moby
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	sed $(SEDFLAGS) 's/export DOCKER_FOR_IAAS_VERSION=".*"/export DOCKER_FOR_IAAS_VERSION="$(AWS_TAG_VERSION)"/' moby/packages/aws/etc/init.d/aws
 	$(MAKE) -C moby ami
 
 moby/bdi: clean moby
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C moby build/gcp/gce.img.tar.gz
 	$(MAKE) -C gcp save-moby
 
 moby/build/aws/initrd.img:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C moby build/aws/initrd.img
 
 moby/build/azure/initrd.img:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C moby build/azure/initrd.img
 
 moby/alpine/cloud/aws/ami_list.json: moby/alpine/cloud/aws/ami_id.out
 	$(MAKE) -C aws/release replicate
 
 moby:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C moby all
 
 ## Azure targets 
@@ -132,7 +132,7 @@ azure-dockerimages: tools
 	$(MAKE) -C azure/dockerfiles EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 azure-template:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AZURE_TARGET_TEMPLATE)
 
@@ -167,7 +167,7 @@ aws-dockerimages: tools
 	$(MAKE) -C aws/dockerfiles EDITIONS_VERSION=$(AWS_TAG_VERSION)
 
 aws-template:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	# "easy use" alias to generate latest version of template.
 	$(MAKE) $(AWS_TARGET_TEMPLATE)
 
@@ -191,7 +191,7 @@ gcp-dockerimages: tools
 	$(MAKE) -C gcp build-cloudstor build-images
 
 gcp-template:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C gcp build-templates
 
 gcp-release: gcp-template
@@ -207,23 +207,23 @@ PKGS_AND_MOCKS := $(shell go list ./... | grep -v /vendor)
 PKGS := $(shell echo $(PKGS_AND_MOCKS) | tr ' ' '\n' | grep -v /mock$)
 
 get-gomock:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	-go get github.com/golang/mock/gomock
 	-go get github.com/golang/mock/mockgen
 
 generate:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	@go generate -x $(PKGS_AND_MOCKS)
 
 test:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	@go test -v github.com/docker/editions/pkg/loadbalancer
 
 check:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 
 clean:
-	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION}\033[0m"
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) -C tools/buoy clean
 	$(MAKE) -C tools/metaserver clean
 	$(MAKE) -C tools/cloudstor clean
