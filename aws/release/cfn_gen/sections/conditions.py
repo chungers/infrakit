@@ -17,12 +17,29 @@ def add_condition_hasonly2AZs(template):
         )
 
 
+def add_condition_CloudStorEFS_selected(template):
+    template.add_condition(
+        "CloudStorEfsSelected",
+        Equals(Ref("EnableCloudStorEfs"), "yes")
+        )
+
+
 def add_condition_EFSSupported(template):
     template.add_condition(
         "EFSSupported",
         Equals(
             FindInMap("AWSRegion2AZ", Ref("AWS::Region"), "EFSSupport"),
             "yes")
+    )
+
+
+def add_condition_InstallCloudStorEFSPreReqs(template):
+    template.add_condition(
+        "InstallCloudStorEFSPreReqs",
+        And(
+            Condition("EFSSupported"),
+            Condition("CloudStorEfsSelected"),
+        )
     )
 
 
