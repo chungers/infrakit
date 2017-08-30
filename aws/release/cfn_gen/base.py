@@ -145,6 +145,10 @@ class AWSBaseTemplate(object):
         self.add_to_parameters(
             parameters.add_parameter_enable_ebs_optimized(self.template))
 
+        self.add_to_parameters(
+            parameters.add_parameter_enable_cloudstor_efs(self.template))
+
+
     def add_outputs(self):
         outputs.add_output_managers(self.template)
         outputs.add_output_dns_target(self.template)
