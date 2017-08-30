@@ -4,7 +4,7 @@ def parameter_groups():
              "Parameters": ["ManagerSize", "ClusterSize"]
              },
             {"Label": {"default": "Swarm Properties"},
-             "Parameters": ["KeyName", "EnableSystemPrune", "EnableCloudWatchLogs"]
+             "Parameters": ["KeyName", "EnableSystemPrune", "EnableCloudWatchLogs", "EnableCloudStorEfs"]
              },
             {"Label": {"default": "Swarm Manager Properties"},
              "Parameters": ["ManagerInstanceType", "ManagerDiskSize", "ManagerDiskType"]

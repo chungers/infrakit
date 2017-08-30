@@ -28,7 +28,11 @@ def common_userdata_head(experimental_flag=True):
         "export RUN_VACUUM='", Ref("EnableSystemPrune"), "'\n",
         "export LOG_GROUP_NAME='", Join("-", [Ref("AWS::StackName"), "lg"]), "'\n",
         "export HAS_DDC='", FindInMap("DockerForAWS", "version", "HasDDC"), "'\n",
+        "export ENABLE_EFS='", If("InstallCloudStorEFSPreReqs", '1', '0'), "'\n",
+        "export EFS_ID_REGULAR='", If("InstallCloudStorEFSPreReqs", Ref("FileSystemGP"), ''), "'\n",
+        "export EFS_ID_MAXIO='", If("InstallCloudStorEFSPreReqs", Ref("FileSystemMaxIO"), ''), "'\n"
     ]
+
     if experimental_flag:
         data.append("export DOCKER_EXPERIMENTAL='true' \n")
     else:
