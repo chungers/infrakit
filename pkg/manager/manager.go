@@ -10,6 +10,9 @@ import (
 	"github.com/docker/infrakit/pkg/leader"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/plugin"
+	"github.com/docker/infrakit/pkg/rpc/client"
+	controller_rpc "github.com/docker/infrakit/pkg/rpc/controller"
+	group_rpc "github.com/docker/infrakit/pkg/rpc/group"
 	rpc "github.com/docker/infrakit/pkg/rpc/group"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/spi/group"
@@ -330,7 +333,24 @@ func (m *manager) onAssumeLeadership() error {
 		log.Warn("Error loading config", "err", err)
 		return err
 	}
-	return m.doCommitGroups(*config)
+	log.Info("Committing specs to controllers", "config", config)
+	return m.callControllers(*config,
+		func(c controller.Controller, spec types.Spec) error {
+			log.Info("Committing spec", "controller", c, "spec", spec)
+			_, err := c.Commit(controller.Enforce, spec)
+			if err != nil {
+				log.Warn("Error committing spec", "spec", spec, "err", err)
+			}
+			return err
+		},
+		func(c group.Plugin, gspec group.Spec) error {
+			log.Info("Committing group spec", "groupPlugin", c, "spec", gspec)
+			_, err := c.CommitGroup(gspec, false)
+			if err != nil {
+				log.Warn("Error committing group spec", "spec", gspec, "err", err)
+			}
+			return err
+		})
 }
 
 func (m *manager) onLostLeadership() error {
@@ -339,103 +359,77 @@ func (m *manager) onLostLeadership() error {
 	if err != nil {
 		return err
 	}
-	return m.doFreeGroups(config)
-}
-
-func (m *manager) doCommit() error {
-
-	// load the config
-	config := globalSpec{}
-
-	// load the latest version -- assumption here is that it's been persisted already.
-	err := config.load(m.snapshot)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Committing. Loaded snapshot.", "err", err)
-	if err != nil {
-		return err
-	}
-	return m.doCommitGroups(config)
-}
-
-func (m *manager) doCommitGroups(config globalSpec) error {
-	return m.execPlugins(config,
-		func(plugin group.Plugin, spec group.Spec) error {
-
-			log.Info("Committing group", "groupID", spec.ID, "spec", spec)
-
-			_, err := plugin.CommitGroup(spec, false)
+	log.Info("Freeing groups")
+	return m.callControllers(config,
+		func(c controller.Controller, spec types.Spec) error {
+			log.Info("Freeing controller", "metadata", spec.Metadata)
+			_, err := c.Free(&spec.Metadata)
 			if err != nil {
-				log.Warn("Error committing group.", "groupID", spec.ID, "err", err)
+				log.Warn("Error freeing controller", "metadata", spec.Metadata, "err", err)
+			}
+			return nil
+		},
+		func(c group.Plugin, gspec group.Spec) error {
+			log.Info("Freeing group", "id", gspec.ID)
+			err := c.FreeGroup(gspec.ID)
+			if err != nil {
+				log.Warn("Error freeing group", "id", gspec.ID, "err", err)
 			}
 			return err
 		})
 }
 
-func (m *manager) doFreeGroups(config globalSpec) error {
-	log.Info("Freeing groups")
-	return m.execPlugins(config,
-		func(plugin group.Plugin, spec group.Spec) error {
+func (m *manager) callControllers(config globalSpec,
+	callController func(controller.Controller, types.Spec) error,
+	callGroupPlugin func(group.Plugin, group.Spec) error,
+) error {
 
-			log.Info("Freeing group", "groupID", spec.ID)
-			err := plugin.FreeGroup(spec.ID)
-			if err != nil {
-				log.Warn("Error freeing group", "groupID", spec.ID, "err", err)
-			}
-			return nil
-		})
-}
-
-func (m *manager) execPlugins(config globalSpec, work func(group.Plugin, group.Spec) error) error {
 	running, err := m.plugins.List()
 	if err != nil {
 		return err
 	}
 
-	return config.visit(func(k key, r record) error {
+	log.Debug("running", "running", running, "index", config.index)
 
-		// TODO(chungers) ==> temporary
-		if k.Kind != "group" {
+	return config.visit(func(k key, r record) error {
+		// for controllers, the kind and the name make up to be the plugin name
+		pn := plugin.NameFrom(k.Kind, k.Name)
+		if !r.Handler.IsEmpty() {
+			pn = r.Handler
+		}
+		interfaceSpec := r.InterfaceSpec
+		if r.Spec.Version != "" {
+			interfaceSpec = spi.DecodeInterfaceSpec(r.Spec.Version)
+		}
+		log.Debug("Dispatching work", "name", pn, "interfaceSpec", interfaceSpec)
+
+		lookup, _ := pn.GetLookupAndType()
+
+		endpoint, has := running[lookup]
+		if !has {
 			return nil
 		}
 
-		id := group.ID(k.Name)
+		rpcClient, err := client.New(endpoint.Address, interfaceSpec)
+		if err == nil {
+			switch interfaceSpec {
+			case controller.InterfaceSpec:
+				c := controller_rpc.Adapt(pn, rpcClient)
+				log.Debug("Calling on controller", "controller", c, "name", pn, "spec", r.Spec)
+				err = callController(c, r.Spec)
+				if err != nil {
+					log.Error("Error running on controller", "c", c, "spec", r.Spec, "err", err)
+				}
 
-		lookup, _ := r.Handler.GetLookupAndType()
-		log.Debug("Processing group", "groupID", id, "plugin", r.Handler, "V", logutil.V(100))
-
-		ep, has := running[lookup]
-		if !has {
-			log.Warn("Not running", "plugin", lookup, "name", r.Handler)
-			return err
+			case group.InterfaceSpec:
+				c := group_rpc.Adapt(rpcClient)
+				log.Debug("Calling on group", "controller", c, "name", pn, "spec", r.Spec)
+				err = callGroupPlugin(c, group.Spec{ID: group.ID(r.Spec.Metadata.Name), Properties: r.Spec.Properties})
+				if err != nil {
+					log.Error("Error running on group", "c", c, "spec", r.Spec, "err", err)
+				}
+			}
 		}
-
-		gp, err := rpc.NewClient(ep.Address)
-		if err != nil {
-			log.Warn("Cannot contact group", "groupID", id, "plugin", r.Handler, "endpoint", ep.Address)
-			return err
-		}
-
-		log.Debug("exec on group", "groupID", id, "plugin", r.Handler, "V", logutil.V(100))
-
-		// spec is store in the properties
-		if r.Spec.Properties == nil {
-			return fmt.Errorf("no spec for group %s plugin=%v", id, r.Handler)
-		}
-
-		spec := group.Spec{
-			ID:         id,
-			Properties: r.Spec.Properties,
-		}
-
-		err = work(gp, spec)
-		if err != nil {
-			log.Warn("Error from exec on plugin", "err", err)
-			return err
-		}
-
 		return nil
 	})
 }

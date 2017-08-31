@@ -13,6 +13,11 @@ func NameFrom(lookup, sub string) Name {
 	return Name(strings.Join([]string{lookup, sub}, "/"))
 }
 
+// IsEmpty returns true if the name is an empty string
+func (n Name) IsEmpty() bool {
+	return string(n) == ""
+}
+
 // GetLookupAndType returns the plugin name for lookup and sub-type supported by the plugin.
 // The name follows a microformat of $plugin[/$subtype] where $plugin is used for the discovery / lookup by name.
 // The $subtype is used for the Type parameter in the RPC requests.

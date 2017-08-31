@@ -91,7 +91,9 @@ func TestStoredRecords(t *testing.T) {
 	require.EqualValues(t, []persisted{
 		{
 			Key: key{Kind: "group", Name: "managers"},
-			Record: record{Handler: plugin.Name("group-stateless"),
+			Record: record{
+				InterfaceSpec: group.InterfaceSpec,
+				Handler:       plugin.Name("group-stateless"),
 				Spec: types.Spec{
 					Kind:       "group",
 					Metadata:   types.Metadata{Name: "managers"},
@@ -122,7 +124,9 @@ func TestStoredRecords(t *testing.T) {
 	g2 := globalSpec{}
 	require.NoError(t, g2.load(store))
 
-	require.EqualValues(t, record{Handler: plugin.Name("group-stateless"),
+	require.EqualValues(t, record{
+		Handler:       plugin.Name("group-stateless"),
+		InterfaceSpec: group.InterfaceSpec,
 		Spec: types.Spec{
 			Kind:       "group",
 			Metadata:   types.Metadata{Name: "managers"},

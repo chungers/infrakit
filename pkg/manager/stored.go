@@ -3,7 +3,9 @@ package manager
 import (
 	"fmt"
 
+	"github.com/docker/infrakit/pkg/controller"
 	"github.com/docker/infrakit/pkg/plugin"
+	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/store"
 	"github.com/docker/infrakit/pkg/types"
@@ -17,6 +19,9 @@ type key struct {
 type record struct {
 	// Handler is the actuall plugin used to process the input
 	Handler plugin.Name
+
+	// InterfaceSpec is the interface spec of the handler
+	InterfaceSpec spi.InterfaceSpec
 
 	// Spec is a copy of the spec
 	Spec types.Spec
@@ -72,8 +77,9 @@ func (g *globalSpec) updateSpec(spec types.Spec, handler plugin.Name) {
 		Name: spec.Metadata.Name,
 	}
 	g.index[key] = record{
-		Spec:    spec,
-		Handler: handler,
+		Spec:          spec,
+		Handler:       handler,
+		InterfaceSpec: controller.InterfaceSpec,
 	}
 }
 
@@ -144,7 +150,8 @@ func (g *globalSpec) updateGroupSpec(gspec group.Spec, handler plugin.Name) {
 					Name: string(gspec.ID),
 				},
 			},
-			Handler: handler,
+			Handler:       handler,
+			InterfaceSpec: group.InterfaceSpec,
 		}
 	}
 	record := g.index[key]
