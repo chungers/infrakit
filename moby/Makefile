@@ -11,13 +11,15 @@ TAR2INITRD_IMAGE=mobylinux/tar2initrd:d5711601eb5b89de0f052d87365e18388ff3f1b5@s
 TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa601811@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
 GCLOUD_IMAGE_TAG ?= sha256:fb904276e8a902ccd9564989d9222bdfbe37ffcd7f9989ca7e24b4019a9b4b6b
 
+LOG_DIR := build
+
 export
 
 define push_to_s3
 	@echo "+ Pushing ${3} to ${1} with type ${2} - ${3}"
 	# Create versioned build
 	docker run --rm \
-		-v $(CURDIR)/cloud/$(1):/tmp \
+		-v $(CURDIR)/$(LOG_DIR)/:/tmp \
 		-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 		docker4x/awscli:latest s3 cp \
@@ -27,7 +29,7 @@ define push_to_s3
 		--metadata editions_version=$(4),arch=$(1),channel=${CHANNEL},docker_version=${DOCKER_VERSION},moby_commit=${MOBY_COMMIT},editions_commit=$(EDITIONS_COMMIT),jenkins_build=$(BUILD_NUMBER)
 	# Update latest for that commit
 		docker run --rm \
-		-v $(CURDIR)/cloud/$(1):/tmp \
+		-v $(CURDIR)/$(LOG_DIR)/:/tmp \
 		-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \
 		-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 		docker4x/awscli:latest s3 cp \
@@ -38,7 +40,7 @@ define push_to_s3
 	# Update the latest endpoint for nightly and tests
 	@if [ "${EE}" = "no" ]; then \
 		docker run --rm \
-			-v $(CURDIR)/cloud/$(1):/tmp \
+			-v $(CURDIR)/$(LOG_DIR)/:/tmp \
 			-e AWS_ACCESS_KEY_ID=${AWS_PUSH_ACCESS_KEY_ID} \
 			-e AWS_SECRET_ACCESS_KEY=${AWS_PUSH_SECRET_ACCESS_KEY} \
 			docker4x/awscli:latest s3 cp \
@@ -80,7 +82,7 @@ endif
 		google/cloud-sdk@$(GCLOUD_IMAGE_TAG) \
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz
 		mkdir -p cloud/gcp
-		echo "docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> cloud/gcp/${BDI_OUT}
+		echo "docker-for-gcp-images/${EDITIONS_COMMIT}/$(BUILD_NUMBER)/gce.img.tar.gz" >> ./$(LOG_DIR)/${BDI_OUT}
 		$(MAKE) -C ../gcp save BUILD_NUMBER=$(GCP_BUILD_NUMBER) FORCE_GSUTIL_AUTH=0
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,gcp,bdi,$(BDI_OUT),$(GCP_TAG_VERSION))
@@ -117,7 +119,7 @@ ami:
 		-e MOBY_OUTPUT \
 		-e LOAD_IMAGES \
 		-e BUILD_TAG \
-		moby-ami:build bake >  ./build/$(AMI_OUT)
+		moby-ami:build bake >  ./$(LOG_DIR)/$(AMI_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,aws,ami,$(AMI_OUT),$(AWS_TAG_VERSION))
 endif
@@ -150,7 +152,7 @@ uploadvhd:
 		--rm \
 		-v vhdartifact:/tmp \
 		moby-azure:build \
-		uploadvhd >./build/$(VHD_OUT)
+		uploadvhd >./$(LOG_DIR)/$(VHD_OUT)
 ifeq ($(PUSH_BUILD_TO_S3),true)
 	$(call push_to_s3,azure,vhd,$(VHD_OUT),$(AZURE_TAG_VERSION))
 endif
