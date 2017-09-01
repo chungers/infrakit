@@ -1,7 +1,6 @@
 package up
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/docker/infrakit/cmd/infrakit/base"
@@ -20,6 +19,11 @@ import (
 )
 
 var log = logutil.New("module", "cli/up")
+
+const (
+	debugV  = logutil.V(400)
+	debugV2 = logutil.V(500)
+)
 
 func init() {
 	base.Register(Command)
@@ -59,6 +63,8 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 	}
 
 	launchConfigURL := up.Flags().String("launch-config-url", "", "URL for the startup configs")
+	loop := up.Flags().Bool("loop", true, "True to loop")
+
 	up.Flags().AddFlagSet(templateFlags)
 
 	up.RunE = func(c *cobra.Command, args []string) error {
@@ -66,13 +72,6 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 		if plugins == nil {
 			panic("no plugins()")
 		}
-
-		if len(args) == 0 {
-			return fmt.Errorf("missing url arg")
-		}
-
-		// Now the actual spec of the infrastructure to stand up
-		specsURL := args[0]
 
 		launchRules := []launch.Rule{}
 		// parse the launch rules if any
@@ -105,6 +104,12 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 
 		log.Info("Entering main loop")
 
+		// Now the actual spec of the infrastructure to stand up
+		specsURL := ""
+		if len(args) == 1 {
+			specsURL = args[0]
+		}
+
 		tick := time.Tick(5 * time.Second)
 		stop := make(chan struct{})
 
@@ -121,11 +126,35 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 					return
 				}
 
-				// refresh the specs from the url
-				log.Info("Checking", "url", specsURL)
-				specs, err := loadSpecs(specsURL)
-				if err != nil {
-					log.Error("Error loading specs", "url", specsURL, "err", err)
+				specs := []types.Spec{}
+
+				if specsURL != "" {
+					// refresh the specs from the url
+					log.Info("Checking", "url", specsURL)
+					specs, err = loadSpecs(specsURL)
+					if err != nil {
+						log.Error("Error loading specs", "url", specsURL, "err", err)
+						continue main
+					}
+				} else {
+
+					log.Info("Inspecting manager because no url is specified.")
+					err = run.Call(plugins, manager.InterfaceSpec, nil,
+						func(m manager.Manager) error {
+							stored, err := m.Specs()
+							if err != nil {
+								return err
+							}
+							specs = stored
+							return nil
+						})
+					if err != nil {
+						log.Error("Error making call to manager", "err", err)
+						continue main
+					}
+				}
+
+				if len(specs) == 0 {
 					continue main
 				}
 
@@ -142,16 +171,23 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 					continue main
 				}
 
-				// Now tell the manager to enforce
-				err = run.Call(plugins, manager.InterfaceSpec, nil,
-					func(m manager.Manager) error {
-						log.Debug("Calling manager to enforce", "m", m, "specs", specs)
-						return m.Enforce(specs)
-					})
-				if err != nil {
-					log.Error("Error making call to manager", "err", err)
+				if specsURL != "" {
+					// Now tell the manager to enforce only if we have new input. Otherwise, just
+					// reconcile using what's already stored.
+					err = run.Call(plugins, manager.InterfaceSpec, nil,
+						func(m manager.Manager) error {
+							log.Debug("Calling manager to enforce", "m", m, "specs", specs, "V", debugV2)
+							return m.Enforce(specs)
+						})
+					if err != nil {
+						log.Error("Error making call to manager", "err", err)
+					}
 				}
 
+				if !*loop {
+					log.Info("Single pass only.")
+					return
+				}
 			}
 		}()
 

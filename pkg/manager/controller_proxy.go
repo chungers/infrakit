@@ -84,7 +84,6 @@ func (c *pController) Plan(operation controller.Operation,
 }
 
 func (c *pController) Commit(operation controller.Operation, spec types.Spec) (object types.Object, err error) {
-	log.Debug("Callling commit >>>>>>>", "spec", spec)
 	gSpec, e := c.translateSpec(spec)
 	if e != nil {
 		err = e
@@ -165,7 +164,18 @@ func (c *pController) Describe(search *types.Metadata) (objects []types.Object, 
 }
 
 func (c *pController) Free(search *types.Metadata) (objects []types.Object, err error) {
+
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>")
+
 	objects, err = c.Describe(search)
-	err = c.plugin.FreeGroup(group.ID(search.Name))
+	if err != nil {
+		return
+	}
+	for _, object := range objects {
+		err = c.plugin.FreeGroup(group.ID(object.Spec.Metadata.Name))
+		if err != nil {
+			return
+		}
+	}
 	return
 }

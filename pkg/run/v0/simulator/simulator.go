@@ -59,7 +59,7 @@ var DefaultOptions = Options{
 	Store:         local.Getenv(EnvStore, "mem"),
 	Dir:           local.Getenv(EnvDir, filepath.Join(local.InfrakitHome(), "simulator")),
 	InstanceTypes: strings.Split(local.Getenv(EnvInstanceTypes, "compute,net,disk"), ","),
-	L4Names:       strings.Split(local.Getenv(EnvL4Names, "lb1,lb2,lb3"), ","),
+	L4Names:       strings.Split(local.Getenv(EnvL4Names, "lb1,lb2"), ","),
 }
 
 // Run runs the plugin, blocking the current thread.  Error is returned immediately

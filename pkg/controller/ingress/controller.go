@@ -72,6 +72,7 @@ func (m *managed) Plan(operation controller.Operation, spec types.Spec) (*types.
 
 // Manage implements internal/Managed
 func (m *managed) Enforce(spec types.Spec) (*types.Object, error) {
+	fmt.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> ingress controller managed.Enforce")
 	err := m.init(spec)
 	if err != nil {
 		return nil, err

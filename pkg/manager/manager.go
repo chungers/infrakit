@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/docker/infrakit/pkg/controller"
 	"github.com/docker/infrakit/pkg/discovery"
@@ -48,6 +49,9 @@ type Manager interface {
 
 	// Enforce enforces infrastructure state to match that of the specs
 	Enforce(specs []types.Spec) error
+
+	// Specs returns the specs this manager tasked with enforcing
+	Specs() ([]types.Spec, error)
 
 	// Inspect returns the current state of the infrastructure
 	Inspect() ([]types.Object, error)
@@ -148,20 +152,79 @@ func (m *manager) LeaderLocation() (*url.URL, error) {
 
 // Enforce enforces infrastructure state to match that of the specs
 func (m *manager) Enforce(specs []types.Spec) error {
+	requested := globalSpec{}
+	for _, s := range specs {
+		handler := plugin.NameFrom(s.Kind, s.Metadata.Name)
+		if s.Kind == "group" {
+			// TODO(chungers) -- this really needs to be cleaned up
+			handler = plugin.Name(m.backendName)
+			gspec := group.Spec{
+				ID:         group.ID(s.Metadata.Name),
+				Properties: s.Properties,
+			}
+			requested.updateGroupSpec(gspec, handler)
+		} else {
+			requested.updateSpec(s, handler)
+		}
+	}
 
-	buff, err := types.AnyValueMust(specs).MarshalYAML()
+	// Note we also have a version that's in the persistent store.
+	// Should we do some delta calculations?
+
+	return requested.store(m.snapshot)
+}
+
+// Specs returns the specs this manager is tasked with enforcing
+func (m *manager) Specs() ([]types.Spec, error) {
+	global := globalSpec{}
+	err := global.load(m.snapshot)
+	if err != nil {
+		return nil, err
+	}
+	saved := []types.Spec{}
+	err = global.visit(func(k key, r record) error {
+		saved = append(saved, r.Spec)
+		return nil
+	})
+	return saved, err
+}
+
+func (m *manager) allControllers(work func(controller.Controller) error) error {
+	// Go through all the controllers
+	running, err := m.plugins.List()
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(string(buff))
-
+	log.Debug("current state", "running", running, "manager", m, "V", debugV2)
+	for lookup, endpoint := range running {
+		rpcClient, err := client.New(endpoint.Address, controller.InterfaceSpec)
+		log.Debug("Scanned controller", "name", lookup, "at", endpoint, "err", err, "manager", m, "V", debugV2)
+		if err == nil {
+			name := plugin.Name(lookup)
+			log.Debug("Calling controller", "name", name, "V", debugV2)
+			c := controller_rpc.Adapt(name, rpcClient)
+			err = work(c)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
-// Inspect returns the current state of the infrastructure
+// Inspect returns the current state of the infrastructure.  It performs an 'all-shard' query across
+// all plugins of the type 'group' and then aggregate the results.
 func (m *manager) Inspect() ([]types.Object, error) {
-	return nil, nil
+	aggregated := []types.Object{}
+	err := m.allControllers(func(c controller.Controller) error {
+		objects, err := c.Describe(nil)
+		if err != nil {
+			return err
+		}
+		aggregated = append(aggregated, objects...)
+		return nil
+	})
+	return aggregated, err
 }
 
 // Terminate destroys all resources associated with the specs
@@ -298,85 +361,105 @@ func (m *manager) Stop() {
 	m.leader.Stop()
 }
 
-func (m *manager) getCurrentState() (globalSpec, error) {
-	// TODO(chungers) -- using the group plugin backend here isn't the general case.
-	// When plugin activation is implemented, it's possible to have multiple group plugins
-	// and the only way to reconstruct the globalSpec, which contains multiple groups of
-	// possibly different group plugin implementations, is to do an 'all-shard' query across
-	// all plugins of the type 'group' and then aggregate the results into the final globalSpec.
-	// For now this just uses the gross simplification of asking the group plugin that the manager
-	// proxies.
+// func (m *manager) getCurrentState() (globalSpec, error) {
+// 	// TODO(chungers) -- using the group plugin backend here isn't the general case.
+// 	// When plugin activation is implemented, it's possible to have multiple group plugins
+// 	// and the only way to reconstruct the globalSpec, which contains multiple groups of
+// 	// possibly different group plugin implementations, is to do an 'all-shard' query across
+// 	// all plugins of the type 'group' and then aggregate the results into the final globalSpec.
+// 	// For now this just uses the gross simplification of asking the group plugin that the manager
+// 	// proxies.
 
-	global := globalSpec{}
+// 	global := globalSpec{}
+// 	// Go through all the controllers
+// 	running, err := m.plugins.List()
+// 	if err != nil {
+// 		return global, err
+// 	}
+// 	log.Debug("current state", "running", running, "manager", m)
+// 	for lookup, endpoint := range running {
+// 		rpcClient, err := client.New(endpoint.Address, controller.InterfaceSpec)
+// 		if err == nil {
+// 			c := controller_rpc.Adapt(plugin.Name(lookup), rpcClient)
+// 			objects, err := c.Describe(nil)
+// 			log.Debug("Describe on controller", "controller", c, "name", lookup, "objects", objects, "err", err, "manager", m)
+// 			if err != nil {
+// 				log.Error("Error describing controller", "c", c, "err", err, "manager", m)
+// 				return global, err
+// 			}
+// 			for _, object := range objects {
+// 				global.updateSpec(object.Spec, plugin.NameFrom(lookup, object.Spec.Metadata.Name))
+// 			}
+// 		}
+// 	}
 
-	specs, err := m.Plugin.InspectGroups()
-	if err != nil {
-		return global, err
-	}
-
-	for _, spec := range specs {
-		global.updateGroupSpec(spec, plugin.Name(m.backendName))
-	}
-	return global, nil
-}
+// 	return global, nil
+// }
 
 func (m *manager) onAssumeLeadership() error {
-	log.Info("Assuming leadership")
+	wait := 5 * time.Second
+	received := 0
 
-	// load the config
-	config := &globalSpec{}
-	// load the latest version -- assumption here is that it's been persisted already.
-	log.Info("Loading snapshot")
-	err := config.load(m.snapshot)
-	log.Info("Loaded snapshot", "err", err)
-	if err != nil {
-		log.Warn("Error loading config", "err", err)
-		return err
+	for {
+
+		log.Info("Assuming leadership")
+
+		// load the config
+		config := &globalSpec{}
+		// load the latest version -- assumption here is that it's been persisted already.
+		log.Info("Loading snapshot")
+		err := config.load(m.snapshot)
+		log.Info("Loaded snapshot", "err", err)
+		if err != nil {
+			log.Warn("Error loading config", "err", err)
+			return err
+		}
+
+		log.Info("Committing specs to controllers", "config", config)
+
+		err = m.callControllers(*config,
+			func(c controller.Controller, spec types.Spec) error {
+				received++
+
+				log.Info("Committing spec", "controller", c, "spec", spec)
+				_, err := c.Commit(controller.Enforce, spec)
+				if err != nil {
+					log.Error("Error committing spec", "spec", spec, "err", err)
+				}
+				return err
+			},
+			func(c group.Plugin, gspec group.Spec) error {
+				received++
+
+				log.Info("Committing group spec", "groupPlugin", c, "spec", gspec)
+				_, err := c.CommitGroup(gspec, false)
+				if err != nil {
+					log.Error("Error committing group spec", "spec", gspec, "err", err)
+				}
+				return err
+			})
+		if err != nil {
+			received = 0
+		}
+
+		if received > 0 {
+			log.Info("On leadership dispatched to running controllers")
+			break
+		}
+
+		log.Warn("No controllers received the messages to enforce. Try later.")
+		<-time.After(wait)
 	}
-	log.Info("Committing specs to controllers", "config", config)
-	return m.callControllers(*config,
-		func(c controller.Controller, spec types.Spec) error {
-			log.Info("Committing spec", "controller", c, "spec", spec)
-			_, err := c.Commit(controller.Enforce, spec)
-			if err != nil {
-				log.Warn("Error committing spec", "spec", spec, "err", err)
-			}
-			return err
-		},
-		func(c group.Plugin, gspec group.Spec) error {
-			log.Info("Committing group spec", "groupPlugin", c, "spec", gspec)
-			_, err := c.CommitGroup(gspec, false)
-			if err != nil {
-				log.Warn("Error committing group spec", "spec", gspec, "err", err)
-			}
-			return err
-		})
+	return nil
 }
 
 func (m *manager) onLostLeadership() error {
 	log.Info("Lost leadership")
-	config, err := m.getCurrentState()
-	if err != nil {
+	return m.allControllers(func(c controller.Controller) error {
+		log.Debug("Freeing controller", "c", c)
+		_, err := c.Free(nil)
 		return err
-	}
-	log.Info("Freeing groups")
-	return m.callControllers(config,
-		func(c controller.Controller, spec types.Spec) error {
-			log.Info("Freeing controller", "metadata", spec.Metadata)
-			_, err := c.Free(&spec.Metadata)
-			if err != nil {
-				log.Warn("Error freeing controller", "metadata", spec.Metadata, "err", err)
-			}
-			return nil
-		},
-		func(c group.Plugin, gspec group.Spec) error {
-			log.Info("Freeing group", "id", gspec.ID)
-			err := c.FreeGroup(gspec.ID)
-			if err != nil {
-				log.Warn("Error freeing group", "id", gspec.ID, "err", err)
-			}
-			return err
-		})
+	})
 }
 
 func (m *manager) callControllers(config globalSpec,
@@ -393,7 +476,7 @@ func (m *manager) callControllers(config globalSpec,
 
 	return config.visit(func(k key, r record) error {
 		// for controllers, the kind and the name make up to be the plugin name
-		pn := plugin.NameFrom(k.Kind, k.Name)
+		pn := plugin.Name(k.Name)
 		if !r.Handler.IsEmpty() {
 			pn = r.Handler
 		}
@@ -401,20 +484,17 @@ func (m *manager) callControllers(config globalSpec,
 		if r.Spec.Version != "" {
 			interfaceSpec = spi.DecodeInterfaceSpec(r.Spec.Version)
 		}
-		log.Debug("Dispatching work", "name", pn, "interfaceSpec", interfaceSpec)
-
 		lookup, _ := pn.GetLookupAndType()
-
 		endpoint, has := running[lookup]
 		if !has {
 			return nil
 		}
-
+		log.Debug("Dispatching work", "name", pn, "interfaceSpec", interfaceSpec, "lookup", lookup)
 		rpcClient, err := client.New(endpoint.Address, interfaceSpec)
 		if err == nil {
 			switch interfaceSpec {
 			case controller.InterfaceSpec:
-				c := controller_rpc.Adapt(pn, rpcClient)
+				c := controller_rpc.Adapt(plugin.Name(lookup), rpcClient)
 				log.Debug("Calling on controller", "controller", c, "name", pn, "spec", r.Spec)
 				err = callController(c, r.Spec)
 				if err != nil {

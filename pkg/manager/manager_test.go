@@ -308,6 +308,7 @@ func TestChangeLeadership(t *testing.T) {
 	checkpoint2 := make(chan struct{})
 	checkpoint2b := make(chan struct{})
 	checkpoint3 := make(chan struct{})
+	checkpoint3b := make(chan struct{})
 
 	manager1, stoppable1 := testEnsemble(t, testDiscoveryDir(t), "m1", leaderChans[0], ctrl,
 		func(s *store_mock.MockSnapshot) {
@@ -334,7 +335,7 @@ func TestChangeLeadership(t *testing.T) {
 			).Return("ok", nil)
 
 			// We will get a call to inspect what's being watched
-			g.EXPECT().InspectGroups().Return([]group.Spec{managerSpec}, nil)
+			g.EXPECT().InspectGroups().AnyTimes().Return([]group.Spec{managerSpec}, nil)
 
 			// Now we lost leadership... need to unwatch
 			g.EXPECT().FreeGroup(gomock.Eq(group.ID("managers"))).Do(
@@ -358,6 +359,19 @@ func TestChangeLeadership(t *testing.T) {
 				}).Return(types.Object{Spec: ingressSpec}, nil)
 
 			// There should be a FREE here later...
+
+			// We will get a call to inspect what's being watched
+			g.EXPECT().Describe(gomock.Eq(nil)).AnyTimes().Return([]types.Object{{Spec: ingressSpec}}, nil)
+
+			// Now we lost leadership... need to unwatch
+			g.EXPECT().Free(gomock.Eq(&types.Metadata{Name: "elb1"})).Do(
+				func(metdata *types.Metadata) ([]types.Object, error) {
+
+					defer close(checkpoint3b)
+
+					return []types.Object{{Spec: ingressSpec}}, nil
+				},
+			).Return([]types.Object{{Spec: ingressSpec}}, nil)
 		},
 	)
 	manager2, stoppable2 := testEnsemble(t, testDiscoveryDir(t), "m2", leaderChans[1], ctrl,
@@ -409,7 +423,9 @@ func TestChangeLeadership(t *testing.T) {
 
 	<-checkpoint2
 	<-checkpoint2b
-	<-checkpoint3
+	time.Sleep(5 * time.Second)
+	//	<-checkpoint3
+	//	<-checkpoint3b
 
 	manager1.Stop()
 	manager2.Stop()

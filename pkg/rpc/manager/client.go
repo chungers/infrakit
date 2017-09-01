@@ -60,6 +60,14 @@ func (c client) Inspect() ([]types.Object, error) {
 	return resp.Objects, err
 }
 
+// Specs returns the current state of the infrastructure
+func (c client) Specs() ([]types.Spec, error) {
+	req := SpecsRequest{}
+	resp := SpecsResponse{}
+	err := c.client.Call("Manager.Specs", req, &resp)
+	return resp.Specs, err
+}
+
 // Terminate destroys all resources associated with the specs
 func (c client) Terminate(specs []types.Spec) error {
 	req := TerminateRequest{

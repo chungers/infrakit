@@ -98,6 +98,25 @@ func (p *Manager) Inspect(_ *http.Request, req *InspectRequest, resp *InspectRes
 	return nil
 }
 
+// SpecsRequest is the rpc request
+type SpecsRequest struct {
+}
+
+// SpecsResponse is the rpc response
+type SpecsResponse struct {
+	Specs []types.Spec
+}
+
+// Specs is the rpc method for Manager.Specs
+func (p *Manager) Specs(_ *http.Request, req *SpecsRequest, resp *SpecsResponse) error {
+	specs, err := p.manager.Specs()
+	if err != nil {
+		return err
+	}
+	resp.Specs = specs
+	return nil
+}
+
 // TerminateRequest is the rpc request
 type TerminateRequest struct {
 	Specs []types.Spec
