@@ -69,6 +69,7 @@ start()
 	done
 	eend 0
 
+	docker volume create --name sshkey
 	docker run -d \
 		--privileged \
 		--name agent \
@@ -84,7 +85,7 @@ start()
 		-v /mnt:/mnt \
 		-v /etc:/etc \
 		-v /var/etc/docker:/var/etc/docker \
-		-v /var/etc/ssh:/etc/ssh \
+		-v sshkey:/etc/ssh \
 		-v /var/etc/hostname:/etc/hostname \
 		-v /var/home:/home \
 		-v /var/run/docker.sock:/var/run/docker.sock \
