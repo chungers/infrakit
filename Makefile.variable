@@ -110,15 +110,22 @@ DOCKER_AWS_ACCOUNT_URL := https://s3.amazonaws.com/docker-for-aws/data/docker_ac
 AWS_AMI_LIST := https://s3.amazonaws.com/docker-for-aws/data/ami/$(DOCKER_VERSION)/ami_list.json
 
 #### Azure Specific VARS
-VHD_SKU := docker-ce
-VHD_VERSION := 1.0.11
 CONTAINER_NAME := mobylinux
+
 # stage offer will have the -preview 
 VHD_OFFER_ID := docker-ce
-EE_VHD_SKU := docker-ee
-EE_VHD_VERSION := 1.0.5
-# stage offer will have the -preview 
+VHD_SKU := docker-ce
+VHD_VERSION := 1.0.12
+ifeq ($(CHANNEL),edge)
+ VHD_OFFER_ID := docker-ce-edge
+ VHD_SKU := docker-ce-edge
+ VHD_VERSION := 1.0.4
+endif
+
 EE_OFFER_ID := docker-ee
+EE_VHD_SKU := docker-ee
+EE_VHD_VERSION := 1.0.9
+
 
 #### GCP Specific VARS
 GCP_BUILD_NUMBER := 3
