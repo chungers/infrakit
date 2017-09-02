@@ -42,6 +42,16 @@ func (c client) LeaderLocation() (*url.URL, error) {
 	return resp.Location, err
 }
 
+// Plan describes the changes need to apply to current specs
+func (c client) Plan(specs []types.Spec) (types.Changes, error) {
+	req := PlanRequest{
+		Specs: specs,
+	}
+	resp := PlanResponse{}
+	err := c.client.Call("Manager.Plan", req, &resp)
+	return resp.Changes, err
+}
+
 // Enforce enforces infrastructure state to match that of the specs
 func (c client) Enforce(specs []types.Spec) error {
 	req := EnforceRequest{

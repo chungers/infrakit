@@ -20,16 +20,65 @@ type testCantMarshal struct {
 	Private func() error
 }
 
+func TestFingerprints(t *testing.T) {
+	require.Equal(t, Fingerprint(
+		AnyValueMust(map[string]interface{}{
+			"a": 1,
+			"z": "z",
+			"x": true,
+		}),
+		AnyValueMust(map[string]interface{}{
+			"a": 10,
+			"z": "zz",
+			"x": false,
+		})), Fingerprint(
+		AnyValueMust(map[string]interface{}{
+			"z": "z",
+			"x": true,
+			"a": 1,
+		}),
+		AnyValueMust(map[string]interface{}{
+			"a": 10,
+			"z": "zz",
+			"x": false,
+		})))
+	require.NotEqual(t, Fingerprint(
+		AnyValueMust(map[string]interface{}{
+			"a": 1,
+			"z": "z",
+			"x": false,
+		}),
+		AnyValueMust(map[string]interface{}{
+			"a": 10,
+			"z": "zz",
+			"x": false,
+		})), Fingerprint(
+		AnyValueMust(map[string]interface{}{
+			"a": 1,
+			"z": "z",
+			"x": true,
+		}),
+		AnyValueMust(map[string]interface{}{
+			"a": 10,
+			"z": "zz",
+			"x": false,
+		})))
+
+}
+
 func TestMarshalUnmarshalAny(t *testing.T) {
 
 	config := AnyBytes([]byte(`{"name":"config"}`))
 	configCopy := AnyString(`{"name":"config"}`)
 	require.Equal(t, config.String(), configCopy.String())
+	require.Equal(t, 0, config.Compare(configCopy))
 
 	config1, err := AnyValue(map[string]interface{}{"name": "config1"})
 	require.NoError(t, err)
 	config2, err := AnyValue(map[string]interface{}{"name": "config2"})
 	require.NoError(t, err)
+
+	require.NotEqual(t, 0, config1.Compare(config2))
 
 	spec := testSpec{
 		Properties: config1,

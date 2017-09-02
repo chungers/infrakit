@@ -15,6 +15,7 @@ import (
 	controller_rpc "github.com/docker/infrakit/pkg/rpc/controller"
 	group_rpc "github.com/docker/infrakit/pkg/rpc/group"
 	rpc "github.com/docker/infrakit/pkg/rpc/group"
+	"github.com/docker/infrakit/pkg/run/depends"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/store"
@@ -46,6 +47,9 @@ type Manager interface {
 
 	// LeaderLocation returns the location of the leader
 	LeaderLocation() (*url.URL, error)
+
+	// Plan returns the changes to be made
+	Plan(specs []types.Spec) (types.Changes, error)
 
 	// Enforce enforces infrastructure state to match that of the specs
 	Enforce(specs []types.Spec) error
@@ -150,8 +154,22 @@ func (m *manager) LeaderLocation() (*url.URL, error) {
 	return m.leaderStore.GetLocation()
 }
 
+// Plan returns the changes needed given the new input
+func (m *manager) Plan(specs []types.Spec) (types.Changes, error) {
+	current, err := m.Specs()
+	if err != nil {
+		return types.Changes{}, err
+	}
+
+	currentSpecs := types.Specs(current)
+	updatedSpecs := types.Specs(specs)
+	return currentSpecs.Changes(updatedSpecs), nil
+}
+
 // Enforce enforces infrastructure state to match that of the specs
 func (m *manager) Enforce(specs []types.Spec) error {
+
+	// TODO
 	requested := globalSpec{}
 	for _, s := range specs {
 		handler := plugin.NameFrom(s.Kind, s.Metadata.Name)
@@ -263,7 +281,7 @@ func (m *manager) Start() (<-chan struct{}, error) {
 			select {
 
 			case op := <-backendOps:
-				log.Debug("Backend operation", "op", op, "V", debugV)
+				log.Debug("Backend operation", "op", op, "V", debugV2)
 				if m.isLeader {
 					op.operation()
 				}
@@ -396,65 +414,114 @@ func (m *manager) Stop() {
 // 	return global, nil
 // }
 
-func (m *manager) onAssumeLeadership() error {
-	wait := 5 * time.Second
-	received := 0
+func (m *manager) checkPluginsRunning(config *globalSpec) (<-chan struct{}, error) {
+	wait := make(chan struct{})
 
-	for {
-
-		log.Info("Assuming leadership")
-
-		// load the config
-		config := &globalSpec{}
-		// load the latest version -- assumption here is that it's been persisted already.
-		log.Info("Loading snapshot")
-		err := config.load(m.snapshot)
-		log.Info("Loaded snapshot", "err", err)
-		if err != nil {
-			log.Warn("Error loading config", "err", err)
-			return err
-		}
-
-		log.Info("Committing specs to controllers", "config", config)
-
-		err = m.callControllers(*config,
-			func(c controller.Controller, spec types.Spec) error {
-				received++
-
-				log.Info("Committing spec", "controller", c, "spec", spec)
-				_, err := c.Commit(controller.Enforce, spec)
-				if err != nil {
-					log.Error("Error committing spec", "spec", spec, "err", err)
-				}
-				return err
-			},
-			func(c group.Plugin, gspec group.Spec) error {
-				received++
-
-				log.Info("Committing group spec", "groupPlugin", c, "spec", gspec)
-				_, err := c.CommitGroup(gspec, false)
-				if err != nil {
-					log.Error("Error committing group spec", "spec", gspec, "err", err)
-				}
-				return err
-			})
-		if err != nil {
-			received = 0
-		}
-
-		if received > 0 {
-			log.Info("On leadership dispatched to running controllers")
-			break
-		}
-
-		log.Warn("No controllers received the messages to enforce. Try later.")
-		<-time.After(wait)
+	specs := config.specs()
+	runnables, err := depends.RunnablesFrom(specs)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	if len(runnables) == 0 {
+		// There's nothing to do. Don't wait just return
+		close(wait)
+		return wait, nil
+	}
+
+	go func(check depends.Runnables, plugins discovery.Plugins) {
+
+		for {
+			running, err := plugins.List()
+			if err != nil {
+				log.Error("Cannot list running plugins", "err", err)
+				continue
+			}
+
+			match := 0
+			for _, runnable := range runnables {
+				lookup, _ := runnable.Plugin().GetLookupAndType()
+				if _, has := running[lookup]; has {
+					match++
+				}
+			}
+			if match == len(runnables) {
+				close(wait)
+				return
+			}
+
+			<-time.After(5 * time.Second)
+		}
+
+	}(runnables, m.plugins)
+	return wait, nil
+}
+
+func (m *manager) onAssumeLeadership() error {
+	log.Info("Assuming leadership")
+
+	// load the config
+	config := &globalSpec{}
+	// load the latest version -- assumption here is that it's been persisted already.
+	log.Info("Loading snapshot")
+	err := config.load(m.snapshot)
+	log.Info("Loaded snapshot", "err", err)
+	if err != nil {
+		log.Warn("Error loading config", "err", err)
+		return err
+	}
+
+	// check that all the plugins referenced in the config are running, block here
+	wait, err := m.checkPluginsRunning(config)
+	if err != nil {
+		return err
+	}
+
+	<-wait
+
+	log.Info("Committing specs to controllers", "config", config)
+
+	return m.callControllers(*config,
+		func(c controller.Controller, spec types.Spec) error {
+			log.Info("Committing spec", "controller", c, "spec", spec)
+			_, err := c.Commit(controller.Enforce, spec)
+			if err != nil {
+				log.Error("Error committing spec", "spec", spec, "err", err)
+			}
+			return err
+		},
+		func(c group.Plugin, gspec group.Spec) error {
+			log.Info("Committing group spec", "groupPlugin", c, "spec", gspec)
+			_, err := c.CommitGroup(gspec, false)
+			if err != nil {
+				log.Error("Error committing group spec", "spec", gspec, "err", err)
+			}
+			return err
+		})
 }
 
 func (m *manager) onLostLeadership() error {
 	log.Info("Lost leadership")
+
+	// load the config
+	config := &globalSpec{}
+	// load the latest version -- assumption here is that it's been persisted already.
+	log.Info("Loading snapshot")
+	err := config.load(m.snapshot)
+	log.Info("Loaded snapshot", "err", err)
+	if err != nil {
+		log.Warn("Error loading config", "err", err)
+		return err
+	}
+
+	// check that all the plugins referenced in the config are running, block here
+	wait, err := m.checkPluginsRunning(config)
+	if err != nil {
+		return err
+	}
+
+	<-wait
+
 	return m.allControllers(func(c controller.Controller) error {
 		log.Debug("Freeing controller", "c", c)
 		_, err := c.Free(nil)
@@ -499,6 +566,7 @@ func (m *manager) callControllers(config globalSpec,
 				err = callController(c, r.Spec)
 				if err != nil {
 					log.Error("Error running on controller", "c", c, "spec", r.Spec, "err", err)
+					return err
 				}
 
 			case group.InterfaceSpec:
@@ -507,6 +575,7 @@ func (m *manager) callControllers(config globalSpec,
 				err = callGroupPlugin(c, group.Spec{ID: group.ID(r.Spec.Metadata.Name), Properties: r.Spec.Properties})
 				if err != nil {
 					log.Error("Error running on group", "c", c, "spec", r.Spec, "err", err)
+					return err
 				}
 			}
 		}

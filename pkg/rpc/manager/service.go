@@ -65,6 +65,26 @@ func (p *Manager) LeaderLocation(_ *http.Request, req *LeaderLocationRequest, re
 	return err
 }
 
+// PlanRequest is the rpc request
+type PlanRequest struct {
+	Specs []types.Spec
+}
+
+// PlanResponse is the rpc response
+type PlanResponse struct {
+	Changes types.Changes
+}
+
+// Plan is the rpc method for Manager.Enforce
+func (p *Manager) Plan(_ *http.Request, req *PlanRequest, resp *PlanResponse) error {
+	changes, err := p.manager.Plan(req.Specs)
+	if err != nil {
+		return err
+	}
+	resp.Changes = changes
+	return nil
+}
+
 // EnforceRequest is the rpc request
 type EnforceRequest struct {
 	Specs []types.Spec

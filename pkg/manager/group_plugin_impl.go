@@ -99,7 +99,7 @@ func (m *manager) DescribeGroup(id group.ID) (desc group.Description, err error)
 	m.backendOps <- backendOp{
 		name: "describe",
 		operation: func() error {
-			log.Debug("Manager DescribeGroup", "id", id, "V", debugV)
+			log.Debug("Manager DescribeGroup", "id", id, "V", debugV2)
 
 			var txnResp group.Description
 			var txnErr error
@@ -132,7 +132,7 @@ func (m *manager) DestroyGroup(id group.ID) (err error) {
 	m.backendOps <- backendOp{
 		name: "destroy",
 		operation: func() error {
-			log.Debug("Manager DestroyGroup", "groupID", id, "V", debugV)
+			log.Debug("Manager DestroyGroup", "groupID", id, "V", debugV2)
 
 			var txnErr error
 
@@ -168,7 +168,7 @@ func (m *manager) FreeGroup(id group.ID) (err error) {
 	m.backendOps <- backendOp{
 		name: "free",
 		operation: func() error {
-			log.Debug("Manager FreeGroup", "groupID", id, "V", debugV)
+			log.Debug("Manager FreeGroup", "groupID", id, "V", debugV2)
 
 			var txnErr error
 
@@ -198,13 +198,13 @@ func (m *manager) FreeGroup(id group.ID) (err error) {
 
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (m *manager) DestroyInstances(id group.ID, instances []instance.ID) (err error) {
-	log.Debug("manager.DestroyInstances", "id", id, "instances", instances, "V", debugV)
+	log.Debug("DestroyInstances", "id", id, "instances", instances, "V", debugV)
 	resultChan := make(chan []interface{})
 
 	m.backendOps <- backendOp{
 		name: "destroyInstances",
 		operation: func() error {
-			log.Debug("Manager DestroyInstances", "groupID", id, "instances", instances, "V", debugV)
+			log.Debug("Manager DestroyInstances", "groupID", id, "instances", instances, "V", debugV2)
 
 			var txnErr error
 

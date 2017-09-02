@@ -87,6 +87,11 @@ func (c *Any) marshal(typed interface{}) error {
 	return nil
 }
 
+// Compare implements comparable
+func (c Any) Compare(other *Any) int {
+	return bytes.Compare(c.Bytes(), other.Bytes())
+}
+
 // Bytes returns the encoded bytes
 func (c *Any) Bytes() []byte {
 	if c == nil {
@@ -138,8 +143,8 @@ func Fingerprint(m ...*Any) string {
 	h := md5.New()
 	for _, mm := range m {
 		buff := mm.Bytes()
-		buff = bytes.Replace(buff, []byte(": "), []byte(":"), -1) // not really proud of this.
-		buff = bytes.Replace(buff, []byte(":"), []byte(":"), -1)  // not really proud of this.
+		buff = bytes.Replace(buff, []byte(": "), []byte(":"), -1)
+		buff = bytes.Replace(buff, []byte(" :"), []byte(":"), -1)
 		buff = bytes.Replace(buff, []byte("\n"), nil, -1)
 		buff = bytes.Replace(buff, []byte("\t"), nil, -1)
 		h.Write(buff)

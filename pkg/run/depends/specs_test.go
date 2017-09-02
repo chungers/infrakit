@@ -1,4 +1,4 @@
-package manager
+package depends
 
 import (
 	"testing"
@@ -14,7 +14,6 @@ func testNames(t *testing.T, kind string, pn plugin.Name, spec string) {
 	q := specQuery{s}
 	require.Equal(t, pn, q.Plugin())
 	require.Equal(t, kind, q.Kind())
-
 }
 
 func TestDerivePluginNames(t *testing.T) {

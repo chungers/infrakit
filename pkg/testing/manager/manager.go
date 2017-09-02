@@ -15,6 +15,9 @@ type Plugin struct {
 	// DoIsLeader returns true if manager is leader
 	DoIsLeader func() (bool, error)
 
+	// DoPlan explains the changes
+	DoPlan func(specs []types.Spec) (types.Changes, error)
+
 	// DoEnforce enforces infrastructure state to match that of the specs
 	DoEnforce func(specs []types.Spec) error
 
@@ -36,6 +39,11 @@ func (t *Plugin) IsLeader() (bool, error) {
 // LeaderLocation returns the location of the leader
 func (t *Plugin) LeaderLocation() (*url.URL, error) {
 	return t.DoLeaderLocation()
+}
+
+// Plan explains the changes
+func (t *Plugin) Plan(specs []types.Spec) (types.Changes, error) {
+	return t.DoPlan(specs)
 }
 
 // Enforce enforces infrastructure state to match that of the specs

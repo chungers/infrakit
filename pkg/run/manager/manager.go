@@ -16,6 +16,7 @@ import (
 	"github.com/docker/infrakit/pkg/launch/os"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/plugin"
+	"github.com/docker/infrakit/pkg/run/depends"
 	"github.com/docker/infrakit/pkg/types"
 )
 
@@ -268,4 +269,21 @@ func (m *Manager) Stop() {
 	m.monitor.Stop()
 	m.startPlugin = nil
 	log.Debug("Stopped plugin manager")
+}
+
+// StartPluginsFromSpecs starts up the plugins referenced in the specs
+func (m *Manager) StartPluginsFromSpecs(specs []types.Spec, onError func(error) bool) error {
+	runnables, err := depends.RunnablesFrom(specs)
+	if err != nil {
+		return err
+	}
+	for _, q := range runnables {
+		log.Info("Launching", "exec", inproc.ExecName, "kind", q.Kind(), "name", q.Plugin(), "options", q.Options())
+		if err := m.Launch(inproc.ExecName, q.Kind(), q.Plugin(), q.Options()); err != nil {
+			if !onError(err) {
+				return err
+			}
+		}
+	}
+	return nil
 }

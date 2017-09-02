@@ -19,7 +19,7 @@ func init() {
 }
 
 // ResolveDependencies returns a list of dependencies by parsing the opaque Properties blob.
-func ResolveDependencies(spec types.Spec) ([]plugin.Name, error) {
+func ResolveDependencies(spec types.Spec) (depends.Runnables, error) {
 	if spec.Properties == nil {
 		return nil, nil
 	}
@@ -30,7 +30,10 @@ func ResolveDependencies(spec types.Spec) ([]plugin.Name, error) {
 		return nil, err
 	}
 
-	return []plugin.Name{groupSpec.Instance.Plugin, groupSpec.Flavor.Plugin}, nil
+	return depends.Runnables{
+		depends.RunnableFrom(groupSpec.Instance.Plugin),
+		depends.RunnableFrom(groupSpec.Flavor.Plugin),
+	}, nil
 }
 
 // Spec is the configuration schema for the plugin, provided in group.Spec.Properties

@@ -68,6 +68,15 @@ func (g *globalSpec) load(store store.Snapshot) error {
 	return nil
 }
 
+func (g *globalSpec) specs() []types.Spec {
+	out := []types.Spec{}
+	g.visit(func(k key, r record) error {
+		out = append(out, r.Spec)
+		return nil
+	})
+	return out
+}
+
 func (g *globalSpec) updateSpec(spec types.Spec, handler plugin.Name) {
 	if g.index == nil {
 		g.index = map[key]record{}

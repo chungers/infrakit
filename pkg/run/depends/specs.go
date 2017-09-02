@@ -1,17 +1,11 @@
-package manager
+package depends
 
 import (
 	"strings"
 
-	"github.com/docker/infrakit/pkg/launch/inproc"
 	"github.com/docker/infrakit/pkg/plugin"
-	"github.com/docker/infrakit/pkg/run/depends"
 	"github.com/docker/infrakit/pkg/types"
 )
-
-type specQuery struct {
-	types.Spec
-}
 
 /*
 Examples:
@@ -26,6 +20,40 @@ Examples:
 { kind:aws/ec2-instance, name:host1 }           => { kind:aws,       plugin:aws/ec2-instance      but query with host1 }
 { kind:aws/ec2-instance, name:us-east/host1 }   => { kind:aws,       plugin:us-east1/ec2-instance but query with host1 }
 */
+
+// Runnable captures all the information necessary to start a plugin
+type Runnable interface {
+	// Kind corresponds to the packages under pkg/run/v0
+	Kind() string
+	// Plugin returns the address of the rpc (endpoint)
+	Plugin() plugin.Name
+	// Options returns the options needed to start the plugin
+	Options() *types.Any
+	// Dependents return all the plugins this runnable depends on
+	Dependents() (Runnables, error)
+}
+
+// RunnableFrom creates a runnable from input name.  This is a simplification
+// for cases where only a plugin name is used to reference another plugin.
+func RunnableFrom(name plugin.Name) Runnable {
+	lookup, _ := name.GetLookupAndType()
+	return specQuery{
+		Spec: types.Spec{
+			Kind: lookup,
+			Metadata: types.Metadata{
+				Name: string(name),
+			},
+		},
+	}
+}
+
+// Runnables represent a collection of Runnables
+type Runnables []Runnable
+
+type specQuery struct {
+	types.Spec
+}
+
 // Kind returns the kind to use for launching.  It's assumed these map to something in the launch Rules.
 func (ps specQuery) Kind() string {
 	// kind can be qualified, like aws/ec2-instance, but the kind is always the base.
@@ -52,43 +80,27 @@ func (ps specQuery) Plugin() plugin.Name {
 	return plugin.NameFrom(ps.Kind(), parts[0])
 }
 
-// // Kind returns the kind to use for launching.  It's assumed these map to something in the launch Rules.
-// func (ps specQuery) Kind() string {
-// 	lookup, _ := ps.Plugin().GetLookupAndType()
-// 	return lookup
-// }
-
-// // Plugin derives a plugin name from the record
-// func (ps specQuery) Plugin() plugin.Name {
-// 	pn := plugin.Name(ps.Spec.Kind)
-// 	if lookup, sub := pn.GetLookupAndType(); sub == "" {
-// 		return plugin.NameFrom(lookup, ps.Spec.Metadata.Name)
-// 	}
-// 	return pn
-// }
-
 // Options returns the options
 func (ps specQuery) Options() *types.Any {
 	return ps.Spec.Options
 }
 
 // Dependents returns the plugins depended on by this unit
-func (ps specQuery) Dependents() (specQueries, error) {
+func (ps specQuery) Dependents() (Runnables, error) {
 
 	var interfaceSpec *types.InterfaceSpec
 	if ps.Spec.Version != "" {
 		decoded := types.DecodeInterfaceSpec(ps.Spec.Version)
 		interfaceSpec = &decoded
 	}
-	dependentPlugins, err := depends.Resolve(ps.Spec, ps.Kind(), interfaceSpec)
+	dependentPlugins, err := Resolve(ps.Spec, ps.Kind(), interfaceSpec)
 	if err != nil {
 		return nil, err
 	}
 	// join this with the dependencies already in the spec
-	out := specQueries{}
-	for _, d := range dependentPlugins {
-		out = append(out, specQuery{types.Spec{Kind: d.String(), Metadata: types.Metadata{Name: d.String()}}})
-	}
+	out := Runnables{}
+	out = append(out, dependentPlugins...)
+
 	for _, d := range ps.Depends {
 		out = append(out, specQuery{types.Spec{Kind: d.Kind, Metadata: types.Metadata{Name: d.Name}}})
 	}
@@ -97,11 +109,10 @@ func (ps specQuery) Dependents() (specQueries, error) {
 	return out, nil
 }
 
-type specQueries []specQuery
-
-func startupInstructions(specs []types.Spec) (specQueries, error) {
+// RunnablesFrom returns the Runnables from given slice of specs
+func RunnablesFrom(specs []types.Spec) (Runnables, error) {
 	// keyed by kind and the specQuery
-	all := map[string]specQuery{}
+	all := map[string]Runnable{}
 	for _, s := range specs {
 		q := specQuery{s}
 		all[q.Kind()] = q
@@ -116,44 +127,9 @@ func startupInstructions(specs []types.Spec) (specQueries, error) {
 			all[d.Kind()] = d
 		}
 	}
-
-	log.Debug("StartUpInstructions", "all", all)
-	out := specQueries{}
+	out := Runnables{}
 	for _, s := range all {
 		out = append(out, s)
 	}
 	return out, nil
-}
-
-func (m *Manager) validate(all specQueries) error {
-	for _, s := range all {
-		log.Debug("Validate", "kind", s.Kind(), "name", s.Plugin(), "options", s.Options())
-	}
-	return nil
-}
-
-// StartPluginsFromSpecs starts up the plugins referenced in the specs
-func (m *Manager) StartPluginsFromSpecs(specs []types.Spec, onError func(error) bool) error {
-
-	instructions, err := startupInstructions(specs)
-	if err != nil {
-		return err
-	}
-	if err := m.validate(instructions); err != nil {
-		if !onError(err) {
-			return err
-		}
-	}
-
-	for _, q := range instructions {
-
-		log.Debug("Launching", "exec", inproc.ExecName, "kind", q.Kind(), "name", q.Plugin(), "options", q.Options())
-
-		if err := m.Launch(inproc.ExecName, q.Kind(), q.Plugin(), q.Options()); err != nil {
-			if !onError(err) {
-				return err
-			}
-		}
-	}
-	return nil
 }
