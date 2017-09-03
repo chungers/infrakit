@@ -23,6 +23,36 @@ func TestAddressable(t *testing.T) {
 	require.Equal(t, "group/workers", string(a.Plugin()))
 	require.Equal(t, "workers", a.Instance())
 
+	spec, err := types.SpecFromString(`
+kind: group
+metadata:
+  name: workers
+`)
+	require.NoError(t, err)
+	b := AsAddressable(&spec)
+	require.Equal(t, "group", b.Kind())
+	require.Equal(t, "group/workers", string(b.Plugin()))
+	require.Equal(t, "workers", b.Instance())
+
+	c := NewAddressable("group", plugin.Name("group-stateless"), "")
+	require.Equal(t, "group", c.Kind())
+	require.Equal(t, "group/group-stateless", string(c.Plugin()))
+	require.Equal(t, "group-stateless", c.Instance())
+
+	c = NewAddressable("group", plugin.Name("group-stateless"), "mygroup")
+	require.Equal(t, "group", c.Kind())
+	require.Equal(t, "group/group-stateless", string(c.Plugin()))
+	require.Equal(t, "mygroup", c.Instance())
+
+	c = NewAddressable("group", plugin.Name("group-stateless/"), "")
+	require.Equal(t, "group", c.Kind())
+	require.Equal(t, "group-stateless", string(c.Plugin()))
+	require.Equal(t, "", c.Instance())
+
+	c = NewAddressable("group", plugin.Name("group-stateless/"), "mygroup")
+	require.Equal(t, "group", c.Kind())
+	require.Equal(t, "group-stateless/mygroup", string(c.Plugin()))
+	require.Equal(t, "mygroup", c.Instance())
 }
 
 func TestDerivePluginNames(t *testing.T) {

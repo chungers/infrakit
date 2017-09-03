@@ -3,16 +3,20 @@ package group
 import (
 	"time"
 
+	"github.com/docker/infrakit/pkg/controller"
+	"github.com/docker/infrakit/pkg/core"
 	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/launch/inproc"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/plugin"
-	"github.com/docker/infrakit/pkg/plugin/group"
+	group_plugin "github.com/docker/infrakit/pkg/plugin/group"
 	metadata_plugin "github.com/docker/infrakit/pkg/plugin/metadata"
 	flavor_client "github.com/docker/infrakit/pkg/rpc/flavor"
 	instance_client "github.com/docker/infrakit/pkg/rpc/instance"
 	"github.com/docker/infrakit/pkg/run"
 	"github.com/docker/infrakit/pkg/spi/flavor"
+	"github.com/docker/infrakit/pkg/spi/group"
+	group_adapter "github.com/docker/infrakit/pkg/spi/group/adapter"
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -86,7 +90,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		return flavor_client.NewClient(n, endpoint.Address)
 	}
 
-	groupPlugin := group.NewGroupPlugin(instancePluginLookup, flavorPluginLookup,
+	groupPlugin := group_plugin.NewGroupPlugin(instancePluginLookup, flavorPluginLookup,
 		options.PollInterval, options.MaxParallelNum)
 
 	// Start a poller to load the snapshot and make that available as metadata
@@ -138,9 +142,13 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 	}()
 
-	controllers := func() (map[string]controller.Controller, error) {
-		m := map[string]controller.Controller{
-			"": group.AsController(groupPlugin, nil),
+	groups := func() (map[group.ID]group.Plugin, error) {
+
+		// we need to use the trailing slash for the name
+		name = plugin.Name(string(name) + "/")
+
+		m := map[group.ID]group.Plugin{
+			"": groupPlugin,
 		}
 		all, err := groupPlugin.InspectGroups()
 		if err != nil {
@@ -148,14 +156,38 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 		for _, gspec := range all {
 			gid := gspec.ID
-			m[string(gid)] = group.AsController(groupPlugin, &gid) // scoped by group ID
+			m[gid] = groupPlugin
 		}
 		return m, nil
 	}
+
+	controllers := func() (map[string]controller.Controller, error) {
+
+		// we need to use the trailing slash for the name
+		name = plugin.Name(string(name) + "/")
+
+		m := map[string]controller.Controller{
+			"": group_adapter.AsController(
+				core.NewAddressable(Kind, name, ""),
+				groupPlugin),
+		}
+		all, err := groupPlugin.InspectGroups()
+		if err != nil {
+			return m, err
+		}
+		for _, gspec := range all {
+			gid := gspec.ID
+			m[string(gid)] = group_adapter.AsController(
+				core.NewAddressable(Kind, name, string(gid)), // scoped by group ID
+				groupPlugin)
+		}
+		return m, nil
+	}
+
 	transport.Name = name
 	impls = map[run.PluginCode]interface{}{
 		run.Metadata:   metadata_plugin.NewPluginFromChannel(updateSnapshot),
-		run.Group:      groupPlugin,
+		run.Group:      groups, //groupPlugin,
 		run.Controller: controllers,
 	}
 	onStop = func() {

@@ -11,7 +11,12 @@ import (
 )
 
 // AsController returns a Controller, possibly with a scope of the group ID.
-func AsController(addr core.Addressable, g group.Plugin, scope *group.ID) controller.Controller {
+func AsController(addr core.Addressable, g group.Plugin) controller.Controller {
+	var scope *group.ID
+	if addr.Instance() != "" {
+		gid := group.ID(addr.Instance())
+		scope = &gid
+	}
 	return &gController{
 		Addressable: addr, // address of the plugin backend
 		scope:       scope,
@@ -33,6 +38,7 @@ func (c *gController) translateSpec(s types.Spec) (group.Spec, error) {
 	gSpec := group.Spec{
 		Properties: spec.Properties,
 	}
+
 	addressable := core.AsAddressable(&spec)
 	if c.scope == nil {
 		if addressable.Instance() == "" {
@@ -50,64 +56,15 @@ func (c *gController) translateSpec(s types.Spec) (group.Spec, error) {
 	return gSpec, nil
 }
 
-func objectFromSpec(spec types.Spec) types.Object {
-	return types.Object{
-		Spec: spec,
-	}
-}
-
-func (c *gController) Plan(operation controller.Operation,
-	spec types.Spec) (object types.Object, plan controller.Plan, err error) {
-
-	gSpec, e := c.translateSpec(spec)
-	if e != nil {
-		err = e
-		return
-	}
-
-	plan = controller.Plan{}
-	object = objectFromSpec(spec)
-	if resp, cerr := c.plugin.CommitGroup(gSpec, true); cerr == nil {
-		plan.Message = []string{resp}
-	} else {
-		err = cerr
-	}
-	return
-}
-
-func (c *gController) Commit(operation controller.Operation, spec types.Spec) (object types.Object, err error) {
-	gSpec, e := c.translateSpec(spec)
-	if e != nil {
-		err = e
-		return
-	}
-
-	object = objectFromSpec(spec)
-	switch operation {
-	case controller.Enforce:
-		_, err = c.plugin.CommitGroup(gSpec, false)
-	case controller.Destroy:
-		err = c.plugin.DestroyGroup(group.ID(spec.Metadata.Name))
-	}
-	return
-}
-
-func (c *gController) helpFind(search *types.Metadata) (gspecs map[group.ID]group.Spec, err error) {
-	gspecs = map[group.ID]group.Spec{}
-
-	all := []group.Spec{}
-	all, err = c.plugin.InspectGroups()
+func buildObject(spec types.Spec, desc group.Description) (types.Object, error) {
+	state, err := types.AnyValue(desc)
 	if err != nil {
-		return
+		return types.Object{}, err
 	}
-
-	for _, gspec := range all {
-		gspecs[gspec.ID] = gspec
-		if c.scope != nil && *c.scope == gspec.ID {
-			break
-		}
-	}
-	return
+	return types.Object{
+		Spec:  spec,
+		State: state,
+	}, nil
 }
 
 func (c *gController) fromGroupSpec(gspec group.Spec) types.Spec {
@@ -129,6 +86,96 @@ func (c *gController) fromGroupSpec(gspec group.Spec) types.Spec {
 	}
 }
 
+func (c *gController) helpFind(search *types.Metadata) (gspecs map[group.ID]group.Spec, err error) {
+	gspecs = map[group.ID]group.Spec{}
+
+	all := []group.Spec{}
+	all, err = c.plugin.InspectGroups()
+	if err != nil {
+		return
+	}
+
+	for _, gspec := range all {
+		gspecs[gspec.ID] = gspec
+		if c.scope != nil && *c.scope == gspec.ID {
+			break
+		}
+	}
+	return
+}
+
+func (c *gController) Plan(operation controller.Operation,
+	spec types.Spec) (object types.Object, plan controller.Plan, err error) {
+
+	gSpec, e := c.translateSpec(spec)
+	if e != nil {
+		err = e
+		return
+	}
+
+	plan = controller.Plan{}
+	if objects, e := c.Describe(&spec.Metadata); e != nil {
+		err = e
+		return
+	} else {
+
+		if len(objects) == 0 {
+			object, err = buildObject(spec, group.Description{})
+			if err != nil {
+				return
+			}
+			plan.Message = []string{"create-new"}
+		} else if len(objects) == 1 {
+			object = objects[0]
+			plan.Message = []string{"update-existing"}
+		} else {
+			err = fmt.Errorf("change affects more than one object")
+			return
+		}
+	}
+
+	if resp, cerr := c.plugin.CommitGroup(gSpec, true); cerr == nil {
+		plan.Message = []string{resp}
+	} else {
+		err = cerr
+	}
+	return
+}
+
+func (c *gController) Commit(operation controller.Operation, spec types.Spec) (object types.Object, err error) {
+	gSpec, e := c.translateSpec(spec)
+	if e != nil {
+		err = e
+		return
+	}
+
+	if objects, e := c.Describe(&spec.Metadata); e != nil {
+		err = e
+		return
+	} else {
+
+		if len(objects) == 0 {
+			object, err = buildObject(spec, group.Description{})
+			if err != nil {
+				return
+			}
+		} else if len(objects) == 1 {
+			object = objects[0]
+		} else {
+			err = fmt.Errorf("change affects more than one object")
+			return
+		}
+	}
+
+	switch operation {
+	case controller.Enforce:
+		_, err = c.plugin.CommitGroup(gSpec, false)
+	case controller.Destroy:
+		err = c.plugin.DestroyGroup(group.ID(spec.Metadata.Name))
+	}
+	return
+}
+
 func (c *gController) Describe(search *types.Metadata) (objects []types.Object, err error) {
 	var gspecs map[group.ID]group.Spec
 	gspecs, err = c.helpFind(search)
@@ -147,16 +194,20 @@ func (c *gController) Describe(search *types.Metadata) (objects []types.Object, 
 		}
 
 		if match {
+
 			var desc group.Description
+			var object types.Object
+
 			desc, err = c.plugin.DescribeGroup(gid)
 			if err != nil {
 				return
 			}
-			state := types.Object{
-				Spec:  c.fromGroupSpec(gspec),
-				State: types.AnyValueMust(desc),
+			object, e := buildObject(c.fromGroupSpec(gspec), desc)
+			if e != nil {
+				err = e
+				return
 			}
-			objects = append(objects, state)
+			objects = append(objects, object)
 		}
 	}
 	return

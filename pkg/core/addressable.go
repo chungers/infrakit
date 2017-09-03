@@ -43,11 +43,23 @@ func NewAddressableFromMetadata(kind string, metadata types.Metadata) Addressabl
 
 // NewAddressable returns a generic addressable object
 func NewAddressable(kind string, pn plugin.Name, instance string) Addressable {
+	n := string(pn)
+	endsWithSlash := n[len(n)-1] == '/'
+
 	lookup, sub := pn.GetLookupAndType()
 	if sub == "" {
 		sub = instance
 	}
-	name := plugin.NameFrom(lookup, sub)
+	name := pn
+	if sub != instance {
+		// Use the a different name only when we changed the subtype
+		name = plugin.NameFrom(lookup, sub)
+	}
+	if endsWithSlash && instance != "" {
+		// If the name ended with / but instance is specified, then qualify it
+		name = plugin.NameFrom(lookup, instance)
+	}
+
 	spec := &types.Spec{
 		Kind: kind,
 		Metadata: types.Metadata{
