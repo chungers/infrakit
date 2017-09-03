@@ -19,7 +19,8 @@ type Managed interface {
 	Plan(controller.Operation, types.Spec) (*types.Object, *controller.Plan, error)
 	Enforce(types.Spec) (*types.Object, error)
 	Inspect() (*types.Object, error)
-	Free() (*types.Object, error)
+	Spec() (types.Spec, error)
+	Pause() (*types.Object, error)
 	Terminate() (*types.Object, error)
 }
 
@@ -182,21 +183,66 @@ func (c *Controller) Describe(search *types.Metadata) (objects []types.Object, e
 	if err != nil {
 		return
 	}
+
+	match := func(other types.Metadata) bool {
+		if search == nil {
+			return true
+		}
+		copy := *search
+		return copy.Compare(other) == 0
+	}
+
 	objects = []types.Object{}
-	for _, s := range m {
-		o, err := s.Inspect()
+	for _, managed := range m {
+		o, err := managed.Inspect()
 		if err != nil {
 			return nil, err
 		}
 		if o != nil {
-			objects = append(objects, *o)
+			if match(o.Spec.Metadata) {
+				objects = append(objects, *o)
+			}
 		}
 	}
 	return
 }
 
-// Free tells the controller to pause management of objects matching.  To resume, commit again.
-func (c *Controller) Free(search *types.Metadata) (objects []types.Object, err error) {
+func (c *Controller) Specs(search *types.Metadata) (specs []types.Spec, err error) {
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	m := []Managed{}
+	m, err = c.getManaged(search, nil)
+
+	log.Debug("Specs", "search", search, "V", debugV, "managed", m, "err", err)
+
+	if err != nil {
+		return
+	}
+
+	match := func(other types.Metadata) bool {
+		if search == nil {
+			return true
+		}
+		return search.Compare(other) == 0
+	}
+
+	specs = []types.Spec{}
+	for _, managed := range m {
+		spec, err := managed.Spec()
+		if err != nil {
+			return nil, err
+		}
+		if match(spec.Metadata) {
+			specs = append(specs, spec)
+		}
+	}
+	return
+}
+
+// Pause tells the controller to pause management of objects matching.  To resume, commit again.
+func (c *Controller) Pause(search *types.Metadata) (objects []types.Object, err error) {
 	if err = c.leaderGuard(); err != nil {
 		return
 	}
@@ -220,7 +266,7 @@ func (c *Controller) Free(search *types.Metadata) (objects []types.Object, err e
 		if len(m) != 1 {
 			continue
 		}
-		m[0].Free()
+		m[0].Pause()
 
 		objects = append(objects, candidate)
 	}

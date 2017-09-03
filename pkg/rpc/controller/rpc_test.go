@@ -146,7 +146,7 @@ func TestControllerDescribe(t *testing.T) {
 
 }
 
-func TestControllerFree(t *testing.T) {
+func TestControllerPause(t *testing.T) {
 	socketPath := tempSocket()
 	name := filepath.Base(socketPath)
 
@@ -156,7 +156,7 @@ func TestControllerFree(t *testing.T) {
 	smallActual := make(chan []interface{}, 1)
 
 	small := &testing_controller.Controller{
-		DoFree: func(search *types.Metadata) ([]types.Object, error) {
+		DoPause: func(search *types.Metadata) ([]types.Object, error) {
 			if search == nil {
 				return nil, fmt.Errorf("boom")
 			}
@@ -170,10 +170,10 @@ func TestControllerFree(t *testing.T) {
 
 	smallSearch := (types.Metadata{Name: "small"}).AddTagsFromStringSlice([]string{"a=b", "c=d"})
 
-	a1, err := must(NewClient(plugin.Name(name), socketPath)).Free(&smallSearch)
+	a1, err := must(NewClient(plugin.Name(name), socketPath)).Pause(&smallSearch)
 	require.NoError(t, err)
 
-	_, err = must(NewClient(plugin.Name("unknown"), socketPath)).Free(&smallSearch)
+	_, err = must(NewClient(plugin.Name("unknown"), socketPath)).Pause(&smallSearch)
 	require.Error(t, err)
 
 	smallArgs := <-smallActual
@@ -182,7 +182,7 @@ func TestControllerFree(t *testing.T) {
 	require.Equal(t, []types.Object{smallObject}, a1)
 
 	// now return error
-	_, err = must(NewClient(plugin.Name(name), socketPath)).Free(nil)
+	_, err = must(NewClient(plugin.Name(name), socketPath)).Pause(nil)
 	require.Error(t, err)
 
 	server.Stop()

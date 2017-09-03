@@ -49,6 +49,14 @@ type Controller interface {
 	// A nil Metadata will instruct the controller to return all objects under management.
 	Describe(*types.Metadata) ([]types.Object, error)
 
-	// Free tells the controller to pause management of objects matching.  To resume, commit again.
-	Free(*types.Metadata) ([]types.Object, error)
+	// Specs returns the objective specifications.  It is in contrast with the output of Describe where is current state.
+	// The current state may or may not match the user's specification, which this returns.
+	// Note that a list is returned.  This is because Commit can be invoked multiple times with different specs, resulting
+	// in a set of objectives each corresponding to the object in Describe.  This does not assume any memory on the part
+	// of the implementation.  The specs can be non-durable and the user would have to provide it each time on restart
+	// or via a datastore.
+	Specs(*types.Metadata) ([]types.Spec, error)
+
+	// Pause tells the controller to pause management of objects matching.  To resume, commit again.
+	Pause(*types.Metadata) ([]types.Object, error)
 }

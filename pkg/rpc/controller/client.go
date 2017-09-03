@@ -68,13 +68,29 @@ func (c client) Describe(metadata *types.Metadata) ([]types.Object, error) {
 	return resp.Objects, err
 }
 
-// Free tells the controller to pause management of objects matching.  To resume, commit again.
-func (c client) Free(metadata *types.Metadata) ([]types.Object, error) {
+// Specs returns the objective specifications.  It is in contrast with the output of Describe where is current state.
+// The current state may or may not match the user's specification, which this returns.
+// Note that a list is returned.  This is because Commit can be invoked multiple times with different specs, resulting
+// in a set of objectives each corresponding to the object in Describe.  This does not assume any memory on the part
+// of the implementation.  The specs can be non-durable and the user would have to provide it each time on restart
+// or via a datastore.
+func (c client) Specs(metadata *types.Metadata) ([]types.Spec, error) {
 	req := FindRequest{
 		Name:     c.name,
 		Metadata: metadata,
 	}
 	resp := FindResponse{}
-	err := c.client.Call("Controller.Free", req, &resp)
+	err := c.client.Call("Controller.Specs", req, &resp)
+	return resp.Specs, err
+}
+
+// Pause tells the controller to pause management of objects matching.  To resume, commit again.
+func (c client) Pause(metadata *types.Metadata) ([]types.Object, error) {
+	req := FindRequest{
+		Name:     c.name,
+		Metadata: metadata,
+	}
+	resp := FindResponse{}
+	err := c.client.Call("Controller.Pause", req, &resp)
 	return resp.Objects, err
 }

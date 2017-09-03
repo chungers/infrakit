@@ -251,7 +251,7 @@ func TestMultiControllerDescribe(t *testing.T) {
 
 }
 
-func TestMultiControllerFree(t *testing.T) {
+func TestMultiControllerPause(t *testing.T) {
 	socketPath := tempSocket()
 	name := filepath.Base(socketPath)
 
@@ -265,7 +265,7 @@ func TestMultiControllerFree(t *testing.T) {
 	largeActual := make(chan []interface{}, 1)
 
 	small := &testing_controller.Controller{
-		DoFree: func(search *types.Metadata) ([]types.Object, error) {
+		DoPause: func(search *types.Metadata) ([]types.Object, error) {
 
 			smallActual <- []interface{}{*search}
 
@@ -273,7 +273,7 @@ func TestMultiControllerFree(t *testing.T) {
 		},
 	}
 	large := &testing_controller.Controller{
-		DoFree: func(search *types.Metadata) ([]types.Object, error) {
+		DoPause: func(search *types.Metadata) ([]types.Object, error) {
 
 			largeActual <- []interface{}{*search}
 
@@ -293,13 +293,13 @@ func TestMultiControllerFree(t *testing.T) {
 	smallSearch := (types.Metadata{Name: "small"}).AddTagsFromStringSlice([]string{"a=b", "c=d"})
 	largeSearch := types.Metadata{Name: "large"}
 
-	a1, err := must(NewClient(plugin.Name(name+"/small"), socketPath)).Free(&smallSearch)
+	a1, err := must(NewClient(plugin.Name(name+"/small"), socketPath)).Pause(&smallSearch)
 	require.NoError(t, err)
 
-	a2, err := must(NewClient(plugin.Name(name+"/large"), socketPath)).Free(&largeSearch)
+	a2, err := must(NewClient(plugin.Name(name+"/large"), socketPath)).Pause(&largeSearch)
 	require.NoError(t, err)
 
-	_, err = must(NewClient(plugin.Name(name+"/typeUnknown"), socketPath)).Free(nil)
+	_, err = must(NewClient(plugin.Name(name+"/typeUnknown"), socketPath)).Pause(nil)
 	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), "controller-impl-test/typeUnknown"))
 
@@ -313,11 +313,81 @@ func TestMultiControllerFree(t *testing.T) {
 	require.Equal(t, []types.Object{largeObject}, a2)
 
 	// now return error
-	small.DoFree = func(search *types.Metadata) ([]types.Object, error) {
+	small.DoPause = func(search *types.Metadata) ([]types.Object, error) {
 		require.Nil(t, search)
 		return nil, fmt.Errorf("boom")
 	}
-	_, err = must(NewClient(plugin.Name(name+"/small"), socketPath)).Free(nil)
+	_, err = must(NewClient(plugin.Name(name+"/small"), socketPath)).Pause(nil)
+	require.Error(t, err)
+
+	server.Stop()
+
+}
+
+func TestMultiControllerSpecs(t *testing.T) {
+	socketPath := tempSocket()
+	name := filepath.Base(socketPath)
+
+	smallSpec := types.Spec{Metadata: types.Metadata{Name: "small"}}
+	largeSpec := types.Spec{Metadata: types.Metadata{Name: "large"}}
+
+	smallActual := make(chan []interface{}, 1)
+	largeActual := make(chan []interface{}, 1)
+
+	small := &testing_controller.Controller{
+		DoSpecs: func(search *types.Metadata) ([]types.Spec, error) {
+
+			smallActual <- []interface{}{*search}
+
+			return []types.Spec{smallSpec}, nil
+		},
+	}
+	large := &testing_controller.Controller{
+		DoSpecs: func(search *types.Metadata) ([]types.Spec, error) {
+
+			largeActual <- []interface{}{*search}
+
+			return []types.Spec{largeSpec}, nil
+		},
+	}
+	server, err := rpc_server.StartPluginAtPath(socketPath, ServerWithNamed(
+		func() (map[string]controller.Controller, error) {
+			return map[string]controller.Controller{
+				"small": small,
+				"large": large,
+			}, nil
+		},
+	))
+	require.NoError(t, err)
+
+	smallSearch := (types.Metadata{Name: "small"}).AddTagsFromStringSlice([]string{"a=b", "c=d"})
+	largeSearch := types.Metadata{Name: "large"}
+
+	a1, err := must(NewClient(plugin.Name(name+"/small"), socketPath)).Specs(&smallSearch)
+	require.NoError(t, err)
+
+	a2, err := must(NewClient(plugin.Name(name+"/large"), socketPath)).Specs(&largeSearch)
+	require.NoError(t, err)
+
+	_, err = must(NewClient(plugin.Name(name+"/typeUnknown"), socketPath)).Specs(&types.Metadata{})
+	require.Error(t, err)
+	require.True(t, strings.Contains(err.Error(), "controller-impl-test/typeUnknown"))
+
+	smallArgs := <-smallActual
+	largeArgs := <-largeActual
+
+	require.EqualValues(t, smallSearch, smallArgs[0])
+	require.Equal(t, []types.Spec{smallSpec}, a1)
+
+	require.EqualValues(t, largeSearch, largeArgs[0])
+	require.Equal(t, []types.Spec{largeSpec}, a2)
+
+	// now return error
+	small.DoDescribe = func(search *types.Metadata) ([]types.Object, error) {
+		require.Nil(t, search)
+		return nil, fmt.Errorf("boom")
+	}
+	_, err = must(NewClient(plugin.Name(name+"/small"), socketPath)).Specs(nil)
 	require.Error(t, err)
 
 	server.Stop()

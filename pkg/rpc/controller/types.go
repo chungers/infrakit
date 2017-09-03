@@ -39,5 +39,6 @@ func (r FindRequest) Plugin() (plugin.Name, error) {
 // FindResponse is the common response message for Describe and Free
 type FindResponse struct {
 	Name    plugin.Name
-	Objects []types.Object
+	Objects []types.Object `json:",omitempty"`
+	Specs   []types.Spec   `json:",omitempty"`
 }

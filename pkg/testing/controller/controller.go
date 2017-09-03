@@ -24,8 +24,16 @@ type Controller struct {
 	// A nil Metadata will instruct the controller to return all objects under management.
 	DoDescribe func(metadata *types.Metadata) ([]types.Object, error)
 
-	// Free tells the controller to pause management of objects matching.  To resume, commit again.
-	DoFree func(metadata *types.Metadata) ([]types.Object, error)
+	// DoSpecs returns the objective specifications.  It is in contrast with the output of Describe where is current state.
+	// The current state may or may not match the user's specification, which this returns.
+	// Note that a list is returned.  This is because Commit can be invoked multiple times with different specs, resulting
+	// in a set of objectives each corresponding to the object in Describe.  This does not assume any memory on the part
+	// of the implementation.  The specs can be non-durable and the user would have to provide it each time on restart
+	// or via a datastore.
+	DoSpecs func(metadata *types.Metadata) ([]types.Spec, error)
+
+	// Pause tells the controller to pause management of objects matching.  To resume, commit again.
+	DoPause func(metadata *types.Metadata) ([]types.Object, error)
 }
 
 // Plan implements pkg/controller/Controller.Plan
@@ -43,8 +51,13 @@ func (t *Controller) Describe(metadata *types.Metadata) ([]types.Object, error) 
 	return t.DoDescribe(metadata)
 }
 
-// Free implements pkg/controller/Controller.Free
-func (t *Controller) Free(metadata *types.Metadata) ([]types.Object, error) {
-	return t.DoFree(metadata)
+// Specs implements pkg/controller/Controller.Specs
+func (t *Controller) Specs(metadata *types.Metadata) ([]types.Spec, error) {
+	return t.DoSpecs(metadata)
+}
+
+// Pause implements pkg/controller/Controller.Pause
+func (t *Controller) Pause(metadata *types.Metadata) ([]types.Object, error) {
+	return t.DoPause(metadata)
 
 }

@@ -116,12 +116,27 @@ func (c *Controller) Describe(_ *http.Request, req *FindRequest, resp *FindRespo
 	})
 }
 
-// Free is the rpc method for Free
-func (c *Controller) Free(_ *http.Request, req *FindRequest, resp *FindResponse) error {
+// Specs is the rpc method for Describe
+func (c *Controller) Specs(_ *http.Request, req *FindRequest, resp *FindResponse) error {
+	pn, _ := req.Plugin()
+	return c.keyed.Do(req, func(v interface{}) error {
+		log.Debug("Specs", "req", req, "p", pn, "v", v, "meta", req.Metadata)
+
+		resp.Name = req.Name
+		specs, err := v.(controller.Controller).Specs(req.Metadata)
+		if err == nil {
+			resp.Specs = specs
+		}
+		return err
+	})
+}
+
+// Pause is the rpc method for Pause
+func (c *Controller) Pause(_ *http.Request, req *FindRequest, resp *FindResponse) error {
 
 	return c.keyed.Do(req, func(v interface{}) error {
 		resp.Name = req.Name
-		objects, err := v.(controller.Controller).Free(req.Metadata)
+		objects, err := v.(controller.Controller).Pause(req.Metadata)
 		if err == nil {
 			resp.Objects = objects
 		}

@@ -92,9 +92,17 @@ func (c *lazyConnect) Describe(search *types.Metadata) (objects []types.Object, 
 	return
 }
 
-func (c *lazyConnect) Free(search *types.Metadata) (objects []types.Object, err error) {
+func (c *lazyConnect) Specs(search *types.Metadata) (specs []types.Spec, err error) {
 	err = c.do(func(p Controller) error {
-		objects, err = p.Free(search)
+		specs, err = p.Specs(search)
+		return err
+	})
+	return
+}
+
+func (c *lazyConnect) Pause(search *types.Metadata) (objects []types.Object, err error) {
+	err = c.do(func(p Controller) error {
+		objects, err = p.Pause(search)
 		return err
 	})
 	return

@@ -68,7 +68,12 @@ func (f fake) Describe(search *types.Metadata) (objects []types.Object, err erro
 	return
 }
 
-func (f fake) Free(search *types.Metadata) (objects []types.Object, err error) {
+func (f fake) Specs(search *types.Metadata) (specs []types.Spec, err error) {
+	f <- 1
+	return
+}
+
+func (f fake) Pause(search *types.Metadata) (objects []types.Object, err error) {
 	f <- 1
 	return
 }
@@ -89,7 +94,7 @@ func TestLazyNoBlockConnect(t *testing.T) {
 		errs <- err
 		close(errs)
 
-		g.Free(nil)
+		g.Pause(nil)
 		close(called2)
 	}()
 
