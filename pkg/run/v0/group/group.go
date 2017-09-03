@@ -138,10 +138,25 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 	}()
 
+	controllers := func() (map[string]controller.Controller, error) {
+		m := map[string]controller.Controller{
+			"": group.AsController(groupPlugin, nil),
+		}
+		all, err := groupPlugin.InspectGroups()
+		if err != nil {
+			return m, err
+		}
+		for _, gspec := range all {
+			gid := gspec.ID
+			m[string(gid)] = group.AsController(groupPlugin, &gid) // scoped by group ID
+		}
+		return m, nil
+	}
 	transport.Name = name
 	impls = map[run.PluginCode]interface{}{
-		run.Metadata: metadata_plugin.NewPluginFromChannel(updateSnapshot),
-		run.Group:    groupPlugin,
+		run.Metadata:   metadata_plugin.NewPluginFromChannel(updateSnapshot),
+		run.Group:      groupPlugin,
+		run.Controller: controllers,
 	}
 	onStop = func() {
 		close(stopSnapshot)

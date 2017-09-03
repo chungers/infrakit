@@ -8,28 +8,6 @@ import (
 	"github.com/docker/infrakit/pkg/types"
 )
 
-// GroupControllers returns a map of *scoped* group controllers by ID of the group.
-func (m *manager) Controllers() (map[string]controller.Controller, error) {
-	controllers := map[string]controller.Controller{
-		"": &pController{
-			plugin: m,
-		},
-	}
-	all, err := m.Plugin.InspectGroups()
-	if err != nil {
-		return controllers, nil
-	}
-	for _, spec := range all {
-		gid := spec.ID
-		controllers[string(gid)] = &pController{
-			plugin: m,
-			scope:  &gid,
-		}
-	}
-	log.Debug("Controllers", "map", controllers, "V", debugV2)
-	return controllers, nil
-}
-
 // This controller is used to implement a generic controller *as well as* a named controller
 // for a group.  When id is specified, the controller is scoped to the id.  When input is missing
 // id, it will be injected.  If input has mismatched id, requests will error.

@@ -111,15 +111,14 @@ func NewManager(plugins discovery.Plugins,
 
 	return &manager{
 		// "base class" is the stateless backend group plugin
-		Plugin: &lateBindGroup{
-			finder: func() (group.Plugin, error) {
+		Plugin: group.LazyConnect(
+			func() (group.Plugin, error) {
 				endpoint, err := plugins.Find(plugin.Name(backendName))
 				if err != nil {
 					return nil, err
 				}
 				return rpc.NewClient(endpoint.Address)
-			},
-		},
+			}, 5*time.Second),
 		plugins:     plugins,
 		leader:      leader,
 		leaderStore: leaderStore,
@@ -581,4 +580,43 @@ func (m *manager) callControllers(config globalSpec,
 		}
 		return nil
 	})
+}
+
+// Groups returns a map of *scoped* group controllers by ID of the group.
+func (m *manager) Groups() (map[group.ID]group.Plugin, error) {
+	groups := map[group.ID]group.Plugin{
+		group.ID(""): m,
+	}
+	all, err := m.Plugin.InspectGroups()
+	if err != nil {
+		return groups, nil
+	}
+	for _, spec := range all {
+		gid := spec.ID
+		groups[gid] = m
+	}
+	log.Debug("Groups", "map", groups, "V", debugV2)
+	return groups, nil
+}
+
+// GroupControllers returns a map of *scoped* group controllers by ID of the group.
+func (m *manager) Controllers() (map[string]controller.Controller, error) {
+	controllers := map[string]controller.Controller{
+		"": &pController{
+			plugin: m,
+		},
+	}
+	all, err := m.Plugin.InspectGroups()
+	if err != nil {
+		return controllers, nil
+	}
+	for _, spec := range all {
+		gid := spec.ID
+		controllers[string(gid)] = &pController{
+			plugin: m,
+			scope:  &gid,
+		}
+	}
+	log.Debug("Controllers", "map", controllers, "V", debugV2)
+	return controllers, nil
 }

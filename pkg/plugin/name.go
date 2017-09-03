@@ -10,7 +10,10 @@ type Name string
 
 // NameFrom creates a name from the parts
 func NameFrom(lookup, sub string) Name {
-	return Name(strings.Join([]string{lookup, sub}, "/"))
+	if sub != "" {
+		return Name(strings.Join([]string{lookup, sub}, "/"))
+	}
+	return Name(lookup)
 }
 
 // IsEmpty returns true if the name is an empty string
