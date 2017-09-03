@@ -187,7 +187,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 	transport.Name = name
 	impls = map[run.PluginCode]interface{}{
 		run.Metadata:   metadata_plugin.NewPluginFromChannel(updateSnapshot),
-		run.Group:      groups, //groupPlugin,
+		run.Group:      groups,
 		run.Controller: controllers,
 	}
 	onStop = func() {
