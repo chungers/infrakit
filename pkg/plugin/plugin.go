@@ -15,7 +15,7 @@ type Metadata struct {
 	// Instance is optionally a key for an object indexable within the remote plugin
 	Instance string
 	// InterfaceSpec is the interface definition of the remote object
-	InterfaceSpec types.InterfaceSpec
+	InterfaceSpec spi.InterfaceSpec
 }
 
 // Spec models a canonical pattern of fields that exist in a struct/ map / union that indicates the block is a plugin.

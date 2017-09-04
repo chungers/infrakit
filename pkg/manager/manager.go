@@ -5,6 +5,7 @@ import (
 	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/leader"
 	"github.com/docker/infrakit/pkg/manager/internal"
+	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/store"
 )
@@ -23,10 +24,11 @@ type Backend interface {
 }
 
 // NewManager returns a manager implementation
-func NewManager(plugins discovery.Plugins,
+func NewManager(name plugin.Name,
+	plugins discovery.Plugins,
 	leader leader.Detector,
 	leaderStore leader.Store,
 	snapshot store.Snapshot,
 	backendName string) Backend {
-	return internal.NewBackend(plugins, leader, leaderStore, snapshot, backendName)
+	return internal.NewBackend(name, plugins, leader, leaderStore, snapshot, backendName)
 }

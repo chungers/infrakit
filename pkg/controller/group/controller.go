@@ -5,7 +5,6 @@ import (
 
 	"github.com/docker/infrakit/pkg/controller"
 	"github.com/docker/infrakit/pkg/core"
-	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -68,18 +67,12 @@ func buildObject(spec types.Spec, desc group.Description) (types.Object, error) 
 }
 
 func (c *gController) fromGroupSpec(gspec group.Spec) types.Spec {
-	lookup, sub := c.Plugin().GetLookupAndType()
-	name := plugin.NameFrom(lookup, string(gspec.ID))
-	if sub == "" {
-		name = plugin.Name(string(gspec.ID))
-	}
-
 	return types.Spec{
 		Kind:    c.Kind(),
 		Version: group.InterfaceSpec.Encode(),
 		Metadata: types.Metadata{
 			Identity: &types.Identity{ID: string(gspec.ID)},
-			Name:     string(name),
+			Name:     c.Plugin().WithType(gspec.ID).String(),
 		},
 		Properties: gspec.Properties,
 		Options:    nil, // TODO(chungers) -- here's a loss of information in the old format

@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/docker/infrakit/pkg/controller"
+	"github.com/docker/infrakit/pkg/core"
 	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/types"
@@ -28,7 +29,73 @@ func (b *Backend) LeaderLocation() (*url.URL, error) {
 
 // Supervising returns information about the objects supervised by this backend.
 func (b *Backend) Supervising() ([]plugin.Metadata, error) {
-	panic("not-done")
+	out := []plugin.Metadata{}
+
+	err := b.visitPlugins(
+		asController(
+			func(n plugin.Name, c controller.Controller) error {
+
+				specs, err := c.Specs(nil)
+				if err != nil {
+					return err
+				}
+
+				kind := ""
+				for _, s := range specs {
+					copy := s
+					addr := core.AsAddressable(&copy)
+					kind = addr.Kind()
+					out = append(out, plugin.Metadata{
+						Kind:          kind,
+						Name:          addr.Plugin(),
+						Instance:      addr.Instance(),
+						InterfaceSpec: controller.InterfaceSpec,
+					})
+				}
+
+				addr := core.NewAddressable(kind, n.LookupOnly(), "")
+				out = append(out, plugin.Metadata{
+					Kind:          addr.Kind(),
+					Name:          addr.Plugin(),
+					Instance:      addr.Instance(),
+					InterfaceSpec: controller.InterfaceSpec,
+				})
+
+				return nil
+			},
+		),
+		asGroupPlugin(
+			func(n plugin.Name, g group.Plugin) error {
+
+				gspecs, err := g.InspectGroups()
+				if err != nil {
+					return err
+				}
+
+				kind := ""
+				for _, gs := range gspecs {
+					addr := core.NewAddressable(kind, n.LookupOnly(), string(gs.ID))
+					kind = addr.Kind()
+					out = append(out, plugin.Metadata{
+						Kind:          kind,
+						Name:          addr.Plugin(),
+						Instance:      addr.Instance(),
+						InterfaceSpec: group.InterfaceSpec,
+					})
+				}
+
+				addr := core.NewAddressable(kind, n.LookupOnly(), "")
+				out = append(out, plugin.Metadata{
+					Kind:          addr.Kind(),
+					Name:          addr.Plugin(),
+					Instance:      addr.Instance(),
+					InterfaceSpec: group.InterfaceSpec,
+				})
+
+				return nil
+			},
+		))
+	return out, err
 }
 
 // Plan returns the changes needed given the new input
@@ -88,14 +155,16 @@ func (b *Backend) Specs() ([]types.Spec, error) {
 // all plugins of the type 'group' and then aggregate the results.
 func (b *Backend) Inspect() ([]types.Object, error) {
 	aggregated := []types.Object{}
-	err := b.allControllers(func(c controller.Controller) error {
-		objects, err := c.Describe(nil)
-		if err != nil {
-			return err
-		}
-		aggregated = append(aggregated, objects...)
-		return nil
-	})
+	err := b.visitPlugins(asController(
+		func(n plugin.Name, c controller.Controller) error {
+			objects, err := c.Describe(nil)
+			if err != nil {
+				return err
+			}
+			aggregated = append(aggregated, objects...)
+			return nil
+		},
+	))
 	return aggregated, err
 }
 

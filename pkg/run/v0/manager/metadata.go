@@ -67,7 +67,7 @@ func (updatable *metadataModel) pluginModel() (chan func(map[string]interface{})
 	model := make(chan func(map[string]interface{}))
 	stop := make(chan struct{})
 	go func() {
-		tick := time.Tick(1 * time.Second)
+		tick := time.Tick(10 * time.Second)
 		for {
 			select {
 			case <-tick:

@@ -16,9 +16,36 @@ func NameFrom(lookup, sub string) Name {
 	return Name(lookup)
 }
 
+// Lookup returns the lookup portion of the name
+func (n Name) Lookup() string {
+	lookup, _ := n.GetLookupAndType()
+	return lookup
+}
+
+// LookupOnly returns the trailing slash form e.g. us-east/
+func (n Name) LookupOnly() Name {
+	lookup, _ := n.GetLookupAndType()
+	return Name(string(lookup + "/"))
+}
+
+// WithType returns a new name with the same lookup but a different type
+func (n Name) WithType(t interface{}) Name {
+	return Name(fmt.Sprintf("%v/%v", n.Lookup(), t))
+}
+
+// Equal returns true if the other name is the same
+func (n Name) Equal(other Name) bool {
+	return string(n) == string(other)
+}
+
 // IsEmpty returns true if the name is an empty string
 func (n Name) IsEmpty() bool {
 	return string(n) == ""
+}
+
+// String returns the string form
+func (n Name) String() string {
+	return string(n)
 }
 
 // GetLookupAndType returns the plugin name for lookup and sub-type supported by the plugin.
@@ -31,11 +58,6 @@ func (r Name) GetLookupAndType() (string, string) {
 		return name[0:first], name[first+1:]
 	}
 	return name, ""
-}
-
-// String returns the string representation
-func (r Name) String() string {
-	return string(r)
 }
 
 // MarshalJSON implements the JSON marshaler interface

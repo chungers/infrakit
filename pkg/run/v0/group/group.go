@@ -142,10 +142,9 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 	}()
 
-	groups := func() (map[group.ID]group.Plugin, error) {
+	transport.Name = name
 
-		// we need to use the trailing slash for the name
-		name = plugin.Name(string(name) + "/")
+	groups := func() (map[group.ID]group.Plugin, error) {
 
 		m := map[group.ID]group.Plugin{
 			"": groupPlugin,
@@ -163,12 +162,9 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 
 	controllers := func() (map[string]controller.Controller, error) {
 
-		// we need to use the trailing slash for the name
-		name = plugin.Name(string(name) + "/")
-
 		m := map[string]controller.Controller{
 			"": group_controller.AsController(
-				core.NewAddressable(Kind, name, ""),
+				core.NewAddressable(Kind, name.LookupOnly(), ""),
 				groupPlugin),
 		}
 		all, err := groupPlugin.InspectGroups()
@@ -178,13 +174,12 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		for _, gspec := range all {
 			gid := gspec.ID
 			m[string(gid)] = group_controller.AsController(
-				core.NewAddressable(Kind, name, string(gid)), // scoped by group ID
+				core.NewAddressable(Kind, name.WithType(gid), string(gid)), // scoped by group ID
 				groupPlugin)
 		}
 		return m, nil
 	}
 
-	transport.Name = name
 	impls = map[run.PluginCode]interface{}{
 		run.Metadata:   metadata_plugin.NewPluginFromChannel(updateSnapshot),
 		run.Group:      groups,

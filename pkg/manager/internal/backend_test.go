@@ -92,7 +92,7 @@ func testEnsemble(t *testing.T,
 	st2, err := server.StartPluginAtPath(filepath.Join(dir, "ingress"), cs)
 	require.NoError(t, err)
 
-	m := NewBackend(disc, detector, nil, snap, "group-stateless")
+	m := NewBackend(plugin.Name("stack"), disc, detector, nil, snap, "group-stateless")
 	ms := controller_rpc.ServerWithNamed(m.Controllers)
 	mt, err := server.StartPluginAtPath(filepath.Join(dir, "group"), ms)
 	require.NoError(t, err)

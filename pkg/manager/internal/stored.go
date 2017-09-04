@@ -37,6 +37,18 @@ type globalSpec struct {
 	index map[key]record
 }
 
+func (g *globalSpec) findSpec(n plugin.Name) (types.Spec, bool) {
+	for k, v := range g.index {
+		if v.Handler.Equal(n) {
+			return v.Spec, true
+		}
+		if k.Name == n.String() {
+			return v.Spec, true
+		}
+	}
+	return types.Spec{}, false
+}
+
 func (g *globalSpec) visit(f func(key, record) error) error {
 	for k, v := range g.index {
 		if err := f(k, v); err != nil {

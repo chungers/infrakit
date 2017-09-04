@@ -31,6 +31,7 @@ func Controller(name string, services *cli.Services) *cobra.Command {
 	controller.AddCommand(
 		Describe(name, services),
 		Commit(name, services),
+		Specs(name, services),
 	)
 
 	return controller

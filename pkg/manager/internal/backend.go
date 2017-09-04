@@ -32,7 +32,8 @@ var (
 // such as leadership changes and configuration changes and perform the necessary actions
 // to activate / deactivate plugins
 type Backend struct {
-	group.Plugin // TODO - remove this
+	self         plugin.Name // the name this backend is listening on.
+	group.Plugin             // TODO - remove this
 
 	plugins     discovery.Plugins
 	leader      leader.Detector
@@ -55,13 +56,15 @@ type backendOp struct {
 
 // NewBackend returns the manager which depends on other services to coordinate and manage
 // the plugins in order to ensure the infrastructure state matches the user's spec.
-func NewBackend(plugins discovery.Plugins,
+func NewBackend(name plugin.Name,
+	plugins discovery.Plugins,
 	leader leader.Detector,
 	leaderStore leader.Store,
 	snapshot store.Snapshot,
 	backendName string) *Backend {
 
 	return &Backend{
+		self: name,
 		// "base class" is the stateless backend group plugin
 		Plugin: group.LazyConnect(
 			func() (group.Plugin, error) {
@@ -91,23 +94,55 @@ func (b *Backend) initRunning() bool {
 	return false
 }
 
-func (b *Backend) allControllers(work func(controller.Controller) error) error {
+type visitor struct {
+	interfaceSpec spi.InterfaceSpec
+	work          func(plugin.Name, client.Client) error
+}
+
+func asController(v func(plugin.Name, controller.Controller) error) visitor {
+	return visitor{
+		interfaceSpec: controller.InterfaceSpec,
+		work: func(n plugin.Name, rpc client.Client) error {
+			return v(n, controller_rpc.Adapt(n, rpc))
+		},
+	}
+}
+
+func asGroupPlugin(v func(plugin.Name, group.Plugin) error) visitor {
+	return visitor{
+		interfaceSpec: group.InterfaceSpec,
+		work: func(n plugin.Name, rpc client.Client) error {
+			return v(n, group_rpc.Adapt(rpc))
+		},
+	}
+}
+
+func (b *Backend) visitPlugins(visitors ...visitor) error {
 	// Go through all the controllers
 	running, err := b.plugins.List()
 	if err != nil {
 		return err
 	}
+
+	self, _ := b.self.GetLookupAndType()
+
 	log.Debug("current state", "running", running, "backend", b, "V", debugV2)
 	for lookup, endpoint := range running {
-		rpcClient, err := client.New(endpoint.Address, controller.InterfaceSpec)
-		log.Debug("Scanned controller", "name", lookup, "at", endpoint, "err", err, "backend", b, "V", debugV2)
-		if err == nil {
-			name := plugin.Name(lookup)
-			log.Debug("Calling controller", "name", name, "V", debugV2)
-			c := controller_rpc.Adapt(name, rpcClient)
-			err = work(c)
-			if err != nil {
-				return err
+
+		if lookup == self {
+			continue
+		}
+
+		for _, visitor := range visitors {
+			rpcClient, err := client.New(endpoint.Address, visitor.interfaceSpec)
+			log.Debug("Scanned controller", "name", lookup, "at", endpoint, "err", err, "backend", b, "V", debugV2)
+			if err == nil {
+				name := plugin.Name(lookup)
+				log.Debug("Calling controller", "name", name, "V", debugV2)
+				err = visitor.work(name, rpcClient)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -310,8 +345,14 @@ func (b *Backend) onAssumeLeadership() error {
 
 	log.Info("Committing specs to controllers", "config", config)
 
-	return b.callControllers(*config,
-		func(c controller.Controller, spec types.Spec) error {
+	return b.visitPlugins(asController(
+		func(n plugin.Name, c controller.Controller) error {
+
+			spec, has := config.findSpec(n)
+			if !has {
+				log.Debug("no spec found", "plugin", n, "V", debugV2)
+				return nil
+			}
 			log.Info("Committing spec", "controller", c, "spec", spec)
 			_, err := c.Commit(controller.Enforce, spec)
 			if err != nil {
@@ -319,14 +360,7 @@ func (b *Backend) onAssumeLeadership() error {
 			}
 			return err
 		},
-		func(c group.Plugin, gspec group.Spec) error {
-			log.Info("Committing group spec", "groupPlugin", c, "spec", gspec)
-			_, err := c.CommitGroup(gspec, false)
-			if err != nil {
-				log.Error("Error committing group spec", "spec", gspec, "err", err)
-			}
-			return err
-		})
+	))
 }
 
 func (b *Backend) onLostLeadership() error {
@@ -351,11 +385,13 @@ func (b *Backend) onLostLeadership() error {
 
 	<-wait
 
-	return b.allControllers(func(c controller.Controller) error {
-		log.Debug("Pausing controller", "c", c)
-		_, err := c.Pause(nil)
-		return err
-	})
+	return b.visitPlugins(asController(
+		func(n plugin.Name, c controller.Controller) error {
+			log.Debug("Pausing controller", "c", c)
+			_, err := c.Pause(nil)
+			return err
+		},
+	))
 }
 
 func (b *Backend) callControllers(config globalSpec,
@@ -536,11 +572,10 @@ func (b *Backend) Groups() (map[group.ID]group.Plugin, error) {
 // GroupControllers returns a map of *scoped* controllers across all the discovered
 // controllers.
 func (b *Backend) Controllers() (map[string]controller.Controller, error) {
-
 	// Addressability -- we need to "shift 1" from this namespace down to indivdually addressable
 	// objects in the destination controller
 	controllers := map[string]controller.Controller{
-		"": &queuedController{},
+	//		"": &queuedController{},
 	}
 	return controllers, nil
 }
