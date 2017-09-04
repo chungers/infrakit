@@ -3,6 +3,7 @@ package manager
 import (
 	"net/url"
 
+	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -24,6 +25,10 @@ type Leadership interface {
 // Manager is the interface for interacting locally or remotely with the manager
 type Manager interface {
 	Leadership
+
+	// Supervising returns a list of plugins this manager is supervising.  By supervising,
+	// the manager provides persistence and leadership checking in HA mode.
+	Supervising() ([]plugin.Metadata, error)
 
 	// LeaderLocation returns the location of the leader
 	LeaderLocation() (*url.URL, error)

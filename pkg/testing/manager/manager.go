@@ -3,11 +3,15 @@ package manager
 import (
 	"net/url"
 
+	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/types"
 )
 
 // Plugin implements manager.Manager
 type Plugin struct {
+
+	// DoSupervising returns the list of controllers under supervision
+	DoSupervising func() ([]plugin.Metadata, error)
 
 	// DoLeaderLocation returns the location
 	DoLeaderLocation func() (*url.URL, error)
@@ -37,6 +41,11 @@ type Plugin struct {
 // IsLeader returns true if manager is leader
 func (t *Plugin) IsLeader() (bool, error) {
 	return t.DoIsLeader()
+}
+
+// Supervising returns list of controllers under supervision
+func (t *Plugin) Supervising() ([]plugin.Metadata, error) {
+	return t.DoSupervising()
 }
 
 // LeaderLocation returns the location of the leader

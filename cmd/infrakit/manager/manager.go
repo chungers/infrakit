@@ -304,7 +304,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 	}
 	change.AddCommand(changeList, changeGet)
 
-	cmd.AddCommand(commit, inspect, change, Leader(plugins), Plan(plugins))
+	cmd.AddCommand(commit, inspect, change, Leader(plugins), Plan(plugins), Supervising(plugins))
 
 	return cmd
 }

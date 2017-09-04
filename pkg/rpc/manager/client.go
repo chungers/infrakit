@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/docker/infrakit/pkg/manager"
+	"github.com/docker/infrakit/pkg/plugin"
 	rpc_client "github.com/docker/infrakit/pkg/rpc/client"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -40,6 +41,14 @@ func (c client) LeaderLocation() (*url.URL, error) {
 	resp := LeaderLocationResponse{}
 	err := c.client.Call("Manager.LeaderLocation", req, &resp)
 	return resp.Location, err
+}
+
+// Supervising returns the location of the leader
+func (c client) Supervising() ([]plugin.Metadata, error) {
+	req := SupervisingRequest{}
+	resp := SupervisingResponse{}
+	err := c.client.Call("Manager.Supervising", req, &resp)
+	return resp.Supervised, err
 }
 
 // Plan describes the changes need to apply to current specs

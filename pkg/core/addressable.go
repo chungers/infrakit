@@ -32,6 +32,11 @@ type Addressable interface {
 	Instance() string
 }
 
+// NewAddressableFromPluginMetadata returns an Addressable from the plugin metadata
+func NewAddressableFromPluginMetadata(meta plugin.Metadata) Addressable {
+	return NewAddressable(meta.Kind, meta.Name, meta.Instance)
+}
+
 // NewAddressableFromMetadata creates an addressable from metadata
 func NewAddressableFromMetadata(kind string, metadata types.Metadata) Addressable {
 	instance := ""

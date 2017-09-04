@@ -26,6 +26,11 @@ func (b *Backend) LeaderLocation() (*url.URL, error) {
 	return b.leaderStore.GetLocation()
 }
 
+// Supervising returns information about the objects supervised by this backend.
+func (b *Backend) Supervising() ([]plugin.Metadata, error) {
+	panic("not-done")
+}
+
 // Plan returns the changes needed given the new input
 func (b *Backend) Plan(specs []types.Spec) (types.Changes, error) {
 	current, err := b.Specs()

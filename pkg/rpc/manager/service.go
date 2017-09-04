@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/docker/infrakit/pkg/manager"
+	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -61,6 +62,24 @@ func (p *Manager) LeaderLocation(_ *http.Request, req *LeaderLocationRequest, re
 	u, err := p.manager.LeaderLocation()
 	if err == nil {
 		resp.Location = u
+	}
+	return err
+}
+
+// SupervisingRequest is the rpc request
+type SupervisingRequest struct {
+}
+
+// SupervisingResponse is the rpc response
+type SupervisingResponse struct {
+	Supervised []plugin.Metadata
+}
+
+// Supervising returns the location of the leader
+func (p *Manager) Supervising(_ *http.Request, req *SupervisingRequest, resp *SupervisingResponse) error {
+	u, err := p.manager.Supervising()
+	if err == nil {
+		resp.Supervised = u
 	}
 	return err
 }
