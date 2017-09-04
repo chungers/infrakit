@@ -1,4 +1,4 @@
-package adapter
+package group
 
 import (
 	"fmt"
@@ -278,7 +278,7 @@ properties:
 
 	c := AsController(core.NewAddressable("group", plugin.Name("group-stateless/"), ""), g)
 
-	objects, err := c.Free(nil)
+	objects, err := c.Pause(nil)
 	require.NoError(t, err)
 	require.Equal(t, spec.Properties, objects[0].Spec.Properties)
 
@@ -287,7 +287,7 @@ properties:
 
 	fmt.Println(string(buff))
 
-	objects, err = c.Free(&types.Metadata{Name: "workers"})
+	objects, err = c.Pause(&types.Metadata{Name: "workers"})
 	require.NoError(t, err)
 	require.Equal(t, spec.Properties, objects[0].Spec.Properties)
 

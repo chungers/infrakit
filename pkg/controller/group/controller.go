@@ -1,4 +1,4 @@
-package adapter
+package group
 
 import (
 	"fmt"
@@ -183,18 +183,17 @@ func (c *gController) Describe(search *types.Metadata) (objects []types.Object, 
 		return
 	}
 
-	objects = []types.Object{}
-
-	for gid, gspec := range gspecs {
-
-		match := true
-		if search != nil {
-			query := core.NewAddressableFromMetadata(c.Kind(), *search)
-			match = query.Instance() == string(gid)
+	match := func(gid group.ID) bool {
+		if search == nil {
+			return true
 		}
+		query := core.NewAddressableFromMetadata(c.Kind(), *search)
+		return query.Instance() == string(gid)
+	}
 
-		if match {
-
+	objects = []types.Object{}
+	for gid, gspec := range gspecs {
+		if match(gid) {
 			var desc group.Description
 			var object types.Object
 
@@ -213,7 +212,31 @@ func (c *gController) Describe(search *types.Metadata) (objects []types.Object, 
 	return
 }
 
-func (c *gController) Free(search *types.Metadata) (objects []types.Object, err error) {
+func (c *gController) Specs(search *types.Metadata) (specs []types.Spec, err error) {
+	var gspecs map[group.ID]group.Spec
+	gspecs, err = c.helpFind(search)
+	if err != nil {
+		return
+	}
+
+	match := func(gid group.ID) bool {
+		if search == nil {
+			return true
+		}
+		query := core.NewAddressableFromMetadata(c.Kind(), *search)
+		return query.Instance() == string(gid)
+	}
+
+	specs = []types.Spec{}
+	for gid, gspec := range gspecs {
+		if match(gid) {
+			specs = append(specs, c.fromGroupSpec(gspec))
+		}
+	}
+	return
+}
+
+func (c *gController) Pause(search *types.Metadata) (objects []types.Object, err error) {
 	objects, err = c.Describe(search)
 	if err != nil {
 		return

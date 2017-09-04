@@ -227,3 +227,53 @@ func TestManagerInspect(t *testing.T) {
 	server.Stop()
 
 }
+
+func TestManagerPause(t *testing.T) {
+	socketPath := tempSocket()
+
+	rawActual := make(chan []types.Spec, 1)
+	expect := []types.Spec{
+		{
+			Kind: "group",
+			Metadata: types.Metadata{
+				Name: "workers",
+			},
+			Properties: types.AnyValueMust(map[string]interface{}{"a": 1, "b": 2}),
+		},
+		{
+			Kind: "group",
+			Metadata: types.Metadata{
+				Name: "managers",
+			},
+			Properties: types.AnyValueMust(map[string]interface{}{"a": 11, "b": 22}),
+		},
+	}
+
+	m := &testing_manager.Plugin{
+		DoPause: func(specs []types.Spec) error {
+
+			rawActual <- specs
+
+			return nil
+		},
+	}
+	server, err := server.StartPluginAtPath(socketPath, PluginServer(m))
+	require.NoError(t, err)
+
+	err = must(NewClient(socketPath)).Pause(expect)
+	require.NoError(t, err)
+	require.EqualValues(t, types.AnyValueMust(expect), types.AnyValueMust(<-rawActual))
+
+	expectErr := errors.New("boom")
+
+	// test for error
+	m.DoPause = func(specs []types.Spec) error {
+		return expectErr
+	}
+	err = must(NewClient(socketPath)).Pause(expect)
+	require.Error(t, err)
+	require.Equal(t, expectErr.Error(), err.Error())
+
+	server.Stop()
+
+}

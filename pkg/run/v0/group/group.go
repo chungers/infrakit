@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/docker/infrakit/pkg/controller"
+	group_controller "github.com/docker/infrakit/pkg/controller/group"
 	"github.com/docker/infrakit/pkg/core"
 	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/launch/inproc"
@@ -16,7 +17,6 @@ import (
 	"github.com/docker/infrakit/pkg/run"
 	"github.com/docker/infrakit/pkg/spi/flavor"
 	"github.com/docker/infrakit/pkg/spi/group"
-	group_adapter "github.com/docker/infrakit/pkg/spi/group/adapter"
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -167,7 +167,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		name = plugin.Name(string(name) + "/")
 
 		m := map[string]controller.Controller{
-			"": group_adapter.AsController(
+			"": group_controller.AsController(
 				core.NewAddressable(Kind, name, ""),
 				groupPlugin),
 		}
@@ -177,7 +177,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 		for _, gspec := range all {
 			gid := gspec.ID
-			m[string(gid)] = group_adapter.AsController(
+			m[string(gid)] = group_controller.AsController(
 				core.NewAddressable(Kind, name, string(gid)), // scoped by group ID
 				groupPlugin)
 		}

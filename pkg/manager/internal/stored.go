@@ -1,4 +1,4 @@
-package manager
+package internal
 
 import (
 	"fmt"
@@ -77,6 +77,17 @@ func (g *globalSpec) specs() []types.Spec {
 	return out
 }
 
+func (g *globalSpec) getSpec(kind string, metadata types.Metadata) (types.Spec, error) {
+	if g.index == nil {
+		g.index = map[key]record{}
+	}
+	r, has := g.index[key{Kind: kind, Name: metadata.Name}]
+	if !has {
+		return types.Spec{}, fmt.Errorf("not found %v %v", kind, metadata.Name)
+	}
+	return r.Spec, nil
+}
+
 func (g *globalSpec) updateSpec(spec types.Spec, handler plugin.Name) {
 	if g.index == nil {
 		g.index = map[key]record{}
@@ -92,6 +103,13 @@ func (g *globalSpec) updateSpec(spec types.Spec, handler plugin.Name) {
 	}
 }
 
+func (g *globalSpec) removeSpec(kind string, metadata types.Metadata) {
+	if g.index == nil {
+		g.index = map[key]record{}
+	}
+	delete(g.index, key{Kind: kind, Name: metadata.Name})
+}
+
 func keyFromGroupID(id group.ID) key {
 	return key{
 		// TODO(chungers) - the group value should be constant for the 'kind'.
@@ -101,24 +119,6 @@ func keyFromGroupID(id group.ID) key {
 		Kind: "group",
 		Name: string(id),
 	}
-}
-
-func (g *globalSpec) removeSpec(kind string, metadata types.Metadata) {
-	if g.index == nil {
-		g.index = map[key]record{}
-	}
-	delete(g.index, key{Kind: kind, Name: metadata.Name})
-}
-
-func (g *globalSpec) getSpec(kind string, metadata types.Metadata) (types.Spec, error) {
-	if g.index == nil {
-		g.index = map[key]record{}
-	}
-	r, has := g.index[key{Kind: kind, Name: metadata.Name}]
-	if !has {
-		return types.Spec{}, fmt.Errorf("not found %v %v", kind, metadata.Name)
-	}
-	return r.Spec, nil
 }
 
 func (g *globalSpec) removeGroup(id group.ID) {

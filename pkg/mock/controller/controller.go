@@ -52,15 +52,15 @@ func (_mr *_MockControllerRecorder) Describe(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Describe", arg0)
 }
 
-func (_m *MockController) Free(_param0 *types.Metadata) ([]types.Object, error) {
-	ret := _m.ctrl.Call(_m, "Free", _param0)
+func (_m *MockController) Pause(_param0 *types.Metadata) ([]types.Object, error) {
+	ret := _m.ctrl.Call(_m, "Pause", _param0)
 	ret0, _ := ret[0].([]types.Object)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-func (_mr *_MockControllerRecorder) Free(arg0 interface{}) *gomock.Call {
-	return _mr.mock.ctrl.RecordCall(_mr.mock, "Free", arg0)
+func (_mr *_MockControllerRecorder) Pause(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Pause", arg0)
 }
 
 func (_m *MockController) Plan(_param0 controller.Operation, _param1 types.Spec) (types.Object, controller.Plan, error) {
@@ -73,4 +73,15 @@ func (_m *MockController) Plan(_param0 controller.Operation, _param1 types.Spec)
 
 func (_mr *_MockControllerRecorder) Plan(arg0, arg1 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Plan", arg0, arg1)
+}
+
+func (_m *MockController) Specs(_param0 *types.Metadata) ([]types.Spec, error) {
+	ret := _m.ctrl.Call(_m, "Specs", _param0)
+	ret0, _ := ret[0].([]types.Spec)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockControllerRecorder) Specs(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Specs", arg0)
 }

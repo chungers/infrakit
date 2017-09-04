@@ -1,4 +1,4 @@
-package manager
+package internal
 
 import (
 	"fmt"
@@ -66,7 +66,7 @@ func testEnsemble(t *testing.T,
 	ctrl *gomock.Controller,
 	configStore func(*store_mock.MockSnapshot),
 	configureGroup func(*group_mock.MockPlugin),
-	configureController func(*controller_mock.MockController)) (Backend, server.Stoppable) {
+	configureController func(*controller_mock.MockController)) (*Backend, server.Stoppable) {
 
 	disc, err := local.NewPluginDiscoveryWithDir(dir)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func testEnsemble(t *testing.T,
 	st2, err := server.StartPluginAtPath(filepath.Join(dir, "ingress"), cs)
 	require.NoError(t, err)
 
-	m := NewManager(disc, detector, nil, snap, "group-stateless")
+	m := NewBackend(disc, detector, nil, snap, "group-stateless")
 	ms := controller_rpc.ServerWithNamed(m.Controllers)
 	mt, err := server.StartPluginAtPath(filepath.Join(dir, "group"), ms)
 	require.NoError(t, err)
@@ -364,7 +364,7 @@ func _TestChangeLeadership(t *testing.T) {
 			g.EXPECT().Describe(gomock.Eq(nil)).AnyTimes().Return([]types.Object{{Spec: ingressSpec}}, nil)
 
 			// Now we lost leadership... need to unwatch
-			g.EXPECT().Free(gomock.Eq(&types.Metadata{Name: "elb1"})).Do(
+			g.EXPECT().Pause(gomock.Eq(&types.Metadata{Name: "elb1"})).Do(
 				func(metdata *types.Metadata) ([]types.Object, error) {
 
 					defer close(checkpoint3b)

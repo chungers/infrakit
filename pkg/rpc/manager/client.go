@@ -78,6 +78,16 @@ func (c client) Specs() ([]types.Spec, error) {
 	return resp.Specs, err
 }
 
+// Pause pauses all the controllers in the spec
+func (c client) Pause(specs []types.Spec) error {
+	req := PauseRequest{
+		Specs: specs,
+	}
+	resp := PauseResponse{}
+	err := c.client.Call("Manager.Pause", req, &resp)
+	return err
+}
+
 // Terminate destroys all resources associated with the specs
 func (c client) Terminate(specs []types.Spec) error {
 	req := TerminateRequest{

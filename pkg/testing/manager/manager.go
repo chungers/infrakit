@@ -27,6 +27,9 @@ type Plugin struct {
 	// DoInspect returns the current state of the infrastructure
 	DoInspect func() ([]types.Object, error)
 
+	// DoPause pauses all controllers in the specs
+	DoPause func(specs []types.Spec) error
+
 	// DoTerminate destroys all resources associated with the specs
 	DoTerminate func(specs []types.Spec) error
 }
@@ -59,6 +62,11 @@ func (t *Plugin) Specs() ([]types.Spec, error) {
 // Inspect returns the current state of the infrastructure
 func (t *Plugin) Inspect() ([]types.Object, error) {
 	return t.DoInspect()
+}
+
+// Pause pauses all controllers in the specs
+func (t *Plugin) Pause(specs []types.Spec) error {
+	return t.DoPause(specs)
 }
 
 // Terminate destroys all resources associated with the specs

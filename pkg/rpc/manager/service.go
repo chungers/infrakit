@@ -137,6 +137,20 @@ func (p *Manager) Specs(_ *http.Request, req *SpecsRequest, resp *SpecsResponse)
 	return nil
 }
 
+// PauseRequest is the rpc request
+type PauseRequest struct {
+	Specs []types.Spec
+}
+
+// PauseResponse is the rpc response
+type PauseResponse struct {
+}
+
+// Pause is the rpc method for Manager.Pause
+func (p *Manager) Pause(_ *http.Request, req *PauseRequest, resp *PauseResponse) error {
+	return p.manager.Pause(req.Specs)
+}
+
 // TerminateRequest is the rpc request
 type TerminateRequest struct {
 	Specs []types.Spec
