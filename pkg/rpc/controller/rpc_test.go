@@ -188,3 +188,46 @@ func TestControllerPause(t *testing.T) {
 	server.Stop()
 
 }
+
+func TestControllerTerminate(t *testing.T) {
+	socketPath := tempSocket()
+	name := filepath.Base(socketPath)
+
+	smallSpec := types.Spec{Metadata: types.Metadata{Name: "small"}}
+	smallObject := types.Object{Spec: smallSpec}
+
+	smallActual := make(chan []interface{}, 1)
+
+	small := &testing_controller.Controller{
+		DoTerminate: func(search *types.Metadata) ([]types.Object, error) {
+			if search == nil {
+				return nil, fmt.Errorf("boom")
+			}
+			smallActual <- []interface{}{*search}
+
+			return []types.Object{smallObject}, nil
+		},
+	}
+	server, err := rpc_server.StartPluginAtPath(socketPath, Server(small))
+	require.NoError(t, err)
+
+	smallSearch := (types.Metadata{Name: "small"}).AddTagsFromStringSlice([]string{"a=b", "c=d"})
+
+	a1, err := must(NewClient(plugin.Name(name), socketPath)).Terminate(&smallSearch)
+	require.NoError(t, err)
+
+	_, err = must(NewClient(plugin.Name("unknown"), socketPath)).Terminate(&smallSearch)
+	require.Error(t, err)
+
+	smallArgs := <-smallActual
+
+	require.EqualValues(t, smallSearch, smallArgs[0])
+	require.Equal(t, []types.Object{smallObject}, a1)
+
+	// now return error
+	_, err = must(NewClient(plugin.Name(name), socketPath)).Terminate(nil)
+	require.Error(t, err)
+
+	server.Stop()
+
+}

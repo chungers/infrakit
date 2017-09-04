@@ -94,3 +94,14 @@ func (c client) Pause(metadata *types.Metadata) ([]types.Object, error) {
 	err := c.client.Call("Controller.Pause", req, &resp)
 	return resp.Objects, err
 }
+
+// Terminate tells the controller to terminate management of objects matching.
+func (c client) Terminate(metadata *types.Metadata) ([]types.Object, error) {
+	req := FindRequest{
+		Name:     c.name,
+		Metadata: metadata,
+	}
+	resp := FindResponse{}
+	err := c.client.Call("Controller.Terminate", req, &resp)
+	return resp.Objects, err
+}

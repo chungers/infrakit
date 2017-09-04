@@ -1,0 +1,59 @@
+package internal
+
+import (
+	"sync"
+)
+
+// Queued is something that can process work in a queue
+type Queued interface {
+	// Run queues the work and blocks until the work is executed with results
+	Run(context interface{}, work func() []interface{}) (result []interface{})
+}
+
+type queue chan<- backendOp
+
+// Run executes work on the queue without timeout.  This could hang indefinitely.  (TODO - add timeout)
+func (q queue) Run(context interface{}, work func() []interface{}) []interface{} {
+	ch := make(chan []interface{}, 1) // default is report is called once
+	q <- backendOp{
+		context: context,
+		operation: func() error {
+			ch <- work()
+			close(ch)
+			return nil
+		},
+	}
+	return <-ch
+}
+
+func merge(done <-chan struct{}, cs ...<-chan backendOp) <-chan backendOp {
+	var wg sync.WaitGroup
+	out := make(chan backendOp)
+
+	// Start an output goroutine for each input channel in cs.  output
+	// copies values from c to out until c or done is closed, then calls
+	// wg.Done.
+	output := func(c <-chan backendOp) {
+		defer wg.Done()
+		for n := range c {
+			select {
+			case out <- n:
+			case <-done:
+				return
+			}
+		}
+	}
+
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
+	}
+
+	// Start a goroutine to close out once all the output goroutines are
+	// done.  This must start after the wg.Add call.
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
+}

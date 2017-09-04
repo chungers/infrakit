@@ -6,7 +6,7 @@ import (
 	"github.com/docker/infrakit/pkg/types"
 )
 
-// Meta describes the plugin
+// Metadata describes the plugin
 type Metadata struct {
 	// Kind is the kind of the plugin (e.g. group, ingress, aws)
 	Kind string

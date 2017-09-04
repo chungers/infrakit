@@ -207,6 +207,7 @@ func (c *Controller) Describe(search *types.Metadata) (objects []types.Object, e
 	return
 }
 
+// Specs implements Controller.Specs
 func (c *Controller) Specs(search *types.Metadata) (specs []types.Spec, err error) {
 
 	c.lock.Lock()
@@ -269,6 +270,41 @@ func (c *Controller) Pause(search *types.Metadata) (objects []types.Object, err 
 		m[0].Pause()
 
 		objects = append(objects, candidate)
+	}
+	return
+}
+
+// Terminate tells the controller to terminate management of objects matching.
+func (c *Controller) Terminate(search *types.Metadata) (objects []types.Object, err error) {
+	if err = c.leaderGuard(); err != nil {
+		return
+	}
+
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	described, err := c.Describe(search)
+	if err != nil {
+		return nil, err
+	}
+
+	objects = []types.Object{}
+	for _, candidate := range described {
+
+		m, err := c.getManaged(&candidate.Metadata, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(m) != 1 {
+			continue
+		}
+		terminated, err := m[0].Terminate()
+		if err == nil && terminated != nil {
+			objects = append(objects, *terminated)
+		} else {
+			log.Warn("terminate", "managed", m[0], "err", err)
+		}
 	}
 	return
 }

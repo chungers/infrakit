@@ -107,3 +107,11 @@ func (c *lazyConnect) Pause(search *types.Metadata) (objects []types.Object, err
 	})
 	return
 }
+
+func (c *lazyConnect) Terminate(search *types.Metadata) (objects []types.Object, err error) {
+	err = c.do(func(p Controller) error {
+		objects, err = p.Terminate(search)
+		return err
+	})
+	return
+}

@@ -28,7 +28,7 @@ var (
 	debugV2 = logutil.V(500)
 )
 
-// backend is the controller of all the plugins.  It is able to process multiple inputs
+// Backend is the controller of all the plugins.  It is able to process multiple inputs
 // such as leadership changes and configuration changes and perform the necessary actions
 // to activate / deactivate plugins
 type Backend struct {
@@ -448,6 +448,7 @@ func (b *Backend) callControllers(config globalSpec,
 	})
 }
 
+// FindGroupSpec returns the group spec given ID
 func (b *Backend) FindGroupSpec(id group.ID) (group.Spec, error) {
 	// load the config
 	config := globalSpec{}
@@ -569,7 +570,7 @@ func (b *Backend) Groups() (map[group.ID]group.Plugin, error) {
 	return groups, nil
 }
 
-// GroupControllers returns a map of *scoped* controllers across all the discovered
+// Controllers returns a map of *scoped* controllers across all the discovered
 // controllers.
 func (b *Backend) Controllers() (map[string]controller.Controller, error) {
 	// Addressability -- we need to "shift 1" from this namespace down to indivdually addressable

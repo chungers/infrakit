@@ -32,8 +32,11 @@ type Controller struct {
 	// or via a datastore.
 	DoSpecs func(metadata *types.Metadata) ([]types.Spec, error)
 
-	// Pause tells the controller to pause management of objects matching.  To resume, commit again.
+	// DoPause tells the controller to pause management of objects matching.  To resume, commit again.
 	DoPause func(metadata *types.Metadata) ([]types.Object, error)
+
+	// DoTerminate tells the controller to terminate / destroy the objects matching search.
+	DoTerminate func(metadata *types.Metadata) ([]types.Object, error)
 }
 
 // Plan implements pkg/controller/Controller.Plan
@@ -59,5 +62,9 @@ func (t *Controller) Specs(metadata *types.Metadata) ([]types.Spec, error) {
 // Pause implements pkg/controller/Controller.Pause
 func (t *Controller) Pause(metadata *types.Metadata) ([]types.Object, error) {
 	return t.DoPause(metadata)
+}
 
+// Terminate implements pkg/controller/Controller.Terminate
+func (t *Controller) Terminate(metadata *types.Metadata) ([]types.Object, error) {
+	return t.DoTerminate(metadata)
 }

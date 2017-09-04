@@ -25,6 +25,7 @@ type queuedGroupPlugin struct {
 
 	group.Plugin // the backend that does the real work
 
+	allGroupSpecsFunc   func() ([]group.Spec, error)
 	findGroupSpecFunc   func(group.ID) (group.Spec, error)
 	updateGroupSpecFunc func(group.Spec) error
 	removeGroupSpecFunc func(group.ID) error
@@ -56,6 +57,11 @@ func (q *queuedGroupPlugin) CommitGroup(grp group.Spec, pretend bool) (resp stri
 	return
 }
 
+// InspectGroups returns all the desired specs.  This is intercepted with the stored version
+func (q *queuedGroupPlugin) InspectGroups() (specs []group.Spec, err error) {
+	return q.allGroupSpecsFunc()
+}
+
 // Serialized describe group
 func (q *queuedGroupPlugin) DescribeGroup(id group.ID) (desc group.Description, err error) {
 	result := q.Run(group.Plugin.DescribeGroup,
@@ -79,9 +85,13 @@ func (q *queuedGroupPlugin) DestroyGroup(id group.ID) (err error) {
 		func() []interface{} {
 
 			// We first update the user's desired state first
-			if removeErr := q.removeGroupSpecFunc(id); removeErr != nil {
-				log.Warn("Error updating/ remove", "err", removeErr)
-				return []interface{}{removeErr}
+
+			// At least make sure we know about this record
+			// If we'd let this proceed is a matter of policy
+			if _, err := q.findGroupSpecFunc(id); err == nil {
+				if removeErr := q.removeGroupSpecFunc(id); removeErr != nil {
+					log.Warn("Error updating/ remove spec. Continue.", "err", removeErr)
+				}
 			}
 
 			return []interface{}{q.Plugin.DestroyGroup(id)}
@@ -97,10 +107,15 @@ func (q *queuedGroupPlugin) DestroyGroup(id group.ID) (err error) {
 func (q *queuedGroupPlugin) FreeGroup(id group.ID) (err error) {
 	result := q.Run(group.Plugin.FreeGroup,
 		func() []interface{} {
+
 			// We first update the user's desired state first
-			if removeErr := q.removeGroupSpecFunc(id); removeErr != nil {
-				log.Warn("Error updating / remove", "err", removeErr)
-				return []interface{}{removeErr}
+
+			// At least make sure we know about this record
+			// If we'd let this proceed is a matter of policy
+			if _, err := q.findGroupSpecFunc(id); err == nil {
+				if removeErr := q.removeGroupSpecFunc(id); removeErr != nil {
+					log.Warn("Error updating/ remove spec. Continue.", "err", removeErr)
+				}
 			}
 
 			return []interface{}{q.Plugin.FreeGroup(id)}

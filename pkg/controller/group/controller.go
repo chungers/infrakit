@@ -45,12 +45,11 @@ func (c *gController) translateSpec(s types.Spec) (group.Spec, error) {
 		}
 		gSpec.ID = group.ID(addressable.Instance())
 		return gSpec, nil
-	} else {
-		if addressable.Instance() != string(*c.scope) {
-			return group.Spec{}, fmt.Errorf("wrong group: %v", *c.scope)
-		}
-		gSpec.ID = *c.scope
 	}
+	if addressable.Instance() != string(*c.scope) {
+		return group.Spec{}, fmt.Errorf("wrong group: %v", *c.scope)
+	}
+	gSpec.ID = *c.scope
 
 	return gSpec, nil
 }
@@ -107,24 +106,24 @@ func (c *gController) Plan(operation controller.Operation,
 	}
 
 	plan = controller.Plan{}
-	if objects, e := c.Describe(&spec.Metadata); e != nil {
+	objects, e := c.Describe(&spec.Metadata)
+	if e != nil {
 		err = e
 		return
-	} else {
+	}
 
-		if len(objects) == 0 {
-			object, err = buildObject(spec, group.Description{})
-			if err != nil {
-				return
-			}
-			plan.Message = []string{"create-new"}
-		} else if len(objects) == 1 {
-			object = objects[0]
-			plan.Message = []string{"update-existing"}
-		} else {
-			err = fmt.Errorf("change affects more than one object")
+	if len(objects) == 0 {
+		object, err = buildObject(spec, group.Description{})
+		if err != nil {
 			return
 		}
+		plan.Message = []string{"create-new"}
+	} else if len(objects) == 1 {
+		object = objects[0]
+		plan.Message = []string{"update-existing"}
+	} else {
+		err = fmt.Errorf("change affects more than one object")
+		return
 	}
 
 	if resp, cerr := c.plugin.CommitGroup(gSpec, true); cerr == nil {
@@ -142,22 +141,22 @@ func (c *gController) Commit(operation controller.Operation, spec types.Spec) (o
 		return
 	}
 
-	if objects, e := c.Describe(&spec.Metadata); e != nil {
+	objects, e := c.Describe(&spec.Metadata)
+	if e != nil {
 		err = e
 		return
-	} else {
+	}
 
-		if len(objects) == 0 {
-			object, err = buildObject(spec, group.Description{})
-			if err != nil {
-				return
-			}
-		} else if len(objects) == 1 {
-			object = objects[0]
-		} else {
-			err = fmt.Errorf("change affects more than one object")
+	if len(objects) == 0 {
+		object, err = buildObject(spec, group.Description{})
+		if err != nil {
 			return
 		}
+	} else if len(objects) == 1 {
+		object = objects[0]
+	} else {
+		err = fmt.Errorf("change affects more than one object")
+		return
 	}
 
 	switch operation {
@@ -237,6 +236,21 @@ func (c *gController) Pause(search *types.Metadata) (objects []types.Object, err
 	for _, object := range objects {
 		addr := core.AsAddressable(&object.Spec)
 		err = c.plugin.FreeGroup(group.ID(addr.Instance()))
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (c *gController) Terminate(search *types.Metadata) (objects []types.Object, err error) {
+	objects, err = c.Describe(search)
+	if err != nil {
+		return
+	}
+	for _, object := range objects {
+		addr := core.AsAddressable(&object.Spec)
+		err = c.plugin.DestroyGroup(group.ID(addr.Instance()))
 		if err != nil {
 			return
 		}

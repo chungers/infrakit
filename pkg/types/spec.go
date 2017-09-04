@@ -165,9 +165,8 @@ func (m Metadata) Compare(other Metadata) int {
 		}
 		if v < other.Tags[k] {
 			return -1
-		} else {
-			return 1
 		}
+		return 1
 	}
 	return 0
 }

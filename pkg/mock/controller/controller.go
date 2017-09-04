@@ -85,3 +85,14 @@ func (_m *MockController) Specs(_param0 *types.Metadata) ([]types.Spec, error) {
 func (_mr *_MockControllerRecorder) Specs(arg0 interface{}) *gomock.Call {
 	return _mr.mock.ctrl.RecordCall(_mr.mock, "Specs", arg0)
 }
+
+func (_m *MockController) Terminate(_param0 *types.Metadata) ([]types.Object, error) {
+	ret := _m.ctrl.Call(_m, "Terminate", _param0)
+	ret0, _ := ret[0].([]types.Object)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+func (_mr *_MockControllerRecorder) Terminate(arg0 interface{}) *gomock.Call {
+	return _mr.mock.ctrl.RecordCall(_mr.mock, "Terminate", arg0)
+}

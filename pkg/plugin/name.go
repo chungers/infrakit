@@ -52,8 +52,8 @@ func (n Name) String() string {
 // The name follows a microformat of $plugin[/$subtype] where $plugin is used for the discovery / lookup by name.
 // The $subtype is used for the Type parameter in the RPC requests.
 // Example: instance-file/json means lookup socket file 'instance-file' and the type is 'json'.
-func (r Name) GetLookupAndType() (string, string) {
-	name := string(r)
+func (n Name) GetLookupAndType() (string, string) {
+	name := string(n)
 	if first := strings.Index(name, "/"); first >= 0 {
 		return name[0:first], name[first+1:]
 	}
@@ -61,12 +61,12 @@ func (r Name) GetLookupAndType() (string, string) {
 }
 
 // MarshalJSON implements the JSON marshaler interface
-func (r Name) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf(`"%s"`, r.String())), nil
+func (n Name) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf(`"%s"`, n.String())), nil
 }
 
 // UnmarshalJSON implements the JSON unmarshaler interface
-func (r *Name) UnmarshalJSON(data []byte) error {
+func (n *Name) UnmarshalJSON(data []byte) error {
 	str := string(data)
 	start := strings.Index(str, "\"")
 	last := strings.LastIndex(str, "\"")
@@ -75,6 +75,6 @@ func (r *Name) UnmarshalJSON(data []byte) error {
 	} else {
 		return fmt.Errorf("bad-format-for-name:%v", string(data))
 	}
-	*r = Name(str)
+	*n = Name(str)
 	return nil
 }

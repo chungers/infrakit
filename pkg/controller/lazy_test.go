@@ -78,6 +78,11 @@ func (f fake) Pause(search *types.Metadata) (objects []types.Object, err error) 
 	return
 }
 
+func (f fake) Terminate(search *types.Metadata) (objects []types.Object, err error) {
+	f <- 1
+	return
+}
+
 func TestLazyNoBlockConnect(t *testing.T) {
 
 	called := make(chan struct{})

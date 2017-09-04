@@ -16,7 +16,7 @@ type Operation int
 
 const (
 	// Enforce represents create, update, reconcile operations
-	Enforce = iota
+	Enforce Operation = iota
 
 	// Destroy is the destroy operation. Destroy also implies Free.
 	Destroy
@@ -59,4 +59,7 @@ type Controller interface {
 
 	// Pause tells the controller to pause management of objects matching.  To resume, commit again.
 	Pause(*types.Metadata) ([]types.Object, error)
+
+	// Terminate tells the controller to terminate / destroy the objects matching search.
+	Terminate(*types.Metadata) ([]types.Object, error)
 }

@@ -109,9 +109,8 @@ func (ps *specQuery) Plugin() plugin.Name {
 			return plugin.NameFrom(parts[0], typeName)
 		}
 		return plugin.NameFrom(parts[0], parts[1])
-	} else {
-		ps.instance = parts[0]
 	}
+	ps.instance = parts[0]
 
 	if typeName != "" {
 		return plugin.NameFrom(ps.Kind(), typeName)

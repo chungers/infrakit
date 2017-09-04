@@ -143,3 +143,16 @@ func (c *Controller) Pause(_ *http.Request, req *FindRequest, resp *FindResponse
 		return err
 	})
 }
+
+// Terminate is the rpc method for Terminate
+func (c *Controller) Terminate(_ *http.Request, req *FindRequest, resp *FindResponse) error {
+
+	return c.keyed.Do(req, func(v interface{}) error {
+		resp.Name = req.Name
+		objects, err := v.(controller.Controller).Terminate(req.Metadata)
+		if err == nil {
+			resp.Objects = objects
+		}
+		return err
+	})
+}

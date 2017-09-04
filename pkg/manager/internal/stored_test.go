@@ -45,8 +45,14 @@ func TestStoredRecords(t *testing.T) {
 
 	gspec, err := g.getGroupSpec(group.ID("workers"))
 	require.NoError(t, err)
-
 	require.EqualValues(t, group.Spec{ID: group.ID("workers"), Properties: s.Properties}, gspec)
+
+	spec, found := g.findSpec(plugin.Name("workers"))
+	require.True(t, found)
+	require.Equal(t, s, spec)
+
+	_, found = g.findSpec(plugin.Name("bad"))
+	require.False(t, found)
 
 	g.removeGroup(group.ID("workers"))
 	g.removeGroup(group.ID("bad"))
@@ -59,7 +65,7 @@ func TestStoredRecords(t *testing.T) {
 
 	g.updateGroupSpec(group.Spec{ID: group.ID("workers"), Properties: s.Properties}, plugin.Name("group-stateless"))
 
-	spec, err := g.getSpec("group", types.Metadata{Name: "workers"})
+	spec, err = g.getSpec("group", types.Metadata{Name: "workers"})
 	require.NoError(t, err)
 	require.EqualValues(t, types.Spec{
 		Kind:       "group",

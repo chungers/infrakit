@@ -5,27 +5,6 @@ import (
 	"github.com/docker/infrakit/pkg/types"
 )
 
-type Queued interface {
-	// Run queues the work and blocks until the work is executed with results
-	Run(context interface{}, work func() []interface{}) (result []interface{})
-}
-
-type queue chan<- backendOp
-
-// Run executes work on the queue without timeout.  This could hang indefinitely.  (TODO - add timeout)
-func (q queue) Run(context interface{}, work func() []interface{}) []interface{} {
-	ch := make(chan []interface{}, 1) // default is report is called once
-	q <- backendOp{
-		context: context,
-		operation: func() error {
-			ch <- work()
-			close(ch)
-			return nil
-		},
-	}
-	return <-ch
-}
-
 type queuedController struct {
 	Queued
 
@@ -38,8 +17,18 @@ type queuedController struct {
 
 // QueuedController returns a controller.Controller that has a backing storage for specs and
 // where all operations are serialized onto a work queue.
-func QueuedController() controller.Controller {
-	return &queuedController{}
+func QueuedController(c controller.Controller, ch chan<- backendOp,
+	findSpecsFunc func(*types.Metadata) ([]types.Spec, error),
+	updateSpecFunc func(types.Spec) error,
+	removeSpecFunc func(types.Spec) error) controller.Controller {
+
+	return &queuedController{
+		Queued:         queue(ch),
+		Controller:     c,
+		findSpecsFunc:  findSpecsFunc,
+		updateSpecFunc: updateSpecFunc,
+		removeSpecFunc: removeSpecFunc,
+	}
 }
 
 // Plan implements pkg/controller/Controller.Plan
@@ -157,7 +146,55 @@ func (q *queuedController) Pause(metadata *types.Metadata) (specs []types.Object
 
 	result := q.Run(controller.Controller.Plan,
 		func() []interface{} {
+
+			// need to remove the desired specs from storage
+			if found, err := q.findSpecsFunc(search); err == nil {
+				for _, s := range found {
+					// Note: this is not atomic.  Each individual remove is a commit.
+					q.removeSpecFunc(s)
+				}
+			}
+
+			// Note it's possible that the pause fails and we are out of sync with what is
+			// in the storage.  The store operations commmit immediately.
+			// It's more important to store the user's desired state accurately and then we can always reconcile later.
 			r1, r2 := q.Controller.Pause(search)
+			return []interface{}{r1, r2}
+		})
+
+	if v, is := result[0].([]types.Object); is {
+		specs = v
+	}
+	if v, is := result[1].(error); is {
+		err = v
+	}
+	return
+}
+
+// Terminate implements pkg/controller/Controller.Terminate
+func (q *queuedController) Terminate(metadata *types.Metadata) (specs []types.Object, err error) {
+
+	search := metadata
+	if metadata != nil {
+		copy := *metadata
+		search = &copy
+	}
+
+	result := q.Run(controller.Controller.Plan,
+		func() []interface{} {
+
+			// need to remove the desired specs from storage
+			if found, err := q.findSpecsFunc(search); err == nil {
+				for _, s := range found {
+					// Note: this is not atomic.  Each individual remove is a commit.
+					q.removeSpecFunc(s)
+				}
+			}
+
+			// Note it's possible that the terminate fails and we are out of sync with what is
+			// in the storage.  The store operations commmit immediately.
+			// It's more important to store the user's desired state accurately and then we can always reconcile later.
+			r1, r2 := q.Controller.Terminate(search)
 			return []interface{}{r1, r2}
 		})
 
