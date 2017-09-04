@@ -38,6 +38,27 @@ func TestStoredRecords(t *testing.T) {
 		Properties: types.AnyValueMust(map[string]interface{}{"a": 1, "b": 2}),
 	}
 	g.updateSpec(s, plugin.Name("group-stateless"))
+	g.updateSpec(types.Spec{
+		Kind: "group",
+		Metadata: types.Metadata{
+			Name: "us-east/workers",
+		},
+		Properties: types.AnyValueMust(map[string]interface{}{"a": 1, "b": 3}),
+	}, plugin.Name("us-east"))
+
+	list, err := g.allGroupSpecs()
+	require.NoError(t, err)
+	require.EqualValues(t, []group.Spec{
+		{
+			ID:         group.ID("us-east/workers"),
+			Properties: types.AnyValueMust(map[string]interface{}{"a": 1, "b": 3}),
+		},
+		{
+			ID:         group.ID("workers"),
+			Properties: types.AnyValueMust(map[string]interface{}{"a": 1, "b": 2}),
+		},
+	}, list)
+	g.removeGroup(group.ID("us-east/workers"))
 
 	require.EqualValues(t, s, g.index[key{Kind: "group", Name: "workers"}].Spec)
 	require.EqualValues(t, plugin.Name("group-stateless"), g.index[key{Kind: "group", Name: "workers"}].Handler)

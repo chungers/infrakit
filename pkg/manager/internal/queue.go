@@ -26,6 +26,44 @@ func (q queue) Run(context interface{}, work func() []interface{}) []interface{}
 	return <-ch
 }
 
+func newFanin(done <-chan struct{}) (*fanin, <-chan backendOp) {
+	out := make(chan backendOp)
+	return &fanin{
+		done: done,
+		out:  out,
+	}, out
+}
+
+type fanin struct {
+	done <-chan struct{}
+	out  chan<- backendOp
+	lock sync.RWMutex
+	wg   sync.WaitGroup
+}
+
+func (f *fanin) stop() {
+	f.wg.Wait()
+	close(f.out)
+}
+
+func (f *fanin) add(c <-chan backendOp) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	output := func(c <-chan backendOp) {
+		defer f.wg.Done()
+		for n := range c {
+			select {
+			case f.out <- n:
+			case <-f.done:
+				return
+			}
+		}
+	}
+	f.wg.Add(1)
+	go output(c)
+}
+
 func merge(done <-chan struct{}, cs ...<-chan backendOp) <-chan backendOp {
 	var wg sync.WaitGroup
 	out := make(chan backendOp)

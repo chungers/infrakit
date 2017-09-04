@@ -316,3 +316,108 @@ func TestQueuedControllersMerged(t *testing.T) {
 	require.EqualValues(t, []interface{}{controller.Destroy, expectSpec2}, <-args)
 
 }
+
+func TestQueuedControllersMerged3(t *testing.T) {
+
+	args := make(chan []interface{}, 50)
+
+	expectSpec := types.Spec{
+		Kind:       "group",
+		Metadata:   types.Metadata{Name: "workers"},
+		Properties: types.AnyValueMust("stuff"),
+	}
+	expectSpec2 := types.Spec{
+		Kind:       "group",
+		Metadata:   types.Metadata{Name: "managers"},
+		Properties: types.AnyValueMust("stuff"),
+	}
+	expectSpec3 := types.Spec{
+		Kind:       "group",
+		Metadata:   types.Metadata{Name: "databases"},
+		Properties: types.AnyValueMust("stuff"),
+	}
+	expectObject := types.Object{Spec: expectSpec}
+	expectPlan := controller.Plan{Message: []string{"create"}}
+
+	expectObject2 := types.Object{Spec: expectSpec2}
+	expectPlan2 := controller.Plan{Message: []string{"create"}}
+
+	expectObject3 := types.Object{Spec: expectSpec3}
+	expectPlan3 := controller.Plan{Message: []string{"create"}}
+
+	f1 := &controller_test.Controller{
+		DoPlan: func(operation controller.Operation, spec types.Spec) (object types.Object, plan controller.Plan, err error) {
+			args <- []interface{}{operation, spec}
+
+			object = expectObject
+			plan = expectPlan
+
+			return
+		},
+	}
+	f2 := &controller_test.Controller{
+		DoPlan: func(operation controller.Operation, spec types.Spec) (object types.Object, plan controller.Plan, err error) {
+			args <- []interface{}{operation, spec}
+
+			object = expectObject2
+			plan = expectPlan2
+
+			return
+		},
+	}
+	f3 := &controller_test.Controller{
+		DoPlan: func(operation controller.Operation, spec types.Spec) (object types.Object, plan controller.Plan, err error) {
+			args <- []interface{}{operation, spec}
+
+			object = expectObject3
+			plan = expectPlan3
+
+			return
+		},
+	}
+
+	c1 := make(chan backendOp)
+	var q1 controller.Controller = QueuedController(f1, c1, nil, nil, nil)
+
+	c2 := make(chan backendOp)
+	var q2 controller.Controller = QueuedController(f2, c2, nil, nil, nil)
+
+	c3 := make(chan backendOp)
+	var q3 controller.Controller = QueuedController(f3, c3, nil, nil, nil)
+
+	done := make(chan struct{})
+
+	fan, main := newFanin(done)
+	go func() {
+		for op := range main {
+			err := op.operation()
+			if err != nil {
+				panic(err)
+			}
+		}
+	}()
+
+	fan.add(c1)
+	fan.add(c2)
+	fan.add(c3)
+
+	q1.Plan(controller.Enforce, expectSpec)
+	q1.Plan(controller.Destroy, expectSpec)
+
+	q2.Plan(controller.Enforce, expectSpec2)
+	q2.Plan(controller.Destroy, expectSpec2)
+
+	q3.Plan(controller.Enforce, expectSpec3)
+	q3.Plan(controller.Destroy, expectSpec3)
+
+	close(args)
+	close(done)
+
+	require.EqualValues(t, []interface{}{controller.Enforce, expectSpec}, <-args)
+	require.EqualValues(t, []interface{}{controller.Destroy, expectSpec}, <-args)
+	require.EqualValues(t, []interface{}{controller.Enforce, expectSpec2}, <-args)
+	require.EqualValues(t, []interface{}{controller.Destroy, expectSpec2}, <-args)
+	require.EqualValues(t, []interface{}{controller.Enforce, expectSpec3}, <-args)
+	require.EqualValues(t, []interface{}{controller.Destroy, expectSpec3}, <-args)
+
+}

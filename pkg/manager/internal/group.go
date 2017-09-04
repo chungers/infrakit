@@ -20,6 +20,24 @@ import (
 // a single group abstraction for managing multiple groups of different instance/flavor pairs
 // (e.g. us-east-1a/workers vs. us-west-2a/workers)
 
+// QueuedGroupPlugin returns a controller.Controller that has a backing storage for specs and
+// where all operations are serialized onto a work queue.
+func QueuedGroupPlugin(g group.Plugin, ch chan<- backendOp,
+	allGroupSpecsFunc func() ([]group.Spec, error),
+	findGroupSpecFunc func(group.ID) (group.Spec, error),
+	updateGroupSpecFunc func(group.Spec) error,
+	removeGroupSpecFunc func(group.ID) error) group.Plugin {
+
+	return &queuedGroupPlugin{
+		Queued:              queue(ch),
+		Plugin:              g,
+		allGroupSpecsFunc:   allGroupSpecsFunc,
+		findGroupSpecFunc:   findGroupSpecFunc,
+		updateGroupSpecFunc: updateGroupSpecFunc,
+		removeGroupSpecFunc: removeGroupSpecFunc,
+	}
+}
+
 type queuedGroupPlugin struct {
 	Queued
 

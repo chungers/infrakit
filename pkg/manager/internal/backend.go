@@ -45,7 +45,8 @@ type Backend struct {
 	running     chan struct{}
 
 	backendName string
-	backendOps  chan<- backendOp
+	//	backendOps  <-chan backendOp
+	fanin *fanin
 }
 
 type backendOp struct {
@@ -170,8 +171,11 @@ func (b *Backend) Start() (<-chan struct{}, error) {
 	stopWorkQueue := make(chan struct{})
 
 	// proxied backend needs to have its operations serialized with respect to leadership calls, etc.
-	backendOps := make(chan backendOp)
-	b.backendOps = backendOps
+	done := make(chan struct{})
+	fanin, backendOps := newFanin(done)
+
+	//b.backendOps = backendOps
+	b.fanin = fanin
 
 	// This goroutine here serializes work so that we don't have concurrent commits or unwatches / updates / etc.
 	go func() {
@@ -188,6 +192,7 @@ func (b *Backend) Start() (<-chan struct{}, error) {
 			case <-stopWorkQueue:
 
 				log.Info("Stopping work queue.")
+				close(done)
 				close(b.running)
 				log.Info("Manager stopped.")
 				return
@@ -448,6 +453,20 @@ func (b *Backend) callControllers(config globalSpec,
 	})
 }
 
+// AllGroupSpecs returns all the group specs stored
+func (b *Backend) AllGroupSpecs() ([]group.Spec, error) {
+	// load the config
+	config := globalSpec{}
+
+	// load the latest version -- assumption here is that it's been persisted already.
+	err := config.load(b.snapshot)
+	if err != nil {
+		log.Warn("Error loading config", "err", err)
+		return nil, err
+	}
+	return config.allGroupSpecs()
+}
+
 // FindGroupSpec returns the group spec given ID
 func (b *Backend) FindGroupSpec(id group.ID) (group.Spec, error) {
 	// load the config
@@ -553,8 +572,53 @@ func (b *Backend) RemoveSpec(spec types.Spec) error {
 	return config.store(b.snapshot)
 }
 
-// Groups returns a map of *scoped* group controllers by ID of the group.
 func (b *Backend) Groups() (map[group.ID]group.Plugin, error) {
+	groups := map[group.ID]group.Plugin{}
+	err := b.visitPlugins(
+		asGroupPlugin(
+			func(n plugin.Name, g group.Plugin) error {
+				all, err := g.InspectGroups()
+				if err != nil {
+					return err
+				}
+				groups[group.ID(n.Lookup())] = g
+				for _, gspec := range all {
+					gid := group.ID(n.WithType(gspec.ID).String())
+					groups[gid] = g
+				}
+				return nil
+			},
+		),
+	)
+	return groups, err
+}
+
+// Controllers returns a map of *scoped* controllers across all the discovered
+// controllers.
+func (b *Backend) Controllers() (map[string]controller.Controller, error) {
+	// Addressability -- we need to "shift 1" from this namespace down to indivdually addressable
+	// objects in the destination controller
+	controllers := map[string]controller.Controller{}
+	err := b.visitPlugins(
+		asController(
+			func(n plugin.Name, c controller.Controller) error {
+				all, err := c.Specs(nil)
+				if err != nil {
+					return err
+				}
+				controllers[n.Lookup()] = c
+				for _, spec := range all {
+					controllers[n.WithType(spec.Metadata.Name).String()] = c
+				}
+				return nil
+			},
+		),
+	)
+	return controllers, err
+}
+
+// Groups returns a map of *scoped* group controllers by ID of the group.
+func (b *Backend) Groups0() (map[group.ID]group.Plugin, error) {
 	groups := map[group.ID]group.Plugin{
 		group.ID(""): b,
 	}
@@ -568,15 +632,4 @@ func (b *Backend) Groups() (map[group.ID]group.Plugin, error) {
 	}
 	log.Debug("Groups", "map", groups, "V", debugV2)
 	return groups, nil
-}
-
-// Controllers returns a map of *scoped* controllers across all the discovered
-// controllers.
-func (b *Backend) Controllers() (map[string]controller.Controller, error) {
-	// Addressability -- we need to "shift 1" from this namespace down to indivdually addressable
-	// objects in the destination controller
-	controllers := map[string]controller.Controller{
-	//		"": &queuedController{},
-	}
-	return controllers, nil
 }

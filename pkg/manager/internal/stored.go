@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/docker/infrakit/pkg/controller"
 	"github.com/docker/infrakit/pkg/plugin"
@@ -138,6 +139,31 @@ func (g *globalSpec) removeGroup(id group.ID) {
 		g.index = map[key]record{}
 	}
 	delete(g.index, keyFromGroupID(id))
+}
+
+func (g *globalSpec) allGroupSpecs() ([]group.Spec, error) {
+	if g.index == nil {
+		g.index = map[key]record{}
+	}
+
+	found := map[string]group.Spec{}
+	keys := []string{}
+	for key, record := range g.index {
+		gspec := group.Spec{
+			ID:         group.ID(key.Name),
+			Properties: record.Spec.Properties,
+		}
+
+		found[key.Name] = gspec
+		keys = append(keys, key.Name)
+	}
+
+	sort.Strings(keys)
+	out := []group.Spec{}
+	for _, k := range keys {
+		out = append(out, found[k])
+	}
+	return out, nil
 }
 
 func (g *globalSpec) getGroupSpec(id group.ID) (group.Spec, error) {
