@@ -447,13 +447,13 @@ if [[ "$IS_LEADER" == "true" ]] && [[ "$IS_UCP_RUNNING" == "false" ]]  ; then
     DTR_STORAGE_KEY=$(python dtrutils.py get-key)
     echo "DTR STORAGE KEY: $DTR_STORAGE_KEY"
 
-    if [[ $(curl --silent --output /dev/null --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "{\"storage\":{\"delete\":{\"enabled\":true},\"maintenance\":{\"readonly\":{\"enabled\":false}},\"azure\":{\"accountname\":\"$DTR_STORAGE_ACCOUNT\", \"accountkey\":\"$DTR_STORAGE_KEY\", \"container\":\"dtrcontainer\"}}}") -lt 300 ]];
+    if [[ $(curl -H 'content-type: application/json' --silent --output /dev/null --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "{\"storage\":{\"delete\":{\"enabled\":true},\"maintenance\":{\"readonly\":{\"enabled\":false}},\"azure\":{\"accountname\":\"$DTR_STORAGE_ACCOUNT\", \"accountkey\":\"$DTR_STORAGE_KEY\", \"container\":\"dtrcontainer\"}}}") -lt 300 ]];
     then
       echo " Successfully Configured DTR storage backend with Azure Blob "
     else
       echo " Failed to configure DTR storage backend. Please configure BLOB storage from DTR UI (under settings) "
       #Additional Debugging Info
-      curl -v --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "{\"storage\":{\"delete\":{\"enabled\":true},\"maintenance\":{\"readonly\":{\"enabled\":false}},\"azure\":{\"accountname\":\"$DTR_STORAGE_ACCOUNT\", \"accountkey\":\"$DTR_STORAGE_KEY\", \"container\":\"dtrcontainer\"}}}"
+      curl -v -H 'content-type: application/json' --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "{\"storage\":{\"delete\":{\"enabled\":true},\"maintenance\":{\"readonly\":{\"enabled\":false}},\"azure\":{\"accountname\":\"$DTR_STORAGE_ACCOUNT\", \"accountkey\":\"$DTR_STORAGE_KEY\", \"container\":\"dtrcontainer\"}}}"
     fi
   else
     REPLICA_ID=$(docker ps --format '{{.Names}}' -f name=dtr-registry | tail -c 13)

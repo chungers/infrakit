@@ -324,13 +324,13 @@ if [[ "$IS_LEADER" == "true" ]]; then
   }
   }
 }')
-    S3_STATUS=$(curl --silent --output /dev/null --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "$SET_BUCKET")
+    S3_STATUS=$(curl -H 'content-type: application/json' --silent --output /dev/null --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "$SET_BUCKET")
     if [[ $S3_STATUS -lt 300 ]];
       then echo "Successfully Configured DTR storage backend with S3"
     else
       echo "Failed to configure DTR storage backend with S3"
       # Additional Debugging Info:
-      curl -v --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "$SET_BUCKET"
+      curl -v -H 'content-type: application/json' --write-out '%{http_code}' -k -u $UCP_ADMIN_USER:$UCP_ADMIN_PASSWORD -X PUT "https://$DTR_ELB_HOSTNAME/api/v0/admin/settings/registry/simple" -d "$SET_BUCKET"
     fi
   else
     REPLICA_ID=$(docker ps --format '{{.Names}}' -f name=dtr-registry | tail -c 13)
