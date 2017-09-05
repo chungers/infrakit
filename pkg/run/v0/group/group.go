@@ -57,8 +57,8 @@ type Options struct {
 var DefaultOptions = Options{
 	PollInterval:            10 * time.Second,
 	MaxParallelNum:          0,
-	PollIntervalGroupSpec:   1 * time.Second,
-	PollIntervalGroupDetail: 30 * time.Second,
+	PollIntervalGroupSpec:   30 * time.Second,
+	PollIntervalGroupDetail: 60 * time.Second,
 }
 
 // Run runs the plugin, blocking the current thread.  Error is returned immediately

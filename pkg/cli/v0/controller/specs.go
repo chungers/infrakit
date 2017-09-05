@@ -14,8 +14,8 @@ import (
 // Specs returns the specs command
 func Specs(name string, services *cli.Services) *cobra.Command {
 	specs := &cobra.Command{
-		Use:   "specs",
-		Short: "Specs all managed objects",
+		Use:   "inspect",
+		Short: "Inspect returns the desired state / Specs for all managed objects",
 	}
 	specs.Flags().AddFlagSet(services.OutputFlags)
 

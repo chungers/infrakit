@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/plugin"
@@ -78,9 +79,11 @@ func (k *Keyed) Keyed(name plugin.Name) (interface{}, error) {
 	}
 	l, subtype := name.GetLookupAndType()
 
+	log.Debug("Keyed", "m", m, "subtype", subtype)
+
 	// Special case of single, unkeyed plugin object
 	if l == "." || l == "" {
-		if len(m) == 1 {
+		if len(m) > 1 {
 			for _, v := range m {
 				return v, nil // first value
 			}
@@ -88,7 +91,7 @@ func (k *Keyed) Keyed(name plugin.Name) (interface{}, error) {
 	}
 
 	if subtype == "." || subtype == "" {
-		if len(m) == 1 {
+		if len(m) > 1 {
 			for _, v := range m {
 				return v, nil // first value
 			}
@@ -98,5 +101,13 @@ func (k *Keyed) Keyed(name plugin.Name) (interface{}, error) {
 	if p, has := m[subtype]; has {
 		return p, nil
 	}
+
+	// check to see if the subtype is actually a path.
+	// shift by one
+	shifted := subtype[strings.Index(subtype, "/")+1:]
+	if p, has := m[shifted]; has {
+		return p, nil
+	}
+
 	return nil, fmt.Errorf("not found: %v (key=%v)", name, subtype)
 }

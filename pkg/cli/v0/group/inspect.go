@@ -3,6 +3,7 @@ package group
 import (
 	"fmt"
 	"os"
+	"path"
 
 	"github.com/docker/infrakit/pkg/cli"
 	"github.com/docker/infrakit/pkg/plugin"
@@ -41,7 +42,7 @@ func Inspect(name string, services *cli.Services) *cobra.Command {
 			if err == nil {
 
 				for _, spec := range specs {
-					if spec.ID == groupID {
+					if string(spec.ID) == path.Base(string(groupID)) {
 						return services.Output(os.Stdout, spec, nil)
 					}
 				}

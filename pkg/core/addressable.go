@@ -77,6 +77,12 @@ func NewAddressable(kind string, pn plugin.Name, instance string) Addressable {
 	return AsAddressable(spec)
 }
 
+// AddressableFromSpec returns an addressable from spec
+func AddressableFromSpec(spec types.Spec) Addressable {
+	copy := spec
+	return AsAddressable(&copy)
+}
+
 // AsAddressable returns a spec as an addressable object
 func AsAddressable(spec *types.Spec) Addressable {
 	a := &specQuery{Spec: spec}

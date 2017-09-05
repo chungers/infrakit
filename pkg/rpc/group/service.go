@@ -2,6 +2,7 @@ package group
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/rpc/internal"
@@ -72,6 +73,15 @@ func (p *Group) Types() []string {
 	return p.keyed.Types()
 }
 
+// In cases where the server is a proxy to another plugin, the id will be in path form.
+// Routing will have delivered the message to the correct server, but we need to "shift one"
+// or take the base name.
+func shift(id group.ID) group.ID {
+	gid := string(id)
+	i := strings.Index(gid, "/")
+	return group.ID(gid[i+1:])
+}
+
 // CommitGroup is the rpc method to commit a group
 func (p *Group) CommitGroup(_ *http.Request, req *CommitGroupRequest, resp *CommitGroupResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
@@ -89,7 +99,7 @@ func (p *Group) CommitGroup(_ *http.Request, req *CommitGroupRequest, resp *Comm
 func (p *Group) FreeGroup(_ *http.Request, req *FreeGroupRequest, resp *FreeGroupResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
 
-		err := v.(group.Plugin).FreeGroup(req.ID)
+		err := v.(group.Plugin).FreeGroup(shift(req.ID))
 		if err != nil {
 			return err
 		}
@@ -101,8 +111,7 @@ func (p *Group) FreeGroup(_ *http.Request, req *FreeGroupRequest, resp *FreeGrou
 // DescribeGroup is the rpc method to describe a group
 func (p *Group) DescribeGroup(_ *http.Request, req *DescribeGroupRequest, resp *DescribeGroupResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
-
-		desc, err := v.(group.Plugin).DescribeGroup(req.ID)
+		desc, err := v.(group.Plugin).DescribeGroup(shift(req.ID))
 		if err != nil {
 			return err
 		}
@@ -116,7 +125,7 @@ func (p *Group) DescribeGroup(_ *http.Request, req *DescribeGroupRequest, resp *
 func (p *Group) DestroyGroup(_ *http.Request, req *DestroyGroupRequest, resp *DestroyGroupResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
 
-		err := v.(group.Plugin).DestroyGroup(req.ID)
+		err := v.(group.Plugin).DestroyGroup(shift(req.ID))
 		if err != nil {
 			return err
 		}
@@ -141,7 +150,7 @@ func (p *Group) InspectGroups(_ *http.Request, req *InspectGroupsRequest, resp *
 // DestroyInstances is the rpc method to destroy specific instances
 func (p *Group) DestroyInstances(_ *http.Request, req *DestroyInstancesRequest, resp *DestroyInstancesResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
-		err := v.(group.Plugin).DestroyInstances(req.ID, req.Instances)
+		err := v.(group.Plugin).DestroyInstances(shift(req.ID), req.Instances)
 		if err != nil {
 			return err
 		}
@@ -154,7 +163,7 @@ func (p *Group) DestroyInstances(_ *http.Request, req *DestroyInstancesRequest, 
 func (p *Group) Size(_ *http.Request, req *SizeRequest, resp *SizeResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
 
-		size, err := v.(group.Plugin).Size(req.ID)
+		size, err := v.(group.Plugin).Size(shift(req.ID))
 		if err != nil {
 			return err
 		}
@@ -168,7 +177,7 @@ func (p *Group) Size(_ *http.Request, req *SizeRequest, resp *SizeResponse) erro
 func (p *Group) SetSize(_ *http.Request, req *SetSizeRequest, resp *SetSizeResponse) error {
 	return p.keyed.Do(req, func(v interface{}) error {
 
-		err := v.(group.Plugin).SetSize(req.ID, req.Size)
+		err := v.(group.Plugin).SetSize(shift(req.ID), req.Size)
 		if err != nil {
 			return err
 		}

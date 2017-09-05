@@ -38,6 +38,12 @@ func (n Name) Equal(other Name) bool {
 	return string(n) == string(other)
 }
 
+// HasType returns true if the name is of the form lookup/type
+func (n Name) HasType() bool {
+	_, s := n.GetLookupAndType()
+	return s != ""
+}
+
 // IsEmpty returns true if the name is an empty string
 func (n Name) IsEmpty() bool {
 	return string(n) == ""

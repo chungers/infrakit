@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -608,7 +609,14 @@ func (b *Backend) Controllers() (map[string]controller.Controller, error) {
 				}
 				controllers[n.Lookup()] = c
 				for _, spec := range all {
-					controllers[n.WithType(spec.Metadata.Name).String()] = c
+
+					addr := core.AddressableFromSpec(spec)
+					k := addr.Plugin()
+					if !k.HasType() {
+						k = n.WithType(k.Lookup())
+					}
+					fmt.Println(">>>> BACKEND", k)
+					controllers[k.String()] = c
 				}
 				return nil
 			},
