@@ -20,11 +20,11 @@ type Runnables []Runnable
 
 // RunnableFrom creates a runnable from input name.  This is a simplification
 // for cases where only a plugin name is used to reference another plugin.
-func RunnableFrom(name plugin.Name) Runnable {
-	lookup, _ := name.GetLookupAndType()
+func RunnableFrom(kind string, name plugin.Name) Runnable {
 	return specQuery{
-		spec: &types.Spec{
-			Kind: lookup,
+		Addressable: core.NewAddressable(kind, name, ""),
+		spec: types.Spec{
+			Kind: kind,
 			Metadata: types.Metadata{
 				Name: string(name),
 			},
@@ -33,7 +33,7 @@ func RunnableFrom(name plugin.Name) Runnable {
 }
 
 // AsRunnable returns the Runnable from a spec.
-func AsRunnable(spec *types.Spec) Runnable {
+func AsRunnable(spec types.Spec) Runnable {
 	return &specQuery{
 		Addressable: core.AsAddressable(spec),
 		spec:        spec,
@@ -42,7 +42,7 @@ func AsRunnable(spec *types.Spec) Runnable {
 
 type specQuery struct {
 	core.Addressable
-	spec *types.Spec
+	spec types.Spec
 }
 
 // Options returns the options
@@ -58,16 +58,18 @@ func (ps specQuery) Dependents() (Runnables, error) {
 		decoded := types.DecodeInterfaceSpec(ps.spec.Version)
 		interfaceSpec = &decoded
 	}
-	dependentPlugins, err := Resolve(*ps.spec, ps.Kind(), interfaceSpec)
+	dependentPlugins, err := Resolve(ps.spec, ps.Kind(), interfaceSpec)
 	if err != nil {
 		return nil, err
 	}
+	log.Debug("dependentPlugins", "depends", dependentPlugins, "spec", ps.spec, "kind", ps.Kind(), "intf", interfaceSpec)
+
 	// join this with the dependencies already in the spec
 	out := Runnables{}
 	out = append(out, dependentPlugins...)
 
 	for _, d := range ps.spec.Depends {
-		out = append(out, AsRunnable(&types.Spec{Kind: d.Kind, Metadata: types.Metadata{Name: d.Name}}))
+		out = append(out, AsRunnable(types.Spec{Kind: d.Kind, Metadata: types.Metadata{Name: d.Name}}))
 	}
 
 	log.Debug("dependents", "specQuery", ps, "result", out)
@@ -79,8 +81,8 @@ func RunnablesFrom(specs []types.Spec) (Runnables, error) {
 	// keyed by kind and the specQuery
 	all := map[string]Runnable{}
 	for _, s := range specs {
-		copy := s
-		q := AsRunnable(&copy)
+
+		q := AsRunnable(s)
 		all[q.Kind()] = q
 
 		deps, err := q.Dependents()

@@ -31,7 +31,7 @@ options:
 		}, nil
 	})
 
-	found, err := Resolve(*mustSpec(types.SpecFromString(``)), "test", &v)
+	found, err := Resolve(mustSpec(types.SpecFromString(``)), "test", &v)
 	require.NoError(t, err)
 	// in this case, the resolver always returns 2
 	require.Equal(t, Runnables{
@@ -53,7 +53,7 @@ options:
 `))),
 	}, found)
 
-	found, err = Resolve(*mustSpec(types.SpecFromString(``)), "nope", &v)
+	found, err = Resolve(mustSpec(types.SpecFromString(``)), "nope", &v)
 	require.NoError(t, err)
 	require.Equal(t, 0, len(found))
 }

@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"fmt"
+	"path"
 	"sync"
 	"time"
 
@@ -119,7 +121,7 @@ func (b *Backend) initRunning() bool {
 type visitor struct {
 	interfaceSpec spi.InterfaceSpec
 	work          func(plugin.Name, interface{}) error
-	adapt         func(plugin.Name, client.Client) interface{}
+	adapt         func(*Backend, plugin.Name, client.Client) interface{}
 }
 
 func asController(v func(plugin.Name, controller.Controller) error) visitor {
@@ -128,8 +130,20 @@ func asController(v func(plugin.Name, controller.Controller) error) visitor {
 		work: func(n plugin.Name, rpc interface{}) error {
 			return v(n, rpc.(controller.Controller))
 		},
-		adapt: func(n plugin.Name, rpc client.Client) interface{} {
-			return controller_rpc.Adapt(n, rpc)
+		adapt: func(b *Backend, n plugin.Name, rpc client.Client) interface{} {
+			c := controller_rpc.Adapt(n, rpc)
+
+			// use internal queued controller
+			ch := make(chan backendOp)
+
+			queuedController := QueuedController(c, ch,
+				b.FindSpecs,
+				b.UpdateSpec,
+				b.RemoveSpec)
+
+			b.fanin.add(ch)
+
+			return queuedController
 		},
 	}
 }
@@ -140,8 +154,22 @@ func asGroupPlugin(v func(plugin.Name, group.Plugin) error) visitor {
 		work: func(n plugin.Name, rpc interface{}) error {
 			return v(n, rpc.(group.Plugin))
 		},
-		adapt: func(n plugin.Name, rpc client.Client) interface{} {
-			return group_rpc.Adapt(rpc)
+		adapt: func(b *Backend, n plugin.Name, rpc client.Client) interface{} {
+
+			g := group_rpc.Adapt(rpc)
+
+			// use internal queued plugin
+			ch := make(chan backendOp)
+
+			queuedGroupPlugin := QueuedGroupPlugin(g, ch,
+				b.AllGroupSpecs,
+				b.FindGroupSpec,
+				b.UpdateGroupSpec,
+				b.RemoveGroupSpec)
+
+			b.fanin.add(ch)
+
+			return queuedGroupPlugin
 		},
 	}
 }
@@ -171,13 +199,12 @@ func (b *Backend) visitPlugins(visitors ...visitor) error {
 			adapter := b.getClient(lookup, visitor.interfaceSpec)
 			if adapter == nil {
 				rpcClient, err := client.New(endpoint.Address, visitor.interfaceSpec)
-				log.Debug("Scanned controller", "name", lookup, "at", endpoint, "err", err, "backend", b, "V", debugV2)
 				if err != nil {
 					// not the right interface
 					continue visit
 				}
 
-				adapter = visitor.adapt(name, rpcClient)
+				adapter = visitor.adapt(b, name, rpcClient)
 				b.setClient(lookup, visitor.interfaceSpec, adapter)
 			}
 
@@ -441,60 +468,6 @@ func (b *Backend) onLostLeadership() error {
 	))
 }
 
-func (b *Backend) callControllers(config globalSpec,
-	callController func(controller.Controller, types.Spec) error,
-	callGroupPlugin func(group.Plugin, group.Spec) error,
-) error {
-
-	running, err := b.plugins.List()
-	if err != nil {
-		return err
-	}
-
-	log.Debug("running", "running", running, "index", config.index)
-
-	return config.visit(func(k key, r record) error {
-		// for controllers, the kind and the name make up to be the plugin name
-		pn := plugin.Name(k.Name)
-		if !r.Handler.IsEmpty() {
-			pn = r.Handler
-		}
-		interfaceSpec := r.InterfaceSpec
-		if r.Spec.Version != "" {
-			interfaceSpec = spi.DecodeInterfaceSpec(r.Spec.Version)
-		}
-		lookup, _ := pn.GetLookupAndType()
-		endpoint, has := running[lookup]
-		if !has {
-			return nil
-		}
-		log.Debug("Dispatching work", "name", pn, "interfaceSpec", interfaceSpec, "lookup", lookup)
-		rpcClient, err := client.New(endpoint.Address, interfaceSpec)
-		if err == nil {
-			switch interfaceSpec {
-			case controller.InterfaceSpec:
-				c := controller_rpc.Adapt(plugin.Name(lookup), rpcClient)
-				log.Debug("Calling on controller", "controller", c, "name", pn, "spec", r.Spec)
-				err = callController(c, r.Spec)
-				if err != nil {
-					log.Error("Error running on controller", "c", c, "spec", r.Spec, "err", err)
-					return err
-				}
-
-			case group.InterfaceSpec:
-				c := group_rpc.Adapt(rpcClient)
-				log.Debug("Calling on group", "controller", c, "name", pn, "spec", r.Spec)
-				err = callGroupPlugin(c, group.Spec{ID: group.ID(r.Spec.Metadata.Name), Properties: r.Spec.Properties})
-				if err != nil {
-					log.Error("Error running on group", "c", c, "spec", r.Spec, "err", err)
-					return err
-				}
-			}
-		}
-		return nil
-	})
-}
-
 // AllGroupSpecs returns all the group specs stored
 func (b *Backend) AllGroupSpecs() ([]group.Spec, error) {
 	// load the config
@@ -597,7 +570,7 @@ func (b *Backend) UpdateSpec(spec types.Spec) error {
 		log.Warn("Error loading config", "err", err)
 		return err
 	}
-	addressable := core.AsAddressable(&spec)
+	addressable := core.AsAddressable(spec)
 	config.updateSpec(spec, addressable.Plugin())
 	return config.store(b.snapshot)
 }
@@ -626,8 +599,19 @@ func (b *Backend) Groups() (map[group.ID]group.Plugin, error) {
 				}
 				groups[group.ID(n.Lookup())] = g
 				for _, gspec := range all {
-					gid := group.ID(n.WithType(gspec.ID).String())
-					groups[gid] = g
+
+					if false {
+						//gid := path.Base(string(gspec.ID)) //string(gspec.ID)
+						gid := string(gspec.ID)
+						fmt.Println(">>>>", gid, "base", path.Base(string(gspec.ID)))
+
+						// need to base the gspec.ID since it may have /
+						id := group.ID(n.WithType(gid).String())
+
+						groups[id] = g
+					}
+
+					groups[group.ID(n.LookupOnly().WithType(path.Base(string(gspec.ID))))] = g
 				}
 				return nil
 			},
@@ -652,7 +636,7 @@ func (b *Backend) Controllers() (map[string]controller.Controller, error) {
 				controllers[n.Lookup()] = c
 				for _, spec := range all {
 
-					addr := core.AddressableFromSpec(spec)
+					addr := core.AsAddressable(spec)
 					k := addr.Plugin()
 					if !k.HasType() {
 						k = n.WithType(k.Lookup())
@@ -665,20 +649,3 @@ func (b *Backend) Controllers() (map[string]controller.Controller, error) {
 	)
 	return controllers, err
 }
-
-// // Groups returns a map of *scoped* group controllers by ID of the group.
-// func (b *Backend) Groups0() (map[group.ID]group.Plugin, error) {
-// 	groups := map[group.ID]group.Plugin{
-// 		group.ID(""): b,
-// 	}
-// 	all, err := b.Plugin.InspectGroups()
-// 	if err != nil {
-// 		return groups, nil
-// 	}
-// 	for _, spec := range all {
-// 		gid := spec.ID
-// 		groups[gid] = b
-// 	}
-// 	log.Debug("Groups", "map", groups, "V", debugV2)
-// 	return groups, nil
-// }

@@ -21,18 +21,18 @@ func init() {
 // ResolveDependencies returns a list of dependencies by parsing the opaque Properties blob.
 func ResolveDependencies(spec types.Spec) (depends.Runnables, error) {
 	if spec.Properties == nil {
-		return nil, nil
+		return depends.Runnables{}, nil
 	}
 
 	groupSpec := Spec{}
 	err := spec.Properties.Decode(&groupSpec)
 	if err != nil {
-		return nil, err
+		return depends.Runnables{}, err
 	}
 
 	return depends.Runnables{
-		depends.RunnableFrom(groupSpec.Instance.Plugin),
-		depends.RunnableFrom(groupSpec.Flavor.Plugin),
+		depends.RunnableFrom("group", groupSpec.Instance.Plugin),
+		depends.RunnableFrom("group", groupSpec.Flavor.Plugin),
 	}, nil
 }
 

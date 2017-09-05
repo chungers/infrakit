@@ -42,7 +42,7 @@ func Inspect(name string, services *cli.Services) *cobra.Command {
 			if err == nil {
 
 				for _, spec := range specs {
-					if string(spec.ID) == path.Base(string(groupID)) {
+					if path.Base(string(spec.ID)) == path.Base(string(groupID)) {
 						return services.Output(os.Stdout, spec, nil)
 					}
 				}

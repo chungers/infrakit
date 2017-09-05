@@ -42,8 +42,7 @@ func (b *Backend) Supervising() ([]plugin.Metadata, error) {
 
 				kind := ""
 				for _, s := range specs {
-					copy := s
-					addr := core.AsAddressable(&copy)
+					addr := core.AsAddressable(s)
 					kind = addr.Kind()
 					out = append(out, plugin.Metadata{
 						Kind:          kind,

@@ -30,7 +30,7 @@ func ResolveDependencies(spec types.Spec) (depends.Runnables, error) {
 
 	out := depends.Runnables{}
 	for _, p := range properties {
-		out = append(out, depends.RunnableFrom(p.L4Plugin))
+		out = append(out, depends.RunnableFrom("ingress", p.L4Plugin))
 	}
 	return out, nil
 }

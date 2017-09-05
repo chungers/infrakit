@@ -32,13 +32,12 @@ type gController struct {
 	plugin group.Plugin
 }
 
-func (c *gController) translateSpec(s types.Spec) (group.Spec, error) {
-	spec := s
+func (c *gController) translateSpec(spec types.Spec) (group.Spec, error) {
 	gSpec := group.Spec{
 		Properties: spec.Properties,
 	}
 
-	addressable := core.AsAddressable(&spec)
+	addressable := core.AsAddressable(spec)
 	if c.scope == nil {
 		if addressable.Instance() == "" {
 			return gSpec, fmt.Errorf("no group name")
@@ -234,7 +233,7 @@ func (c *gController) Pause(search *types.Metadata) (objects []types.Object, err
 		return
 	}
 	for _, object := range objects {
-		addr := core.AsAddressable(&object.Spec)
+		addr := core.AsAddressable(object.Spec)
 		err = c.plugin.FreeGroup(group.ID(addr.Instance()))
 		if err != nil {
 			return
@@ -249,7 +248,7 @@ func (c *gController) Terminate(search *types.Metadata) (objects []types.Object,
 		return
 	}
 	for _, object := range objects {
-		addr := core.AsAddressable(&object.Spec)
+		addr := core.AsAddressable(object.Spec)
 		err = c.plugin.DestroyGroup(group.ID(addr.Instance()))
 		if err != nil {
 			return

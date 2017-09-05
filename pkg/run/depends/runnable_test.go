@@ -8,19 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mustSpec(s types.Spec, err error) *types.Spec {
+func mustSpec(s types.Spec, err error) types.Spec {
 	if err != nil {
 		panic(err)
 	}
-	copy := s
-	return &copy
+	return s
 }
 
 func TestRunnable(t *testing.T) {
 	v := types.DecodeInterfaceSpec("Test/0.1")
 	Register("TestRunnable", v, func(spec types.Spec) (Runnables, error) {
-		copy := spec
-		return Runnables{AsRunnable(&copy)}, nil
+		return Runnables{AsRunnable(spec)}, nil
 	})
 
 	runnable := AsRunnable(mustSpec(types.SpecFromString(`
@@ -50,8 +48,7 @@ func TestRunnableWithDepends(t *testing.T) {
 	v := types.DecodeInterfaceSpec("group/0.1")
 	Register("group", v, func(spec types.Spec) (Runnables, error) {
 		// This just echos back whatever comes in
-		copy := spec
-		return Runnables{AsRunnable(&copy)}, nil
+		return Runnables{AsRunnable(spec)}, nil
 	})
 
 	runnable := AsRunnable(mustSpec(types.SpecFromString(`

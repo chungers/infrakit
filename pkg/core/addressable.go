@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/docker/infrakit/pkg/plugin"
@@ -30,6 +31,8 @@ type Addressable interface {
 	Plugin() plugin.Name
 	// Instance is the instance identifier
 	Instance() string
+	// String returns the string representation for debugging
+	String() string
 }
 
 // NewAddressableFromPluginMetadata returns an Addressable from the plugin metadata
@@ -65,7 +68,7 @@ func NewAddressable(kind string, pn plugin.Name, instance string) Addressable {
 		name = plugin.NameFrom(lookup, instance)
 	}
 
-	spec := &types.Spec{
+	spec := types.Spec{
 		Kind: kind,
 		Metadata: types.Metadata{
 			Name: string(name),
@@ -77,21 +80,15 @@ func NewAddressable(kind string, pn plugin.Name, instance string) Addressable {
 	return AsAddressable(spec)
 }
 
-// AddressableFromSpec returns an addressable from spec
-func AddressableFromSpec(spec types.Spec) Addressable {
-	copy := spec
-	return AsAddressable(&copy)
-}
-
 // AsAddressable returns a spec as an addressable object
-func AsAddressable(spec *types.Spec) Addressable {
+func AsAddressable(spec types.Spec) Addressable {
 	a := &specQuery{Spec: spec}
 	a.Plugin() // initializes
 	return a
 }
 
 type specQuery struct {
-	*types.Spec
+	types.Spec
 	instance string // derived
 }
 
@@ -130,4 +127,9 @@ func (ps specQuery) Instance() string {
 		return ps.Spec.Metadata.Identity.ID
 	}
 	return ps.instance
+}
+
+// String returns the string represenation
+func (ps specQuery) String() string {
+	return fmt.Sprintf("%v::%v::%v", ps.Kind(), ps.Plugin(), ps.Instance())
 }

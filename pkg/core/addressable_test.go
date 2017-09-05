@@ -11,7 +11,7 @@ import (
 func testNames(t *testing.T, kind string, pn plugin.Name, instance string, spec string) {
 	s := types.Spec{}
 	require.NoError(t, types.AnyYAMLMust([]byte(spec)).Decode(&s))
-	q := AsAddressable(&s)
+	q := AsAddressable(s)
 	require.Equal(t, pn, q.Plugin())
 	require.Equal(t, kind, q.Kind())
 	require.Equal(t, instance, q.Instance())
@@ -29,7 +29,7 @@ metadata:
   name: workers
 `)
 	require.NoError(t, err)
-	b := AsAddressable(&spec)
+	b := AsAddressable(spec)
 	require.Equal(t, "group", b.Kind())
 	require.Equal(t, "group/workers", string(b.Plugin()))
 	require.Equal(t, "workers", b.Instance())
