@@ -119,7 +119,7 @@ func (b *Backend) Enforce(specs []types.Spec) error {
 		handler := plugin.NameFrom(s.Kind, s.Metadata.Name)
 		if s.Kind == "group" {
 			// TODO(chungers) -- this really needs to be cleaned up
-			handler = plugin.Name(b.backendName)
+			handler = plugin.Name(s.Metadata.Name)
 			gspec := group.Spec{
 				ID:         group.ID(s.Metadata.Name),
 				Properties: s.Properties,

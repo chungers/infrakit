@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 	"github.com/docker/infrakit/pkg/rpc/client"
 	controller_rpc "github.com/docker/infrakit/pkg/rpc/controller"
 	group_rpc "github.com/docker/infrakit/pkg/rpc/group"
-	rpc "github.com/docker/infrakit/pkg/rpc/group"
+	//	rpc "github.com/docker/infrakit/pkg/rpc/group"
 	"github.com/docker/infrakit/pkg/run/depends"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/spi/group"
@@ -33,8 +32,8 @@ var (
 // such as leadership changes and configuration changes and perform the necessary actions
 // to activate / deactivate plugins
 type Backend struct {
-	self         plugin.Name // the name this backend is listening on.
-	group.Plugin             // TODO - remove this
+	self plugin.Name // the name this backend is listening on.
+	//	group.Plugin             // TODO - remove this
 
 	plugins     discovery.Plugins
 	leader      leader.Detector
@@ -45,9 +44,31 @@ type Backend struct {
 	stop        chan struct{}
 	running     chan struct{}
 
-	backendName string
+	rpcClients     map[rpcClientKey]interface{}
+	rpcClientsLock sync.RWMutex
+
+	// backendName string
 	//	backendOps  <-chan backendOp
 	fanin *fanin
+}
+
+type rpcClientKey struct {
+	lookup        string
+	interfaceSpec spi.InterfaceSpec
+}
+
+func (b *Backend) getClient(lookup string, interfaceSpec spi.InterfaceSpec) interface{} {
+	b.rpcClientsLock.RLock()
+	defer b.rpcClientsLock.RUnlock()
+	key := rpcClientKey{lookup: lookup, interfaceSpec: interfaceSpec}
+	return b.rpcClients[key]
+}
+
+func (b *Backend) setClient(lookup string, interfaceSpec spi.InterfaceSpec, adapter interface{}) {
+	b.rpcClientsLock.Lock()
+	defer b.rpcClientsLock.Unlock()
+	key := rpcClientKey{lookup: lookup, interfaceSpec: interfaceSpec}
+	b.rpcClients[key] = adapter
 }
 
 type backendOp struct {
@@ -62,25 +83,24 @@ func NewBackend(name plugin.Name,
 	plugins discovery.Plugins,
 	leader leader.Detector,
 	leaderStore leader.Store,
-	snapshot store.Snapshot,
-	backendName string) *Backend {
+	snapshot store.Snapshot) *Backend {
 
 	return &Backend{
 		self: name,
-		// "base class" is the stateless backend group plugin
-		Plugin: group.LazyConnect(
-			func() (group.Plugin, error) {
-				endpoint, err := plugins.Find(plugin.Name(backendName))
-				if err != nil {
-					return nil, err
-				}
-				return rpc.NewClient(endpoint.Address)
-			}, 5*time.Second),
+		// // "base class" is the stateless backend group plugin
+		// Plugin: group.LazyConnect(
+		// 	func() (group.Plugin, error) {
+		// 		endpoint, err := plugins.Find(plugin.Name(backendName))
+		// 		if err != nil {
+		// 			return nil, err
+		// 		}
+		// 		return rpc.NewClient(endpoint.Address)
+		// 	}, 5*time.Second),
 		plugins:     plugins,
 		leader:      leader,
 		leaderStore: leaderStore,
 		snapshot:    snapshot,
-		backendName: backendName,
+		rpcClients:  map[rpcClientKey]interface{}{},
 	}
 }
 
@@ -98,14 +118,18 @@ func (b *Backend) initRunning() bool {
 
 type visitor struct {
 	interfaceSpec spi.InterfaceSpec
-	work          func(plugin.Name, client.Client) error
+	work          func(plugin.Name, interface{}) error
+	adapt         func(plugin.Name, client.Client) interface{}
 }
 
 func asController(v func(plugin.Name, controller.Controller) error) visitor {
 	return visitor{
 		interfaceSpec: controller.InterfaceSpec,
-		work: func(n plugin.Name, rpc client.Client) error {
-			return v(n, controller_rpc.Adapt(n, rpc))
+		work: func(n plugin.Name, rpc interface{}) error {
+			return v(n, rpc.(controller.Controller))
+		},
+		adapt: func(n plugin.Name, rpc client.Client) interface{} {
+			return controller_rpc.Adapt(n, rpc)
 		},
 	}
 }
@@ -113,8 +137,11 @@ func asController(v func(plugin.Name, controller.Controller) error) visitor {
 func asGroupPlugin(v func(plugin.Name, group.Plugin) error) visitor {
 	return visitor{
 		interfaceSpec: group.InterfaceSpec,
-		work: func(n plugin.Name, rpc client.Client) error {
-			return v(n, group_rpc.Adapt(rpc))
+		work: func(n plugin.Name, rpc interface{}) error {
+			return v(n, rpc.(group.Plugin))
+		},
+		adapt: func(n plugin.Name, rpc client.Client) interface{} {
+			return group_rpc.Adapt(rpc)
 		},
 	}
 }
@@ -135,17 +162,31 @@ func (b *Backend) visitPlugins(visitors ...visitor) error {
 			continue
 		}
 
+	visit:
 		for _, visitor := range visitors {
-			rpcClient, err := client.New(endpoint.Address, visitor.interfaceSpec)
-			log.Debug("Scanned controller", "name", lookup, "at", endpoint, "err", err, "backend", b, "V", debugV2)
-			if err == nil {
-				name := plugin.Name(lookup)
-				log.Debug("Calling controller", "name", name, "V", debugV2)
-				err = visitor.work(name, rpcClient)
+
+			name := plugin.Name(lookup)
+
+			// check if we have a stored rpcClient
+			adapter := b.getClient(lookup, visitor.interfaceSpec)
+			if adapter == nil {
+				rpcClient, err := client.New(endpoint.Address, visitor.interfaceSpec)
+				log.Debug("Scanned controller", "name", lookup, "at", endpoint, "err", err, "backend", b, "V", debugV2)
 				if err != nil {
-					return err
+					// not the right interface
+					continue visit
 				}
+
+				adapter = visitor.adapt(name, rpcClient)
+				b.setClient(lookup, visitor.interfaceSpec, adapter)
 			}
+
+			// Now we have a matched client
+			log.Debug("Calling controller", "name", name, "V", debugV2)
+			if err := visitor.work(name, adapter); err != nil {
+				return err
+			}
+
 		}
 	}
 	return nil
@@ -496,7 +537,7 @@ func (b *Backend) UpdateGroupSpec(spec group.Spec) error {
 		return err
 	}
 
-	stored.updateGroupSpec(spec, plugin.Name(b.backendName))
+	stored.updateGroupSpec(spec, b.self)
 	log.Debug("Saving updated config", "config", stored)
 
 	return stored.store(b.snapshot)
@@ -573,6 +614,7 @@ func (b *Backend) RemoveSpec(spec types.Spec) error {
 	return config.store(b.snapshot)
 }
 
+// Groups returns a map of group plugins managed by this backend.
 func (b *Backend) Groups() (map[group.ID]group.Plugin, error) {
 	groups := map[group.ID]group.Plugin{}
 	err := b.visitPlugins(
@@ -615,7 +657,6 @@ func (b *Backend) Controllers() (map[string]controller.Controller, error) {
 					if !k.HasType() {
 						k = n.WithType(k.Lookup())
 					}
-					fmt.Println(">>>> BACKEND", k)
 					controllers[k.String()] = c
 				}
 				return nil
@@ -625,19 +666,19 @@ func (b *Backend) Controllers() (map[string]controller.Controller, error) {
 	return controllers, err
 }
 
-// Groups returns a map of *scoped* group controllers by ID of the group.
-func (b *Backend) Groups0() (map[group.ID]group.Plugin, error) {
-	groups := map[group.ID]group.Plugin{
-		group.ID(""): b,
-	}
-	all, err := b.Plugin.InspectGroups()
-	if err != nil {
-		return groups, nil
-	}
-	for _, spec := range all {
-		gid := spec.ID
-		groups[gid] = b
-	}
-	log.Debug("Groups", "map", groups, "V", debugV2)
-	return groups, nil
-}
+// // Groups returns a map of *scoped* group controllers by ID of the group.
+// func (b *Backend) Groups0() (map[group.ID]group.Plugin, error) {
+// 	groups := map[group.ID]group.Plugin{
+// 		group.ID(""): b,
+// 	}
+// 	all, err := b.Plugin.InspectGroups()
+// 	if err != nil {
+// 		return groups, nil
+// 	}
+// 	for _, spec := range all {
+// 		gid := spec.ID
+// 		groups[gid] = b
+// 	}
+// 	log.Debug("Groups", "map", groups, "V", debugV2)
+// 	return groups, nil
+// }

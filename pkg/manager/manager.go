@@ -14,7 +14,7 @@ import (
 type Backend interface {
 	Manager
 
-	group.Plugin
+	//	group.Plugin
 
 	Controllers() (map[string]controller.Controller, error)
 	Groups() (map[group.ID]group.Plugin, error)
@@ -28,7 +28,6 @@ func NewManager(name plugin.Name,
 	plugins discovery.Plugins,
 	leader leader.Detector,
 	leaderStore leader.Store,
-	snapshot store.Snapshot,
-	backendName string) Backend {
-	return internal.NewBackend(name, plugins, leader, leaderStore, snapshot, backendName)
+	snapshot store.Snapshot) Backend {
+	return internal.NewBackend(name, plugins, leader, leaderStore, snapshot) //, backendName)
 }
