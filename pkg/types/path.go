@@ -239,3 +239,13 @@ func (p *Path) UnmarshalJSON(buff []byte) error {
 	*p = PathFromString(str)
 	return nil
 }
+
+// ShiftN shifts by n segments where segments are delimited by '/'
+// https://play.golang.org/p/TgTTqcSgHw
+func ShiftN(id string, n int) string {
+	p := strings.Split(strings.Trim(id, " \t\n"), "/")
+	if n > len(p) {
+		return ""
+	}
+	return strings.Join(p[n:], "/")
+}

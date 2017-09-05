@@ -161,7 +161,7 @@ func asGroupPlugin(v func(plugin.Name, group.Plugin) error) visitor {
 			// use internal queued plugin
 			ch := make(chan backendOp)
 
-			queuedGroupPlugin := QueuedGroupPlugin(g, ch,
+			queuedGroupPlugin := QueuedGroupPlugin(n, g, ch,
 				b.AllGroupSpecs,
 				b.FindGroupSpec,
 				b.UpdateGroupSpec,
@@ -206,10 +206,12 @@ func (b *Backend) visitPlugins(visitors ...visitor) error {
 
 				adapter = visitor.adapt(b, name, rpcClient)
 				b.setClient(lookup, visitor.interfaceSpec, adapter)
+				log.Debug("Cached adapter", "name", name, "interfaceSpec", visitor.interfaceSpec, "V", debugV2)
+
 			}
 
 			// Now we have a matched client
-			log.Debug("Calling controller", "name", name, "V", debugV2)
+			log.Debug("Found adapter", "name", name, "adapater", adapter, "V", debugV2)
 			if err := visitor.work(name, adapter); err != nil {
 				return err
 			}

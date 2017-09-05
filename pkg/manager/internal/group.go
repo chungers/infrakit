@@ -2,7 +2,9 @@ package internal
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/docker/infrakit/pkg/plugin"
 	group_types "github.com/docker/infrakit/pkg/plugin/group/types"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/instance"
@@ -22,13 +24,14 @@ import (
 
 // QueuedGroupPlugin returns a controller.Controller that has a backing storage for specs and
 // where all operations are serialized onto a work queue.
-func QueuedGroupPlugin(g group.Plugin, ch chan<- backendOp,
+func QueuedGroupPlugin(n plugin.Name, g group.Plugin, ch chan<- backendOp,
 	allGroupSpecsFunc func() ([]group.Spec, error),
 	findGroupSpecFunc func(group.ID) (group.Spec, error),
 	updateGroupSpecFunc func(group.Spec) error,
 	removeGroupSpecFunc func(group.ID) error) group.Plugin {
 
 	return &queuedGroupPlugin{
+		name:                n,
 		Queued:              queue(ch),
 		Plugin:              g,
 		allGroupSpecsFunc:   allGroupSpecsFunc,
@@ -39,6 +42,8 @@ func QueuedGroupPlugin(g group.Plugin, ch chan<- backendOp,
 }
 
 type queuedGroupPlugin struct {
+	name plugin.Name // name of the plugin proxied for.
+
 	Queued
 
 	group.Plugin // the backend that does the real work
@@ -51,6 +56,9 @@ type queuedGroupPlugin struct {
 
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (q *queuedGroupPlugin) CommitGroup(grp group.Spec, pretend bool) (resp string, err error) {
+
+	log.Debug("CommitGroup", "spec", grp, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	result := q.Run(group.Plugin.CommitGroup,
 		func() []interface{} {
 
@@ -61,6 +69,9 @@ func (q *queuedGroupPlugin) CommitGroup(grp group.Spec, pretend bool) (resp stri
 					return []interface{}{"cannot update", updateErr}
 				}
 			}
+
+			// need to translate
+			grp.ID = q.translate(grp.ID)
 
 			r1, r2 := q.Plugin.CommitGroup(grp, pretend)
 			return []interface{}{r1, r2}
@@ -75,6 +86,18 @@ func (q *queuedGroupPlugin) CommitGroup(grp group.Spec, pretend bool) (resp stri
 	return
 }
 
+// This is for taking the base name of the gid in case the gid is of the form <lookup>/<name>.
+// In this case, we need to shift 1.
+func (q *queuedGroupPlugin) translate(id group.ID) group.ID {
+	gid := string(id)
+	if strings.Index(gid, q.name.String()) > 0 {
+		// strip out the plugin name
+		gid = strings.Replace(gid, q.name.String(), "", 1)
+		return group.ID(gid)
+	}
+	return id
+}
+
 // InspectGroups returns all the desired specs.  This is intercepted with the stored version
 func (q *queuedGroupPlugin) InspectGroups() (specs []group.Spec, err error) {
 	return q.allGroupSpecsFunc()
@@ -82,6 +105,9 @@ func (q *queuedGroupPlugin) InspectGroups() (specs []group.Spec, err error) {
 
 // Serialized describe group
 func (q *queuedGroupPlugin) DescribeGroup(id group.ID) (desc group.Description, err error) {
+	id = q.translate(id)
+	log.Debug("DescribeGroup", "id", id, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	result := q.Run(group.Plugin.DescribeGroup,
 		func() []interface{} {
 			r1, r2 := q.Plugin.DescribeGroup(id)
@@ -99,6 +125,10 @@ func (q *queuedGroupPlugin) DescribeGroup(id group.ID) (desc group.Description, 
 
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (q *queuedGroupPlugin) DestroyGroup(id group.ID) (err error) {
+	id = q.translate(id)
+
+	log.Debug("DestroyGroup", "id", id, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	result := q.Run(group.Plugin.DestroyGroup,
 		func() []interface{} {
 
@@ -123,6 +153,10 @@ func (q *queuedGroupPlugin) DestroyGroup(id group.ID) (err error) {
 
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (q *queuedGroupPlugin) FreeGroup(id group.ID) (err error) {
+	id = q.translate(id)
+
+	log.Debug("FreeGroup", "id", id, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	result := q.Run(group.Plugin.FreeGroup,
 		func() []interface{} {
 
@@ -146,6 +180,10 @@ func (q *queuedGroupPlugin) FreeGroup(id group.ID) (err error) {
 
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (q *queuedGroupPlugin) DestroyInstances(id group.ID, instances []instance.ID) (err error) {
+	id = q.translate(id)
+
+	log.Debug("DestroyInstances", "id", id, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	result := q.Run(group.Plugin.DestroyInstances,
 		func() []interface{} {
 			return []interface{}{q.Plugin.DestroyInstances(id, instances)}
@@ -158,7 +196,10 @@ func (q *queuedGroupPlugin) DestroyInstances(id group.ID, instances []instance.I
 
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (q *queuedGroupPlugin) SetSize(id group.ID, size int) error {
-	spec, err := q.findGroupSpecFunc(id)
+	spec, err := q.findGroupSpecFunc(id) // don't translate id here...  commit will
+
+	log.Debug("SetSize", "id", id, "spec", spec, "size", size, "err", err, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	if err != nil {
 		return err
 	}
@@ -178,6 +219,9 @@ func (q *queuedGroupPlugin) SetSize(id group.ID, size int) error {
 // This implements/ overrides the Group Plugin interface to support single group-only operations
 func (q *queuedGroupPlugin) Size(id group.ID) (size int, err error) {
 	spec, err := q.findGroupSpecFunc(id)
+
+	log.Debug("Size", "id", id, "spec", spec, "size", size, "err", err, "tag", "queuedGroupPlugin", "V", debugV2)
+
 	if err != nil {
 		return 0, err
 	}

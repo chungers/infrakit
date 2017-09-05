@@ -2,7 +2,6 @@ package group
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/rpc/internal"
@@ -73,13 +72,12 @@ func (p *Group) Types() []string {
 	return p.keyed.Types()
 }
 
-// In cases where the server is a proxy to another plugin, the id will be in path form.
-// Routing will have delivered the message to the correct server, but we need to "shift one"
-// or take the base name.
+// shift the name in case we are in a proxied situation where group A proxies for B
+// and the gid is encoded as A/B/id and this needs to be shifted to B/id.
 func shift(id group.ID) group.ID {
-	gid := string(id)
-	i := strings.Index(gid, "/")
-	return group.ID(gid[i+1:])
+	// here we use shift of 0 --> assumption here is client will do the shift
+	// when constructing the id.
+	return group.ID(types.ShiftN(string(id), 0))
 }
 
 // CommitGroup is the rpc method to commit a group
