@@ -95,10 +95,11 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 		if err != nil {
 			return err
 		}
-		err = pluginManager.Launch(inproc.ExecName, group_kind.Kind, plugin.Name(group_kind.LookupName), nil)
-		if err != nil {
-			return err
-		}
+
+		// err = pluginManager.Launch(inproc.ExecName, group_kind.Kind, plugin.Name(group_kind.LookupName), nil)
+		// if err != nil {
+		// 	return err
+		// }
 
 		pluginManager.WaitStarting()
 

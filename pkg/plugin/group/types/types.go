@@ -21,18 +21,42 @@ func init() {
 // ResolveDependencies returns a list of dependencies by parsing the opaque Properties blob.
 func ResolveDependencies(spec types.Spec) (depends.Runnables, error) {
 	if spec.Properties == nil {
-		return depends.Runnables{}, nil
+		return nil, nil
 	}
 
-	groupSpec := Spec{}
+	// This extends on the group plugin spec to add optional Options section
+	type t struct {
+		Instance struct {
+			Plugin  plugin.Name
+			Options *types.Any
+		}
+		Flavor struct {
+			Plugin  plugin.Name
+			Options *types.Any
+		}
+	}
+
+	groupSpec := t{}
 	err := spec.Properties.Decode(&groupSpec)
 	if err != nil {
-		return depends.Runnables{}, err
+		return nil, err
 	}
 
 	return depends.Runnables{
-		depends.RunnableFrom("group", groupSpec.Instance.Plugin),
-		depends.RunnableFrom("group", groupSpec.Flavor.Plugin),
+		depends.AsRunnable(types.Spec{
+			Kind: groupSpec.Instance.Plugin.Lookup(),
+			Metadata: types.Metadata{
+				Name: groupSpec.Instance.Plugin.String(),
+			},
+			Options: groupSpec.Instance.Options,
+		}),
+		depends.AsRunnable(types.Spec{
+			Kind: groupSpec.Flavor.Plugin.Lookup(),
+			Metadata: types.Metadata{
+				Name: groupSpec.Flavor.Plugin.String(),
+			},
+			Options: groupSpec.Flavor.Options,
+		}),
 	}, nil
 }
 

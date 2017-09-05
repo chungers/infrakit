@@ -28,6 +28,9 @@ func (i InterfaceSpec) Encode() string {
 // DecodeInterfaceSpec takes a string and returns the struct
 func DecodeInterfaceSpec(s string) InterfaceSpec {
 	p := strings.SplitN(s, "/", 3)
+	if len(p) == 1 {
+		return InterfaceSpec{Name: s}
+	}
 	i := InterfaceSpec{
 		Name:    p[0],
 		Version: p[1],

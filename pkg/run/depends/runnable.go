@@ -1,6 +1,9 @@
 package depends
 
 import (
+	"fmt"
+	"sort"
+
 	"github.com/docker/infrakit/pkg/core"
 	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/types"
@@ -20,7 +23,8 @@ type Runnables []Runnable
 
 // RunnableFrom creates a runnable from input name.  This is a simplification
 // for cases where only a plugin name is used to reference another plugin.
-func RunnableFrom(kind string, name plugin.Name) Runnable {
+func RunnableFrom(name plugin.Name) Runnable {
+	kind := name.Lookup()
 	return specQuery{
 		Addressable: core.NewAddressable(kind, name, ""),
 		spec: types.Spec{
@@ -78,12 +82,19 @@ func (ps specQuery) Dependents() (Runnables, error) {
 
 // RunnablesFrom returns the Runnables from given slice of specs
 func RunnablesFrom(specs []types.Spec) (Runnables, error) {
+
+	key := func(addr core.Addressable) string {
+		return fmt.Sprintf("%v::%v", addr.Kind(), addr.Plugin().Lookup())
+	}
+
+	keys := []string{}
 	// keyed by kind and the specQuery
 	all := map[string]Runnable{}
 	for _, s := range specs {
 
 		q := AsRunnable(s)
-		all[q.Kind()] = q
+		all[key(q)] = q
+		keys = append(keys, key(q))
 
 		deps, err := q.Dependents()
 		if err != nil {
@@ -91,13 +102,15 @@ func RunnablesFrom(specs []types.Spec) (Runnables, error) {
 		}
 
 		for _, d := range deps {
-			// last win -- check for configs?  atm just focus on referenced objects
-			all[d.Kind()] = d
+			all[key(d)] = d
+			keys = append(keys, key(d))
 		}
 	}
+
+	sort.Strings(keys)
 	out := Runnables{}
-	for _, s := range all {
-		out = append(out, s)
+	for _, k := range keys {
+		out = append(out, all[k])
 	}
 	return out, nil
 }

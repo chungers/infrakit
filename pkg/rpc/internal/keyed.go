@@ -10,7 +10,7 @@ import (
 
 var log = logutil.New("module", "rpc/internal")
 
-const debugV = logutil.V(500)
+const debugV = logutil.V(600)
 
 // ServeKeyed returns a map containing keyed rpc objects
 func ServeKeyed(listFunc func() (map[string]interface{}, error)) *Keyed {
@@ -79,7 +79,7 @@ func (k *Keyed) Keyed(name plugin.Name) (interface{}, error) {
 	}
 	l, subtype := name.GetLookupAndType()
 
-	log.Debug("Keyed", "m", m, "subtype", subtype)
+	log.Debug("Keyed", "m", m, "subtype", subtype, "V", debugV)
 
 	// Special case of single, unkeyed plugin object
 	if l == "." || l == "" {

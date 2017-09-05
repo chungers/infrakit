@@ -26,7 +26,7 @@ const (
 	Kind = "manager"
 
 	// LookupName is the name used to look up the object via discovery
-	LookupName = "group"
+	LookupName = "stack"
 
 	// EnvOptionsBackend is the environment variable to use to set the default value of Options.Backend
 	EnvOptionsBackend = "INFRAKIT_MANAGER_BACKEND"

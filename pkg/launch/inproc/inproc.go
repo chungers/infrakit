@@ -36,6 +36,16 @@ var (
 	buildersLock = sync.Mutex{}
 )
 
+// GuessKind returns a kind that likely supports the given name. This assumes that the launcher will just
+// launch the plugin with the same lookup name as the name of the kind.
+func GuessKind(pn plugin.Name) string {
+	k, _ := pn.GetLookupAndType()
+	if _, has := builders[k]; has {
+		return k
+	}
+	return ""
+}
+
 // Register registers helper function with the plugin lookup name
 func Register(lookup string, prf PluginRunFunc, defaultOptions interface{}) {
 	buildersLock.Lock()
