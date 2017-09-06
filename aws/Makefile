@@ -73,14 +73,6 @@ clean-stack:
 
 release: buildtools
 	@echo "\033[0;1;34m++ Create AWS release of EDITIONS_VERSION: ${EDITIONS_VERSION} - Editions Commit: ${EDITIONS_COMMIT} on CHANNEL: ${CHANNEL}\033[0m"
-ifeq ($(EDITIONS_VERSION),)
-	@echo "\033[31m Error - No AWS Editions version found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
-	exit 1
-endif
-ifeq ($(CHANNEL),)
-	@echo "\033[31m Error - No AWS Channel found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
-	exit 1
-endif
 	$(CFNRUN) -e FLAGS="--upload" \
 		-e UPLOAD_S3_BUCKET="${STAGE_S3_BUCKET}" \
 		-e UPLOAD_S3_KEY="${AWS_STAGE_ACCESS_KEY_ID}" \
@@ -107,7 +99,7 @@ template: buildtools
 	@echo "\033[0;1;34m++ Create AWS template of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
 	$(CFNRUN) -e FLAGS="--template" $(CFNGEN)
 
-buildtools: clean
+buildtools: clean validate-meta
 	-mkdir -p tmp/ $(ROOT_DIR)/dist/
 	@echo "\033[0;1;34m+++ Build cfngen image - Editions Commit: ${EDITIONS_COMMIT} - from $(AMI_S3_PATH)/$(AMI_OUT) \033[0m"
 	docker build -t $(CFNGEN) -f release/cfn_gen/Dockerfile release/cfn_gen
@@ -125,6 +117,16 @@ test: buildtools
 notify:
 	@echo "\033[0;1;34m++ Notify results\033[0m"
 	$(TOOLSRUN) notify.py
+
+validate-meta:
+ifeq ($(EDITIONS_VERSION),)
+	@echo "\033[31m Error - No AWS Editions version found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
+	exit 1
+endif
+ifeq ($(CHANNEL),)
+	@echo "\033[31m Error - No AWS Channel found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
+	exit 1
+endif
 
 clean:
 	@echo "\033[0;1;34m++ Clean existing artifacts\033[0m"

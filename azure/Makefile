@@ -93,17 +93,8 @@ ifeq ($(VHD_URL),)
 	AZURE_TARGET_PATH = dist/azure/${CHANNEL}/${EDITIONS_VERSION}
 endif
 
-release:
+release: validate-meta buildtools
 	@echo "\033[0;1;34m++ Create Azure release of EDITIONS_VERSION: ${EDITIONS_VERSION} - Editions Commit: ${EDITIONS_COMMIT} on CHANNEL: ${CHANNEL}\033[0m"
-ifeq ($(EDITIONS_VERSION),)
-	@echo "\033[31m Error - No Azure Editions version found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
-	exit 1
-endif
-ifeq ($(CHANNEL),)
-	@echo "\033[31m Error - No Azure Channel found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
-	exit 1
-endif
-	$(MAKE) -C release build
 	docker run --rm \
 		-e AWS_ACCESS_KEY_ID \
 		-e AWS_SECRET_ACCESS_KEY \
@@ -127,7 +118,23 @@ endif
 		--ee_vhd_version="$(EE_VHD_VERSION)" \
 		--ee_offer_id="$(EE_OFFER_ID)" \
 		--edition_addon=$(EDITION_ADDON)
-	docker rmi azure-release
+
+buildtools: clean
+	$(MAKE) -C release build
+
+validate-meta:
+ifeq ($(EDITIONS_VERSION),)
+	@echo "\033[31m Error - No Azure Editions version found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
+	exit 1
+endif
+ifeq ($(CHANNEL),)
+	@echo "\033[31m Error - No Azure Channel found with commit ${EDITIONS_COMMIT} !!!!!\033[0m"
+	exit 1
+endif
+
+clean:
+	@echo "\033[0;1;34m++ Clean existing artifacts\033[0m"
+	-docker rmi -f azure-release
 
 # e2e
 # az group create --name fb-1705 --location centralus
