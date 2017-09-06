@@ -215,4 +215,38 @@ func TestRunnablesFromSpec(t *testing.T) {
 	require.NoError(t, runnables[1].Options().Decode(&options))
 	require.Equal(t, float64(20), options["poll"])
 
+	runnables, err = RunnablesFrom(mustSpecs(types.SpecsFromString(`
+- kind: ingress
+  metadata:
+    name: us-east-net/workers.com
+  properties:
+    routes: 10
+  options:
+    poll: 20
+
+# The lookup will be nfs (a plugin endpoint)
+- kind: simulator/disk
+  metadata:
+    name: nfs/disk1
+  properties:
+    cidr: 10.20.100.100/16
+
+# The lookup will default to simulator because it's not in the metadata/name
+- kind: simulator/net
+  metadata:
+    name: subnet1
+  properties:
+    cidr: 10.20.100.100/16
+
+
+`)))
+
+	require.NoError(t, err)
+	require.Equal(t, "ingress", runnables[0].Kind())
+	require.Equal(t, "us-east-net", runnables[0].Plugin().Lookup())
+	require.Equal(t, "simulator", runnables[1].Kind())
+	require.Equal(t, "nfs", runnables[1].Plugin().Lookup())
+	require.Equal(t, "simulator", runnables[2].Kind())
+	require.Equal(t, "simulator", runnables[2].Plugin().Lookup())
+
 }

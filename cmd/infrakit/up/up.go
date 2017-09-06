@@ -12,7 +12,6 @@ import (
 	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/run"
 	run_manager "github.com/docker/infrakit/pkg/run/manager"
-	group_kind "github.com/docker/infrakit/pkg/run/v0/group"
 	manager_kind "github.com/docker/infrakit/pkg/run/v0/manager"
 	"github.com/docker/infrakit/pkg/types"
 	"github.com/spf13/cobra"
@@ -131,7 +130,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 
 				if specsURL != "" {
 					// refresh the specs from the url
-					log.Info("Checking", "url", specsURL)
+					log.Info("Loading from", "url", specsURL)
 					specs, err = loadSpecs(specsURL)
 					if err != nil {
 						log.Error("Error loading specs", "url", specsURL, "err", err)
@@ -139,7 +138,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 					}
 				} else {
 
-					log.Info("Inspecting manager because no url is specified.")
+					log.Info("Loading from manager because no url is specified.")
 					err = run.Call(plugins, manager.InterfaceSpec, nil,
 						func(m manager.Manager) error {
 							stored, err := m.Specs()

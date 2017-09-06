@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/docker/infrakit/pkg/plugin"
 	group_types "github.com/docker/infrakit/pkg/plugin/group/types"
@@ -86,16 +85,12 @@ func (q *queuedGroupPlugin) CommitGroup(grp group.Spec, pretend bool) (resp stri
 	return
 }
 
-// This is for taking the base name of the gid in case the gid is of the form <lookup>/<name>.
-// In this case, we need to shift 1.
+// The group id when used to make api calls, should always be relative to the plugin's address.
+// This is because it's a sub-component of the plugin. So here we do the relative calculation.
 func (q *queuedGroupPlugin) translate(id group.ID) group.ID {
-	gid := string(id)
-	if strings.Index(gid, q.name.String()) > 0 {
-		// strip out the plugin name
-		gid = strings.Replace(gid, q.name.String(), "", 1)
-		return group.ID(gid)
-	}
-	return id
+	// use plugin name as a way to reference groups
+	rel := plugin.Name(string(id)).Rel(q.name)
+	return group.ID(rel.String())
 }
 
 // InspectGroups returns all the desired specs.  This is intercepted with the stored version

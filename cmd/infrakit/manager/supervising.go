@@ -13,7 +13,7 @@ func Supervising(plugins func() discovery.Plugins) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "supervising",
-		Short: "Supervising returns the leadership information",
+		Short: "Supervising returns the objects the manager is providing leader detection and persistence services",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			if len(args) != 0 {

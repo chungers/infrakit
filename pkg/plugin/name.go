@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -14,6 +15,19 @@ func NameFrom(lookup, sub string) Name {
 		return Name(strings.Join([]string{lookup, sub}, "/"))
 	}
 	return Name(lookup)
+}
+
+// Rel computes the relative form, assuming the receiver is the base path
+// so that Join(other, n.Rel(other)) == other.  If it's not relative at all, then the receiver is returned
+func (n Name) Rel(other Name) Name {
+	rel, err := filepath.Rel(other.String(), n.String())
+	if err == nil {
+		if rel == "." {
+			return n
+		}
+		return Name(rel)
+	}
+	return n
 }
 
 // Lookup returns the lookup portion of the name

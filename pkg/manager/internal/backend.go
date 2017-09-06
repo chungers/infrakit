@@ -35,7 +35,6 @@ var (
 // to activate / deactivate plugins
 type Backend struct {
 	self plugin.Name // the name this backend is listening on.
-	//	group.Plugin             // TODO - remove this
 
 	plugins     discovery.Plugins
 	leader      leader.Detector
@@ -49,8 +48,6 @@ type Backend struct {
 	rpcClients     map[rpcClientKey]interface{}
 	rpcClientsLock sync.RWMutex
 
-	// backendName string
-	//	backendOps  <-chan backendOp
 	fanin *fanin
 }
 
@@ -88,16 +85,7 @@ func NewBackend(name plugin.Name,
 	snapshot store.Snapshot) *Backend {
 
 	return &Backend{
-		self: name,
-		// // "base class" is the stateless backend group plugin
-		// Plugin: group.LazyConnect(
-		// 	func() (group.Plugin, error) {
-		// 		endpoint, err := plugins.Find(plugin.Name(backendName))
-		// 		if err != nil {
-		// 			return nil, err
-		// 		}
-		// 		return rpc.NewClient(endpoint.Address)
-		// 	}, 5*time.Second),
+		self:        name,
 		plugins:     plugins,
 		leader:      leader,
 		leaderStore: leaderStore,
@@ -398,6 +386,7 @@ func (b *Backend) checkPluginsRunning(config *globalSpec) (<-chan struct{}, erro
 }
 
 func (b *Backend) onAssumeLeadership() error {
+
 	log.Info("Assuming leadership")
 
 	// load the config
@@ -420,6 +409,10 @@ func (b *Backend) onAssumeLeadership() error {
 	<-wait
 
 	log.Info("Committing specs to controllers", "config", config)
+	if true {
+		// REMOVE ME
+		return nil
+	}
 
 	return b.visitPlugins(asController(
 		func(n plugin.Name, c controller.Controller) error {

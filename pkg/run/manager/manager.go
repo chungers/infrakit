@@ -172,6 +172,11 @@ func (m *Manager) Launch(exec string, key string, name plugin.Name, options *typ
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 
+	if m.startPlugin == nil {
+		log.Info("monitor not running anymore")
+		return nil
+	}
+
 	// check that the plugin is not currently running
 	running, err := m.plugins().List()
 	if err != nil {
@@ -185,32 +190,32 @@ func (m *Manager) Launch(exec string, key string, name plugin.Name, options *typ
 	}
 	m.wgStartAll.Add(1)
 
-	log.Debug("starting", "key", key, "name", name, "exec", exec, "options", options)
-	if m.startPlugin == nil {
-		log.Info("monitor not running anymore")
-		return nil
-	}
-
-	m.startPlugin <- launch.StartPlugin{
+	instruction := launch.StartPlugin{
 		Key:     key,
-		Name:    name,
+		Name:    name.LookupOnly(),
 		Exec:    launch.ExecName(exec),
 		Options: options,
-		Started: func(key string, n plugin.Name, config *types.Any) {
-			m.started <- n
-			m.wgStartAll.Done()
-			log.Debug("started", "key", key, "name", name, "exec", exec, "options", options)
-		},
-		Error: func(key string, n plugin.Name, config *types.Any, err error) {
-			log.Error("error starting", "key", key, "name", name, "exec", exec, "options", options)
-			if m.mustAll {
-				log.Crit("Terminating due to error starting plugin", "err", err,
-					"key", key, "name", n, "config", stringFrom(config))
-				panic(err)
-			}
-			m.wgStartAll.Done()
-		},
 	}
+
+	log.Debug("starting", "instruction", instruction)
+
+	instruction.Started = func(key string, n plugin.Name, config *types.Any) {
+		m.started <- n
+		m.wgStartAll.Done()
+		log.Debug("started", "key", key, "name", name, "exec", exec, "options", options)
+	}
+
+	instruction.Error = func(key string, n plugin.Name, config *types.Any, err error) {
+		log.Error("error starting", "key", key, "name", name, "exec", exec, "options", options)
+		if m.mustAll {
+			log.Crit("Terminating due to error starting plugin", "err", err,
+				"key", key, "name", n, "config", stringFrom(config))
+			panic(err)
+		}
+		m.wgStartAll.Done()
+	}
+
+	m.startPlugin <- instruction
 	return nil
 }
 
@@ -235,10 +240,17 @@ func (m *Manager) WaitForAllShutdown() {
 		case <-checkNow:
 			log.Debug("Checking on targets", "targets", targets, "V", logutil.V(500))
 			if m, err := m.plugins().List(); err == nil {
+				if len(m) == 0 {
+					log.Info("Nothing is running. Exiting")
+					return
+				}
 				if countMatches(targets, m) == 0 {
 					log.Info("Scan found plugins not running now", "plugins", targets)
 					return
 				}
+			} else {
+				log.Error("cannot scan for plugins", "err", err)
+				return
 			}
 		}
 	}
@@ -249,7 +261,7 @@ func countMatches(list []string, found map[string]*plugin.Endpoint) int {
 	c := 0
 	for _, l := range list {
 		if _, has := found[l]; has {
-			log.Debug("Scan found", "lookup", l, "V", logutil.V(400))
+			log.Debug("Scan found", "lookup", l, "V", logutil.V(800))
 			c++
 		}
 	}
@@ -277,8 +289,10 @@ func (m *Manager) StartPluginsFromSpecs(specs []types.Spec, onError func(error) 
 	if err != nil {
 		return err
 	}
+
+	log.Debug("Starting runnables", "runnables", runnables)
+
 	for _, q := range runnables {
-		log.Info("Launching", "exec", inproc.ExecName, "kind", q.Kind(), "name", q.Plugin(), "options", q.Options())
 		if err := m.Launch(inproc.ExecName, q.Kind(), q.Plugin(), q.Options()); err != nil {
 			if !onError(err) {
 				return err
