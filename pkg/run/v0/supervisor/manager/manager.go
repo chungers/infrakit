@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/launch/inproc"
@@ -15,6 +16,7 @@ import (
 	"github.com/docker/infrakit/pkg/rpc/mux"
 	rpc "github.com/docker/infrakit/pkg/rpc/server"
 	"github.com/docker/infrakit/pkg/run"
+	"github.com/docker/infrakit/pkg/run/local"
 	"github.com/docker/infrakit/pkg/store"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -24,7 +26,7 @@ const (
 	Kind = "manager"
 
 	// LookupName is the name used to look up the object via discovery
-	LookupName = "group"
+	LookupName = "stack"
 
 	// EnvOptionsBackend is the environment variable to use to set the default value of Options.Backend
 	EnvOptionsBackend = "INFRAKIT_MANAGER_BACKEND"
@@ -34,11 +36,15 @@ const (
 
 	// EnvAdvertise is the location of this node (127.0.0.1:24864)
 	EnvAdvertise = "INFRAKIT_ADVERTISE"
+
+	// EnvMetadatPollInterval is the polling interval to update metadata values exported by the manager.
+	EnvMetadataPollInterval = "INFRAKIT_MANAGER_METADATA_POLL_INTERVAL"
 )
 
 var (
-	log                   = logutil.New("module", "run/manager")
-	defaultOptionsBackend = run.GetEnv(EnvOptionsBackend, "file")
+	log                         = logutil.New("module", "run/manager")
+	defaultOptionsBackend       = local.Getenv(EnvOptionsBackend, "file")
+	defaultMetadataPollInterval = types.DurationFromString(local.Getenv(EnvMetadataPollInterval, "10s"), 10*time.Second)
 )
 
 func init() {
@@ -51,9 +57,6 @@ type Options struct {
 	// Possible values are file, etcd, and swarm
 	Backend string
 
-	// Name of the backend
-	BackendName plugin.Name
-
 	// Settings is the configuration of the backend
 	Settings *types.Any
 
@@ -65,6 +68,9 @@ type Options struct {
 	leaderStore leader.Store
 	store       store.Snapshot
 	cleanUpFunc func()
+
+	// MetadataPollInterval is the interval for polling and exporting metadata values
+	MetadataPollInterval types.Duration
 }
 
 // MuxConfig is the struct for the mux frontend
@@ -82,10 +88,10 @@ var DefaultOptions = defaultOptions()
 func defaultOptions() (options Options) {
 
 	options = Options{
-		BackendName: plugin.Name("group-stateless"),
+		MetadataPollInterval: defaultMetadataPollInterval,
 		Mux: &MuxConfig{
-			Listen:    run.GetEnv(EnvMuxListen, ":24864"),
-			Advertise: run.GetEnv(EnvAdvertise, "localhost:24864"),
+			Listen:    local.Getenv(EnvMuxListen, ":24864"),
+			Advertise: local.Getenv(EnvAdvertise, "localhost:24864"),
 		},
 	}
 
@@ -170,23 +176,19 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		return
 	}
 
-	var mgr manager.Backend
-	lookup, _ := options.BackendName.GetLookupAndType()
-	mgr, err = manager.NewManager(plugins(), options.leader, options.leaderStore, options.store, lookup)
-	if err != nil {
-		return
-	}
-
-	log.Info("start manager")
+	//lookup, _ := options.BackendName.GetLookupAndType()
+	mgr := manager.NewManager(name, plugins(), options.leader, options.leaderStore, options.store) //, lookup)
+	log.Info("Start manager", "m", mgr)
 
 	_, err = mgr.Start()
 	if err != nil {
 		return
 	}
 
-	log.Info("manager running")
+	log.Info("Manager running")
 
 	updatable := &metadataModel{
+		options:  options,
 		snapshot: options.store,
 		manager:  mgr,
 	}
@@ -200,7 +202,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 
 	impls = map[run.PluginCode]interface{}{
 		run.Manager:           mgr,
-		run.Controller:        mgr.GroupControllers,
+		run.Controller:        mgr.Controllers,
 		run.Group:             mgr.Groups,
 		run.MetadataUpdatable: metadataUpdatable,
 		run.Metadata:          metadataUpdatable,
