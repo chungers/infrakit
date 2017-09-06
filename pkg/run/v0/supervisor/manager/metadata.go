@@ -12,6 +12,7 @@ import (
 )
 
 type metadataModel struct {
+	options  Options
 	snapshot store.Snapshot
 	manager  manager.Manager
 }
@@ -67,7 +68,7 @@ func (updatable *metadataModel) pluginModel() (chan func(map[string]interface{})
 	model := make(chan func(map[string]interface{}))
 	stop := make(chan struct{})
 	go func() {
-		tick := time.Tick(1 * time.Second)
+		tick := time.Tick(updatable.options.MetadataPollInterval.Duration())
 		for {
 			select {
 			case <-tick:

@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/docker/infrakit/pkg/manager"
+	"github.com/docker/infrakit/pkg/plugin"
 	rpc_client "github.com/docker/infrakit/pkg/rpc/client"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -42,6 +43,24 @@ func (c client) LeaderLocation() (*url.URL, error) {
 	return resp.Location, err
 }
 
+// Supervising returns the location of the leader
+func (c client) Supervising() ([]plugin.Metadata, error) {
+	req := SupervisingRequest{}
+	resp := SupervisingResponse{}
+	err := c.client.Call("Manager.Supervising", req, &resp)
+	return resp.Supervised, err
+}
+
+// Plan describes the changes need to apply to current specs
+func (c client) Plan(specs []types.Spec) (types.Changes, error) {
+	req := PlanRequest{
+		Specs: specs,
+	}
+	resp := PlanResponse{}
+	err := c.client.Call("Manager.Plan", req, &resp)
+	return resp.Changes, err
+}
+
 // Enforce enforces infrastructure state to match that of the specs
 func (c client) Enforce(specs []types.Spec) error {
 	req := EnforceRequest{
@@ -58,6 +77,24 @@ func (c client) Inspect() ([]types.Object, error) {
 	resp := InspectResponse{}
 	err := c.client.Call("Manager.Inspect", req, &resp)
 	return resp.Objects, err
+}
+
+// Specs returns the current state of the infrastructure
+func (c client) Specs() ([]types.Spec, error) {
+	req := SpecsRequest{}
+	resp := SpecsResponse{}
+	err := c.client.Call("Manager.Specs", req, &resp)
+	return resp.Specs, err
+}
+
+// Pause pauses all the controllers in the spec
+func (c client) Pause(specs []types.Spec) error {
+	req := PauseRequest{
+		Specs: specs,
+	}
+	resp := PauseResponse{}
+	err := c.client.Call("Manager.Pause", req, &resp)
+	return err
 }
 
 // Terminate destroys all resources associated with the specs

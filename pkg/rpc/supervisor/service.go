@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/docker/infrakit/pkg/manager"
+	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -65,6 +66,44 @@ func (p *Manager) LeaderLocation(_ *http.Request, req *LeaderLocationRequest, re
 	return err
 }
 
+// SupervisingRequest is the rpc request
+type SupervisingRequest struct {
+}
+
+// SupervisingResponse is the rpc response
+type SupervisingResponse struct {
+	Supervised []plugin.Metadata
+}
+
+// Supervising returns the location of the leader
+func (p *Manager) Supervising(_ *http.Request, req *SupervisingRequest, resp *SupervisingResponse) error {
+	u, err := p.manager.Supervising()
+	if err == nil {
+		resp.Supervised = u
+	}
+	return err
+}
+
+// PlanRequest is the rpc request
+type PlanRequest struct {
+	Specs []types.Spec
+}
+
+// PlanResponse is the rpc response
+type PlanResponse struct {
+	Changes types.Changes
+}
+
+// Plan is the rpc method for Manager.Enforce
+func (p *Manager) Plan(_ *http.Request, req *PlanRequest, resp *PlanResponse) error {
+	changes, err := p.manager.Plan(req.Specs)
+	if err != nil {
+		return err
+	}
+	resp.Changes = changes
+	return nil
+}
+
 // EnforceRequest is the rpc request
 type EnforceRequest struct {
 	Specs []types.Spec
@@ -96,6 +135,39 @@ func (p *Manager) Inspect(_ *http.Request, req *InspectRequest, resp *InspectRes
 	}
 	resp.Objects = objects
 	return nil
+}
+
+// SpecsRequest is the rpc request
+type SpecsRequest struct {
+}
+
+// SpecsResponse is the rpc response
+type SpecsResponse struct {
+	Specs []types.Spec
+}
+
+// Specs is the rpc method for Manager.Specs
+func (p *Manager) Specs(_ *http.Request, req *SpecsRequest, resp *SpecsResponse) error {
+	specs, err := p.manager.Specs()
+	if err != nil {
+		return err
+	}
+	resp.Specs = specs
+	return nil
+}
+
+// PauseRequest is the rpc request
+type PauseRequest struct {
+	Specs []types.Spec
+}
+
+// PauseResponse is the rpc response
+type PauseResponse struct {
+}
+
+// Pause is the rpc method for Manager.Pause
+func (p *Manager) Pause(_ *http.Request, req *PauseRequest, resp *PauseResponse) error {
+	return p.manager.Pause(req.Specs)
 }
 
 // TerminateRequest is the rpc request
