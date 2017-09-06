@@ -132,8 +132,12 @@ func runMain(cfg config) error {
 
 	logrus.Infoln("Starting up manager:", cfg)
 
-	mgr := manager.NewManager(cfg.plugins, cfg.leader, cfg.leaderStore, cfg.snapshot, cfg.pluginName)
-	_, err := mgr.Start()
+	mgr, err := manager.NewManager(cfg.plugins, cfg.leader, cfg.leaderStore, cfg.snapshot, cfg.pluginName)
+	if err != nil {
+		return err
+	}
+
+	_, err = mgr.Start()
 	if err != nil {
 		return err
 	}
