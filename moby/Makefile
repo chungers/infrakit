@@ -51,6 +51,12 @@ define push_to_s3
 	fi
 endef
 
+define check_previous_build
+	@echo "+ Checking if ${EDITIONS_COMMIT} was previously built for ${1}"
+	PROVIDER=${1} OUTPUT=${2} COMMIT=${EDITIONS_COMMIT} /bin/sh check.sh || exit 1
+	@echo "We never built it - Continue"
+endef
+
 all:
 	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) src/initrd.img
@@ -90,6 +96,9 @@ endif
 
 ami:
 	@echo "\033[32m++ $@\033[0m"
+ifeq ($(FORCE),false)
+	$(call check_previous_build,ami,$(AMI_OUT))
+endif
 	$(MAKE) build/aws/initrd.img
 	tar cf - \
 	  cloud -C build/aws/ initrd.img -C ../ vmlinuz64 \
@@ -139,6 +148,9 @@ ami-clean-mount:
 		moby-ami:build clean-mount
 
 uploadvhd:
+ifeq ($(FORCE),false)
+	$(call check_previous_build,vhd,$(VHD_OUT))
+endif
 	@echo "\033[32m++ $@\033[0m"
 	$(MAKE) azure
 	docker run \
