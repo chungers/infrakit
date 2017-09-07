@@ -3,13 +3,13 @@ set -e
 
 # if there is an ENV with this name, use it, if not, default to these values.
 NAMESPACE="${NAMESPACE:-docker4x}"
-TAG_VERSION="${AWS_TAG_VERSION:-latest}"
+TAG_VERSION="${ORACLE_TAG_VERSION:-latest}"
 COMPOSE_VERSION="${COMPOSE_VERSION:-1.15.0}"
 
 CURR_DIR=`pwd`
 ROOT_DIR="${ROOT_DIR:-$CURR_DIR}"
 DEFAULT_PATH="dist/aws/nightly/$TAG_VERSION"
-AWS_TARGET_PATH="${AWS_TARGET_PATH:-$DEFAULT_PATH}"
+ORACLE_TARGET_PATH="${ORACLE_TARGET_PATH:-$DEFAULT_PATH}"
 
 # Test all images built
 function check_image () {
@@ -46,12 +46,12 @@ function docker_tag_exists() {
   true
 }
 
-echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
+echo -e "+ \033[1mCreating dist folder:\033[0m $ORACLE_TARGET_PATH"
 # Create directory and make sure to chmod it
-mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
+mkdir -p $ROOT_DIR/$ORACLE_TARGET_PATH 
 if [ $? ]; then
   docker run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
-  mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
+  mkdir -p $ROOT_DIR/$ORACLE_TARGET_PATH 
 fi
 
 for IMAGE in shell init guide ddc-init cloud meta

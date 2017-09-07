@@ -35,6 +35,7 @@ dockerimages: deepclean tools
 	$(MAKE) aws-dockerimages
 	$(MAKE) azure-dockerimages
 	$(MAKE) gcp-dockerimages
+	$(MAKE) oracle-dockerimages
 
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
@@ -199,6 +200,10 @@ gcp-release: gcp-template
 	$(MAKE) -C gcp release
 
 
+## ORACLE Targets
+oracle-dockerimages: tools
+	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${ORACLE_TAG_VERSION}\033[0m"
+	$(MAKE) -C oracle/dockerfiles EDITIONS_VERSION=$(ORACLE_TAG_VERSION)
 
 
 ## Golang targets
