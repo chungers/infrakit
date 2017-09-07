@@ -3,7 +3,7 @@
 default: lb-controller
 	VERSION="$(ORACLE_TAG_VERSION)" ./build_and_push_all.sh
 
-elb-controller:
+lb-controller:
 	@echo "Building LB Controller"
 	cd lb-controller/files/container && \
 	VERSION="$(ORACLE_TAG_VERSION)" \
