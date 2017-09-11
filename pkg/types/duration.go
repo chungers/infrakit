@@ -9,20 +9,26 @@ import (
 // Duration is a wrapper for time.Duration that adds JSON parsing
 type Duration time.Duration
 
+// Duration returns the time.Duration
 func (d Duration) Duration() time.Duration {
 	return time.Duration(d)
 }
 
-// DurationSorter is a wrapper to make Duration sortable
-type durationSorter []Duration
+// FromDuration constructs a Duration from a time.Duration
+func FromDuration(d time.Duration) Duration {
+	return Duration(d)
+}
 
-func (d durationSorter) Len() int           { return len(d) }
-func (d durationSorter) Less(i, j int) bool { return time.Duration(d[i]) < time.Duration(d[j]) }
-func (d durationSorter) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
+// Durations is a wrapper to make Duration sortable
+type Durations []time.Duration
+
+func (d Durations) Len() int           { return len(d) }
+func (d Durations) Less(i, j int) bool { return time.Duration(d[i]) < time.Duration(d[j]) }
+func (d Durations) Swap(i, j int)      { d[i], d[j] = d[j], d[i] }
 
 // SortDurations sorts the durations
-func SortDurations(d []Duration) {
-	sort.Sort(durationSorter(d))
+func SortDurations(d []time.Duration) {
+	sort.Sort(Durations(d))
 }
 
 // DurationFromString returns either the parsed duration or a default value.
