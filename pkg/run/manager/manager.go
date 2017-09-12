@@ -20,7 +20,10 @@ import (
 	"github.com/docker/infrakit/pkg/types"
 )
 
-var log = logutil.New("module", "run/manager")
+var (
+	log        = logutil.New("module", "run/manager")
+	debugLoopV = logutil.V(1000)
+)
 
 // ManagePlugins returns a manager that can manage the start up and stopping of plugins.
 func ManagePlugins(rules []launch.Rule,
@@ -238,7 +241,7 @@ func (m *Manager) WaitForAllShutdown() {
 			}
 
 		case <-checkNow:
-			log.Debug("Checking on targets", "targets", targets, "V", logutil.V(500))
+			log.Debug("Checking on targets", "targets", targets, "V", debugLoopV)
 			if m, err := m.plugins().List(); err == nil {
 				if len(m) == 0 {
 					log.Info("Nothing is running. Exiting")
@@ -261,7 +264,7 @@ func countMatches(list []string, found map[string]*plugin.Endpoint) int {
 	c := 0
 	for _, l := range list {
 		if _, has := found[l]; has {
-			log.Debug("Scan found", "lookup", l, "V", logutil.V(800))
+			log.Debug("Scan found", "lookup", l, "V", debugLoopV)
 			c++
 		}
 	}
