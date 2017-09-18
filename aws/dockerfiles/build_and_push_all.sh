@@ -26,7 +26,6 @@ function check_image () {
   docker container run --rm \
     -v ${CURR_DIR}/${FOLDER}/tests:/tests \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /usr/bin/docker:/usr/bin/docker \
     --entrypoint sh \
     ${FINAL_IMAGE} /tests/run.sh
 }
@@ -50,7 +49,7 @@ echo -e "+ \033[1mCreating dist folder:\033[0m $AWS_TARGET_PATH"
 # Create directory and make sure to chmod it
 mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
 if [ $? ]; then
-  docker run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
+  docker container run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
   mkdir -p $ROOT_DIR/$AWS_TARGET_PATH 
 fi
 
@@ -59,10 +58,13 @@ do
   FINAL_IMAGE="${NAMESPACE}/${IMAGE}-aws:${TAG_VERSION}"
   echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
   BUILD_ARGS=""
-  if [ "$IMAGE" = "shell" ]; then
-    BUILD_ARGS="--build-arg COMPOSE_VERSION=$COMPOSE_VERSION"
+  if [ "$IMAGE" = "shell" ] || [ "$IMAGE" = "init" ] || [ "$IMAGE" = "guide" ]; then
+    BUILD_ARGS+=" --build-arg DOCKER_BIN_URL=$DOCKER_BIN_URL"
   fi
-  docker build --pull -t "${FINAL_IMAGE}" $ARGS -f "${IMAGE}/Dockerfile" ${IMAGE}
+  if [ "$IMAGE" = "shell" ]; then
+    BUILD_ARGS+=" --build-arg COMPOSE_VERSION=$COMPOSE_VERSION"
+  fi
+  docker build --pull -t "${FINAL_IMAGE}" ${BUILD_ARGS} -f "${IMAGE}/Dockerfile" ${IMAGE}
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"

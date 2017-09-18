@@ -10,3 +10,4 @@ test -x /usr/bin/buoy.sh
 test -x /usr/bin/vacuum.sh 
 test -x /usr/bin/refresh.sh 
 test -x /usr/bin/bouncer.sh
+test -x /usr/bin/docker

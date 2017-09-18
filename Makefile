@@ -12,21 +12,25 @@ endif
 release: 
 	$(MAKE) aws-release
 	$(MAKE) azure-release
+	#$(MAKE) oracle-release
 	#$(MAKE) gcp-release
 
 nightly:
 	$(MAKE) aws-nightly
 	$(MAKE) azure-nightly
+	#$(MAKE) oracle-nightly
 
 templates:
 	$(MAKE) azure-template
 	$(MAKE) aws-template
-	# $(MAKE) gcp-template
+	#$(MAKE) oracle-template
+	#$(MAKE) gcp-template
 
 e2e:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	$(MAKE) aws-e2e 
 	$(MAKE) azure-e2e 
+	#$(MAKE) oracle-e2e 
 
 
 ## Container images targets
@@ -35,7 +39,8 @@ dockerimages: deepclean tools
 	$(MAKE) aws-dockerimages
 	$(MAKE) azure-dockerimages
 	$(MAKE) gcp-dockerimages
-	$(MAKE) oracle-dockerimages
+	$(MAKE) build-rtf
+
 
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
@@ -45,8 +50,10 @@ define build_cp_tool
 	$(MAKE) -C tools/$(1)
 	mkdir -p aws/dockerfiles/$(3)
 	mkdir -p azure/dockerfiles/$(3)
+	#mkdir -p oracle/dockerfiles/$(3)
 	cp tools/$(1)/$(2) aws/dockerfiles/$(3)
 	cp tools/$(1)/$(2) azure/dockerfiles/$(3)
+	cp tools/$(1)/$(2) oracle/dockerfiles/$(3)
 	if [ "$(2)" = "bin/guide" ]; then \
 		mkdir -p gcp/dockerfiles/$(3) \
 		cp tools/$(1)/$(2) gcp/dockerfiles/$(3); \
@@ -56,6 +63,7 @@ endef
 define clean_plugin_tool
 	-rm -f aws/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f azure/dockerfiles/cloudstor-rootfs.tar.gz
+	#-rm -f oracle/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f gcp/dockerfiles/cloudstor-rootfs.tar.gz
 	-rm -f gcp/dockerfiles/guide/cloudstor-rootfs.tar.gz
 	-rm -Rf gcp/dockerfiles/meta
@@ -65,7 +73,10 @@ define clean_plugin_tool
 	-rm -Rf aws/dockerfiles/meta/bin
 	-rm -Rf azure/dockerfiles/init/bin
 	-rm -Rf azure/dockerfiles/guide/bin
-	-rm -Rf azure/dockerfiles/meta/bin
+	#-rm -Rf azure/dockerfiles/meta/bin
+	#-rm -Rf oracle/dockerfiles/init/bin
+	#-rm -Rf oracle/dockerfiles/guide/bin
+	#-rm -Rf oracle/dockerfiles/meta/bin
 	# clean up common files copied
 	-rm -Rf azure/dockerfiles/alb-controller/files/container/bin/
 	-rm -f azure/dockerfiles/ddc-init/files/aztags.py
@@ -150,7 +161,7 @@ azure-dev: azure azure/editions.json moby/cloud/azure/vhd_blob_url.out-dockerima
 	# way to boot the Azure template.
 
 $(AZURE_TARGET_TEMPLATE):
-	$(MAKE) -C azure/release template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
+	$(MAKE) -C azure template EDITIONS_VERSION=$(AZURE_TAG_VERSION)
 
 azure/editions.json: azure-template
 	cp $(AZURE_TARGET_TEMPLATE) azure/editions.json
@@ -199,12 +210,31 @@ gcp-release: gcp-template
 	$(MAKE) -C gcp save-templates
 	$(MAKE) -C gcp release
 
-
-## ORACLE Targets
+## Oracle Targets
+#  Definitely not copy-pasta from AWS, why do you ask?
+#
 oracle-dockerimages: tools
 	@echo "\033[32m+ $@ - EDITIONS_VERSION? ${ORACLE_TAG_VERSION}\033[0m"
 	$(MAKE) -C oracle/dockerfiles EDITIONS_VERSION=$(ORACLE_TAG_VERSION)
 
+oracle-template:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
+	# "easy use" alias to generate latest version of template.
+	$(MAKE) $(ORACLE_TARGET_TEMPLATE)
+
+oracle-release:
+	@echo "\033[32m+ $@ - Editions Commit: ${EDITIONS_COMMIT} \033[0m"
+	$(MAKE) -C oracle release
+
+$(ORACLE_TARGET_TEMPLATE):
+	$(MAKE) -C oracle template EDITIONS_VERSION=$(ORACLE_TAG_VERSION)
+
+oracle-nightly:
+	@echo "\033[32m+ $@\033[0m"
+	$(MAKE) -C oracle nightly
+
+oracle-e2e:
+	$(MAKE) -C oracle/test
 
 ## Golang targets
 # Package list
@@ -224,6 +254,20 @@ test:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 	@go test -v github.com/docker/editions/pkg/loadbalancer
 
+build-rtf:
+	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} \033[0m"
+	$(MAKE) -C tests build
+
+ci-test:
+	@echo "\033[32m+ $@ - Build templates \033[0m"
+	$(MAKE) aws-template TEST_JENKINS=true
+	$(MAKE) azure-template TEST_JENKINS=true
+	@echo "\033[32m+ $@ - Checking templates syntax \033[0m"
+	@for i in $(shell find . -iname "*.tmpl"); do jq . "$$i" > /dev/null || exit 1; done
+	@echo "\033[32m+ $@ - Checking docker image creation \033[0m"
+	$(MAKE) aws-dockerimages
+	$(MAKE) azure-dockerimages
+
 check:
 	@echo "\033[32m+ $@ - DOCKER_VERSION: ${DOCKER_VERSION} - CHANNEL: ${CHANNEL}\033[0m"
 
@@ -237,6 +281,7 @@ clean:
 	rm -f moby/cloud/azure/$(VHD_OUT)
 	rm -f moby/cloud/aws/$(AMI_OUT)
 	rm -f moby/cloud/gcp/$(BDI_OUT)
+	#TODO Oracle image cleanup OVA?
 	$(call clean_plugin_tool)
 
 deepclean: clean
@@ -244,3 +289,4 @@ deepclean: clean
 	rm -rf dist/
 	rm -f $(AWS_TARGET_PATH)/*.tar
 	rm -f $(AZURE_TARGET_PATH)/*.tar
+	#TODO ORACLE_TARGET_PATH cleaning

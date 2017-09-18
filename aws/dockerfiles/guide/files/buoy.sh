@@ -9,8 +9,8 @@ IS_LEADER=$(docker node inspect self -f '{{ .ManagerStatus.Leader }}')
 
 if [[ "$IS_LEADER" == "true" ]]; then
     # we are the leader, so call buoy. We only need to call once, so we only call from the current leader.
-    NUM_MANAGERS=$(docker info | grep Managers | cut -f2 -d: | sed -e 's/^[ \t]*//')
-    TOTAL_NODES=$(docker info | grep Nodes | cut -f2 -d: | sed -e 's/^[ \t]*//')
+    NUM_MANAGERS=$(docker info --format '{{ .Swarm.Managers }}')
+    TOTAL_NODES=$(docker info --format '{{ .Swarm.Nodes }}')
     NUM_WORKERS=$(expr $TOTAL_NODES - $NUM_MANAGERS)
     NUM_SERVICES=$(docker service ls -q | wc -w)
     DOCKER_VERSION=$(docker version --format '{{.Server.Version}}')

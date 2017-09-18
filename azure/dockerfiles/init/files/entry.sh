@@ -227,6 +227,7 @@ run_system_containers()
         --label com.docker.editions.system \
         --log-driver=json-file \
         --name=editions_logger \
+        --log-opt max-size=50m \
         --restart=always \
         -d \
         -e ROLE \
@@ -251,6 +252,7 @@ run_system_containers()
     docker run \
         --label com.docker.editions.system \
         --log-driver=json-file \
+        --log-opt max-size=50m \
         --restart=always  \
         --name=editions_guide \
         -d \
@@ -271,7 +273,6 @@ run_system_containers()
         -e SWARM_LOGS_STORAGE_ACCOUNT \
         -e SWARM_INFO_STORAGE_ACCOUNT \
         -v /var/run/docker.sock:/var/run/docker.sock \
-        -v /usr/bin/docker:/usr/bin/docker \
         docker4x/guide-azure:$DOCKER_FOR_IAAS_VERSION
 
     if [ "$ROLE" = "MANAGER" ]; then
@@ -279,6 +280,7 @@ run_system_containers()
         docker run \
             --label com.docker.editions.system \
             --log-driver=json-file \
+            --log-opt max-size=50m \
             --name=meta-azure \
             --restart=always \
             -d \
@@ -302,6 +304,7 @@ run_system_containers()
             -d \
             --label com.docker.editions.system \
             --log-driver=json-file  \
+            --log-opt max-size=50m \
             --name=editions_controller \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v /var/lib/docker/editions:/var/lib/docker/editions \

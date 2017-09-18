@@ -1,13 +1,13 @@
-.PHONY: lb-controller
+.PHONY: elb-controller
 
-default: lb-controller
-	VERSION="$(ORACLE_TAG_VERSION)" ./build_and_push_all.sh
+default: elb-controller
+	VERSION="$(AWS_TAG_VERSION)" ./build_and_push_all.sh
 
-lb-controller:
-	@echo "Building LB Controller"
-	cd lb-controller/files/container && \
-	VERSION="$(ORACLE_TAG_VERSION)" \
+elb-controller:
+	@echo "Building ELB Controller"
+	cd elb-controller/files/container && \
+	VERSION="$(AWS_TAG_VERSION)" \
 	DOCKER_REPO="docker4x/l4controller-aws" \
-	DOCKER_TAG="$(ORACLE_TAG_VERSION)" \
+	DOCKER_TAG="$(AWS_TAG_VERSION)" \
 	DOCKER_TAG_LATEST=true \
 	make -k container

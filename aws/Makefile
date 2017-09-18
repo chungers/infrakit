@@ -13,8 +13,6 @@ DEV := 0
 
 AMI_S3_BUCKET := docker-ci-editions
 AMI_S3_PATH := ami
-
-
 STAGE_S3_BUCKET := editions-stage-us-east-1-150610-005505
 
 ifneq ($(EDITIONS_COMMIT), )
@@ -95,13 +93,14 @@ nightly:
 	$(TOOLSRUN) notify.py
 
 template: buildtools
-	@echo "\033[0;1;34m++ Using bucket: $(AMI_S3_BUCKET) and path of: $(AMI_S3_PATH)/ami_id.out \033[0m"
+	@echo "\033[0;1;34m++ Using bucket: $(AMI_S3_BUCKET) and path of: $(AMI_S3_PATH)/$(AMI_OUT) \033[0m"
 	@echo "\033[0;1;34m++ Create AWS template of EDITIONS_VERSION: ${EDITIONS_VERSION} on CHANNEL: ${CHANNEL}\033[0m"
 	$(CFNRUN) -e FLAGS="--template" $(CFNGEN)
 
-buildtools: clean validate-meta
+buildtools: clean
 	-mkdir -p tmp/ $(ROOT_DIR)/dist/
 	@echo "\033[0;1;34m+++ Build cfngen image - Editions Commit: ${EDITIONS_COMMIT} - from $(AMI_S3_PATH)/$(AMI_OUT) \033[0m"
+	$(MAKE) validate-meta
 	docker build -t $(CFNGEN) -f release/cfn_gen/Dockerfile release/cfn_gen
 	@echo "\033[0;1;34m+++ Build common tools image\033[0m"
 	docker build -t $(TOOLS) -f release/Dockerfile.tools .

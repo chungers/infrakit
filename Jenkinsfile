@@ -13,9 +13,9 @@ wrappedNode(label: "docker-edge && ubuntu && aufs") {
   stage(name: "build JSON templates") {
     sh("make templates TEST_JENKINS=true")
   }
-  stage(name: "validate json files") {
+  stage(name: "validate template files") {
     withTool("jq@1.5") {
-      def cloudFormation = (ArrayList)(sh(script: 'find . -iname "*.json"', returnStdout: true).split("\r?\n"))
+      def cloudFormation = (ArrayList)(sh(script: 'find . -iname "*.tmpl"', returnStdout: true).split("\r?\n"))
       for (i in cloudFormation) {
         try {
           sh("jq . '${i}' >/dev/null")

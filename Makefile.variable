@@ -1,9 +1,9 @@
 ifeq ($(EDITIONS_TAG),)
-	EDITIONS_TAG := ce
+	EDITIONS_TAG := ce-rc2
 endif
 
 ifeq ($(EDITIONS_DOCKER_VERSION),)
-	EDITIONS_DOCKER_VERSION := 17.07.0
+	EDITIONS_DOCKER_VERSION := 17.09.0
 endif
 
 ifeq ($(FORCE),)
@@ -24,6 +24,21 @@ ifeq ($(RELEASE),false)
 		EDITIONS_TAG := $(EDITIONS_TAG)-dev
 	endif
 endif
+
+### MOBY COMMIT
+# Check if MOBY_COMMIT has been defined via env
+ifeq ($(MOBY_COMMIT),)
+ifeq ($(EE),yes)
+	MOBY_COMMIT := eade98cbea46d9e834ab359dc5386a7d2d248ea3
+	DOCKER_RELEASE_BUILD := ee-17.06-64
+else
+	MOBY_COMMIT := 64f481ac4d0da244ba8dbcd27a0c72de262dbb1a
+	DOCKER_RELEASE_BUILD := ce-17.09-17
+endif
+endif
+
+### STATIC DOCKER
+DOCKER_BIN_URL := http://docker-ci-artifacts.s3.amazonaws.com/ci.qa.aws.dckr.io/jenkins-docker-release-packaging-$(DOCKER_RELEASE_BUILD)/docker-amd64.tgz
 
 # Check if DOCKER_VERSION has been set
 ifeq ($(DOCKER_VERSION),)
@@ -144,22 +159,13 @@ AWS_TARGET_TEMPLATE := $(AWS_TARGET_PATH)/Docker.tmpl
 GCP_TARGET_PATH := dist/gcp/$(CHANNEL)/$(GCP_TAG_VERSION)
 ORACLE_TARGET_PATH := dist/oracle/$(CHANNEL)/$(ORACLE_TAG_VERSION)
 
-
-### MOBY COMMIT
-# Check if MOBY_COMMIT has been defined via env
-ifeq ($(MOBY_COMMIT),)
-ifeq ($(EE),yes)
-	MOBY_COMMIT := eade98cbea46d9e834ab359dc5386a7d2d248ea3
-else
-	MOBY_COMMIT := d3ff203d023f04eb2b20350c1c240539e4cd2339
-endif
-endif
-
 ### DDC VARS
 UCP_TAG := 2.2.2
 DTR_TAG := 2.3.2
 
 ### COMPOSE
 COMPOSE_VERSION := 1.15.0
+
+
 
 export

@@ -1,15 +1,16 @@
 NAMESPACE ?= docker4x
-IMAGE := $(NAMESPACE)/rtf
+DOCKER_VERSION ?= 17.06.1-ce
+IMAGE := $(NAMESPACE)/rtf:$(DOCKER_VERSION)
 DOCKER := /usr/bin/docker
 DOCKER_SOCK := /var/run/docker.sock
-DOCKER_VERSION ?= 17.06.1-ce
-RUN_RTF := docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) -t $(IMAGE)
 
-push: build
-	docker image push $(IMAGE)
+RUN_RTF := docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) -t $(IMAGE)
 
 build:
 	docker build --build-arg DOCKER_VERSION=$(DOCKER_VERSION) -t $(IMAGE) .
+ifeq ($(DOCKER_PUSH),true)
+	docker image push $(IMAGE)
+endif
 
 run: build
 	$(RUN_RTF) -v run

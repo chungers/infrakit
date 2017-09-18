@@ -17,7 +17,7 @@ echo -e "+ \033[1mCreating dist folder:\033[0m $AZURE_TARGET_PATH"
 # Create directory and make sure to chmod it
 mkdir -p $ROOT_DIR/$AZURE_TARGET_PATH 
 if [ $? ]; then
-  docker run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
+  docker container run --rm -v $ROOT_DIR:/data alpine sh -c "chmod +rwx -R /data/dist"
   mkdir -p $ROOT_DIR/$AZURE_TARGET_PATH 
 fi
 
@@ -37,7 +37,6 @@ function check_image () {
   docker container run --rm \
     -v ${CURR_DIR}/${FOLDER}/tests:/tests \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v /usr/bin/docker:/usr/bin/docker \
     --entrypoint sh \
     ${FINAL_IMAGE} /tests/run.sh
 }
@@ -67,7 +66,11 @@ for IMAGE in init guide create-sp ddc-init cloud logger meta lookup
 do
   FINAL_IMAGE="${NAMESPACE}/${IMAGE}-azure:${TAG_VERSION}"
   echo -e "++ \033[1mBuilding image:\033[0m ${FINAL_IMAGE}"
-  docker build --pull -t "${FINAL_IMAGE}" -f "${IMAGE}/Dockerfile" ${IMAGE}
+  BUILD_ARGS=""
+  if [ "$IMAGE" = "init" ] || [ "$IMAGE" = "guide" ]; then
+    BUILD_ARGS+=" --build-arg DOCKER_BIN_URL=$DOCKER_BIN_URL"
+  fi
+  docker image build --pull -t "${FINAL_IMAGE}" $BUILD_ARGS -f "${IMAGE}/Dockerfile" ${IMAGE}
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
     docker push "${FINAL_IMAGE}"
@@ -79,7 +82,7 @@ do
 done
 
 # build and push walinuxagent image
-docker build --pull -t docker4x/agent-azure:${TAG_VERSION} -f walinuxagent/Dockerfile walinuxagent
+docker image build --pull -t docker4x/agent-azure:${TAG_VERSION} -f walinuxagent/Dockerfile walinuxagent
 if [ "${DOCKER_PUSH}" = true ]; then
   docker push "docker4x/agent-azure:${TAG_VERSION}"
   if ! docker_tag_exists "${FINAL_IMAGE}"; then
@@ -97,9 +100,9 @@ if [ "${DOCKER_PUSH}" -eq 1 ]; then
 fi
 
 # Build upgrade-azure-core passing in the necessary env vars
-docker build --pull -t docker4x/upgrade-azure-core:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
+docker image build --pull -t docker4x/upgrade-azure-core:${TAG_VERSION} --build-arg VERSION=${EDITIONS_DOCKER_VERSION} --build-arg CHANNEL=${CHANNEL} -f upgrade/Dockerfile upgrade
 # Build upgrade-azure wrapper that will invoke upgrade-azure-core without users having to be aware of the Customdata mount
-docker build --pull -t docker4x/upgrade-azure:${UPGRADE_TAG} --build-arg TAG_VERSION=${TAG_VERSION} -f upgrade/Dockerfile.wrapper upgrade
+docker image build --pull -t docker4x/upgrade-azure:${UPGRADE_TAG} --build-arg TAG_VERSION=${TAG_VERSION} -f upgrade/Dockerfile.wrapper upgrade
 
 # Ensure that the upgrade image has :YY.MM-latest tag as well so that upgrade.sh in shell can easily refer to it
 docker tag "${NAMESPACE}/upgrade-azure-core:${TAG_VERSION}" "${NAMESPACE}/upgrade-azure-core:${UPGRADE_TAG}"

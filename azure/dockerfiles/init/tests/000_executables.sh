@@ -8,3 +8,4 @@ test -x /usr/bin/azureleader.py
 test -x /usr/bin/sakey.py
 test -x /usr/bin/aztags.py 
 test -x /usr/bin/buoy
+test -x /usr/bin/docker

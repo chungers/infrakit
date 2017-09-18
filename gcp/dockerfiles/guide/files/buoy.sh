@@ -52,8 +52,8 @@ if [ "$IS_LEADER" == "true" ]; then
     exit 0
   fi
 
-  NUM_MANAGERS=$(docker system info | grep Managers | cut -f2 -d: | sed -e 's/^[ \t]*//')
-  TOTAL_NODES=$(docker system info | grep Nodes | cut -f2 -d: | sed -e 's/^[ \t]*//')
+  NUM_MANAGERS=$(docker info --format '{{ .Swarm.Managers }}')
+  TOTAL_NODES=$(docker info --format '{{ .Swarm.Nodes }}')
   NUM_WORKERS=$(expr $TOTAL_NODES - $NUM_MANAGERS)
   NUM_SERVICES=$(docker service ls -q | wc -w)
 

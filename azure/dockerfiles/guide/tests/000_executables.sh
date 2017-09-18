@@ -16,3 +16,4 @@ test -x /usr/bin/azrejoin.py
 test -x /usr/bin/kick_azrejoin_listener.sh
 test -x /usr/bin/aznodewatch.py 
 test -x /usr/bin/kick_aznodewatch.sh
+test -x /usr/bin/docker

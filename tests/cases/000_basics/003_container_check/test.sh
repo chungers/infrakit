@@ -11,17 +11,12 @@ AZURE_CONTAINERS="logger agent"
 AWS_CONTAINERS="shell"
 PLATFORM=
 
-if [ $VERSION -z ]; then
-    VERSION="17.06"
-fi
-
-
 # Function that checks both for a container name
 # and if it is up
 check_container() {
   CONTAINER=$(docker container ls --filter name=$1 --filter status="running")
   echo $CONTAINER | assert_contains $1
-  echo $CONTAINER | assert_contains $VERSION
+  echo $CONTAINER | assert_contains $EXPECTED_VERSION
 }
 
 # Determine whether the platform is Azure or AWS

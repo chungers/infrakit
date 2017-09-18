@@ -365,7 +365,7 @@ def create_rg_ddc_template(vhd_sku, vhd_version, offer_id, release_channel, dock
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('dtrStorageAccount')]",
-            "apiVersion": "variables('storApiVersion')]",
+            "apiVersion": "[variables('storageApiVersion')]",
             "location": "[variables('storageLocation')]",
             "tags": {
                 "provider": "[toUpper(variables('DockerProviderTag'))]"
