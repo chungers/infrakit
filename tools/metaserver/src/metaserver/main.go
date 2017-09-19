@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 )
 
@@ -68,15 +69,20 @@ func handleRequests(iaasProvider string) {
 
 	// specific to the service
 	var w Web
-	if iaasProvider == "aws" {
-		fmt.Println("AWS service")
-		w = AWSWeb{}
-	} else if iaasProvider == "azure" {
-		fmt.Println("Azure service")
-		w = AzureWeb{}
-	} else {
-		fmt.Printf("%v service\n", iaasProvider)
-		panic("-iaas_provider was not a valid option.")
+	switch iaasProvider {
+
+	case "aws":
+		fmt.Println("AWS service started")
+		w = NewAWSClient()
+	case "azure":
+		fmt.Println("Azure service started")
+		w = NewAzureClient()
+	case "oracle":
+		fmt.Println("Oracle service started")
+		w = NewOracleClient()
+	default:
+		logrus.Infof("%v service\n", iaasProvider)
+		logrus.Fatal("-iaas_provider was not a valid option.")
 	}
 
 	// used to get the swarm tokens
@@ -102,18 +108,24 @@ func handleRequests(iaasProvider string) {
 func validate(iaasProvider string) {
 	// validate that we have everything we need in order to start. If anything is missing.
 	// Then exit.
-	if iaasProvider == "aws" {
+	switch iaasProvider {
+	case "aws":
 		// make sure our required ENV variables are available, if not fail.
 		if !checkEnvVars("WORKER_SECURITY_GROUP_ID", "MANAGER_SECURITY_GROUP_ID") {
 			os.Exit(1)
 		}
-	} else if iaasProvider == "azure" {
+	case "azure":
 		// make sure our required ENV variables are available, if not fail.
 		if !checkEnvVars("APP_ID", "APP_SECRET", "ACCOUNT_ID", "TENANT_ID", "GROUP_NAME", "VMSS_MGR", "VMSS_WRK") {
 			os.Exit(1)
 		}
-	} else {
-		fmt.Printf("ERROR: -iaas_provider %v was not a valid option. please pick either 'aws' or 'azure'", iaasProvider)
+	case "oracle":
+		// make sure our required ENV variables are available, if not fail.
+		if !checkEnvVars("USER_OCID", "COMPONENT_OCID", "TENANT_OCID", "FINGERPRINT", "KEY_FILE", "REGION", "STACK_NAME") {
+			os.Exit(1)
+		}
+	default:
+		logrus.Infof("ERROR: -iaas_provider %v was not a valid option. please pick either 'aws' or 'azure'", iaasProvider)
 		os.Exit(1)
 	}
 }
@@ -121,7 +133,7 @@ func validate(iaasProvider string) {
 func checkEnvVars(envVars ...string) bool {
 	for _, envVar := range envVars {
 		if os.Getenv(envVar) == "" {
-			fmt.Printf("ERROR: Missing environment variable: %s.\n", envVar)
+			logrus.Infof("ERROR: Missing environment variable: %s.\n", envVar)
 			return false
 		}
 	}

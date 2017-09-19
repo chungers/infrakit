@@ -3,11 +3,15 @@ DOCKER_VERSION ?= 17.06.1-ce
 IMAGE := $(NAMESPACE)/rtf:$(DOCKER_VERSION)
 DOCKER := /usr/bin/docker
 DOCKER_SOCK := /var/run/docker.sock
+DOCKER_VERSION ?= 17.06.1-ce
+KEY_FILE ?= /home/docker/id_rsa
+RUN_RTF := docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) -t $(IMAGE)
+
 
 RUN_RTF := docker container run -v $(DOCKER):$(DOCKER) -v $(DOCKER_SOCK):$(DOCKER_SOCK) -t $(IMAGE)
 
 build:
-	docker build --build-arg DOCKER_VERSION=$(DOCKER_VERSION) -t $(IMAGE) .
+	docker build --build-arg DOCKER_VERSION=$(DOCKER_VERSION) --build-arg KEY_PATH=$(KEY_FILE) -t $(IMAGE) .
 ifeq ($(DOCKER_PUSH),true)
 	docker image push $(IMAGE)
 endif

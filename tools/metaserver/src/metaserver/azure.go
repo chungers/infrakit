@@ -211,3 +211,8 @@ func getVMSSList(client compute.VirtualMachineScaleSetVMsClient, env map[string]
 	}
 	return vms, nil
 }
+
+// NewAzureClient returns a struct of the web struct
+func NewAzureClient() AzureWeb {
+	return AzureWeb{}
+}

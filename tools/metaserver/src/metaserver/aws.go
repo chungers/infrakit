@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -153,7 +154,7 @@ func awsInstances(customFilters []*ec2.Filter) []WebInstance {
 	if err != nil {
 		// Print the error, cast err to awserr.Error to get the Code and
 		// Message from an error.
-		fmt.Println(err.Error())
+		logrus.Error(err.Error())
 	}
 
 	var instances []WebInstance
@@ -185,4 +186,9 @@ func awsInstances(customFilters []*ec2.Filter) []WebInstance {
 		}
 	}
 	return instances
+}
+
+// NewAWSClient returns a struct of the web struct
+func NewAWSClient() AWSWeb {
+	return AWSWeb{}
 }

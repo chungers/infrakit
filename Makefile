@@ -41,7 +41,6 @@ dockerimages: deepclean tools
 	$(MAKE) gcp-dockerimages
 	$(MAKE) build-rtf
 
-
 dockerimages-walinuxagent:
 	@echo "\033[32m+ $@ - EDITIONS_VERSION: ${EDITIONS_VERSION}\033[0m"
 	$(MAKE) -C azure walinuxagent TAG="$(AZURE_TAG_VERSION)"
