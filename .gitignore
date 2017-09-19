@@ -19,6 +19,8 @@ azure/dockerfiles/*/files/azendpt.py
 azure/dockerfiles/*/files/dockerutils.py
 azure/dockerfiles/alb-controller/container/bin/*
 gcp/dockerfiles/files/bin/*
+oracle/dockerfiles/*/bin/
+oracle/dockerfiles/lb-controller/container/bin/*
 tools/*/bin/*
 tools/*/src/*/vendor/
 aws/release/tmp
