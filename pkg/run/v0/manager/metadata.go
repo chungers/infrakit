@@ -82,9 +82,9 @@ func (updatable *metadataModel) pluginModel() (chan func(map[string]interface{})
 
 				// update config
 				snapshot := map[string]interface{}{}
-				objects, err := updatable.manager.Inspect()
+				objects, err := updatable.manager.Describe()
 				if err != nil {
-					log.Warn("Error inspecting manager states", "err", err)
+					log.Warn("Error describing manager states", "err", err)
 					continue
 				}
 				for _, o := range objects {

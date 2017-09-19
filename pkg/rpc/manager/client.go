@@ -52,12 +52,20 @@ func (c client) Enforce(specs []types.Spec) error {
 	return err
 }
 
-// Inspect returns the current state of the infrastructure
-func (c client) Inspect() ([]types.Object, error) {
-	req := InspectRequest{}
-	resp := InspectResponse{}
-	err := c.client.Call("Manager.Inspect", req, &resp)
+// Describe returns the current state of the infrastructure
+func (c client) Describe() ([]types.Object, error) {
+	req := DescribeRequest{}
+	resp := DescribeResponse{}
+	err := c.client.Call("Manager.Describe", req, &resp)
 	return resp.Objects, err
+}
+
+// Specs returns the current state of the infrastructure
+func (c client) Specs() ([]types.Spec, error) {
+	req := SpecsRequest{}
+	resp := SpecsResponse{}
+	err := c.client.Call("Manager.Specs", req, &resp)
+	return resp.Specs, err
 }
 
 // Terminate destroys all resources associated with the specs

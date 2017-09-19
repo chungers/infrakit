@@ -5,55 +5,11 @@ import (
 	"fmt"
 
 	"github.com/docker/infrakit/pkg/cli"
-	"github.com/docker/infrakit/pkg/controller"
 	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/rpc/client"
-	"github.com/docker/infrakit/pkg/spi/flavor"
-	"github.com/docker/infrakit/pkg/spi/group"
-	"github.com/docker/infrakit/pkg/spi/instance"
-	"github.com/docker/infrakit/pkg/spi/metadata"
-	"github.com/docker/infrakit/pkg/spi/resource"
 	"github.com/docker/infrakit/pkg/template"
 	"github.com/spf13/cobra"
-
-	// v0 loads these packages
-	_ "github.com/docker/infrakit/pkg/cli/v0/controller"
-	_ "github.com/docker/infrakit/pkg/cli/v0/event"
-	_ "github.com/docker/infrakit/pkg/cli/v0/flavor"
-	_ "github.com/docker/infrakit/pkg/cli/v0/group"
-	_ "github.com/docker/infrakit/pkg/cli/v0/instance"
-	_ "github.com/docker/infrakit/pkg/cli/v0/loadbalancer"
-	_ "github.com/docker/infrakit/pkg/cli/v0/metadata"
-	_ "github.com/docker/infrakit/pkg/cli/v0/resource"
 )
-
-func init() {
-	cli.Register(controller.InterfaceSpec,
-		[]cli.CmdBuilder{
-			Info,
-		})
-
-	cli.Register(instance.InterfaceSpec,
-		[]cli.CmdBuilder{
-			Info,
-		})
-	cli.Register(flavor.InterfaceSpec,
-		[]cli.CmdBuilder{
-			Info,
-		})
-	cli.Register(group.InterfaceSpec,
-		[]cli.CmdBuilder{
-			Info,
-		})
-	cli.Register(resource.InterfaceSpec,
-		[]cli.CmdBuilder{
-			Info,
-		})
-	cli.Register(metadata.InterfaceSpec,
-		[]cli.CmdBuilder{
-			Info,
-		})
-}
 
 // Info returns the info command which works for multiple interfaces (e.g. instance, flavor, etc.)
 func Info(name string, services *cli.Services) *cobra.Command {

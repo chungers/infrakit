@@ -34,20 +34,23 @@ var (
 type Leadership interface {
 	// IsLeader returns true only if for certain this is a leader. False if not or unknown.
 	IsLeader() (bool, error)
+
+	// LeaderLocation returns the location of the leader
+	LeaderLocation() (*url.URL, error)
 }
 
 // Manager is the interface for interacting locally or remotely with the manager
 type Manager interface {
 	Leadership
 
-	// LeaderLocation returns the location of the leader
-	LeaderLocation() (*url.URL, error)
-
 	// Enforce enforces infrastructure state to match that of the specs
 	Enforce(specs []types.Spec) error
 
-	// Inspect returns the current state of the infrastructure
-	Inspect() ([]types.Object, error)
+	// Specs returns the desired specification of the cluster
+	Specs() ([]types.Spec, error)
+
+	// Describe returns the current state of the infrastructure
+	Describe() ([]types.Object, error)
 
 	// Terminate destroys all resources associated with the specs
 	Terminate(specs []types.Spec) error
@@ -156,8 +159,13 @@ func (m *manager) Enforce(specs []types.Spec) error {
 	return nil
 }
 
-// Inspect returns the current state of the infrastructure
-func (m *manager) Inspect() ([]types.Object, error) {
+// Specs returns the usr's specification of the infrastructure
+func (m *manager) Specs() ([]types.Spec, error) {
+	return nil, nil
+}
+
+// Describe returns the current state of the infrastructure
+func (m *manager) Describe() ([]types.Object, error) {
 	return nil, nil
 }
 

@@ -79,22 +79,41 @@ func (p *Manager) Enforce(_ *http.Request, req *EnforceRequest, resp *EnforceRes
 	return p.manager.Enforce(req.Specs)
 }
 
-// InspectRequest is the rpc request
-type InspectRequest struct {
+// DescribeRequest is the rpc request
+type DescribeRequest struct {
 }
 
-// InspectResponse is the rpc response
-type InspectResponse struct {
+// DescribeResponse is the rpc response
+type DescribeResponse struct {
 	Objects []types.Object
 }
 
-// Inspect is the rpc method for Manager.Inspect
-func (p *Manager) Inspect(_ *http.Request, req *InspectRequest, resp *InspectResponse) error {
-	objects, err := p.manager.Inspect()
+// Describe is the rpc method for Manager.Describe
+func (p *Manager) Describe(_ *http.Request, req *DescribeRequest, resp *DescribeResponse) error {
+	objects, err := p.manager.Describe()
 	if err != nil {
 		return err
 	}
 	resp.Objects = objects
+	return nil
+}
+
+// SpecsRequest is the rpc request
+type SpecsRequest struct {
+}
+
+// SpecsResponse is the rpc response
+type SpecsResponse struct {
+	Specs []types.Spec
+}
+
+// Specs is the rpc method for Manager.Specs
+func (p *Manager) Specs(_ *http.Request, req *SpecsRequest, resp *SpecsResponse) error {
+	specs, err := p.manager.Specs()
+	if err != nil {
+		return err
+	}
+	resp.Specs = specs
 	return nil
 }
 
