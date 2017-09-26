@@ -39,6 +39,7 @@ dockerimages: deepclean tools
 	$(MAKE) aws-dockerimages
 	$(MAKE) azure-dockerimages
 	$(MAKE) gcp-dockerimages
+	$(MAKE) oracle-dockerimages
 	$(MAKE) build-rtf
 
 dockerimages-walinuxagent:

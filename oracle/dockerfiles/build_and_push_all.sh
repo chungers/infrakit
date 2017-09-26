@@ -62,6 +62,7 @@ do
   if [ "$IMAGE" = "shell" ]; then
     BUILD_ARGS="--build-arg COMPOSE_VERSION=$COMPOSE_VERSION"
   fi
+  ls -lah ${IMAGE}
   docker build --pull -t "${FINAL_IMAGE}" $ARGS -f "${IMAGE}/Dockerfile" ${IMAGE}
   check_image ${FINAL_IMAGE}
   if [ "${DOCKER_PUSH}" = true ]; then
