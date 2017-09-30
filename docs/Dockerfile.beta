@@ -1,9 +1,0 @@
-FROM appaws/docs-beta:latest
-MAINTAINER French Ben <frenchben@docker.com> (@frenchben)
-
-ENV PROJECT=editions
-
-COPY . /src
-COPY ./layouts/ /docs/layouts/
-COPY ./content/ /docs/content/
-COPY ./config.toml /docs/

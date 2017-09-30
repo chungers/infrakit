@@ -1,4 +1,0 @@
-Host github.com
-  IdentityFile /run/secrets/gh-ssh-key
-  StrictHostKeyChecking no
-  UserKnownHostsFile /dev/null

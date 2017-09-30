@@ -1,1 +1,0 @@
-FROM dockercloud/registration:latest
