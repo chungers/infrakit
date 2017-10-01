@@ -41,24 +41,24 @@ func init() {
 // Options capture the options for starting up the group controller.
 type Options struct {
 	// PollInterval is the frequency for syncing the state
-	PollInterval time.Duration
+	PollInterval types.Duration
 
 	// MaxParallelNum is the max number of parallel instance operation. Default =0 (no limit)
 	MaxParallelNum uint
 
 	// PollIntervalGroupSpec polls for group spec at this interval to update the metadata paths
-	PollIntervalGroupSpec time.Duration
+	PollIntervalGroupSpec types.Duration
 
 	// PollIntervalGroupDetail polls for group details at this interval to update the metadata paths
-	PollIntervalGroupDetail time.Duration
+	PollIntervalGroupDetail types.Duration
 }
 
 // DefaultOptions return an Options with default values filled in.
 var DefaultOptions = Options{
-	PollInterval:            10 * time.Second,
+	PollInterval:            types.FromDuration(10 * time.Second),
 	MaxParallelNum:          0,
-	PollIntervalGroupSpec:   10 * time.Second,
-	PollIntervalGroupDetail: 10 * time.Second,
+	PollIntervalGroupSpec:   types.FromDuration(1 * time.Second),
+	PollIntervalGroupDetail: types.FromDuration(30 * time.Second),
 }
 
 // Run runs the plugin, blocking the current thread.  Error is returned immediately
@@ -91,14 +91,14 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 	}
 
 	groupPlugin := group_plugin.NewGroupPlugin(instancePluginLookup, flavorPluginLookup,
-		options.PollInterval, options.MaxParallelNum)
+		options.PollInterval.Duration(), options.MaxParallelNum)
 
 	// Start a poller to load the snapshot and make that available as metadata
 	updateSnapshot := make(chan func(map[string]interface{}))
 	stopSnapshot := make(chan struct{})
 	go func() {
-		tick := time.Tick(options.PollIntervalGroupSpec)
-		tick2 := time.Tick(options.PollIntervalGroupDetail)
+		tick := time.Tick(options.PollIntervalGroupSpec.Duration())
+		tick2 := time.Tick(options.PollIntervalGroupDetail.Duration())
 		for {
 			select {
 			case <-tick:

@@ -1,7 +1,7 @@
 package aws
 
 import (
-	"time"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
@@ -15,10 +15,13 @@ import (
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/plugin"
 	aws_instance "github.com/docker/infrakit/pkg/provider/aws/plugin/instance"
+	aws_loadbalancer "github.com/docker/infrakit/pkg/provider/aws/plugin/loadbalancer"
 	aws_metadata "github.com/docker/infrakit/pkg/provider/aws/plugin/metadata"
 	"github.com/docker/infrakit/pkg/run"
+	"github.com/docker/infrakit/pkg/run/local"
 	"github.com/docker/infrakit/pkg/spi/event"
 	"github.com/docker/infrakit/pkg/spi/instance"
+	"github.com/docker/infrakit/pkg/spi/loadbalancer"
 	"github.com/docker/infrakit/pkg/spi/metadata"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -26,6 +29,24 @@ import (
 const (
 	// Kind is the canonical name of the plugin for starting up, etc.
 	Kind = "aws"
+
+	// EnvRegion is the env for aws region.  Don't set this if want auto detect.
+	EnvRegion = "INFRAKIT_AWS_REGION"
+
+	// EnvStackName is the env for stack name
+	EnvStackName = "INFRAKIT_AWS_STACKNAME"
+
+	// EnvMetadataTemplateURL is the location of the template for Metadata plugin
+	EnvMetadataTemplateURL = "INFRAKIT_AWS_METADATA_TEMPLATE_URL"
+
+	// EnvMetadataPollInterval is the env to set fo polling for metadata updates
+	EnvMetadataPollInterval = "INFRAKIT_AWS_METADATA_POLL_INTERVAL"
+
+	// EnvNamespaceTags is the env to set for namespace tags. It's k=v,...
+	EnvNamespaceTags = "INFRAKIT_AWS_NAMESPACE_TAGS"
+
+	// EnvELBNames is the name of the ELB ENV variable name for the ELB plugin.
+	EnvELBNames = "INFRAKIT_AWS_ELB_NAMES"
 )
 
 var (
@@ -41,17 +62,35 @@ type Options struct {
 	// Namespace is a set of kv pairs for tags that namespaces the resource instances
 	Namespace map[string]string
 
+	// ELBNames is a list of names for ELB instances to start the L4 plugins
+	ELBNames []string
+
 	aws_metadata.Options `json:",inline" yaml:",inline"`
+}
+
+func defaultNamespace() map[string]string {
+	t := map[string]string{}
+	list := local.Getenv(EnvNamespaceTags, "")
+	for _, v := range strings.Split(list, ",") {
+		p := strings.Split(v, "=")
+		if len(p) == 2 {
+			t[p[0]] = p[1]
+		}
+	}
+	return t
 }
 
 // DefaultOptions return an Options with default values filled in.
 var DefaultOptions = Options{
-	Namespace: map[string]string{},
+	Namespace: defaultNamespace(),
+	ELBNames:  strings.Split(local.Getenv(EnvELBNames, ""), ","),
 	Options: aws_metadata.Options{
+		Template:  local.Getenv(EnvMetadataTemplateURL, ""),
+		StackName: local.Getenv(EnvStackName, ""),
 		Options: aws_instance.Options{
-			Region: "us-west-1",
+			Region: local.Getenv(EnvRegion, ""), // empty string trigger auto-detect
 		},
-		PollInterval: 60 * time.Second,
+		PollInterval: types.MustParseDuration(local.Getenv(EnvMetadataPollInterval, "5s")),
 	},
 }
 
@@ -81,11 +120,22 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 	if err != nil {
 		return
 	}
+
+	l4Map := map[string]loadbalancer.L4{}
+	elbClient := elb.New(builder.Config)
+	for _, elbName := range options.ELBNames {
+		var elbPlugin loadbalancer.L4
+		elbPlugin, err = aws_loadbalancer.NewELBPlugin(elbClient, elbName)
+		if err != nil {
+			return
+		}
+		l4Map[elbName] = elbPlugin
+	}
+
 	autoscalingClient := autoscaling.New(builder.Config)
 	cloudWatchLogsClient := cloudwatchlogs.New(builder.Config)
 	dynamodbClient := dynamodb.New(builder.Config)
 	ec2Client := ec2.New(builder.Config)
-	elbClient := elb.New(builder.Config)
 	iamClient := iam.New(builder.Config)
 	sqsClient := sqs.New(builder.Config)
 
@@ -95,6 +145,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 			"ec2-instance": (&aws_instance.Monitor{Plugin: instancePlugin}).Init(),
 		},
 		run.Metadata: metadataPlugin,
+		run.L4:       func() (map[string]loadbalancer.L4, error) { return l4Map, nil },
 		run.Instance: map[string]instance.Plugin{
 			"autoscaling-autoscalinggroup":    aws_instance.NewAutoScalingGroupPlugin(autoscalingClient, options.Namespace),
 			"autoscaling-launchconfiguration": aws_instance.NewLaunchConfigurationPlugin(autoscalingClient, options.Namespace),

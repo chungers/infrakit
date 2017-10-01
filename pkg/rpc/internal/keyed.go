@@ -77,28 +77,18 @@ func (k *Keyed) Keyed(name plugin.Name) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	l, subtype := name.GetLookupAndType()
 
-	log.Debug("Keyed", "m", m, "subtype", subtype, "V", debugV)
+	lookup, subtype := name.GetLookupAndType()
+	log.Debug("Keyed", "m", m, "lookup", lookup, "subtype", subtype, "V", debugV)
 
-	// Special case of single, unkeyed plugin object
-	if l == "." || l == "" {
-		if len(m) > 1 {
-			for _, v := range m {
-				return v, nil // first value
-			}
+	if (subtype == "" || lookup == ".") && len(m) == 1 {
+		// this case we just match the default .
+		for _, p := range m {
+			return p, nil
 		}
 	}
 
-	if subtype == "." || subtype == "" {
-		if len(m) > 1 {
-			for _, v := range m {
-				return v, nil // first value
-			}
-		}
-	}
-
-	if p, has := m[subtype]; has {
+	if p, has := m[lookup]; has {
 		return p, nil
 	}
 
@@ -108,6 +98,5 @@ func (k *Keyed) Keyed(name plugin.Name) (interface{}, error) {
 	if p, has := m[shifted]; has {
 		return p, nil
 	}
-
 	return nil, fmt.Errorf("not found: %v (key=%v)", name, subtype)
 }
