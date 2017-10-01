@@ -17,8 +17,8 @@ const (
 	// Kind is the canonical name of the plugin for starting up, etc.
 	Kind = "file"
 
-	// EnvOptionsDir is the environment variable to use to set the default value of Options.Dir
-	EnvOptionsDir = "INFRAKIT_INSTANCE_FILE_OPTIONS_DIR"
+	// EnvDir is the environment variable to use to set the default value of Options.Dir
+	EnvDir = "INFRAKIT_INSTANCE_FILE_DIR"
 )
 
 var (
@@ -37,7 +37,7 @@ type Options struct {
 
 // DefaultOptions return an Options with default values filled in.
 var DefaultOptions = Options{
-	Dir: local.Getenv(EnvOptionsDir, os.TempDir()),
+	Dir: local.Getenv(EnvDir, os.TempDir()),
 }
 
 // Run runs the plugin, blocking the current thread.  Error is returned immediately

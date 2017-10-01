@@ -1,6 +1,7 @@
 package group
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/docker/infrakit/pkg/controller"
@@ -15,6 +16,7 @@ import (
 	flavor_client "github.com/docker/infrakit/pkg/rpc/flavor"
 	instance_client "github.com/docker/infrakit/pkg/rpc/instance"
 	"github.com/docker/infrakit/pkg/run"
+	"github.com/docker/infrakit/pkg/run/local"
 	"github.com/docker/infrakit/pkg/spi/flavor"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/instance"
@@ -28,8 +30,11 @@ const (
 	// LookupName is the name used to look up the object via discovery
 	LookupName = "group"
 
-	// EnvOptionsBackend is the environment variable to use to set the default value of Options.Backend
-	EnvOptionsBackend = "INFRAKIT_MANAGER_OPTIONS_BACKEND"
+	// EnvPollInterval is the frequency for polling
+	EnvPollInterval = "INFRAKIT_GROUP_POLL_INTERVAL"
+
+	// EnvMaxParallelNum sets the max parallelism for creating instances
+	EnvMaxParallelNum = "INFRAKIT_GROUP_MAX_PARALLEL_NUM"
 )
 
 var log = logutil.New("module", "run/group")
@@ -53,12 +58,20 @@ type Options struct {
 	PollIntervalGroupDetail types.Duration
 }
 
+func mustParseUint(s string) uint {
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return uint(v)
+}
+
 // DefaultOptions return an Options with default values filled in.
 var DefaultOptions = Options{
-	PollInterval:            types.FromDuration(10 * time.Second),
-	MaxParallelNum:          0,
-	PollIntervalGroupSpec:   types.FromDuration(1 * time.Second),
-	PollIntervalGroupDetail: types.FromDuration(30 * time.Second),
+	PollInterval:            types.MustParseDuration(local.Getenv(EnvPollInterval, "10s")),
+	MaxParallelNum:          mustParseUint(local.Getenv(EnvMaxParallelNum, "0")),
+	PollIntervalGroupSpec:   types.MustParseDuration(local.Getenv(EnvPollInterval, "10s")),
+	PollIntervalGroupDetail: types.MustParseDuration(local.Getenv(EnvPollInterval, "10s")),
 }
 
 // Run runs the plugin, blocking the current thread.  Error is returned immediately

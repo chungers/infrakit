@@ -1,10 +1,12 @@
 package terraform
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/docker/infrakit/pkg/discovery"
@@ -37,6 +39,18 @@ func init() {
 	inproc.Register(Kind, Run, DefaultOptions)
 }
 
+// ImportResourceOptions defines a resource to import
+type ImportResourceOptions struct {
+	// Terraform resource type
+	ResourceType string
+
+	// Resource name in the group spec
+	ResourceName string
+
+	// ID of the resource to import
+	ResourceID string
+}
+
 // Options capture the options for starting up the plugin.
 type Options struct {
 	// Dir for storing plan files
@@ -51,14 +65,17 @@ type Options struct {
 	// ImportGroupSpecURL defines the group spec that the instance is imported into.
 	ImportGroupSpecURL string
 
-	// ImportInstanceID defines the instance ID to import
-	ImportInstanceID string
+	// ImportResources defines the instances to import
+	ImportResources []ImportResourceOptions
 
 	// ImportGroupID defines the group ID to import the resource into (optional)
 	ImportGroupID string
 
 	// NewOption is an example... see the plugins.json file in this directory.
 	NewOption string
+
+	// Envs are the environemtn variables to include when invoking terraform
+	Envs types.Any
 }
 
 // DefaultOptions return an Options with default values filled in.  If you want to expose these to the CLI,
@@ -74,7 +91,7 @@ var DefaultOptions = Options{
 func Run(plugins func() discovery.Plugins, name plugin.Name,
 	config *types.Any) (transport plugin.Transport, impls map[run.PluginCode]interface{}, onStop func(), err error) {
 
-	options := Options{}
+	options := DefaultOptions
 	err = config.Decode(&options)
 	if err != nil {
 		return
@@ -89,7 +106,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 
 	importInstSpec, err := parseInstanceSpecFromGroup(options.ImportGroupSpecURL, options.ImportGroupID)
 	if err != nil {
-		// If we cannot prase the group spec then we cannot import the resource, the plugin should
+		// If we cannot parse the group spec then we cannot import the resource, the plugin should
 		// not start since terraform is not managing the resource
 		log.Error("error parsing instance spec from group", "err", err)
 		return
@@ -98,11 +115,30 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 	// Do we have the new options?
 	log.Info("NewOptions", "value", options.NewOption, "Dir", options.Dir)
 
+	// Parse import options
+	resources := []*terraform.ImportResource{}
+	for _, importResource := range options.ImportResources {
+		resType := terraform.TResourceType(importResource.ResourceType)
+		resName := terraform.TResourceName(importResource.ResourceName)
+		resID := importResource.ResourceID
+		res := terraform.ImportResource{
+			ResourceType: &resType,
+			ResourceName: &resName,
+			ResourceID:   &resID,
+		}
+		resources = append(resources, &res)
+	}
+	// Environment varables to include when invoking terraform
+	envs, err := parseOptionsEnvs(&options.Envs)
+	if err != nil {
+		log.Error("error parsing configuration Env Options", "err", err)
+		return
+	}
 	impls = map[run.PluginCode]interface{}{
 		run.Instance: terraform.NewTerraformInstancePlugin(options.Dir, options.PollInterval.Duration(),
-			options.Standalone, &terraform.ImportOptions{
+			options.Standalone, envs, &terraform.ImportOptions{
 				InstanceSpec: importInstSpec,
-				InstanceID:   &options.ImportInstanceID,
+				Resources:    resources,
 			}),
 	}
 
@@ -165,4 +201,23 @@ func parseInstanceSpecFromGroup(groupSpecURL, groupID string) (*instance.Spec, e
 	log.Info("Successfully processed instance spec from group.", "group", groupSpec.ID, "spec", spec)
 
 	return &spec, nil
+}
+
+// parseOptionsEnvs processes the data to create a key=value slice of strings
+func parseOptionsEnvs(data *types.Any) ([]string, error) {
+	envs := []string{}
+	if data == nil || len(data.Bytes()) == 0 {
+		return envs, nil
+	}
+	err := json.Unmarshal(data.Bytes(), &envs)
+	if err != nil {
+		return envs, fmt.Errorf("Failed to unmarshall Options.Envs data: %v", err)
+	}
+	// Must be key=value pairs
+	for _, val := range envs {
+		if !strings.Contains(val, "=") {
+			return []string{}, fmt.Errorf("Env var is missing '=' character: %v", val)
+		}
+	}
+	return envs, err
 }

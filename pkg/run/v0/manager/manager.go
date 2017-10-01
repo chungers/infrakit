@@ -99,16 +99,16 @@ func defaultOptions() (options Options) {
 	switch options.Backend {
 	case "swarm":
 		options.Backend = "swarm"
-		options.Settings = DefaultBackendSwarmOptions
+		options.Settings = types.AnyValueMust(DefaultBackendSwarmOptions)
 	case "etcd":
 		options.Backend = "etcd"
-		options.Settings = DefaultBackendEtcdOptions
+		options.Settings = types.AnyValueMust(DefaultBackendEtcdOptions)
 	case "file":
 		options.Backend = "file"
-		options.Settings = DefaultBackendFileOptions
+		options.Settings = types.AnyValueMust(DefaultBackendFileOptions)
 	default:
 		options.Backend = "file"
-		options.Settings = DefaultBackendFileOptions
+		options.Settings = types.AnyValueMust(DefaultBackendFileOptions)
 	}
 
 	return
@@ -123,7 +123,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		panic("no plugins()")
 	}
 
-	options := Options{}
+	options := defaultOptions()
 	err = config.Decode(&options)
 	if err != nil {
 		return
@@ -136,7 +136,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 
 	switch strings.ToLower(options.Backend) {
 	case "etcd":
-		backendOptions := BackendEtcdOptions{}
+		backendOptions := DefaultBackendEtcdOptions
 		err = options.Settings.Decode(&backendOptions)
 		if err != nil {
 			return
@@ -148,7 +148,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 		log.Info("etcd backend", "leader", options.leader, "store", options.store, "cleanup", options.cleanUpFunc)
 	case "file":
-		backendOptions := BackendFileOptions{}
+		backendOptions := DefaultBackendFileOptions
 		err = options.Settings.Decode(&backendOptions)
 		if err != nil {
 			return
@@ -160,7 +160,7 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		}
 		log.Info("file backend", "leader", options.leader, "store", options.store, "cleanup", options.cleanUpFunc)
 	case "swarm":
-		backendOptions := BackendSwarmOptions{}
+		backendOptions := DefaultBackendSwarmOptions
 		err = options.Settings.Decode(&backendOptions)
 		if err != nil {
 			return
