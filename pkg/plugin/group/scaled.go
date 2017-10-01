@@ -83,13 +83,13 @@ func (s *scaledGroup) CreateOne(logicalID *instance.LogicalID) {
 		settings.config.Allocation,
 		index)
 	if err != nil {
-		log.Error("Failed to Prepare instance", "err", err)
+		log.Error("Failed to Prepare instance", "settings", settings, "err", err)
 		return
 	}
 
 	id, err := settings.instancePlugin.Provision(spec)
 	if err != nil {
-		log.Error("Failed to provision", "err", err)
+		log.Error("Failed to provision", "settings", settings, "err", err)
 		return
 	}
 
@@ -133,7 +133,7 @@ func (s *scaledGroup) Destroy(inst instance.Description, ctx instance.Context) e
 func (s *scaledGroup) List() ([]instance.Description, error) {
 	settings := s.latestSettings()
 
-	return settings.instancePlugin.DescribeInstances(s.memberTags, false)
+	return settings.instancePlugin.DescribeInstances(s.memberTags, true)
 }
 
 func (s *scaledGroup) Label() error {
