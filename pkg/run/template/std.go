@@ -22,14 +22,16 @@ func StdFunctions(engine *template.Template, plugins func() discovery.Plugins) *
 			// This is an override of the existing Var function
 			{
 				Name: "var",
-				Func: func(name string, optional ...interface{}) (interface{}, error) {
+				Func: func(name string, optional ...interface{}) (v interface{}, err error) {
 
 					// returns nil if it's a read and unresolved
 					// or if it's a write, returns a void value that is not nil (an empty string)
-					v := engine.Var(name, optional...)
-					if v == nil {
-						// If not resolved, try to interpret the path as a path for metadata...
-						return metadata_template.MetadataFunc(plugins)(name, optional...)
+					v = engine.Var(name, optional...)
+					if v == nil || isDeferred(engine, name, v) {
+						v, err = metadata_template.MetadataFunc(plugins)(name, optional...)
+						if v == nil && engine.Options().MultiPass {
+							return engine.DeferVar(name), nil
+						}
 					}
 					return v, nil
 				},
@@ -37,4 +39,12 @@ func StdFunctions(engine *template.Template, plugins func() discovery.Plugins) *
 		}
 	})
 	return engine
+}
+
+func isDeferred(engine *template.Template, name string, v interface{}) bool {
+	str, is := v.(string)
+	if !is {
+		return false
+	}
+	return engine.DeferVar(name) == str
 }
