@@ -124,12 +124,17 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 			return err
 		}
 		defer func() {
+			// TODO -- fix this...
+			<-time.After(500 * time.Millisecond)
 			pluginManager.TerminateAll()
 			pluginManager.WaitForAllShutdown()
 			pluginManager.Stop()
 		}()
 
 		pluginManager.WaitStarting()
+
+		// TODO -- fix this...
+		<-time.After(500 * time.Millisecond)
 
 		input, err := services.ReadFromStdinIfElse(
 			func() bool { return args[0] == "-" },

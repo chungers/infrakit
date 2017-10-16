@@ -29,7 +29,7 @@ func StdFunctions(engine *template.Template, plugins func() discovery.Plugins) *
 					v = engine.Var(name, optional...)
 					if v == nil || isDeferred(engine, name, v) {
 						v, err = metadata_template.MetadataFunc(plugins)(name, optional...)
-						if v == nil && engine.Options().MultiPass {
+						if cannotResolve(v) && engine.Options().MultiPass {
 							return engine.DeferVar(name), nil
 						}
 					}
@@ -39,6 +39,19 @@ func StdFunctions(engine *template.Template, plugins func() discovery.Plugins) *
 		}
 	})
 	return engine
+}
+
+func cannotResolve(v interface{}) bool {
+	if v == nil {
+		return true
+	}
+	// In cases where the metadata function is used to check for plugin
+	// existence, e.g. {{ metadata `vars`}}, the returned value would be
+	// true/false.
+	if v, is := v.(bool); is {
+		return !v
+	}
+	return false
 }
 
 func isDeferred(engine *template.Template, name string, v interface{}) bool {
