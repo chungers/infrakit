@@ -10,7 +10,6 @@ import (
 	"github.com/docker/infrakit/cmd/infrakit/manager/schema"
 
 	"github.com/docker/infrakit/pkg/cli"
-	"github.com/docker/infrakit/pkg/discovery"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/manager"
 	"github.com/docker/infrakit/pkg/plugin"
@@ -19,10 +18,10 @@ import (
 	group_rpc "github.com/docker/infrakit/pkg/rpc/group"
 	manager_rpc "github.com/docker/infrakit/pkg/rpc/manager"
 	metadata_rpc "github.com/docker/infrakit/pkg/rpc/metadata"
+	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/metadata"
 	"github.com/docker/infrakit/pkg/types"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +32,9 @@ func init() {
 }
 
 // Command is the entrypoint
-func Command(plugins func() discovery.Plugins) *cobra.Command {
+func Command(scope scope.Scope) *cobra.Command {
+
+	services := cli.NewServices(scope)
 
 	var groupPlugin group.Plugin
 	var groupPluginName string
@@ -50,7 +51,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 			}
 
 			// Scan for a manager
-			pm, err := plugins().List()
+			pm, err := scope.Plugins().List()
 			if err != nil {
 				return err
 			}
@@ -93,8 +94,6 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 	}
 	pretend := cmd.PersistentFlags().Bool("pretend", false, "Don't actually make changes; explain where appropriate")
 
-	templateFlags, toJSON, fromJSON, processTemplate := base.TemplateProcessor(plugins)
-
 	///////////////////////////////////////////////////////////////////////////////////
 	// commit
 	commit := &cobra.Command{
@@ -107,17 +106,17 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 				os.Exit(1)
 			}
 
-			view, err := base.ReadFromStdinIfElse(
+			view, err := services.ReadFromStdinIfElse(
 				func() bool { return args[0] == "-" },
-				func() (string, error) { return processTemplate(args[0]) },
-				toJSON,
+				func() (string, error) { return services.ProcessTemplate(args[0]) },
+				services.ToJSON,
 			)
 			if err != nil {
 				return err
 			}
 
 			commitEachGroup := func(name plugin.Name, gid group.ID, gspec group_types.Spec) error {
-				endpoint, err := plugins().Find(name)
+				endpoint, err := scope.Plugins().Find(name)
 				if err != nil {
 					return err
 				}
@@ -148,7 +147,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 			return schema.ParseInputSpecs([]byte(view), commitEachGroup)
 		},
 	}
-	commit.Flags().AddFlagSet(templateFlags)
+	commit.Flags().AddFlagSet(services.ProcessTemplateFlags)
 
 	///////////////////////////////////////////////////////////////////////////////////
 	// inspect
@@ -172,7 +171,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 				return err
 			}
 
-			buff, err := fromJSON(view.Bytes())
+			buff, err := services.FromJSON(view.Bytes())
 			if err != nil {
 				return err
 			}
@@ -182,7 +181,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 			return nil
 		},
 	}
-	inspect.Flags().AddFlagSet(templateFlags)
+	inspect.Flags().AddFlagSet(services.ProcessTemplateFlags)
 
 	///////////////////////////////////////////////////////////////////////////////////
 	// leader
@@ -197,7 +196,7 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 				os.Exit(1)
 			}
 			// Scan for a manager
-			pm, err := plugins().List()
+			pm, err := scope.Plugins().List()
 			if err != nil {
 				return err
 			}
@@ -236,111 +235,6 @@ func Command(plugins func() discovery.Plugins) *cobra.Command {
 			return nil
 		},
 	}
-
-	///////////////////////////////////////////////////////////////////////////////////
-	// change
-	change := &cobra.Command{
-		Use:   "change",
-		Short: "Change returns the plugin configurations known by the manager",
-	}
-	vars := change.Flags().StringSlice("var", []string{}, "key=value pairs")
-	commitChange := change.Flags().BoolP("commit", "c", false, "Commit changes")
-
-	// This is the only interactive command.  We want to show the user the proposal, with the diff
-	// and when the user accepts the change, call a commit.
-	change.RunE = func(cmd *cobra.Command, args []string) error {
-
-		if len(args) != 0 {
-			cmd.Usage()
-			os.Exit(1)
-		}
-
-		// get the changes
-		changes, err := changeSet(*vars)
-		if err != nil {
-			return err
-		}
-		current, proposed, cas, err := updatablePlugin.Changes(changes)
-		if err != nil {
-			return err
-		}
-		currentBuff, err := current.MarshalYAML()
-		if err != nil {
-			return err
-		}
-
-		proposedBuff, err := proposed.MarshalYAML()
-		if err != nil {
-			return err
-		}
-
-		if *commitChange {
-			fmt.Printf("Committing changes, hash=%s\n", cas)
-		} else {
-			fmt.Printf("Proposed changes, hash=%s\n", cas)
-		}
-
-		// Render the delta
-		dmp := diffmatchpatch.New()
-		diffs := dmp.DiffMain(string(currentBuff), string(proposedBuff), false)
-		fmt.Println(dmp.DiffPrettyText(diffs))
-
-		if *commitChange {
-			return updatablePlugin.Commit(proposed, cas)
-		}
-
-		return nil
-	}
-	change.Flags().AddFlagSet(templateFlags)
-
-	///////////////////////////////////////////////////////////////////////////////////
-	// change-list
-	changeList := &cobra.Command{
-		Use:   "ls",
-		Short: "Lists all the changeable paths",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			if len(args) != 0 {
-				cmd.Usage()
-				os.Exit(1)
-			}
-
-			all, err := types.ListAll(updatablePlugin, types.PathFromString("."))
-			if err != nil {
-				return err
-			}
-
-			types.SortPaths(all)
-			for _, p := range all {
-				fmt.Println(p.String())
-			}
-			return nil
-		},
-	}
-	///////////////////////////////////////////////////////////////////////////////////
-	// change-cat
-	changeGet := &cobra.Command{
-		Use:   "cat",
-		Short: "Cat returns the current value at given path",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			if len(args) != 1 {
-				cmd.Usage()
-				os.Exit(1)
-			}
-
-			path := types.PathFromString(args[0])
-			any, err := updatablePlugin.Get(path)
-			if err != nil {
-				return err
-			}
-
-			fmt.Println(any.String())
-
-			return nil
-		},
-	}
-	change.AddCommand(changeList, changeGet)
 
 	cmd.AddCommand(commit, inspect, leader)
 

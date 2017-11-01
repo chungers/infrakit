@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/launch/inproc"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/plugin"
@@ -17,6 +16,7 @@ import (
 	terraform "github.com/docker/infrakit/pkg/provider/terraform/instance"
 	"github.com/docker/infrakit/pkg/run"
 	"github.com/docker/infrakit/pkg/run/local"
+	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/template"
@@ -49,6 +49,9 @@ type ImportResourceOptions struct {
 
 	// ID of the resource to import
 	ResourceID string
+
+	// IDs of the properties to exclude from the instance spec
+	ExcludePropIDs []string
 }
 
 // Options capture the options for starting up the plugin.
@@ -74,7 +77,7 @@ type Options struct {
 	// NewOption is an example... see the plugins.json file in this directory.
 	NewOption string
 
-	// Envs are the environemtn variables to include when invoking terraform
+	// Envs are the environment variables to include when invoking terraform
 	Envs types.Any
 }
 
@@ -88,7 +91,7 @@ var DefaultOptions = Options{
 
 // Run runs the plugin, blocking the current thread.  Error is returned immediately
 // if the plugin cannot be started.
-func Run(plugins func() discovery.Plugins, name plugin.Name,
+func Run(scope scope.Scope, name plugin.Name,
 	config *types.Any) (transport plugin.Transport, impls map[run.PluginCode]interface{}, onStop func(), err error) {
 
 	options := DefaultOptions
@@ -121,10 +124,12 @@ func Run(plugins func() discovery.Plugins, name plugin.Name,
 		resType := terraform.TResourceType(importResource.ResourceType)
 		resName := terraform.TResourceName(importResource.ResourceName)
 		resID := importResource.ResourceID
+		excludePropIDs := importResource.ExcludePropIDs
 		res := terraform.ImportResource{
-			ResourceType: &resType,
-			ResourceName: &resName,
-			ResourceID:   &resID,
+			ResourceType:   &resType,
+			ResourceName:   &resName,
+			ResourceID:     &resID,
+			ExcludePropIDs: &excludePropIDs,
 		}
 		resources = append(resources, &res)
 	}
@@ -192,6 +197,10 @@ func parseInstanceSpecFromGroup(groupSpecURL, groupID string) (*instance.Spec, e
 				string(groupSpec.ID), groupID)
 		}
 		tags["infrakit.group"] = groupID
+	}
+	// Use the first logical ID if set
+	if len(groupProps.Allocation.LogicalIDs) > 0 {
+		tags["LogicalID"] = string(groupProps.Allocation.LogicalIDs[0])
 	}
 
 	spec := instance.Spec{
