@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/docker/infrakit/pkg/api"
 	"github.com/docker/infrakit/pkg/api/types"
@@ -23,7 +25,10 @@ func InstallGo(os string) types.ShellScript {
 
 func main() {
 
-	scope, err := api.Connect("local", api.Options{})
+	scope, err := api.Connect("local://",
+		api.Options{
+			ProfilePaths: strings.Split(os.Getenv("PROFILES_PATH"), ","),
+		})
 	if err != nil {
 		panic(err)
 	}

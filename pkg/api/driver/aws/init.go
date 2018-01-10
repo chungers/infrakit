@@ -5,6 +5,7 @@ import (
 	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/types"
 
+	_ "github.com/docker/infrakit/pkg/api/internal"
 	_ "github.com/docker/infrakit/pkg/run/v0/aws"
 )
 

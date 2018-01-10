@@ -1,0 +1,2 @@
+# A simple map of profile name and actual profile yml (which can be loaded as playbooks)
+spot-small : spot-small.yml
