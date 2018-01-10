@@ -74,9 +74,14 @@ func init() {
 	Configure(&DevDefaults)
 }
 
+// Logger is the interface for logging
+type Logger struct {
+	log15.Logger
+}
+
 // New returns a logger of given context
-func New(ctx ...interface{}) log15.Logger {
-	return log15.Root().New(ctx...)
+func New(ctx ...interface{}) *Logger {
+	return &Logger{log15.Root().New(ctx...)}
 }
 
 // Root returns the process's root logger

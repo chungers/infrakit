@@ -5,7 +5,6 @@ import (
 	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/discovery/local"
 	logutil "github.com/docker/infrakit/pkg/log"
-	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi/flavor"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/instance"
@@ -13,7 +12,6 @@ import (
 	"github.com/docker/infrakit/pkg/spi/metadata"
 	"github.com/docker/infrakit/pkg/spi/stack"
 	"github.com/docker/infrakit/pkg/template"
-	"github.com/docker/infrakit/pkg/types"
 )
 
 var log = logutil.New("module", "run/scope")
@@ -62,7 +60,7 @@ type Scope interface {
 	L4(n string) (loadbalancer.L4, error)
 
 	// Metadata is for resolving metadata / path related queries
-	Metadata(p string) (*MetadataCall, error)
+	Metadata(p string) (*metadata.Call, error)
 
 	// TemplateEngine creates a template engine for use.
 	TemplateEngine(url string, opts template.Options) (*template.Template, error)
@@ -72,12 +70,12 @@ type Scope interface {
 // running. When work completes, the plugins are shutdown.
 type Work func(Scope) error
 
-// MetadataCall is a struct that has all the information needed to evaluate a template metadata function
-type MetadataCall struct {
-	Plugin metadata.Plugin
-	Name   plugin.Name
-	Key    types.Path
-}
+// // MetadataCall is a struct that has all the information needed to evaluate a template metadata function
+// type MetadataCall struct {
+// 	Plugin metadata.Plugin
+// 	Name   plugin.Name
+// 	Key    types.Path
+// }
 
 type fullScope func() discovery.Plugins
 

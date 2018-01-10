@@ -16,18 +16,18 @@ import (
 )
 
 // Metadata implements resolution of path to metadata
-func (f fullScope) Metadata(path string) (*MetadataCall, error) {
+func (f fullScope) Metadata(path string) (*metadata.Call, error) {
 	return DefaultMetadataResolver(f)(path)
 }
 
 // DefaultMetadataResolver returns a resolver
-func DefaultMetadataResolver(plugins func() discovery.Plugins) func(string) (*MetadataCall, error) {
-	return func(path string) (*MetadataCall, error) {
+func DefaultMetadataResolver(plugins func() discovery.Plugins) func(string) (*metadata.Call, error) {
+	return func(path string) (*metadata.Call, error) {
 		return metadataPlugin(plugins, types.PathFromString(path))
 	}
 }
 
-func metadataPlugin(plugins func() discovery.Plugins, mpath types.Path) (*MetadataCall, error) {
+func metadataPlugin(plugins func() discovery.Plugins, mpath types.Path) (*metadata.Call, error) {
 
 	if plugins == nil {
 		return nil, fmt.Errorf("no plugin discovery:%s", mpath.String())
@@ -53,7 +53,7 @@ func metadataPlugin(plugins func() discovery.Plugins, mpath types.Path) (*Metada
 			return nil, err
 		}
 
-		return &MetadataCall{
+		return &metadata.Call{
 			Name:   name,
 			Plugin: pl,
 			Key:    mpath.Shift(1),
@@ -103,7 +103,7 @@ func metadataPlugin(plugins func() discovery.Plugins, mpath types.Path) (*Metada
 	if err != nil {
 		return nil, err
 	}
-	return &MetadataCall{Name: pluginName, Key: key, Plugin: pl}, nil
+	return &metadata.Call{Name: pluginName, Key: key, Plugin: pl}, nil
 }
 
 // MetadataFunc returns a template function to support metadata retrieval in templates.
@@ -198,7 +198,7 @@ func IsReadonly(err error) bool {
 	return is
 }
 
-type metadataResolver func(p string) (*MetadataCall, error)
+type metadataResolver func(p string) (*metadata.Call, error)
 
 // blocking get from metadata. block the same go routine / thread until timeout or value is available
 func doBlockingGet(resolver metadataResolver, path string, retry, timeout time.Duration) (interface{}, error) {

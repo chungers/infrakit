@@ -303,46 +303,46 @@ func TestMetadataResolver(t *testing.T) {
 
 	server, socket := runServer(t, "test-vars", m)
 
-	for l, check := range map[string]func(*testing.T, *MetadataCall, error){
-		"test-vars": func(t *testing.T, c *MetadataCall, err error) {
+	for l, check := range map[string]func(*testing.T, *metadata.Call, error){
+		"test-vars": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, c)
 			require.Equal(t, types.NullPath, c.Key)
 		},
-		"test-vars/aws": func(t *testing.T, c *MetadataCall, err error) {
+		"test-vars/aws": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, c)
 			require.Equal(t, types.NullPath, c.Key)
 		},
-		"test-vars/aws/region/count": func(t *testing.T, c *MetadataCall, err error) {
+		"test-vars/aws/region/count": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, c)
 			require.Equal(t, types.PathFromString("region/count"), c.Key)
 		},
-		"test-vars/azure": func(t *testing.T, c *MetadataCall, err error) {
+		"test-vars/azure": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, c)
 			require.Equal(t, types.NullPath, c.Key)
 		},
-		"test-vars/none": func(t *testing.T, c *MetadataCall, err error) {
+		"test-vars/none": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, c)
 			require.Equal(t, types.PathFromString("none"), c.Key) // Don't throw error because maybe later this can be resolved
 		},
-		"test-vars/none/sub": func(t *testing.T, c *MetadataCall, err error) {
+		"test-vars/none/sub": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.NotNil(t, c)
 			require.Equal(t, types.PathFromString("none/sub"), c.Key)
 		},
-		"test": func(t *testing.T, c *MetadataCall, err error) {
+		"test": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.Nil(t, c)
 		},
-		"test/aws": func(t *testing.T, c *MetadataCall, err error) {
+		"test/aws": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.Nil(t, c)
 		},
-		"test/foo": func(t *testing.T, c *MetadataCall, err error) {
+		"test/foo": func(t *testing.T, c *metadata.Call, err error) {
 			require.NoError(t, err)
 			require.Nil(t, c)
 		},

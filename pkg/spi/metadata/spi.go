@@ -1,6 +1,7 @@
 package metadata
 
 import (
+	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/spi"
 	"github.com/docker/infrakit/pkg/types"
 )
@@ -18,6 +19,13 @@ var (
 		Version: "0.1.1",
 	}
 )
+
+// Call is a struct that has all the information needed to evaluate a template metadata function
+type Call struct {
+	Plugin
+	Name plugin.Name
+	Key  types.Path
+}
 
 // Plugin is the interface for metadata-related operations.
 type Plugin interface {
