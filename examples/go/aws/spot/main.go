@@ -6,26 +6,27 @@ import (
 	"strings"
 
 	"github.com/docker/infrakit/pkg/api"
-	"github.com/docker/infrakit/pkg/api/types"
+	"github.com/docker/infrakit/pkg/api/compute"
+	"github.com/docker/infrakit/pkg/api/scope"
 
 	_ "github.com/docker/infrakit/pkg/api/driver/aws"
 )
 
-func InstallDocker(os string) types.ShellScript {
-	return types.ShellScript("wget -qO https://get.docker.com | sh")
+func InstallDocker(os string) compute.ShellScript {
+	return compute.ShellScript("wget -qO https://get.docker.com | sh")
 }
 
-func InstallGit(os string) types.ShellScript {
-	return types.ShellScript("apt-get install -y git-core")
+func InstallGit(os string) compute.ShellScript {
+	return compute.ShellScript("apt-get install -y git-core")
 }
 
-func InstallGo(os string) types.ShellScript {
-	return types.ShellScript("apt-get install -y golang")
+func InstallGo(os string) compute.ShellScript {
+	return compute.ShellScript("apt-get install -y golang")
 }
 
 func main() {
 
-	scope, err := api.Connect("local://",
+	scope, err := scope.Connect("local://",
 		api.Options{
 			ProfilePaths: strings.Split(os.Getenv("PROFILES_PATH"), ","),
 		})
@@ -48,16 +49,22 @@ func main() {
 		panic("cannot find profile")
 	}
 
-	profile.AddTag("foo", "bar").
-		AddInit(InstallDocker("ubuntu")).
+	machine, err := compute.Customize(profile)
+	if err != nil {
+		// Err if profile is not a machine profile; can't down-cast.
+		panic(err)
+	}
+
+	machine.AddInit(InstallDocker("ubuntu")).
 		AddInit(InstallGit("ubuntu")).
-		AddInit(InstallGo("ubuntu"))
+		AddInit(InstallGo("ubuntu")).
+		AddTag("foo", "bar")
 
 	for _, id := range []string{"hello", "world"} {
 
-		profile.SetLogicalID(id).Set("subnetID", "1234")
+		machine.SetLogicalID(id).Set("subnetID", "1234")
 
-		meta, err := scope.Provision(profile)
+		meta, err := scope.Enforce(machine)
 		if err != nil {
 			panic(err)
 		}
