@@ -6,11 +6,13 @@ import (
 	"sync"
 	"time"
 
+	group_types "github.com/docker/infrakit/pkg/plugin/group/types"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/instance"
 )
 
 type scaler struct {
+	options        group_types.Options
 	id             group.ID
 	scaled         Scaled
 	size           uint
@@ -34,7 +36,6 @@ func NewScalingGroup(id group.ID, scaled Scaled, size uint, pollInterval time.Du
 }
 
 func (s *scaler) PlanUpdate(scaled Scaled, settings groupSettings, newSettings groupSettings) (updatePlan, error) {
-
 	sizeChange := int(newSettings.config.Allocation.Size) - int(settings.config.Allocation.Size)
 
 	instances, err := labelAndList(s.scaled)
@@ -54,25 +55,14 @@ func (s *scaler) PlanUpdate(scaled Scaled, settings groupSettings, newSettings g
 	switch {
 	case sizeChange == 0:
 		rollCount := len(undesired)
-
 		if rollCount == 0 {
-			if settings.config.InstanceHash() == newSettings.config.InstanceHash() {
-
-				// This is a no-op update because:
-				//  - the instance configuration is unchanged
-				//  - the group contains no instances with an undesired state
-				//  - the group size is unchanged
-				return &noopUpdate{}, nil
-			}
-
-			// This case likely occurs because a group was created in a way that no instances are being
-			// created. We proceed with the update here, which will likely only change the target
-			// configuration in the scaler.
-
-			plan.desc = "Adjusting the instance configuration, no restarts necessary"
-			return &plan, nil
+			// This is a no-op update because:
+			//  - the instance configuration is unchanged
+			//  - the group contains no instances with an undesired state
+			//  - the group size is unchanged
+			return &noopUpdate{}, nil
 		}
-
+		// Perform a rolling update on the instances that do not match the desired
 		plan.desc = fmt.Sprintf("Performing a rolling update on %d instances", rollCount)
 
 	case sizeChange < 0:
@@ -114,9 +104,10 @@ func (s *scaler) PlanUpdate(scaled Scaled, settings groupSettings, newSettings g
 	}
 
 	plan.rollingPlan = &rollingupdate{
-		scaled:     scaled,
-		updatingTo: newSettings,
-		stop:       make(chan bool),
+		scaled:       scaled,
+		updatingFrom: settings,
+		updatingTo:   newSettings,
+		stop:         make(chan bool),
 	}
 
 	return plan, nil
@@ -250,7 +241,7 @@ func (s *scaler) converge() {
 		copy(sorted, descriptions)
 
 		// Sorting first ensures that redundant operations are non-destructive.
-		sort.Sort(sortByID(sorted))
+		sort.Sort(sortByID{list: sorted})
 
 		// TODO(wfarner): Consider favoring removal of instances that do not match the desired configuration by
 		// injecting a sorter.

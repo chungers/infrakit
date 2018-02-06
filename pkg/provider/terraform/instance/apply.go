@@ -14,6 +14,7 @@ import (
 
 	"github.com/deckarep/golang-set"
 	manager_discovery "github.com/docker/infrakit/pkg/manager/discovery"
+	ibmcloud_client "github.com/docker/infrakit/pkg/provider/ibmcloud/client"
 	"github.com/docker/infrakit/pkg/types"
 	"github.com/docker/infrakit/pkg/util/exec"
 	"github.com/spf13/afero"
@@ -90,7 +91,14 @@ func (p *plugin) terraformApply() error {
 				}
 				if err := p.handleFiles(fns); err == nil {
 					if err = p.doTerraformApply(); err == nil {
-						initial = false
+						// Goroutine was interrupted, this likely means that there was a file change; now that
+						// apply is finished we want to clear the cache since we expect a delta
+						if initial {
+							p.fsLock.RLock()
+							p.clearCachedInstances()
+							p.fsLock.RUnlock()
+							initial = false
+						}
 					} else {
 						logger.Error("terraformApply", "msg", "Failed to execute 'terraform apply'", "error", err)
 					}
@@ -168,8 +176,8 @@ type tfFuncs struct {
 // hasRecentDeltas returns true if any tf.json[.new] files have been changed in
 // in the last "window" seconds
 func (p *plugin) hasRecentDeltas(window int) (bool, error) {
-	p.fsLock.Lock()
-	defer p.fsLock.Unlock()
+	p.fsLock.RLock()
+	defer p.fsLock.RUnlock()
 
 	now := time.Now()
 	modTime := time.Time{}
@@ -267,7 +275,10 @@ func (p *plugin) handleFiles(fns tfFuncs) error {
 	// Once we have the update resources we need to lock out any new files (from Provision)
 	// and the listing of the files (from Describe) while we reconcile orphans and rename
 	p.fsLock.Lock()
-	defer p.fsLock.Unlock()
+	defer func() {
+		p.clearCachedInstances()
+		p.fsLock.Unlock()
+	}()
 
 	// Load all instance files and all new files from disk
 	tfInstFiles := map[TResourceType]map[TResourceName]TResourceFilenameProps{}
@@ -328,7 +339,7 @@ func (p *plugin) handleFiles(fns tfFuncs) error {
 			// State files have instances of this type, check each resource name
 			for resName, propsFilename := range resNameFilenamePropsMap {
 				if _, has = tfStateResName[resName]; has {
-					logger.Info("handleFiles", "msg", fmt.Sprintf("Instance %v.%v exists in terraform state", resType, resName))
+					logger.Debug("handleFiles", "msg", fmt.Sprintf("Instance %v.%v exists in terraform state", resType, resName), "V", debugV1)
 				} else {
 					logger.Info("handleFiles", "msg", fmt.Sprintf("Detected candidate instance %v.%v to prune at file: %v", resType, resName, propsFilename.FileName))
 					addToResTypeNamePropsMap(prunes, resType, resName, propsFilename.FileName, propsFilename.FileProps)
@@ -444,13 +455,15 @@ func (p *plugin) handleFilePruning(
 			}
 		}
 	}
-	logger.Info("handleFilePruning", "msg", fmt.Sprintf("Pruning %v tf.json files", len(pruneFiles)))
-	for file := range pruneFiles {
-		path := filepath.Join(p.Dir, file)
-		logger.Info("handleFilePruning", "msg", fmt.Sprintf("Pruning file: %v", file))
-		err := p.fs.Remove(path)
-		if err != nil {
-			return err
+	if len(pruneFiles) > 0 {
+		logger.Info("handleFilePruning", "msg", fmt.Sprintf("Pruning %v tf.json files", len(pruneFiles)))
+		for file := range pruneFiles {
+			path := filepath.Join(p.Dir, file)
+			logger.Info("handleFilePruning", "msg", fmt.Sprintf("Pruning file: %v", file))
+			err := p.fs.Remove(path)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -496,7 +509,7 @@ func (p *plugin) getExistingResource(resType TResourceType, resName TResourceNam
 				}
 			}
 		}
-		id, err := GetIBMCloudVMByTag(username, apiKey, tags)
+		id, err := GetIBMCloudVMByTag(ibmcloud_client.GetClient(username, apiKey), tags)
 		if err != nil {
 			return nil, err
 		}

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	terraform_types "github.com/docker/infrakit/pkg/provider/terraform/instance/types"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 
@@ -26,7 +27,12 @@ func TestRunTerraformApply(t *testing.T) {
 	dir, err := os.Getwd()
 	require.NoError(t, err)
 	dir = path.Join(dir, "aws-two-tier")
-	terraform := NewTerraformInstancePlugin(dir, 1*time.Second, false, []string{}, nil)
+	options := terraform_types.Options{
+		Dir:          dir,
+		PollInterval: types.FromDuration(2 * time.Minute),
+	}
+	terraform, err := NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
 	p, _ := terraform.(*plugin)
 	err = p.doTerraformApply()
 	require.NoError(t, err)
@@ -36,7 +42,13 @@ func TestContinuePollingStandalone(t *testing.T) {
 	dir, err := ioutil.TempDir("", "infrakit-instance-terraform")
 	require.NoError(t, err)
 	defer os.RemoveAll(dir)
-	terraform := NewTerraformInstancePlugin(dir, 1*time.Second, true, []string{}, nil)
+	options := terraform_types.Options{
+		Dir:          dir,
+		Standalone:   true,
+		PollInterval: types.FromDuration(2 * time.Minute),
+	}
+	terraform, err := NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
 	p, _ := terraform.(*plugin)
 	shoudApply := p.shouldApply()
 	require.True(t, shoudApply)
@@ -58,7 +70,7 @@ type fileInfo struct {
 }
 
 // writeFile is a utility function to write out a terraform file
-func writeFile(info fileInfo, t *testing.T) {
+func writeFileInfo(info fileInfo, t *testing.T) {
 	require.NotZero(t, len(info.ResInfo))
 	inst := make(map[TResourceType]map[TResourceName]TResourceProperties)
 	for _, resInfo := range info.ResInfo {
@@ -81,7 +93,7 @@ func writeFile(info fileInfo, t *testing.T) {
 	} else {
 		filename = fmt.Sprintf("%v.tf.json", info.FilePrefix)
 	}
-	err = afero.WriteFile(info.Plugin.fs, filepath.Join(info.Plugin.Dir, filename), buff, 0644)
+	err = writeFileRaw(info.Plugin, filename, buff)
 	require.NoError(t, err)
 }
 
@@ -142,7 +154,7 @@ func TestHandleFilesRefreshFail(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 
 	stateListInvokedCount := 0
@@ -222,7 +234,7 @@ func TestHasRecentDelta(t *testing.T) {
 	require.False(t, hasDelta)
 
 	// Non tf.json[.new] file (should be ignored)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "foo.txt"), []byte("some-text"), 0644)
+	err = writeFileRaw(tf, "foo.txt", []byte("some-text"))
 	require.NoError(t, err)
 	hasDelta, err = tf.hasRecentDeltas(60)
 	require.NoError(t, err)
@@ -239,7 +251,7 @@ func TestHasRecentDelta(t *testing.T) {
 		NewFile: false,
 		Plugin:  tf,
 	}
-	writeFile(info, t)
+	writeFileInfo(info, t)
 
 	// File delta in the last 5 seconds
 	hasDelta, err = tf.hasRecentDeltas(5)
@@ -259,7 +271,7 @@ func TestHasRecentDelta(t *testing.T) {
 
 	// Add another, should be a delta
 	info.ResInfo[0].ResName = TResourceName("instance-12346")
-	writeFile(info, t)
+	writeFileInfo(info, t)
 	hasDelta, err = tf.hasRecentDeltas(1)
 	require.NoError(t, err)
 	require.True(t, hasDelta)
@@ -280,7 +292,7 @@ func TestHasRecentDeltaInFuture(t *testing.T) {
 		NewFile: false,
 		Plugin:  tf,
 	}
-	writeFile(info, t)
+	writeFileInfo(info, t)
 
 	// Update the timestamp to 29 seconds in the future
 	path := filepath.Join(tf.Dir, "instance-12345.tf.json")
@@ -318,7 +330,7 @@ func TestHandleFilesNoPruneNoNewFiles(t *testing.T) {
 			NewFile: false,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	require.Len(t, tfFilesNew, 0)
@@ -366,7 +378,7 @@ func TestHandleFilesDedicatedGlobalNoPruneNoNewFiles(t *testing.T) {
 			NewFile: false,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 105; i < 110; i++ {
 		info := fileInfo{
@@ -383,7 +395,7 @@ func TestHandleFilesDedicatedGlobalNoPruneNoNewFiles(t *testing.T) {
 			NewFile: false,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 110; i < 115; i++ {
 		info := fileInfo{
@@ -396,7 +408,7 @@ func TestHandleFilesDedicatedGlobalNoPruneNoNewFiles(t *testing.T) {
 			NewFile: false,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 		// Dedicated
 		info = fileInfo{
 			ResInfo: []resInfo{
@@ -409,7 +421,7 @@ func TestHandleFilesDedicatedGlobalNoPruneNoNewFiles(t *testing.T) {
 			NewFile:    false,
 			Plugin:     tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 115; i < 117; i++ {
 		// Global
@@ -423,7 +435,7 @@ func TestHandleFilesDedicatedGlobalNoPruneNoNewFiles(t *testing.T) {
 			NewFile: false,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	require.Len(t, tfFilesNew, 0)
@@ -508,7 +520,7 @@ func TestHandleFilesNoPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	require.Len(t, tfFilesNew, 5)
@@ -615,14 +627,14 @@ func TestHandleFilePruningRemovedFromBackend(t *testing.T) {
 		NewFile: false,
 		Plugin:  tf,
 	}
-	writeFile(info, t)
+	writeFileInfo(info, t)
 	// Random file, should not be removed
 	info = fileInfo{
 		ResInfo: []resInfo{{ResType: VMIBMCloud, ResName: TResourceName("instance-234")}},
 		NewFile: false,
 		Plugin:  tf,
 	}
-	writeFile(info, t)
+	writeFileInfo(info, t)
 
 	fns := tfFuncs{
 		getExistingResource: func(resType TResourceType, resName TResourceName, props TResourceProperties) (*string, error) {
@@ -770,7 +782,7 @@ func internalTestHandleFilesPruneMultipleVMTypes(t *testing.T, pruneType int) {
 			NewFile: false,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	require.Len(t, tfFilesNew, 0)
@@ -883,7 +895,7 @@ func TestHandleFilesPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	require.Len(t, tfFilesNew, 5)
@@ -949,7 +961,7 @@ func TestHandleFilesDedicatedGlobalNoPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 105; i < 110; i++ {
 		newFile := false
@@ -970,7 +982,7 @@ func TestHandleFilesDedicatedGlobalNoPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 110; i < 115; i++ {
 		newFile := false
@@ -987,7 +999,7 @@ func TestHandleFilesDedicatedGlobalNoPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 		// Dedicated
 		info = fileInfo{
 			ResInfo: []resInfo{
@@ -1000,7 +1012,7 @@ func TestHandleFilesDedicatedGlobalNoPruneWithNewFiles(t *testing.T) {
 			NewFile:    newFile,
 			Plugin:     tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 115; i < 117; i++ {
 		newFile := false
@@ -1018,7 +1030,7 @@ func TestHandleFilesDedicatedGlobalNoPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	// 100, 102, 104, 106, 108, 110, 112, 114 VMs
@@ -1132,7 +1144,7 @@ func TestHandleFilesDedicatedGlobalPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 105; i < 110; i++ {
 		newFile := false
@@ -1153,7 +1165,7 @@ func TestHandleFilesDedicatedGlobalPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 110; i < 115; i++ {
 		newFile := false
@@ -1170,7 +1182,7 @@ func TestHandleFilesDedicatedGlobalPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 		// Dedicated
 		info = fileInfo{
 			ResInfo: []resInfo{
@@ -1183,7 +1195,7 @@ func TestHandleFilesDedicatedGlobalPruneWithNewFiles(t *testing.T) {
 			NewFile:    newFile,
 			Plugin:     tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	for i := 115; i < 117; i++ {
 		newFile := false
@@ -1201,7 +1213,7 @@ func TestHandleFilesDedicatedGlobalPruneWithNewFiles(t *testing.T) {
 			NewFile: newFile,
 			Plugin:  tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	tfFiles, tfFilesNew := getFilenames(t, tf)
 	// 100, 102, 104, 106, 108, 110, 112, 114 VMs
@@ -1306,7 +1318,7 @@ func TestHandleFilesDuplicates(t *testing.T) {
 			NewFile:    true,
 			Plugin:     tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 
 	fns := tfFuncs{
@@ -1354,7 +1366,7 @@ func TestHandleFilesDuplicates(t *testing.T) {
 			NewFile:    true,
 			Plugin:     tf,
 		}
-		writeFile(info, t)
+		writeFileInfo(info, t)
 	}
 	err = tf.handleFiles(fns)
 	require.NoError(t, err)

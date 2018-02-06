@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/docker/infrakit/pkg/provider/ibmcloud/client"
+	"github.com/docker/infrakit/pkg/spi/flavor"
 	"github.com/softlayer/softlayer-go/datatypes"
 	"github.com/softlayer/softlayer-go/filter"
 )
@@ -55,19 +56,18 @@ func mergeLabelsIntoTagSlice(tags []interface{}, labels map[string]string) []str
 
 // GetIBMCloudVMByTag queries Softlayer for VMs that match all of the given tags. Returns
 // the single VM ID that matches or nil if there are no matches.
-func GetIBMCloudVMByTag(username, apiKey string, tags []string) (*int, error) {
-	c := client.GetClient(username, apiKey)
+func GetIBMCloudVMByTag(c client.API, tags []string) (*int, error) {
 	mask := "id,hostname,tagReferences[id,tag[name]]"
 	// Use the swarm ID as the filter
 	var filters *string
 	for _, tag := range tags {
-		if strings.HasPrefix(tag, "swarm-id:") {
+		if strings.HasPrefix(tag, fmt.Sprintf("%s:", flavor.ClusterIDTag)) {
 			f := filter.New(filter.Path("virtualGuests.tagReferences.tag.name").Eq(tag)).Build()
 			logger.Info("GetIBMCloudVMByTag", "msg", fmt.Sprintf("Querying IBM Cloud for VMs with tag filter: %v", f))
 			filters = &f
 		}
 	}
-	vms, err := c.GetVirtualGuests(username, apiKey, &mask, filters)
+	vms, err := c.GetVirtualGuests(&mask, filters)
 	if err != nil {
 		return nil, err
 	}

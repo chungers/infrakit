@@ -12,11 +12,20 @@ import (
 	"testing"
 	"time"
 
+	terraform_types "github.com/docker/infrakit/pkg/provider/terraform/instance/types"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/types"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
+)
+
+var (
+	emptyTfShowFns = describeFns{
+		tfShow: func(resTypes []TResourceType, propFilter []string) (result map[TResourceType]map[TResourceName]TResourceProperties, err error) {
+			return map[TResourceType]map[TResourceName]TResourceProperties{}, nil
+		},
+	}
 )
 
 func TestProcessImportOptions(t *testing.T) {
@@ -49,12 +58,47 @@ func TestProcessImportOptions(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestEnvs(t *testing.T) {
+	dir, err := ioutil.TempDir("", "infrakit-instance-terraform")
+	require.NoError(t, err)
+	options := terraform_types.Options{
+		Dir:          dir,
+		PollInterval: types.FromDuration(2 * time.Minute),
+		Envs:         *types.AnyString(`["k1=v1", "keyval"]`),
+	}
+	_, err = NewTerraformInstancePlugin(options, nil)
+	require.Error(t, err)
+
+	options.Envs = *types.AnyString(`["k1=v1", "k2=v2"]`)
+	tf, err := NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
+	p, _ := tf.(*plugin)
+	require.Equal(t, []string{"k1=v1", "k2=v2"}, p.envs)
+
+	options.Envs = *types.AnyString("")
+	tf, err = NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
+	p, _ = tf.(*plugin)
+	require.Equal(t, []string{}, p.envs)
+
+	options.Envs = nil
+	tf, err = NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
+	p, _ = tf.(*plugin)
+	require.Equal(t, []string{}, p.envs)
+}
+
 // getPlugin returns the terraform instance plugin to use for testing and the
 // directory where the .tf.json files should be stored
 func getPlugin(t *testing.T) (*plugin, string) {
 	dir, err := ioutil.TempDir("", "infrakit-instance-terraform")
 	require.NoError(t, err)
-	tf := NewTerraformInstancePlugin(dir, 120*time.Second, false, []string{}, nil)
+	options := terraform_types.Options{
+		Dir:          dir,
+		PollInterval: types.FromDuration(2 * time.Minute),
+	}
+	tf, err := NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
 	tf.(*plugin).pretend = true
 	p, is := tf.(*plugin)
 	require.True(t, is)
@@ -71,7 +115,12 @@ func getPluginDirNotExists(t *testing.T) (*plugin, string) {
 	_, err = os.Stat(dir)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err), fmt.Sprintf("Incorrect error, expected NotExist, got %v", err))
-	tf := NewTerraformInstancePlugin(dir, 120*time.Second, false, []string{}, nil)
+	options := terraform_types.Options{
+		Dir:          dir,
+		PollInterval: types.FromDuration(2 * time.Minute),
+	}
+	tf, err := NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
 	tf.(*plugin).pretend = true
 	p, is := tf.(*plugin)
 	require.True(t, is)
@@ -87,11 +136,35 @@ func getPluginDirNoPerms(t *testing.T) (*plugin, string) {
 	dir = dir + "/noperm"
 	os.Mkdir(dir, 0200)
 	require.NoError(t, err)
-	tf := NewTerraformInstancePlugin(dir, 120*time.Second, false, []string{}, nil)
+	options := terraform_types.Options{
+		Dir:          dir,
+		PollInterval: types.FromDuration(2 * time.Minute),
+	}
+	tf, err := NewTerraformInstancePlugin(options, nil)
+	require.NoError(t, err)
 	tf.(*plugin).pretend = true
 	p, is := tf.(*plugin)
 	require.True(t, is)
 	return p, dir
+}
+
+// writeFile is a utility to write the formatted data to a file
+func writeFile(p *plugin, filename string, tf TFormat) error {
+	buff, err := json.MarshalIndent(tf, " ", " ")
+	if err != nil {
+		return err
+	}
+	return writeFileRaw(p, filename, buff)
+}
+
+// writeFile is a utility to write the raw bytes to a file
+func writeFileRaw(p *plugin, filename string, buff []byte) error {
+	if err := afero.WriteFile(p.fs, filepath.Join(p.Dir, filename), buff, 0644); err != nil {
+		return err
+	}
+	// Now that the file is written out we need to clear the cache
+	p.clearCachedInstances()
+	return nil
 }
 
 func TestHandleProvisionTagsEmptyTagsLogicalID(t *testing.T) {
@@ -109,9 +182,9 @@ func TestHandleProvisionTagsEmptyTagsLogicalID(t *testing.T) {
 		handleProvisionTags(spec, instance.ID("instance-1234"), vmType.(TResourceType), props)
 		if vmType == VMSoftLayer || vmType == VMIBMCloud {
 			tags := props["tags"]
-			require.Equal(t, tags, []interface{}{"name:instance-1234"})
+			require.Equal(t, tags, []interface{}{NameTag + ":instance-1234"})
 		} else {
-			expectedTags := map[string]interface{}{"Name": "instance-1234"}
+			expectedTags := map[string]interface{}{NameTag: "instance-1234"}
 			require.Equal(t, expectedTags, props["tags"])
 		}
 	}
@@ -132,9 +205,9 @@ func TestHandleProvisionTagsEmptyTagsNoLogicalID(t *testing.T) {
 		tags := props["tags"]
 		var expectedTags interface{}
 		if vmType == VMSoftLayer || vmType == VMIBMCloud {
-			expectedTags = []interface{}{"name:instance-1234"}
+			expectedTags = []interface{}{NameTag + ":instance-1234"}
 		} else {
-			expectedTags = map[string]interface{}{"Name": "instance-1234"}
+			expectedTags = map[string]interface{}{NameTag: "instance-1234"}
 		}
 		require.Equal(t, expectedTags, tags)
 	}
@@ -147,7 +220,7 @@ func TestHandleProvisionTagsWithTagsLogicalID(t *testing.T) {
 		Properties: nil,
 		Tags: map[string]string{
 			instance.LogicalIDTag: "logical-id-1",
-			"name":                "existing-name",
+			NameTag:               "existing-name",
 			"foo":                 "bar"},
 		Init:        "",
 		Attachments: []instance.Attachment{},
@@ -162,11 +235,11 @@ func TestHandleProvisionTagsWithTagsLogicalID(t *testing.T) {
 			// Note that tags are all lowercase
 			require.Contains(t, tags, "foo:bar")
 			require.Contains(t, tags, instance.LogicalIDTag+":logical-id-1")
-			require.Contains(t, tags, "name:existing-name")
+			require.Contains(t, tags, NameTag+":existing-name")
 		} else {
 			expectedTags := map[string]interface{}{
 				instance.LogicalIDTag: "logical-id-1",
-				"name":                "existing-name",
+				NameTag:               "existing-name",
 				"foo":                 "bar",
 			}
 			require.Equal(t, expectedTags, props["tags"])
@@ -179,8 +252,8 @@ func TestHandleProvisionTagsWithTagsNoLogicalID(t *testing.T) {
 	spec := instance.Spec{
 		Properties: nil,
 		Tags: map[string]string{
-			"Name": "existing-name",
-			"foo":  "bar"},
+			NameTag: "existing-name",
+			"foo":   "bar"},
 		Init:        "",
 		Attachments: []instance.Attachment{},
 		LogicalID:   nil,
@@ -192,11 +265,11 @@ func TestHandleProvisionTagsWithTagsNoLogicalID(t *testing.T) {
 			tags := props["tags"]
 			require.Len(t, tags, 2)
 			require.Contains(t, tags, "foo:bar")
-			require.Contains(t, tags, "name:existing-name")
+			require.Contains(t, tags, NameTag+":existing-name")
 		} else {
 			expectedTags := map[string]interface{}{
-				"Name": "existing-name",
-				"foo":  "bar",
+				NameTag: "existing-name",
+				"foo":   "bar",
 			}
 			require.Equal(t, expectedTags, props["tags"])
 		}
@@ -396,7 +469,8 @@ func TestProvisionDescribeDestroyScopeWithoutLogicalID(t *testing.T) {
 		Tags:       map[string]string{"tag1": "val1"},
 	})
 	require.NoError(t, err)
-	results, err := tf.DescribeInstances(
+	results, err := tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tag1": "val1"},
 		false,
 	)
@@ -409,9 +483,10 @@ func TestProvisionDescribeDestroyScopeWithoutLogicalID(t *testing.T) {
 			ID: *id1,
 			Tags: map[string]string{
 				attachTag: strings.Join(expectedAttach1, ","),
-				"Name":    string(*id1),
+				NameTag:   string(*id1),
 				"tag1":    "val1",
 			},
+			Properties: types.AnyString("{}"),
 		})
 	expectedAttach2 := []string{"default_dedicated_2", "managers_global"}
 	require.Contains(t,
@@ -420,9 +495,10 @@ func TestProvisionDescribeDestroyScopeWithoutLogicalID(t *testing.T) {
 			ID: *id2,
 			Tags: map[string]string{
 				attachTag: strings.Join(expectedAttach2, ","),
-				"Name":    string(*id2),
+				NameTag:   string(*id2),
 				"tag1":    "val1",
 			},
+			Properties: types.AnyString("{}"),
 		})
 	// Should be files for:
 	// 2 VMs
@@ -523,7 +599,8 @@ func TestProvisionDescribeDestroyScopeLogicalID(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	results, err := tf.DescribeInstances(
+	results, err := tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tag1": "val1"},
 		false,
 	)
@@ -536,11 +613,12 @@ func TestProvisionDescribeDestroyScopeLogicalID(t *testing.T) {
 			ID: *id1,
 			Tags: map[string]string{
 				attachTag:             strings.Join(expectedAttach1, ","),
-				"Name":                string(*id1),
+				NameTag:               string(*id1),
 				"tag1":                "val1",
 				instance.LogicalIDTag: "mgr1",
 			},
-			LogicalID: &logicalID1,
+			LogicalID:  &logicalID1,
+			Properties: types.AnyString("{}"),
 		})
 	expectedAttach2 := []string{"default_dedicated_" + string(logicalID2), "managers_global"}
 	require.Contains(t,
@@ -549,11 +627,12 @@ func TestProvisionDescribeDestroyScopeLogicalID(t *testing.T) {
 			ID: *id2,
 			Tags: map[string]string{
 				attachTag:             strings.Join(expectedAttach2, ","),
-				"Name":                string(*id2),
+				NameTag:               string(*id2),
 				"tag1":                "val1",
 				instance.LogicalIDTag: "mgr2",
 			},
-			LogicalID: &logicalID2,
+			LogicalID:  &logicalID2,
+			Properties: types.AnyString("{}"),
 		})
 	// Should be files for:
 	// 2 VMs
@@ -660,7 +739,7 @@ func TestProvisionUpdateDedicatedGlobal(t *testing.T) {
 				TResourceName(string(*id1)): {
 					"tags": map[string]interface{}{
 						attachTag: "default_dedicated_1,managers_global",
-						"Name":    string(*id1),
+						NameTag:   string(*id1),
 						"tag1":    "val1",
 					},
 					"vmp1": "vmv1",
@@ -761,7 +840,7 @@ func TestProvisionUpdateDedicatedGlobal(t *testing.T) {
 				TResourceName(string(*id2)): {
 					"tags": map[string]interface{}{
 						attachTag: "default_dedicated_1,managers_global",
-						"Name":    string(*id2),
+						NameTag:   string(*id2),
 						"tag1":    "val1",
 					},
 					"vmp1": "vmv1",
@@ -1020,7 +1099,7 @@ func TestRunValidateProvisionDescribe(t *testing.T) {
 				"subnet_id": "${aws_subnet.default.id}",
 				"private_ip": "INSTANCE_LOGICAL_ID",
 				"tags" :  {
-					"Name" : "web4",
+					"infrakit.instance.name" : "web4",
 					"InstancePlugin" : "terraform"
 				},
 				"connection" : {
@@ -1136,7 +1215,7 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 				"terraform_demo_swarm_mgr_sl",
 				"label1:value1",
 				"label2:value2",
-				"name:" + string(*id2),
+				NameTag + ":" + string(*id2),
 				instance.LogicalIDTag + ":logical:id-2",
 			}), conv(props["tags"].([]interface{})))
 			require.Equal(t, expectedUserData2, props["user_metadata"])
@@ -1157,7 +1236,7 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 				"InstancePlugin":      "terraform",
 				"label1":              "value1",
 				"label2":              "value2",
-				"Name":                string(*id2),
+				NameTag:               string(*id2),
 				instance.LogicalIDTag: "logical:id-2",
 			}, props["tags"])
 			require.Equal(t, base64.StdEncoding.EncodeToString([]byte(expectedUserData2)), props["user_data"])
@@ -1193,10 +1272,11 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 				"label1":                      "value1",
 				"label2":                      "value2",
 				"label3":                      "value3",
-				"name":                        string(*id1),
+				NameTag:                       string(*id1),
 				instance.LogicalIDTag:         "logical.id-1",
 			},
-			LogicalID: &logicalID1,
+			LogicalID:  &logicalID1,
+			Properties: types.AnyString("{}"),
 		}
 		inst2 = instance.Description{
 			ID: *id2,
@@ -1204,10 +1284,11 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 				"terraform_demo_swarm_mgr_sl": "",
 				"label1":                      "value1",
 				"label2":                      "value2",
-				"name":                        string(*id2),
+				NameTag:                       string(*id2),
 				instance.LogicalIDTag:         "logical:id-2",
 			},
-			LogicalID: &logicalID2,
+			LogicalID:  &logicalID2,
+			Properties: types.AnyString("{}"),
 		}
 	case VMAmazon:
 		inst1 = instance.Description{
@@ -1217,10 +1298,11 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 				"label1":              "value1",
 				"label2":              "value2",
 				"LABEL3":              "VALUE3",
-				"Name":                string(*id1),
+				NameTag:               string(*id1),
 				instance.LogicalIDTag: "logical.id-1",
 			},
-			LogicalID: &logicalID1,
+			LogicalID:  &logicalID1,
+			Properties: types.AnyString("{}"),
 		}
 		inst2 = instance.Description{
 			ID: *id2,
@@ -1228,15 +1310,19 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 				"InstancePlugin":      "terraform",
 				"label1":              "value1",
 				"label2":              "value2",
-				"Name":                string(*id2),
+				NameTag:               string(*id2),
 				instance.LogicalIDTag: "logical:id-2",
 			},
-			LogicalID: &logicalID2,
+			LogicalID:  &logicalID2,
+			Properties: types.AnyString("{}"),
 		}
 	}
 
 	// Both instances match: label=value1
-	list, err := tf.DescribeInstances(map[string]string{"label1": "value1"}, false)
+	list, err := tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{"label1": "value1"},
+		false)
 	require.NoError(t, err)
 	require.Contains(t, list, inst1)
 	require.Contains(t, list, inst2)
@@ -1266,7 +1352,7 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 			"label1:changed1",
 			"label2:value2",
 			"label3:value3",
-			"name:" + string(*id2),
+			NameTag + ":" + string(*id2),
 			instance.LogicalIDTag + ":logical:id-2",
 		}), conv(props["tags"].([]interface{})))
 	case VMAmazon:
@@ -1275,7 +1361,7 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 			"label1":              "changed1",
 			"label2":              "value2",
 			"label3":              "value3",
-			"Name":                string(*id2),
+			NameTag:               string(*id2),
 			instance.LogicalIDTag: "logical:id-2",
 		}, props["tags"])
 	}
@@ -1285,17 +1371,25 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 	inst2.Tags["label3"] = "value3"
 
 	// Only a single match: label1=changed1
-	list, err = tf.DescribeInstances(map[string]string{"label1": "changed1"}, false)
+	list, err = tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{"label1": "changed1"},
+		false)
 	require.NoError(t, err)
 	require.Equal(t, []instance.Description{inst2}, list)
 
 	// Only a single match: label1=value1
-	list, err = tf.DescribeInstances(map[string]string{"label1": "value1"}, false)
+	list, err = tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{"label1": "value1"},
+		false)
 	require.NoError(t, err)
 	require.Equal(t, []instance.Description{inst1}, list)
 
 	// No matches: label1=foo
-	list, err = tf.DescribeInstances(map[string]string{"label1": "foo"}, false)
+	list, err = tf.doDescribeInstances(emptyTfShowFns,
+		map[string]string{"label1": "foo"},
+		false)
 	require.NoError(t, err)
 	require.Equal(t, []instance.Description{}, list)
 
@@ -1307,7 +1401,10 @@ func runValidateProvisionDescribe(t *testing.T, resourceType, properties string)
 	require.Len(t, files, 1)
 	require.Equal(t, filepath.Base(tfPath1), files[0].Name())
 
-	list, err = tf.DescribeInstances(map[string]string{"label1": "changed1"}, false)
+	list, err = tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{"label1": "changed1"},
+		false)
 	require.NoError(t, err)
 	require.Equal(t, []instance.Description{}, list)
 
@@ -1492,7 +1589,7 @@ func TestWriteTerraformFilesSingleOverride(t *testing.T) {
 	fileMap["instance-1234"] = &tFormat
 	// Indicate that the file already exists as .tf.json file, create it with
 	// garbage (it should be overriden)
-	err := afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-1234.tf.json"), []byte("not-json"), 0644)
+	err := writeFileRaw(tf, "instance-1234.tf.json", []byte("not-json"))
 	require.NoError(t, err)
 	paths, err := tf.writeTerraformFiles(
 		fileMap,
@@ -2070,55 +2167,7 @@ func TestFindOrphanedDedicatedAttachmentKeys(t *testing.T) {
 	require.Equal(t, []string{"mgr3"}, orphanKeys)
 }
 
-func TestScanLocalFilesNoDir(t *testing.T) {
-	tf, dir := getPluginDirNotExists(t)
-	defer os.RemoveAll(dir)
-	_, err := tf.scanLocalFiles()
-	require.Error(t, err)
-	require.True(t, os.IsNotExist(err), fmt.Sprintf("Incorrect error, expected NotExist, got %v", err))
-}
-
-func TestScanLocalFilesNoPermissions(t *testing.T) {
-	tf, dir := getPluginDirNoPerms(t)
-	defer os.RemoveAll(dir)
-	_, err := tf.scanLocalFiles()
-	require.Error(t, err)
-	require.True(t, os.IsPermission(err), fmt.Sprintf("Incorrect error, expected permission, got %v", err))
-}
-
-func TestScanLocalFilesNoFiles(t *testing.T) {
-	tf, dir := getPlugin(t)
-	defer os.RemoveAll(dir)
-	vms, err := tf.scanLocalFiles()
-	require.NoError(t, err)
-	require.Empty(t, vms)
-}
-
-func TestScanLocalFilesInvalidFile(t *testing.T) {
-	tf, dir := getPlugin(t)
-	defer os.RemoveAll(dir)
-	err := afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-12345.tf.json"), []byte("not-json"), 0644)
-	require.NoError(t, err)
-	_, err = tf.scanLocalFiles()
-	require.Error(t, err)
-}
-
-func TestScanLocalFilesNoVms(t *testing.T) {
-	tf, dir := getPlugin(t)
-	defer os.RemoveAll(dir)
-	// Create a valid file without a VM type
-	m := make(map[TResourceType]map[TResourceName]TResourceProperties)
-	tformat := TFormat{Resource: m}
-	buff, err := json.Marshal(tformat)
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-12345.tf.json"), buff, 0644)
-	require.NoError(t, err)
-	_, err = tf.scanLocalFiles()
-	require.Error(t, err)
-	require.Equal(t, "not found", err.Error())
-}
-
-func TestScanLocalFiles(t *testing.T) {
+func TestScanLocalFilesVMOnly(t *testing.T) {
 	tf, dir := getPlugin(t)
 	defer os.RemoveAll(dir)
 
@@ -2127,20 +2176,14 @@ func TestScanLocalFiles(t *testing.T) {
 	inst1[VMSoftLayer] = map[TResourceName]TResourceProperties{
 		"instance-12": {"key1": "val1"},
 	}
-	tformat := TFormat{Resource: inst1}
-	buff, err := json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-12.tf.json"), buff, 0644)
+	err := writeFile(tf, "instance-12.tf.json", TFormat{Resource: inst1})
 	require.NoError(t, err)
 
 	inst2 := make(map[TResourceType]map[TResourceName]TResourceProperties)
 	inst2[VMSoftLayer] = map[TResourceName]TResourceProperties{
 		"instance-34": {"key2": "val2"},
 	}
-	tformat = TFormat{Resource: inst2}
-	buff, err = json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-34.tf.json"), buff, 0644)
+	err = writeFile(tf, "instance-34.tf.json", TFormat{Resource: inst2})
 	require.NoError(t, err)
 
 	// And another type
@@ -2148,33 +2191,43 @@ func TestScanLocalFiles(t *testing.T) {
 	inst3[VMAmazon] = map[TResourceName]TResourceProperties{
 		"instance-56": {"key3": "val3"},
 	}
-	tformat = TFormat{Resource: inst3}
-	buff, err = json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-56.tf.json"), buff, 0644)
+	err = writeFile(tf, "instance-56.tf.json", TFormat{Resource: inst3})
 	require.NoError(t, err)
 
-	// Should get 2 different resource types, 2 VMs for softlayer and 1 for AWS
-	vms, err := tf.scanLocalFiles()
+	// Should get 3 files, 2 VMs for softlayer and 1 for AWS
+	files, err := tf.listCurrentTfFiles()
 	require.NoError(t, err)
-	require.Equal(t, 2, len(vms))
-	softlayerVMs, contains := vms[VMSoftLayer]
-	require.True(t, contains)
-	require.Equal(t, 2, len(softlayerVMs))
+	require.Len(t, files, 3)
+
+	require.Contains(t, files, "instance-12.tf.json")
+	data := files["instance-12.tf.json"]
 	require.Equal(t,
-		softlayerVMs[TResourceName("instance-12")],
-		TResourceProperties{"key1": "val1"},
+		map[TResourceType]map[TResourceName]TResourceProperties{
+			VMSoftLayer: {
+				TResourceName("instance-12"): {"key1": "val1"},
+			},
+		},
+		data,
 	)
+	require.Contains(t, files, "instance-34.tf.json")
+	data = files["instance-34.tf.json"]
 	require.Equal(t,
-		softlayerVMs[TResourceName("instance-34")],
-		TResourceProperties{"key2": "val2"},
+		map[TResourceType]map[TResourceName]TResourceProperties{
+			VMSoftLayer: {
+				TResourceName("instance-34"): {"key2": "val2"},
+			},
+		},
+		data,
 	)
-	awsVMs, contains := vms[VMAmazon]
-	require.True(t, contains)
-	require.Equal(t, 1, len(awsVMs))
+	require.Contains(t, files, "instance-56.tf.json")
+	data = files["instance-56.tf.json"]
 	require.Equal(t,
-		awsVMs[TResourceName("instance-56")],
-		TResourceProperties{"key3": "val3"},
+		map[TResourceType]map[TResourceName]TResourceProperties{
+			VMAmazon: {
+				TResourceName("instance-56"): {"key3": "val3"},
+			},
+		},
+		data,
 	)
 }
 
@@ -2305,15 +2358,15 @@ func TestMergeTagsIntoVMPropsNoExtraTags(t *testing.T) {
 		if vmType == VMSoftLayer || vmType == VMIBMCloud {
 			props = TResourceProperties{
 				"tags": []interface{}{
-					"Name:instance-1234",
+					NameTag + ":instance-1234",
 					"foo:BaR",
 				},
 			}
 		} else {
 			props = TResourceProperties{
 				"tags": map[string]interface{}{
-					"Name": "instance-1234",
-					"foo":  "BaR",
+					NameTag: "instance-1234",
+					"foo":   "BaR",
 				},
 			}
 		}
@@ -2323,11 +2376,11 @@ func TestMergeTagsIntoVMPropsNoExtraTags(t *testing.T) {
 			require.Len(t, tags, 2)
 			// Note that tags are all lowercase
 			require.Contains(t, tags, "foo:bar")
-			require.Contains(t, tags, "name:instance-1234")
+			require.Contains(t, tags, NameTag+":instance-1234")
 		} else {
 			expectedTags := map[string]interface{}{
-				"Name": "instance-1234",
-				"foo":  "BaR",
+				NameTag: "instance-1234",
+				"foo":   "BaR",
 			}
 			require.Equal(t, expectedTags, props["tags"])
 		}
@@ -2338,8 +2391,8 @@ func TestMergeTagsIntoVMPropsNoExtraTags(t *testing.T) {
 func TestMergeTagsIntoVMPropsNoVMTags(t *testing.T) {
 	for _, vmType := range VMTypes {
 		tags := map[string]string{
-			"Name": "instance-1234",
-			"foo":  "BaR",
+			NameTag: "instance-1234",
+			"foo":   "BaR",
 		}
 		props := TResourceProperties{}
 		mergeTagsIntoVMProps(vmType.(TResourceType), props, tags)
@@ -2348,11 +2401,11 @@ func TestMergeTagsIntoVMPropsNoVMTags(t *testing.T) {
 			require.Len(t, tags, 2)
 			// Note that tags are all lowercase
 			require.Contains(t, tags, "foo:bar")
-			require.Contains(t, tags, "name:instance-1234")
+			require.Contains(t, tags, NameTag+":instance-1234")
 		} else {
 			expectedTags := map[string]interface{}{
-				"Name": "instance-1234",
-				"foo":  "BaR",
+				NameTag: "instance-1234",
+				"foo":   "BaR",
 			}
 			require.Equal(t, expectedTags, props["tags"])
 		}
@@ -2365,21 +2418,21 @@ func TestMergeTagsIntoVMProps(t *testing.T) {
 		if vmType == VMSoftLayer || vmType == VMIBMCloud {
 			props = TResourceProperties{
 				"tags": []interface{}{
-					"Name:instance-1234",
+					NameTag + ":instance-1234",
 					"key:original",
 				},
 			}
 		} else {
 			props = TResourceProperties{
 				"tags": map[string]interface{}{
-					"Name": "instance-1234",
-					"key":  "original",
+					NameTag: "instance-1234",
+					"key":   "original",
 				},
 			}
 		}
 		tags := map[string]string{
-			"Name": "instance-1234",
-			"key":  "override::val",
+			NameTag: "instance-1234",
+			"key":   "override::val",
 			// Input tag is comma separated
 			attachTag: fmt.Sprintf("%s,%s", "attach1", "attach2"),
 		}
@@ -2388,7 +2441,7 @@ func TestMergeTagsIntoVMProps(t *testing.T) {
 			tags := props["tags"]
 			require.Len(t, tags, 3)
 			require.Contains(t, tags, "key:override::val")
-			require.Contains(t, tags, "name:instance-1234")
+			require.Contains(t, tags, NameTag+":instance-1234")
 			// Changed to space separated
 			require.Contains(t,
 				tags,
@@ -2396,7 +2449,7 @@ func TestMergeTagsIntoVMProps(t *testing.T) {
 			)
 		} else {
 			expectedTags := map[string]interface{}{
-				"Name":    "instance-1234",
+				NameTag:   "instance-1234",
 				"key":     "override::val",
 				attachTag: fmt.Sprintf("%s,%s", "attach1", "attach2"),
 			}
@@ -2466,7 +2519,7 @@ func TestLabelInvalidFile(t *testing.T) {
 	tf, dir := getPlugin(t)
 	defer os.RemoveAll(dir)
 	id := "instance-1234"
-	err := afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id)), []byte("not-json"), 0644)
+	err := writeFileRaw(tf, fmt.Sprintf("%v.tf.json", id), []byte("not-json"))
 	require.NoError(t, err)
 	err = tf.Label(instance.ID(id), nil)
 	require.Error(t, err)
@@ -2478,10 +2531,7 @@ func TestLabelNoVM(t *testing.T) {
 	id := "instance-1234"
 	// No VM data in instance definition
 	inst := make(map[TResourceType]map[TResourceName]TResourceProperties)
-	tformat := TFormat{Resource: inst}
-	buff, err := json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id)), buff, 0644)
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json", id), TFormat{Resource: inst})
 	require.NoError(t, err)
 	err = tf.Label(instance.ID(id), nil)
 	require.Error(t, err)
@@ -2495,10 +2545,7 @@ func TestLabelNoProperties(t *testing.T) {
 	// Resource does not have any properties
 	inst := make(map[TResourceType]map[TResourceName]TResourceProperties)
 	inst[VMSoftLayer] = map[TResourceName]TResourceProperties{"instance-1234": {}}
-	tformat := TFormat{Resource: inst}
-	buff, err := json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id)), buff, 0644)
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json", id), TFormat{Resource: inst})
 	require.NoError(t, err)
 	err = tf.Label(instance.ID(id), nil)
 	require.Error(t, err)
@@ -2519,10 +2566,7 @@ func TestLabelCreateNewTags(t *testing.T) {
 				fmt.Sprintf("key-%v", index): fmt.Sprintf("val-%v", index),
 			},
 		}
-		tformat := TFormat{Resource: inst}
-		buff, err := json.MarshalIndent(tformat, " ", " ")
-		require.NoError(t, err)
-		err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id)), buff, 0644)
+		err := writeFile(tf, fmt.Sprintf("%v.tf.json", id), TFormat{Resource: inst})
 		require.NoError(t, err)
 	}
 
@@ -2591,10 +2635,7 @@ func TestLabelMergeTags(t *testing.T) {
 				"tags": tags,
 			},
 		}
-		tformat := TFormat{Resource: inst}
-		buff, err := json.MarshalIndent(tformat, " ", " ")
-		require.NoError(t, err)
-		err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id)), buff, 0644)
+		err := writeFile(tf, fmt.Sprintf("%v.tf.json", id), TFormat{Resource: inst})
 		require.NoError(t, err)
 	}
 
@@ -2782,9 +2823,7 @@ func TestDestroy(t *testing.T) {
 			},
 		},
 	}
-	buff, err := json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id)), buff, 0644)
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json", id), tformat)
 	require.NoError(t, err)
 	err = tf.Destroy(instance.ID(id), instance.Termination)
 	require.Nil(t, err)
@@ -2888,7 +2927,7 @@ func TestDestroyRollingUpdateLogicalID(t *testing.T) {
 						"tag1":                "val1",
 						attachTag:             fmt.Sprintf("default_dedicated_%s", logicalID),
 						instance.LogicalIDTag: string(logicalID),
-						"Name":                string(*id1),
+						NameTag:               string(*id1),
 					},
 				},
 			},
@@ -2956,7 +2995,7 @@ func TestDestroyRollingUpdateLogicalID(t *testing.T) {
 						"tag1":                "val1",
 						attachTag:             fmt.Sprintf("default_dedicated_%s", logicalID),
 						instance.LogicalIDTag: string(logicalID),
-						"Name":                string(*id2),
+						NameTag:               string(*id2),
 					},
 				},
 			},
@@ -3047,7 +3086,7 @@ func TestDestroyRollingUpdateWithoutLogicalID(t *testing.T) {
 						"tags": map[string]interface{}{
 							fmt.Sprintf("tag%v", index+1): fmt.Sprintf("val%v", index+1),
 							attachTag:                     fmt.Sprintf("default_dedicated_%v", index+1),
-							"Name":                        id,
+							NameTag:                       id,
 						},
 					},
 				},
@@ -3137,7 +3176,7 @@ func TestDestroyRollingUpdateWithoutLogicalID(t *testing.T) {
 						"tags": map[string]interface{}{
 							fmt.Sprintf("tag%v", index+1): fmt.Sprintf("val%v", index+1),
 							attachTag:                     fmt.Sprintf("default_dedicated_%v", index+1),
-							"Name":                        id,
+							NameTag:                       id,
 						},
 					},
 				},
@@ -3222,7 +3261,25 @@ func TestParseAttachTagSlice(t *testing.T) {
 func TestDescribeNoFiles(t *testing.T) {
 	tf, dir := getPlugin(t)
 	defer os.RemoveAll(dir)
-	results, err := tf.DescribeInstances(map[string]string{}, false)
+	results, err := tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{},
+		false)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{}, results)
+}
+
+func TestDescribeNoVMs(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+	// Create a valid file without a VM type
+	m := make(map[TResourceType]map[TResourceName]TResourceProperties)
+	err := writeFile(tf, "instance-12345.tf.json", TFormat{Resource: m})
+	require.NoError(t, err)
+	results, err := tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{},
+		true)
 	require.NoError(t, err)
 	require.Equal(t, []instance.Description{}, results)
 }
@@ -3238,9 +3295,7 @@ func TestDescribeWithNewFile(t *testing.T) {
 	inst1[VMSoftLayer] = map[TResourceName]TResourceProperties{
 		TResourceName(id1): {"tags": tags1},
 	}
-	buff, err := json.MarshalIndent(TFormat{Resource: inst1}, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json.new", id1)), buff, 0644)
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json", id1), TFormat{Resource: inst1})
 	require.NoError(t, err)
 	// Instance1, unique tag and shared tag
 	inst2 := make(map[TResourceType]map[TResourceName]TResourceProperties)
@@ -3249,9 +3304,7 @@ func TestDescribeWithNewFile(t *testing.T) {
 	inst2[VMAzure] = map[TResourceName]TResourceProperties{
 		TResourceName(id2): {"tags": tags2},
 	}
-	buff, err = json.MarshalIndent(TFormat{Resource: inst2}, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id2)), buff, 0644)
+	err = writeFile(tf, fmt.Sprintf("%v.tf.json", id2), TFormat{Resource: inst2})
 	require.NoError(t, err)
 	// Instance1, unique tag only
 	inst3 := make(map[TResourceType]map[TResourceName]TResourceProperties)
@@ -3260,19 +3313,19 @@ func TestDescribeWithNewFile(t *testing.T) {
 	inst3[VMAmazon] = map[TResourceName]TResourceProperties{
 		TResourceName(id3): {"tags": tags3},
 	}
-	buff, err = json.MarshalIndent(TFormat{Resource: inst3}, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id3)), buff, 0644)
+	err = writeFile(tf, fmt.Sprintf("%v.tf.json", id3), TFormat{Resource: inst3})
 	require.NoError(t, err)
 
 	// First instance matches
-	results, err := tf.DescribeInstances(
+	results, err := tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tag1": "val1"},
 		false)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(results))
 	require.Equal(t, instance.ID(id1), results[0].ID)
-	results, err = tf.DescribeInstances(
+	results, err = tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tag1": "val1", "tagShared": "valShared"},
 		false)
 	require.NoError(t, err)
@@ -3280,7 +3333,8 @@ func TestDescribeWithNewFile(t *testing.T) {
 	require.Equal(t, instance.ID(id1), results[0].ID)
 
 	// Second instance matches
-	results, err = tf.DescribeInstances(
+	results, err = tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tag2": "val2"},
 		false)
 	require.NoError(t, err)
@@ -3288,7 +3342,8 @@ func TestDescribeWithNewFile(t *testing.T) {
 	require.Equal(t, instance.ID(id2), results[0].ID)
 
 	// Both instances matches
-	results, err = tf.DescribeInstances(
+	results, err = tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tagShared": "valShared"},
 		false)
 	require.NoError(t, err)
@@ -3301,19 +3356,24 @@ func TestDescribeWithNewFile(t *testing.T) {
 	require.Contains(t, ids, instance.ID(id2))
 
 	// No instances match
-	results, err = tf.DescribeInstances(
+	results, err = tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"tag1": "val1", "tagShared": "valShared", "foo": "bar"},
 		false)
 	require.NoError(t, err)
 	require.Empty(t, results)
-	results, err = tf.DescribeInstances(
+	results, err = tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"TAG2": "val2"},
 		false)
 	require.NoError(t, err)
 	require.Empty(t, results)
 
 	// All instances match (no tags passed)
-	results, err = tf.DescribeInstances(map[string]string{}, false)
+	results, err = tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{},
+		false)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(results))
 	ids = []instance.ID{}
@@ -3340,9 +3400,7 @@ func TestDescribeAttachTag(t *testing.T) {
 			},
 		},
 	}
-	buff, err := json.MarshalIndent(TFormat{Resource: inst1}, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json.new", id1)), buff, 0644)
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json", id1), TFormat{Resource: inst1})
 	require.NoError(t, err)
 
 	inst2 := make(map[TResourceType]map[TResourceName]TResourceProperties)
@@ -3356,13 +3414,12 @@ func TestDescribeAttachTag(t *testing.T) {
 			},
 		},
 	}
-	buff, err = json.MarshalIndent(TFormat{Resource: inst2}, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", id2)), buff, 0644)
+	err = writeFile(tf, fmt.Sprintf("%v.tf.json", id2), TFormat{Resource: inst2})
 	require.NoError(t, err)
 
 	// Get both instances
-	results, err := tf.DescribeInstances(
+	results, err := tf.doDescribeInstances(
+		emptyTfShowFns,
 		map[string]string{"key": "val"},
 		false)
 	require.NoError(t, err)
@@ -3375,6 +3432,7 @@ func TestDescribeAttachTag(t *testing.T) {
 				"key":     "val",
 				attachTag: "attach1-1,attach1-2",
 			},
+			Properties: types.AnyString("{}"),
 		},
 	)
 	require.Contains(t,
@@ -3385,6 +3443,7 @@ func TestDescribeAttachTag(t *testing.T) {
 				"key":     "val",
 				attachTag: "attach2-1,attach2-2",
 			},
+			Properties: types.AnyString("{}"),
 		},
 	)
 }
@@ -3940,11 +3999,7 @@ func TestImportAlreadyExists(t *testing.T) {
 		ResourceType: &resType,
 	}
 	// Ensure that a tf.json file exists
-	err := afero.WriteFile(
-		tf.fs,
-		filepath.Join(dir, "instance-123.tf.json"),
-		[]byte("random-content"),
-		0644)
+	err := writeFileRaw(tf, "instance-123.tf.json", []byte("random-content"))
 	require.NoError(t, err)
 	err = tf.importResources(fns, []*ImportResource{&res}, &spec)
 	require.NoError(t, err)
@@ -4379,9 +4434,7 @@ func internalTestImportResourceDedicatedGlobal(t *testing.T, options importOptio
 				},
 			},
 		}
-		buff, err := json.MarshalIndent(tFormat, "  ", "  ")
-		require.NoError(t, err)
-		err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, fmt.Sprintf("%v.tf.json", existingVMName)), buff, 0644)
+		err := writeFile(tf, fmt.Sprintf("%v.tf.json", existingVMName), tFormat)
 		require.NoError(t, err)
 	}
 	if options.FileExistsGlobal {
@@ -4394,9 +4447,7 @@ func internalTestImportResourceDedicatedGlobal(t *testing.T, options importOptio
 				},
 			},
 		}
-		buff, err := json.MarshalIndent(tFormat, "  ", "  ")
-		require.NoError(t, err)
-		err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "managers_global.tf.json"), buff, 0644)
+		err := writeFile(tf, "managers_global.tf.json", tFormat)
 		require.NoError(t, err)
 	}
 	if options.FileExistsDedicated {
@@ -4409,9 +4460,7 @@ func internalTestImportResourceDedicatedGlobal(t *testing.T, options importOptio
 				},
 			},
 		}
-		buff, err := json.MarshalIndent(tFormat, "  ", "  ")
-		require.NoError(t, err)
-		err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "managers_dedicated_mgr1.tf.json"), buff, 0644)
+		err := writeFile(tf, "managers_dedicated_mgr1.tf.json", tFormat)
 		require.NoError(t, err)
 	}
 	spec := instance.Spec{
@@ -4901,23 +4950,17 @@ func TestParseFileForInstanceID(t *testing.T) {
 	tformat := TFormat{Resource: map[TResourceType]map[TResourceName]TResourceProperties{
 		VMIBMCloud: {"instance-1234": {}}},
 	}
-	buff, err := json.MarshalIndent(tformat, "  ", "  ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-1234.tf.json.new"), buff, 0644)
+	err := writeFile(tf, "instance-1234.tf.json.new", tformat)
 	require.NoError(t, err)
 	tformat = TFormat{Resource: map[TResourceType]map[TResourceName]TResourceProperties{
 		VMSoftLayer: {"instance-2345": {}}},
 	}
-	buff, err = json.MarshalIndent(tformat, "  ", "  ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-2345.tf.json.new"), buff, 0644)
+	err = writeFile(tf, "instance-2345.tf.json.new", tformat)
 	require.NoError(t, err)
 	tformat = TFormat{Resource: map[TResourceType]map[TResourceName]TResourceProperties{
 		VMAmazon: {"instance-3456": {}}},
 	}
-	buff, err = json.MarshalIndent(tformat, "  ", "  ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-3456.tf.json"), buff, 0644)
+	err = writeFile(tf, "instance-3456.tf.json", tformat)
 	require.NoError(t, err)
 
 	tFormat, filename, err := tf.parseFileForInstanceID(instance.ID("instance-1234"))
@@ -4979,6 +5022,15 @@ func TestListCurrentTfFilesNoPermissions(t *testing.T) {
 	require.True(t, os.IsPermission(err), fmt.Sprintf("Incorrect error, expected permission, got %v", err))
 }
 
+func TestListCurrentTfFilesInvalidFile(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+	err := writeFileRaw(tf, "instance-1234.tf.json", []byte("not-json"))
+	require.NoError(t, err)
+	_, err = tf.listCurrentTfFiles()
+	require.Error(t, err)
+}
+
 func TestListCurrentTfFiles(t *testing.T) {
 	tf, dir := getPlugin(t)
 	defer os.RemoveAll(dir)
@@ -4991,40 +5043,28 @@ func TestListCurrentTfFiles(t *testing.T) {
 	resources[TResourceType("nfs")] = map[TResourceName]TResourceProperties{
 		"instance-12-default-nfs": {"nfs-k1": "nfs-v1"},
 	}
-	tformat := TFormat{Resource: resources}
-	buff, err := json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-12.tf.json.new"), buff, 0644)
+	err := writeFile(tf, "instance-12.tf.json.new", TFormat{Resource: resources})
 	require.NoError(t, err)
 	// File with only a VM
 	resources = make(map[TResourceType]map[TResourceName]TResourceProperties)
 	resources[VMSoftLayer] = map[TResourceName]TResourceProperties{
 		"instance-34": {"key2": "val2"},
 	}
-	tformat = TFormat{Resource: resources}
-	buff, err = json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-34.tf.json"), buff, 0644)
+	err = writeFile(tf, "instance-34.tf.json", TFormat{Resource: resources})
 	require.NoError(t, err)
 	// And a dedicated resource
 	resources = make(map[TResourceType]map[TResourceName]TResourceProperties)
 	resources[TResourceType("nfs")] = map[TResourceName]TResourceProperties{
 		"instance-34-dedicated-nfs": {"nfs-k2": "nfs-v2"},
 	}
-	tformat = TFormat{Resource: resources}
-	buff, err = json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "default-dedicated-instance-34.tf.json"), buff, 0644)
+	err = writeFile(tf, "default-dedicated-instance-34.tf.json", TFormat{Resource: resources})
 	require.NoError(t, err)
 	// And a global type
 	resources = make(map[TResourceType]map[TResourceName]TResourceProperties)
 	resources[TResourceType("nfs")] = map[TResourceName]TResourceProperties{
 		"global-nfs": {"nfs-k3": "nfs-v3"},
 	}
-	tformat = TFormat{Resource: resources}
-	buff, err = json.MarshalIndent(tformat, " ", " ")
-	require.NoError(t, err)
-	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "scope_global.tf.json"), buff, 0644)
+	err = writeFile(tf, "scope_global.tf.json", TFormat{Resource: resources})
 	require.NoError(t, err)
 
 	// Should get 4 files
@@ -5075,4 +5115,346 @@ func TestListCurrentTfFiles(t *testing.T) {
 		},
 		data,
 	)
+}
+
+func TestDoDescribeInstancesEmpty(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+
+	result, err := tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{},
+		false)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{}, result)
+
+	result, err = tf.doDescribeInstances(
+		emptyTfShowFns,
+		map[string]string{},
+		true)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{}, result)
+}
+
+func TestDoDescribeInstancesShowError(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+
+	// Write single file
+	id := "instance-1"
+	tags := []string{"tag1:val1"}
+	inst := map[TResourceType]map[TResourceName]TResourceProperties{
+		VMIBMCloud: {
+			TResourceName(id): {"k1": "v1", "tags": tags},
+		},
+	}
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json.new", id), TFormat{Resource: inst})
+	require.NoError(t, err)
+
+	fns := describeFns{
+		tfShow: func(types []TResourceType, propFilter []string) (map[TResourceType]map[TResourceName]TResourceProperties, error) {
+			require.Equal(t, []TResourceType{VMIBMCloud}, types)
+			require.Nil(t, propFilter)
+			return nil, fmt.Errorf("Custom show error")
+		},
+	}
+
+	_, err = tf.doDescribeInstances(fns, map[string]string{}, true)
+	require.Error(t, err)
+	// The "show" is used to populate the cache, if it failed then the cache
+	// does not exist.
+	require.Equal(t, "Unable to retrieve instances", err.Error())
+}
+
+func TestDoDescribeInstancesProperties(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+
+	// Write files without all properties, the properties will be returned
+	// from terraform
+	id1 := "instance-1"
+	id2 := "instance-2"
+	tag1 := []string{"common:val", "tag1:val1"}
+	tag2 := []string{"common:val", "tag2:val2"}
+	inst1 := map[TResourceType]map[TResourceName]TResourceProperties{
+		VMIBMCloud: {
+			TResourceName(id1): {"tags": tag1},
+		},
+	}
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json.new", id1), TFormat{Resource: inst1})
+	require.NoError(t, err)
+	inst2 := map[TResourceType]map[TResourceName]TResourceProperties{
+		VMIBMCloud: {
+			TResourceName(id2): {"tags": tag2},
+		},
+	}
+	err = writeFile(tf, fmt.Sprintf("%v.tf.json.new", id2), TFormat{Resource: inst2})
+	require.NoError(t, err)
+
+	fns := describeFns{
+		tfShow: func(types []TResourceType, propFilter []string) (map[TResourceType]map[TResourceName]TResourceProperties, error) {
+			require.Equal(t, []TResourceType{VMIBMCloud}, types)
+			require.Nil(t, propFilter)
+			result := map[TResourceType]map[TResourceName]TResourceProperties{
+				VMIBMCloud: {
+					TResourceName(id1): TResourceProperties{"k1": "v1", "tags": tag1},
+					TResourceName(id2): TResourceProperties{"k2": "v2", "tags": tag2},
+				},
+			}
+			return result, nil
+		},
+	}
+
+	// Expected results
+	props1, err := types.AnyValue(TResourceProperties{"k1": "v1", "tags": tag1})
+	require.NoError(t, err)
+	props2, err := types.AnyValue(TResourceProperties{"k2": "v2", "tags": tag2})
+	require.NoError(t, err)
+	instDesc1 := instance.Description{
+		Tags:       map[string]string{"common": "val", "tag1": "val1"},
+		ID:         instance.ID(id1),
+		Properties: props1,
+	}
+	instDesc1NoProps := instance.Description{
+		Tags:       map[string]string{"common": "val", "tag1": "val1"},
+		ID:         instance.ID(id1),
+		Properties: types.AnyString("{}"),
+	}
+	instDesc2 := instance.Description{
+		Tags:       map[string]string{"common": "val", "tag2": "val2"},
+		ID:         instance.ID(id2),
+		Properties: props2,
+	}
+	instDesc2NoProps := instance.Description{
+		Tags:       map[string]string{"common": "val", "tag2": "val2"},
+		ID:         instance.ID(id2),
+		Properties: types.AnyString("{}"),
+	}
+
+	// No tag filter, all props
+	result, err := tf.doDescribeInstances(fns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Contains(t, result, instDesc1)
+	require.Contains(t, result, instDesc2)
+
+	// No tag filter, no props
+	result, err = tf.doDescribeInstances(fns, map[string]string{}, false)
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Contains(t, result, instDesc1NoProps)
+	require.Contains(t, result, instDesc2NoProps)
+
+	// Ensure that the cache was not changed, get all again
+	result, err = tf.doDescribeInstances(fns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Contains(t, result, instDesc1)
+	require.Contains(t, result, instDesc2)
+
+	// Common tag filter
+	result, err = tf.doDescribeInstances(fns, map[string]string{"common": "val"}, true)
+	require.NoError(t, err)
+	require.Len(t, result, 2)
+	require.Contains(t, result, instDesc1)
+	require.Contains(t, result, instDesc2)
+
+	// Tag1 only filter
+	result, err = tf.doDescribeInstances(fns, map[string]string{"tag1": "val1"}, true)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{instDesc1}, result)
+
+	// Tag2 only filter
+	result, err = tf.doDescribeInstances(fns, map[string]string{"tag2": "val2"}, true)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{instDesc2}, result)
+
+	// No matching tags
+	result, err = tf.doDescribeInstances(fns, map[string]string{"tag1": "bogus"}, true)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{}, result)
+}
+
+func TestCacheClearAndPopulate(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+
+	// Cache should be non-nil but empty
+	require.Equal(t, []instance.Description{}, *tf.cachedInstances)
+
+	// Create an instance on the filesystem
+	id1 := "instance-1"
+	err := writeFile(tf, fmt.Sprintf("%v.tf.json.new", id1), TFormat{
+		Resource: map[TResourceType]map[TResourceName]TResourceProperties{
+			VMIBMCloud: {
+				TResourceName(id1): {"fileProp1": "fp1"},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// A describe will return this instance
+	results, err := tf.doDescribeInstances(emptyTfShowFns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.Equal(t, instance.ID(id1), results[0].ID)
+
+	// Should match the cache
+	require.Equal(t, results, *tf.cachedInstances)
+
+	// Issue a provision, should clear the cache
+	tformat := TFormat{
+		Resource: map[TResourceType]map[TResourceName]TResourceProperties{
+			VMIBMCloud: {
+				TResourceName("resource"): {"fileProp2": "fp2"},
+			},
+		},
+	}
+	buff, err := json.MarshalIndent(tformat, "  ", "  ")
+	require.NoError(t, err)
+	id2, err := tf.Provision(instance.Spec{
+		Properties: types.AnyBytes(buff),
+		Tags:       map[string]string{},
+	})
+	require.NoError(t, err)
+	require.Nil(t, tf.cachedInstances)
+
+	// Describe will re-populate it
+	results, err = tf.doDescribeInstances(emptyTfShowFns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	ids := []instance.ID{}
+	for _, r := range results {
+		ids = append(ids, r.ID)
+	}
+	require.Contains(t, ids, instance.ID(id1))
+	require.Contains(t, ids, *id2)
+
+	// Should match the cache
+	require.Equal(t, results, *tf.cachedInstances)
+
+	// Label inst2, should clear the cache
+	err = tf.Label(*id2, map[string]string{"label1": "new"})
+	require.NoError(t, err)
+	require.Nil(t, tf.cachedInstances)
+
+	// Describe will re-populate it
+	results, err = tf.doDescribeInstances(emptyTfShowFns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	ids = []instance.ID{}
+	for _, r := range results {
+		ids = append(ids, r.ID)
+	}
+	require.Contains(t, ids, instance.ID(id1))
+	require.Contains(t, ids, *id2)
+
+	// Should match the cache
+	require.Equal(t, results, *tf.cachedInstances)
+
+	// Destroy inst2, should clear the cache
+	err = tf.Destroy(*id2, instance.Termination)
+	require.NoError(t, err)
+	require.Nil(t, tf.cachedInstances)
+
+	// Describe will re-populate it
+	results, err = tf.doDescribeInstances(emptyTfShowFns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.Equal(t, instance.ID(id1), results[0].ID)
+
+	// Should match the cache
+	require.Equal(t, results, *tf.cachedInstances)
+
+	// handleFiles should also clear the cache
+	fns := tfFuncs{
+		tfStateList: func() (map[TResourceType]map[TResourceName]struct{}, error) {
+			return map[TResourceType]map[TResourceName]struct{}{}, nil
+		},
+		tfRefresh: func() error {
+			return nil
+		},
+	}
+	err = tf.handleFiles(fns)
+	require.NoError(t, err)
+	require.Nil(t, tf.cachedInstances)
+
+	// Describe will re-populate it
+	results, err = tf.doDescribeInstances(emptyTfShowFns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	require.Equal(t, instance.ID(id1), results[0].ID)
+
+	// Should match the cache
+	require.Equal(t, results, *tf.cachedInstances)
+}
+
+func TestCache(t *testing.T) {
+	tf, dir := getPlugin(t)
+	defer os.RemoveAll(dir)
+
+	// Cache should be non-nil but empty
+	require.Equal(t, []instance.Description{}, *tf.cachedInstances)
+	require.False(t, tf.isCacheNil())
+
+	// nil-ify the cache
+	tf.cachedInstances = nil
+	require.True(t, tf.isCacheNil())
+
+	// Create an instance on the filesystem
+	id1 := "instance-1"
+	tFormat := TFormat{
+		Resource: map[TResourceType]map[TResourceName]TResourceProperties{
+			VMIBMCloud: {
+				TResourceName(id1): {"fileProp1": "fp1"},
+			},
+		},
+	}
+	buff, err := json.MarshalIndent(tFormat, " ", " ")
+	require.NoError(t, err)
+	err = afero.WriteFile(tf.fs, filepath.Join(tf.Dir, "instance-1.tf.json.new"), buff, 0644)
+	require.NoError(t, err)
+
+	// Refresh should pick it up
+	expectedProps, err := types.AnyValue(TResourceProperties{"fileProp1": "fp1"})
+	require.NoError(t, err)
+	expectedInstDesc := instance.Description{
+		ID:         instance.ID(id1),
+		Tags:       map[string]string{},
+		Properties: expectedProps,
+	}
+	tf.refreshNilInstanceCache(emptyTfShowFns)
+	require.Equal(t, []instance.Description{expectedInstDesc}, *tf.cachedInstances)
+
+	// Now that it's cached we can remove the file
+	err = tf.fs.Remove(filepath.Join(tf.Dir, "instance-1.tf.json.new"))
+	require.NoError(t, err)
+
+	// A refresh shouldn't change the cache since it is not nil
+	require.False(t, tf.isCacheNil())
+	tf.refreshNilInstanceCache(emptyTfShowFns)
+	require.Equal(t, []instance.Description{expectedInstDesc}, *tf.cachedInstances)
+
+	// And describe should use the cache
+	fns := describeFns{
+		tfShow: func(types []TResourceType, propFilter []string) (map[TResourceType]map[TResourceName]TResourceProperties, error) {
+			require.Fail(t, "Should not be invoked")
+			return nil, nil
+		},
+	}
+	insts, err := tf.doDescribeInstances(fns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{expectedInstDesc}, insts)
+
+	// Now clear it
+	tf.clearCachedInstances()
+	require.True(t, tf.isCacheNil())
+
+	// Refresh, no files
+	tf.refreshNilInstanceCache(emptyTfShowFns)
+	require.False(t, tf.isCacheNil())
+	require.Equal(t, []instance.Description{}, *tf.cachedInstances)
+	insts, err = tf.doDescribeInstances(fns, map[string]string{}, true)
+	require.NoError(t, err)
+	require.Equal(t, []instance.Description{}, insts)
 }
