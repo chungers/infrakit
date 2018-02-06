@@ -63,6 +63,7 @@ func (l *localScope) Enforce(profile api.Profile) (types.Metadata, error) {
 		}
 		for _, plugin := range plugins {
 			// start each plugin if not running
+			log.Info("starting up plugin", plugin)
 		}
 	}
 

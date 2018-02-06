@@ -6,7 +6,6 @@ import (
 	"path"
 
 	"github.com/docker/infrakit/pkg/api"
-	"github.com/docker/infrakit/pkg/plugin"
 	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/run/scope/local"
 	"github.com/docker/infrakit/pkg/template"
