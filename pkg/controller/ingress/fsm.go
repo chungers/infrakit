@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/infrakit/pkg/controller"
 	ingress "github.com/docker/infrakit/pkg/controller/ingress/types"
+	"github.com/docker/infrakit/pkg/controller/internal"
 	"github.com/docker/infrakit/pkg/core"
 	"github.com/docker/infrakit/pkg/fsm"
 	"github.com/docker/infrakit/pkg/spi/loadbalancer"
@@ -124,7 +124,7 @@ func (c *managed) init(in types.Spec) (err error) {
 	// Once the state is in the syncing state, we advance the fsm from syncing to waiting by executing
 	// work along with the work signal.
 	stateMachineSpec.SetAction(syncing, sync,
-		func(instance fsm.Instance) error {
+		func(instance fsm.FSM) error {
 
 			log.Debug("syncing routes and backends")
 
@@ -190,7 +190,7 @@ func (c *managed) init(in types.Spec) (err error) {
 	}
 
 	// add the poller
-	c.poller = controller.Poll(
+	c.poller = internal.Poll(
 		func() bool {
 
 			if mustTrue(c.isLeader()) {

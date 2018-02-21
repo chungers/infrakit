@@ -69,24 +69,10 @@ func DockerClient(spec Spec) (docker.APIClientCloser, error) {
 
 // baseFlavor is the base implementation.  The manager / worker implementations will provide override.
 type baseFlavor struct {
-	self            *instance.LogicalID
 	getDockerClient func(Spec) (docker.APIClientCloser, error)
 	initScript      *template.Template
 	metadataPlugin  metadata.Plugin
 	scope           scope.Scope
-}
-
-// isSelf determines if the code is being executed on the given instance
-func (s *baseFlavor) isSelf(inst instance.Description) bool {
-	if s.self != nil {
-		if inst.LogicalID != nil && *inst.LogicalID == *s.self {
-			return true
-		}
-		if v, has := inst.Tags[instance.LogicalIDTag]; has {
-			return string(*s.self) == v
-		}
-	}
-	return false
 }
 
 // Runs a poller that periodically samples the swarm status and node info.
@@ -218,6 +204,28 @@ func (s *baseFlavor) Healthy(flavorProperties *types.Any, inst instance.Descript
 		return flavor.Unknown, nil
 
 	case len(nodes) == 1:
+		if nodes[0].Status.State != swarm.NodeStateReady {
+			log.Warn("Node is not ready",
+				"id", nodes[0].ID,
+				"hostname", nodes[0].Description.Hostname,
+				"state", nodes[0].Status.State)
+			return flavor.Unhealthy, nil
+		}
+		if nodes[0].Spec.Role == swarm.NodeRoleManager {
+			if nodes[0].ManagerStatus == nil {
+				log.Error("ManagerStatus is not defined",
+					"id", nodes[0].ID,
+					"hostname", nodes[0].Description.Hostname)
+				return flavor.Unhealthy, nil
+			}
+			if nodes[0].ManagerStatus.Reachability != swarm.ReachabilityReachable {
+				log.Warn("Manager node is not reachable",
+					"id", nodes[0].ID,
+					"hostname", nodes[0].Description.Hostname,
+					"reachability", nodes[0].ManagerStatus.Reachability)
+				return flavor.Unhealthy, nil
+			}
+		}
 		return flavor.Healthy, nil
 
 	default:

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -193,6 +194,8 @@ func TestStartOneLeader(t *testing.T) {
 	leaderChans := []chan string{make(chan string), make(chan string)}
 	checkpoint := make(chan struct{})
 
+	lock := sync.Mutex{}
+	commitCount := 0
 	manager1, stoppable1 := testEnsemble(t, testDiscoveryDir(t), "m1", leaderChans[0], ctrl,
 		func(s *store_mock.MockSnapshot) {
 			empty := &[]entry{}
@@ -210,13 +213,18 @@ func TestStartOneLeader(t *testing.T) {
 		func(g *group_mock.MockPlugin) {
 			g.EXPECT().CommitGroup(gomock.Any(), false).Do(
 				func(spec group.Spec, pretend bool) (string, error) {
-
-					defer close(checkpoint)
+					// Close the checkpoint channel after the 2nd commit
+					lock.Lock()
+					defer lock.Unlock()
+					commitCount++
+					if commitCount == 2 {
+						defer close(checkpoint)
+					}
 
 					require.Equal(t, gs.ID, spec.ID)
 					require.Equal(t, testToStruct(gs.Properties), testToStruct(spec.Properties))
 					return "ok", nil
-				}).Return("ok", nil)
+				}).Return("ok", nil).Times(2)
 		})
 	manager2, stoppable2 := testEnsemble(t, testDiscoveryDir(t), "m2", leaderChans[1], ctrl,
 		func(s *store_mock.MockSnapshot) {
@@ -260,7 +268,9 @@ func TestChangeLeadership(t *testing.T) {
 	checkpoint1 := make(chan struct{})
 	checkpoint2 := make(chan struct{})
 	checkpoint3 := make(chan struct{})
+	lock := sync.Mutex{}
 
+	commitCountMgr1 := 0
 	manager1, stoppable1 := testEnsemble(t, testDiscoveryDir(t), "m1", leaderChans[0], ctrl,
 		func(s *store_mock.MockSnapshot) {
 			empty := &[]entry{}
@@ -279,14 +289,19 @@ func TestChangeLeadership(t *testing.T) {
 		func(g *group_mock.MockPlugin) {
 			g.EXPECT().CommitGroup(gomock.Any(), false).Do(
 				func(spec group.Spec, pretend bool) (string, error) {
-
-					defer close(checkpoint1)
+					// Close the checkpoint1 channel after the 2nd commit
+					lock.Lock()
+					defer lock.Unlock()
+					commitCountMgr1++
+					if commitCountMgr1 == 2 {
+						defer close(checkpoint1)
+					}
 
 					require.Equal(t, gs.ID, spec.ID)
 					require.Equal(t, testToStruct(gs.Properties), testToStruct(spec.Properties))
 					return "ok", nil
 				},
-			).Return("ok", nil)
+			).Return("ok", nil).Times(2)
 
 			// We will get a call to inspect what's being watched
 			g.EXPECT().InspectGroups().Return([]group.Spec{gs}, nil)
@@ -301,6 +316,8 @@ func TestChangeLeadership(t *testing.T) {
 				},
 			).Return(nil)
 		})
+
+	commitCountMgr2 := 0
 	manager2, stoppable2 := testEnsemble(t, testDiscoveryDir(t), "m2", leaderChans[1], ctrl,
 		func(s *store_mock.MockSnapshot) {
 			empty := &[]entry{}
@@ -319,14 +336,19 @@ func TestChangeLeadership(t *testing.T) {
 		func(g *group_mock.MockPlugin) {
 			g.EXPECT().CommitGroup(gomock.Any(), false).Do(
 				func(spec group.Spec, pretend bool) (string, error) {
-
-					defer close(checkpoint2)
+					// Close the checkpoint2 channel after the 2nd commit
+					lock.Lock()
+					defer lock.Unlock()
+					commitCountMgr2++
+					if commitCountMgr2 == 2 {
+						defer close(checkpoint2)
+					}
 
 					require.Equal(t, gs.ID, spec.ID)
 					require.Equal(t, testToStruct(gs.Properties), testToStruct(spec.Properties))
 					return "ok", nil
 				},
-			).Return("ok", nil)
+			).Return("ok", nil).Times(2)
 		})
 
 	manager1.Start()

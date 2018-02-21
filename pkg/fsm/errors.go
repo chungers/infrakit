@@ -4,44 +4,57 @@ import (
 	"fmt"
 )
 
-type errDuplicateState Index
+// ErrDuplicateState is thrown when there are indexes of the same value
+type ErrDuplicateState Index
 
-func (e errDuplicateState) Error() string {
-	return fmt.Sprintf("duplicated state index: %d", e)
+func (e ErrDuplicateState) Error() string {
+	return fmt.Sprintf("duplicated state index")
 }
 
-type unknownState Index
+// ErrUnknownState indicates the state referenced does not match a known state index
+type ErrUnknownState Index
 
-func (e unknownState) Error() string {
-	return fmt.Sprintf("unknown state index: %d", e)
+func (e ErrUnknownState) Error() string {
+	return fmt.Sprintf("unknown state")
 }
 
-type unknownTransition Signal
-
-func (e unknownTransition) Error() string {
-	return fmt.Sprintf("no transition defined for signal %d", e)
+// ErrUnknownTransition indicates an unknown signal while in given state is raised
+type ErrUnknownTransition struct {
+	Signal Signal
+	State  Index
 }
 
-type unknownSignal Signal
-
-func (e unknownSignal) Error() string {
-	return fmt.Sprintf("signal in action not found in transitions %d", e)
+func (e ErrUnknownTransition) Error() string {
+	return fmt.Sprintf("unknown stransition")
 }
 
-type unknownInstance ID
-
-func (e unknownInstance) Error() string {
-	return fmt.Sprintf("unknown instance %d", e)
+// ErrUnknownSignal is raised when a undefined signal is received in the given state
+type ErrUnknownSignal struct {
+	Signal Signal
+	State  Index
 }
 
-type nilAction Signal
+func (e ErrUnknownSignal) Error() string {
+	return fmt.Sprintf("unknown signal")
+}
 
-func (e nilAction) Error() string {
+// ErrUnknownFSM is raised when the ID is does not match any thing in the set
+type ErrUnknownFSM ID
+
+func (e ErrUnknownFSM) Error() string {
+	return fmt.Sprintf("unknown instance")
+}
+
+// ErrNilAction is raised when an action is nil
+type ErrNilAction Signal
+
+func (e ErrNilAction) Error() string {
 	return fmt.Sprintf("nil action corresponding to signal %d", e)
 }
 
-type noTransitions Spec
+// ErrNoTransitions is raised when there are no transitions defined
+type ErrNoTransitions Spec
 
-func (e noTransitions) Error() string {
+func (e ErrNoTransitions) Error() string {
 	return fmt.Sprintf("no transitions defined: count(states)=%d", len(e.states))
 }

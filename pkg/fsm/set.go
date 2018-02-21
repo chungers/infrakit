@@ -1,6 +1,7 @@
 package fsm
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func NewSet(spec *Spec, clock *Clock, optional ...Options) *Set {
 		errors:       make(chan error),
 		events:       make(chan *event),
 		transactions: make(chan *txn, options.BufferSize),
-		new:          make(chan Instance),
+		new:          make(chan FSM),
 		deadlines:    newQueue(),
 	}
 
@@ -46,59 +47,14 @@ func NewSet(spec *Spec, clock *Clock, optional ...Options) *Set {
 	return set
 }
 
-// DefaultOptions returns default values
-func DefaultOptions(name string) Options {
-	return Options{
-		Name:       name,
-		BufferSize: defaultBufferSize,
-	}
-}
-
-// Options contains options for the set
-type Options struct {
-	// Name is the name of the set
-	Name string
-
-	// BufferSize is the size of transaction queue/buffered channel
-	BufferSize int
-}
-
-// Set is a collection of fsm instances that follow a given spec.  This is
-// the primary interface to manipulate the instances... by sending signals to it via channels.
-type Set struct {
-	options      Options
-	spec         Spec
-	now          Time
-	next         ID
-	clock        *Clock
-	members      map[ID]*instance
-	bystate      map[Index]map[ID]*instance
-	reads        chan func(Set) // given a view which is a copy of the Set
-	stop         chan struct{}
-	add          chan Index // add an instance with initial state
-	new          chan Instance
-	delete       chan ID // delete an instance with id
-	errors       chan error
-	events       chan *event
-	transactions chan *txn
-	deadlines    *queue
-	name         string
-	running      bool
-}
-
 // Signal sends a signal to the instance
 func (s *Set) Signal(signal Signal, instance ID, optionalData ...interface{}) error {
 	if _, has := s.spec.signals[signal]; !has {
-		return unknownSignal(signal)
+		return ErrUnknownSignal{Signal: signal}
 	}
 
-	var data interface{}
-	if len(optionalData) > 0 {
-		data = optionalData[0]
-	}
-
-	log.Debug("Signal", "set", s.options.Name, "signal", signal, "instance", instance)
-	s.events <- &event{instance: instance, signal: signal, data: data}
+	log.Debug("Signal", "set", s.options.Name, "signal", s.spec.SignalName(signal), "instance", instance)
+	s.events <- &event{instance: instance, signal: signal, data: optionalData}
 	return nil
 }
 
@@ -122,8 +78,8 @@ func (s *Set) CountByState(state Index) int {
 	return <-total
 }
 
-// ForEachInstance iterates through the set and provides a consistent view of the instances
-func (s *Set) ForEachInstance(view func(ID, Index, interface{}) bool) {
+// ForEach iterates through the set and provides a consistent view of the instances
+func (s *Set) ForEach(view func(ID, Index, interface{}) bool) {
 	blocker := make(chan struct{})
 	s.reads <- func(set Set) {
 		defer close(blocker)
@@ -138,8 +94,8 @@ func (s *Set) ForEachInstance(view func(ID, Index, interface{}) bool) {
 	<-blocker
 }
 
-// ForEachInstanceInState iterates through the set and provides a consistent view of the instances
-func (s *Set) ForEachInstanceInState(check Index, view func(ID, Index, interface{}) bool) {
+// ForEachInState iterates through the set and provides a consistent view of the instances
+func (s *Set) ForEachInState(check Index, view func(ID, Index, interface{}) bool) {
 	blocker := make(chan struct{})
 	s.reads <- func(set Set) {
 		defer close(blocker)
@@ -159,9 +115,14 @@ func (s *Set) ForEachInstanceInState(check Index, view func(ID, Index, interface
 	<-blocker
 }
 
-// Instance returns the instance by id
-func (s *Set) Instance(id ID) Instance {
-	blocker := make(chan Instance, 1)
+// Name returns the name of the set
+func (s *Set) Name() string {
+	return s.options.Name
+}
+
+// Get returns the instance by id. Nil if no id matched
+func (s *Set) Get(id ID) FSM {
+	blocker := make(chan FSM, 1)
 	s.reads <- func(set Set) {
 		defer close(blocker)
 		blocker <- set.members[id]
@@ -170,13 +131,13 @@ func (s *Set) Instance(id ID) Instance {
 }
 
 // Add adds an instance given initial state
-func (s *Set) Add(initial Index) Instance {
+func (s *Set) Add(initial Index) FSM {
 	s.add <- initial
 	return <-s.new
 }
 
 // Delete deletes an instance
-func (s *Set) Delete(instance Instance) {
+func (s *Set) Delete(instance FSM) {
 	s.delete <- instance.ID()
 }
 
@@ -189,20 +150,56 @@ func (s *Set) Stop() {
 	}
 }
 
+// Errors returns the errors encountered during async processing of events
+func (s *Set) Errors() <-chan error {
+	return s.errors
+}
+
 type event struct {
 	instance ID
 	signal   Signal
-	data     interface{}
+	data     []interface{}
 }
 
 func (s *Set) handleError(tid int64, err error, ctx interface{}) {
-	log.Warn("error", "tid", tid, "err", err, "context", ctx)
+
+	message := err.Error()
+	switch err := err.(type) {
+	case ErrUnknownState:
+		if s.options.IgnoreUndefinedStates {
+			return
+		}
+		message = fmt.Sprintf("%s: %v", err.Error(),
+			s.spec.StateName(Index(err)))
+
+	case ErrUnknownTransition:
+		if s.options.IgnoreUndefinedTransitions {
+			return
+		}
+		message = fmt.Sprintf("%s: state(%v) on signal(%v)", err.Error(),
+			s.spec.StateName(err.State), s.spec.SignalName(err.Signal))
+
+	case ErrUnknownSignal:
+		if s.options.IgnoreUndefinedSignals {
+			return
+		}
+		message = fmt.Sprintf("%s: state(%v) on signal(%v)", err.Error(),
+			s.spec.StateName(Index(err.State)), s.spec.SignalName(Signal(err.Signal)))
+
+	case ErrDuplicateState:
+		message = fmt.Sprintf("%s: %v", err.Error(),
+			s.spec.StateName(Index(err)))
+
+	case ErrUnknownFSM:
+		message = fmt.Sprintf("%s: %v", err.Error(), err)
+	}
+
+	defer log.Error("error", "tid", tid, "err", message, "context", ctx)
 	select {
-	case s.errors <- err:
+	case s.errors <- err: // non-blocking send
 	default:
 	}
 }
-
 func (s *Set) handleAdd(tid int64, initial Index) error {
 	// add a new instance
 	id := s.next
@@ -219,7 +216,7 @@ func (s *Set) handleAdd(tid int64, initial Index) error {
 		},
 	}
 
-	log.Debug("add: set deadline", "name", s.options.Name, "tid", tid, "id", id, "initial", initial)
+	log.Debug("add: set deadline", "name", s.options.Name, "tid", tid, "id", id, "initial", s.spec.StateName(initial))
 	if err := s.processDeadline(tid, new, initial); err != nil {
 		return err
 	}
@@ -240,7 +237,7 @@ func (s *Set) handleAdd(tid int64, initial Index) error {
 func (s *Set) handleDelete(tid int64, id ID) error {
 	instance, has := s.members[id]
 	if !has {
-		return unknownInstance(id)
+		return ErrUnknownFSM(id)
 	}
 	// delete an instance and update index
 	delete(s.members, id)
@@ -266,7 +263,7 @@ func (s *Set) handleClockTick(tid int64) error {
 	s.tick()
 	now := s.ct()
 
-	log.Debug("Clock tick", "name", s.options.Name, "tid", tid, "now", now)
+	log.Debug("Clock tick", "name", s.options.Name, "tid", tid, "now", now, "V", debugV2)
 
 	for s.deadlines.Len() > 0 {
 
@@ -284,6 +281,7 @@ func (s *Set) handleClockTick(tid int64) error {
 		// check > 0 here because we could have already raised the signal
 		// when a real event came in.
 		if instance.deadline > 0 {
+
 			// raise the signal
 			if ttl, err := s.spec.expiry(instance.state); err != nil {
 
@@ -291,7 +289,8 @@ func (s *Set) handleClockTick(tid int64) error {
 
 			} else if ttl != nil {
 
-				log.Warn("deadline exceeded", "name", s.options.Name, "tid", tid, "id", instance.id, "raise", ttl.Raise)
+				log.Error("deadline exceeded", "name", s.options.Name, "tid", tid, "id", instance.id,
+					"raise", s.spec.SignalName(ttl.Raise))
 
 				s.raise(tid, instance.id, ttl.Raise, instance.state)
 			}
@@ -322,18 +321,19 @@ func (s *Set) processDeadline(tid int64, instance *instance, state Index) error 
 			// in the queue and deadline is different now
 			log.Debug("deadline updating", "name", s.options.Name, "tid", tid,
 				"instance", instance.id, "deadline", instance.deadline,
-				"state", instance.index)
+				"deadline-queue-index", instance.index)
 			s.deadlines.update(instance)
 		} else {
 			log.Debug("deadline removing", "name", s.options.Name, "tid", tid,
 				"instance", instance.id, "deadline", instance.deadline,
-				"state", instance.index)
+				"deadline-queue-index", instance.index)
 			s.deadlines.remove(instance)
 		}
 	} else if instance.deadline > 0 {
 		// index == -1 means it's not in the queue yet and we have a deadline
 		log.Debug("deadline enqueuing", "name", s.options.Name, "tid", tid,
-			"instance", instance.id, "deadline", instance.deadline, "state", instance.index)
+			"instance", instance.id, "deadline", instance.deadline,
+			"deadline-queue-index", instance.index)
 		s.deadlines.enqueue(instance)
 	}
 
@@ -351,7 +351,8 @@ func (s *Set) processVisitLimit(tid int64, instance *instance, state Index) erro
 		if limit.Value > 0 && instance.visits[state] == limit.Value {
 
 			log.Debug("Max visit limit hit", "name", s.options.Name, "tid", tid,
-				"instance", instance.id, "state", instance.state, "raise", limit.Raise)
+				"instance", instance.id, "state", s.spec.StateName(instance.state),
+				"raise", s.spec.SignalName(limit.Raise))
 
 			s.raise(tid, instance.id, limit.Raise, instance.state)
 
@@ -365,11 +366,11 @@ func (s *Set) processVisitLimit(tid int64, instance *instance, state Index) erro
 func (s *Set) raise(tid int64, id ID, signal Signal, current Index) (err error) {
 	defer func() {
 		log.Debug("instance.signal", "name", s.options.Name, "instance", id,
-			"signal", signal, "state", current, "err", err)
+			"signal", s.spec.SignalName(signal), "state", s.spec.StateName(current), "err", err)
 	}()
 
 	if _, has := s.spec.signals[signal]; !has {
-		err = unknownSignal(signal)
+		err = ErrUnknownSignal{Signal: signal}
 		return
 	}
 
@@ -388,7 +389,7 @@ func (s *Set) handleEvent(tid int64, event *event) error {
 
 	instance, has := s.members[event.instance]
 	if !has {
-		return unknownInstance(event.instance)
+		return ErrUnknownFSM(event.instance)
 	}
 
 	current := instance.state
@@ -398,8 +399,11 @@ func (s *Set) handleEvent(tid int64, event *event) error {
 	}
 
 	log.Debug("Transition", "name", s.options.Name, "tid", tid,
-		"instance", instance.id, "state", current, "signal", event.signal, "next", next,
-		"deadline", instance.deadline, "index", instance.index)
+		"instance", instance.id,
+		"state", s.spec.StateName(current),
+		"signal", s.spec.SignalName(event.signal),
+		"next", s.spec.StateName(next),
+		"deadline", instance.deadline, "fsm-index", instance.index)
 
 	// any flap detection?
 	limit := s.spec.flap(current, next)
@@ -410,7 +414,7 @@ func (s *Set) handleEvent(tid int64, event *event) error {
 
 		if flaps >= limit.Count {
 
-			log.Warn("Flapping", "tid", tid, "flaps", flaps,
+			log.Debug("Flapping", "tid", tid, "flaps", flaps,
 				"instance", instance.id, "state", instance.state, "raise", limit.Raise)
 			s.raise(tid, instance.id, limit.Raise, instance.state)
 
@@ -423,12 +427,12 @@ func (s *Set) handleEvent(tid int64, event *event) error {
 		instance.data = event.data
 	}
 
-	log.Debug("Transtion", "action", action)
+	log.Debug("Transtion", "action", action, "next", next)
 	// call action before transitiion
 	if action != nil {
 		if err := action(instance); err != nil {
 
-			log.Warn("Error transition", "err", err)
+			log.Debug("Error transition", "err", err)
 
 			if alternate, err := s.spec.error(current, event.signal); err != nil {
 
@@ -436,7 +440,7 @@ func (s *Set) handleEvent(tid int64, event *event) error {
 
 			} else {
 
-				log.Warn("Err executing action", "tid", tid, "instance", instance.id,
+				log.Debug("Err executing action", "tid", tid, "instance", instance.id,
 					"state", current, "signal", event.signal, "alternate", alternate, "next", next)
 
 				next = alternate
@@ -469,6 +473,7 @@ type txn struct {
 func (s *Set) run() {
 
 	stopTransactions := make(chan struct{})
+
 	// Core processing
 	go func() {
 		defer func() {
@@ -493,26 +498,8 @@ func (s *Set) run() {
 		}
 	}()
 
-	stopTimer := make(chan struct{})
-	// timer
-	go func() {
-		for {
-			select {
-			case <-stopTimer:
-				return
-
-			case <-s.clock.C:
-				s.transactions <- &txn{
-					tid: s.tid(),
-					Func: func(tid int64) (interface{}, error) {
-						return nil, s.handleClockTick(tid)
-					},
-				}
-			}
-		}
-	}()
-
 	// Input events
+
 	go func() {
 
 	loop:
@@ -523,8 +510,15 @@ func (s *Set) run() {
 
 			select {
 
+			case <-s.clock.C:
+				tx = &txn{
+					tid: s.tid(),
+					Func: func(tid int64) (interface{}, error) {
+						return nil, s.handleClockTick(tid)
+					},
+				}
+
 			case <-s.stop:
-				close(stopTimer)
 				break loop
 
 			case initial, ok := <-s.add:
@@ -574,8 +568,7 @@ func (s *Set) run() {
 					tid: tid,
 					Func: func(tid int64) (interface{}, error) {
 						// For reads on the Set itself.  All the reads are serialized.
-						view := *s // a copy (not quite deep copy) of the set
-						reader(view)
+						reader(*s)
 						return nil, nil
 					},
 				}

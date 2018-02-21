@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/infrakit/pkg/controller"
 	"github.com/docker/infrakit/pkg/leader"
 	metadata_plugin "github.com/docker/infrakit/pkg/plugin/metadata"
 	"github.com/docker/infrakit/pkg/run/scope"
+	"github.com/docker/infrakit/pkg/spi/controller"
 	"github.com/docker/infrakit/pkg/spi/group"
 	"github.com/docker/infrakit/pkg/spi/metadata"
 	"github.com/docker/infrakit/pkg/types"
@@ -438,26 +438,6 @@ func (m *manager) onLostLeadership() error {
 	return m.doFreeAll(config)
 }
 
-func (m *manager) doCommit() error {
-
-	defer m.metadataChanged()
-
-	// load the config
-	config := globalSpec{}
-
-	// load the latest version -- assumption here is that it's been persisted already.
-	err := config.load(m.Options.SpecStore)
-	if err != nil {
-		return err
-	}
-
-	log.Info("Committing. Loaded snapshot.", "err", err)
-	if err != nil {
-		return err
-	}
-	return m.doCommitAll(config)
-}
-
 func (m *manager) doCommitAll(config globalSpec) error {
 	return m.execPlugins(config,
 		func(control controller.Controller, spec types.Spec) (bool, error) {
@@ -475,7 +455,11 @@ func (m *manager) doCommitAll(config globalSpec) error {
 				log.Error("Cannot commit group", "spec", spec, "err", err)
 			}
 			return true, err
-		})
+		},
+		true) // Exec the plugins with groupRequeue=true since the initial group
+	// commit only defines the group. Once all groups are defined then issue
+	// another commit to handle any updates that have not completed (occurs
+	// if there in a update and leadership changes)
 }
 
 func (m *manager) doFreeAll(config globalSpec) error {
@@ -495,18 +479,23 @@ func (m *manager) doFreeAll(config globalSpec) error {
 
 			log.Info("Freeing group", "groupID", spec.ID)
 			return true, plugin.FreeGroup(spec.ID)
-		})
+		},
+		false)
 }
 
 func (m *manager) execPlugins(config globalSpec,
 	controllerWork func(controller.Controller, types.Spec) (bool, error),
-	groupWork func(group.Plugin, group.Spec) (bool, error)) (err error) {
+	groupWork func(group.Plugin, group.Spec) (bool, error),
+	groupRequeue bool) (err error) {
 
-	return config.visit(func(k key, r record) error {
+	// Operations that should be executed last
+	deferredOps := []backendOp{}
+
+	result := config.visit(func(k key, r record) error {
 
 		// TODO(chungers) ==> temporary
 		switch k.Kind {
-		case "ingress", "enrollment":
+		case "ingress", "enrollment", "gc":
 
 			cp, err := m.scope.Controller(r.Handler.String())
 			if err != nil {
@@ -521,7 +510,7 @@ func (m *manager) execPlugins(config globalSpec,
 					return controllerWork(cp, r.Spec)
 				},
 			}
-			log.Debug("queued operation for ingress/enrollment", "key", k, "record", r, "V", debugV)
+			log.Debug("queued operation for controller", "key", k, "record", r, "V", debugV)
 
 		case "group": // not ideal to use string here.
 			id := group.ID(k.Name)
@@ -543,12 +532,15 @@ func (m *manager) execPlugins(config globalSpec,
 				ID:         id,
 				Properties: r.Spec.Properties,
 			}
-
-			m.backendOps <- backendOp{
+			op := backendOp{
 				name: k.Kind,
 				operation: func() (bool, error) {
 					return groupWork(gp, spec)
 				},
+			}
+			m.backendOps <- op
+			if groupRequeue {
+				deferredOps = append(deferredOps, op)
 			}
 			log.Debug("queued operation for group", "key", k, "record", r, "V", debugV)
 
@@ -561,6 +553,11 @@ func (m *manager) execPlugins(config globalSpec,
 			log.Error("Error from exec on plugin", "err", err)
 		}
 		return err
-
 	})
+
+	for _, op := range deferredOps {
+		m.backendOps <- op
+	}
+
+	return result
 }
