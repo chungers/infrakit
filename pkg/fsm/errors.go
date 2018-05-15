@@ -8,14 +8,14 @@ import (
 type ErrDuplicateState Index
 
 func (e ErrDuplicateState) Error() string {
-	return fmt.Sprintf("duplicated state index: %v", e)
+	return fmt.Sprintf("duplicated state index: %v", Index(e))
 }
 
 // ErrUnknownState indicates the state referenced does not match a known state index
 type ErrUnknownState Index
 
 func (e ErrUnknownState) Error() string {
-	return fmt.Sprintf("unknown state: %v", e)
+	return fmt.Sprintf("unknown state: %v", Index(e))
 }
 
 // ErrUnknownTransition indicates an unknown signal while in given state is raised
