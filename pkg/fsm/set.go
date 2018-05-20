@@ -389,7 +389,17 @@ func (s *Set) raise(tid int64, id ID, signal Signal, current Index) (err error) 
 	return nil
 }
 
-func (s *Set) handleEvent(tid int64, event *event) error {
+func (s *Set) handleEvent(tid int64, event *event) (handleEventError error) {
+
+	defer func() {
+		r := recover()
+		if r != nil {
+			if err, is := r.(error); is {
+				handleEventError = err
+				log.Error("Recovered from handle event error", "err", err)
+			}
+		}
+	}()
 
 	now := s.ct()
 

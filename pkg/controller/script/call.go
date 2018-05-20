@@ -104,8 +104,6 @@ func (s Step) exec(ctx context.Context, b *batch, scope scope.Scope, properties 
 		// create an item for tracking
 		b.Put(key, fsm, b.model.Spec(), nil)
 
-		fmt.Println("******************", key)
-
 		go func() {
 			err := blockingExec(s.Step, scope, properties, target)
 			results <- err

@@ -20,7 +20,7 @@ func Tail(name string, services *cli.Services) *cobra.Command {
 		Short: "Get event entry by path",
 	}
 	globals := []string{}
-	templateURL := "str://{{jsonDecode .Data}}"
+	templateURL := "str://{{jsonEncode .}}"
 	tail.Flags().StringVar(&templateURL, "view", templateURL, "URL for view template")
 	tail.RunE = func(cmd *cobra.Command, args []string) error {
 

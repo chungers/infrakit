@@ -179,7 +179,7 @@ func (b *batch) run(ctx context.Context) {
 				if item != nil {
 					b.EventCh() <- event.Event{
 						Topic:   b.Topic(TopicStatus),
-						Type:    event.Type("Init"),
+						Type:    event.Type("Start"),
 						ID:      b.EventID(item.Key),
 						Message: "Batch init",
 					}.Init()
@@ -347,7 +347,7 @@ func (b *batch) run(ctx context.Context) {
 
 					b.EventCh() <- event.Event{
 						Topic:   b.Topic(TopicStatus),
-						Type:    event.Type("Done"),
+						Type:    event.Type("DoneStep"),
 						ID:      b.EventID(item.Key),
 						Message: "Done step: " + step.Call,
 					}.Init()
