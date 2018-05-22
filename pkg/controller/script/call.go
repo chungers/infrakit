@@ -25,6 +25,14 @@ func (l targetParsers) targets(properties script.Properties, target string) []st
 
 type shardsT []Step
 
+// Result captures the output or error of the call.
+type Result struct {
+	Step   script.Step
+	Target string
+	Output interface{}
+	Error  error
+}
+
 // Step is the runtime object for an executable step
 type Step struct {
 	fsm.FSM
@@ -86,33 +94,44 @@ func (e errors) Error() string {
 	return strings.Join(errs, ",")
 }
 
-func (s Step) exec(ctx context.Context, b *batch, scope scope.Scope, properties script.Properties, finish func(error)) {
+func (s Step) exec(ctx context.Context, output chan<- Result, b *batch, scope scope.Scope,
+	properties script.Properties, targetParsers targetParsers, finish func(error)) {
 
 	log.Debug("exec", "call", s.Call, "step", s, "targets", s.targets)
 
-	if len(s.targets) == 0 {
-		finish(blockingExec(s.Step, scope, properties, ""))
-		return
+	targets := s.targets
+	if len(targets) == 0 {
+		if s.Target == nil {
+			// need to load *all* of the targets as specified in the 'targets' section:
+			v, err := blockingExec(s.Step, scope, properties, "")
+			finish(err)
+			output <- Result{Step: s.Step, Output: v, Error: err}
+			return
+		} else {
+			// load from the target section
+			targets = targetParsers.targets(properties, *s.Target)
+		}
 	}
 
-	results := make(chan error)
+	results := make(chan error, len(targets))
 	// Need to 'fork' for each target.  The target list already takes into account parallelism.
-	for _, target := range s.targets {
+	for _, target := range targets {
 
 		key := fmt.Sprintf("%s/%s/%s/%s", b.spec.Metadata.Name, s.Call, strings.Join(s.targets, ","), target)
-		fsm := b.model.NewFork(s)
+		sm := b.model.NewFork(s)
 		// create an item for tracking
-		b.Put(key, fsm, b.model.Spec(), nil)
+		b.Put(key, sm, b.model.Spec(), nil)
 
-		go func() {
-			err := blockingExec(s.Step, scope, properties, target)
+		go func(t string) {
+			v, err := blockingExec(s.Step, scope, properties, t)
 			results <- err
 			if err == nil {
-				fsm.Signal(done)
+				sm.Signal(done)
 			} else {
-				fsm.Signal(fail)
+				sm.Signal(fail)
 			}
-		}()
+			output <- Result{Step: s.Step, Target: target, Output: v, Error: err}
+		}(target)
 	}
 
 	errors := errors{}
@@ -139,8 +158,12 @@ loop:
 }
 
 // blockingExec executes a single callable with a single target.  This is a blocking call.
-func blockingExec(step script.Step, scope scope.Scope, properties script.Properties, target string) error {
-	log.Info("running exec", "step", step, "target", target)
-	time.Sleep(2 * time.Second)
-	return nil
+func blockingExec(step script.Step, scope scope.Scope,
+	properties script.Properties, target string) (interface{}, error) {
+
+	log.Info("Running exec", "step", step, "target", target)
+	time.Sleep(5 * time.Second)
+
+	// TODO - send result
+	return fmt.Sprintf("%v", time.Now()), nil
 }

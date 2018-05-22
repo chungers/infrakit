@@ -321,6 +321,10 @@ func BuildModel(properties script.Properties, options script.Options) (*Model, e
 			},
 			Actions: map[fsm.Signal]fsm.Action{
 				done: func(n fsm.FSM) error {
+					if next == complete {
+						model.batchDoneChan <- n
+						return nil
+					}
 					n.Signal(exec)
 					return nil
 				},

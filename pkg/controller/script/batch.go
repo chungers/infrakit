@@ -30,7 +30,8 @@ type batch struct {
 
 	targetParsers targetParsers
 
-	cancel func()
+	results chan Result
+	cancel  func()
 }
 
 // targetParsers is a list of parsers that takes a blob *types.Any to a list
@@ -40,6 +41,9 @@ type targetParsers []func(*types.Any) ([]string, error)
 var (
 	// TopicStatus is the topic for batch status
 	TopicStatus = types.PathFromString("status")
+
+	// TopicResults is the topic for results
+	TopicResults = types.PathFromString("results")
 
 	// TopicErr is the topic for error
 	TopicErr = types.PathFromString("error")
@@ -76,6 +80,7 @@ func newBatch(scope scope.Scope, options script.Options) (internal.Managed, erro
 		scope:      scope,
 		Collection: base,
 		options:    options,
+		results:    make(chan Result),
 	}
 	// set the behaviors
 	base.StartFunc = b.run
@@ -153,6 +158,29 @@ func (b *batch) run(ctx context.Context) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	b.cancel = cancel
+
+	go func() {
+	loop:
+		for {
+			result, ok := <-b.results
+			if !ok {
+				break loop
+			}
+
+			any, err := types.AnyValue(result)
+			if err == nil {
+				log.Error("Error", "err", err)
+			}
+
+			b.EventCh() <- event.Event{
+				Topic:   b.Topic(TopicResults),
+				Type:    event.Type("Result"),
+				ID:      fmt.Sprintf("%s/%s", result.Step.Call, result.Target),
+				Message: "Result",
+				Data:    any,
+			}.Init()
+		}
+	}()
 
 	go func() {
 
@@ -235,7 +263,7 @@ func (b *batch) run(ctx context.Context) {
 					ctx, _ = context.WithDeadline(ctx, time.Now().Add(b.options.StepDeadline.Duration()))
 				}
 
-				curShard.exec(ctx, b, b.scope, b.properties,
+				curShard.exec(ctx, b.results, b, b.scope, b.properties, defaultTargetParsers,
 					func(err error) {
 						if err == nil {
 							item.State.Signal(shardDone)
@@ -341,7 +369,7 @@ func (b *batch) run(ctx context.Context) {
 				item := b.Collection.GetByFSM(s.FSM)
 				if item != nil {
 
-					log.Debug("step-done", "shard", s, "item", item, "state", b.model.spec.StateName(item.State.State()))
+					log.Debug("!!!!!!!!!!!!!!!!! step-done", "shard", s, "item", item, "state", b.model.spec.StateName(item.State.State()))
 
 					step := s.Step
 
@@ -406,6 +434,8 @@ func (b *batch) stop() error {
 	log.Info("stop")
 
 	if b.model != nil {
+
+		close(b.results)
 
 		b.cancel()
 
