@@ -1,10 +1,10 @@
 package script
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	script "github.com/docker/infrakit/pkg/controller/script/types"
 	"github.com/docker/infrakit/pkg/fsm"
@@ -95,7 +95,7 @@ func (e errors) Error() string {
 }
 
 func (s Step) exec(ctx context.Context, output chan<- Result, b *batch, scope scope.Scope,
-	properties script.Properties, targetParsers targetParsers, finish func(error)) {
+	targetParsers targetParsers, finish func(error)) {
 
 	log.Debug("exec", "call", s.Call, "step", s, "targets", s.targets)
 
@@ -103,13 +103,13 @@ func (s Step) exec(ctx context.Context, output chan<- Result, b *batch, scope sc
 	if len(targets) == 0 {
 		if s.Target == nil {
 			// need to load *all* of the targets as specified in the 'targets' section:
-			v, err := blockingExec(s.Step, scope, properties, "")
+			v, err := blockingExec(b, s.Step, scope, "")
 			finish(err)
 			output <- Result{Step: s.Step, Output: v, Error: err}
 			return
 		} else {
 			// load from the target section
-			targets = targetParsers.targets(properties, *s.Target)
+			targets = targetParsers.targets(b.properties, *s.Target)
 		}
 	}
 
@@ -123,7 +123,7 @@ func (s Step) exec(ctx context.Context, output chan<- Result, b *batch, scope sc
 		b.Put(key, sm, b.model.Spec(), nil)
 
 		go func(t string) {
-			v, err := blockingExec(s.Step, scope, properties, t)
+			v, err := blockingExec(b, s.Step, scope, t)
 			results <- err
 			if err == nil {
 				sm.Signal(done)
@@ -158,12 +158,41 @@ loop:
 }
 
 // blockingExec executes a single callable with a single target.  This is a blocking call.
-func blockingExec(step script.Step, scope scope.Scope,
-	properties script.Properties, target string) (interface{}, error) {
+func blockingExec(batch *batch, step script.Step, scope scope.Scope, target string) (interface{}, error) {
 
-	log.Info("Running exec", "step", step, "target", target)
-	time.Sleep(5 * time.Second)
+	call := batch.callables[step.Call]
+	if call == nil {
+		return nil, fmt.Errorf("no call: %v", step.Call)
+	}
 
-	// TODO - send result
-	return fmt.Sprintf("%v", time.Now()), nil
+	// Set the parameters.  Very crude assumption that the types all match correctly:
+	params := map[string]interface{}{}
+	if step.Params != nil {
+		err := step.Params.Decode(&params)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for k, v := range params {
+		err := call.SetParameter(k, v)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	log.Info("Running exec", "step", step, "target", target, "call", call, "params", params)
+
+	var buffer bytes.Buffer
+	args := []string{}
+
+	ctx := context.Background()
+	err := call.Execute(ctx, args, &buffer)
+	if err != nil {
+		return nil, err
+	}
+
+	if step.ResultIsBytes {
+		return buffer.Bytes(), nil
+	}
+	return buffer.String(), nil
 }

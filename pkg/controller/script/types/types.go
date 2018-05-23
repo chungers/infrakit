@@ -19,6 +19,9 @@ type Step struct {
 	Call   string
 	Params *types.Any
 
+	// ResultIsBytes is set true if the result from the call is just byte slice (default is string)
+	ResultIsBytes bool `json:"result_is_bytes,omitempty" yaml:"result_is_bytes,omitempty"`
+
 	// Target references a name in the map of Properties.Targets
 	Target          *string
 	Parallelism     *int

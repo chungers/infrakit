@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/infrakit/pkg/callable"
+	"github.com/docker/infrakit/pkg/callable/backend"
 	"github.com/docker/infrakit/pkg/controller/internal"
 	script "github.com/docker/infrakit/pkg/controller/script/types"
 	"github.com/docker/infrakit/pkg/fsm"
@@ -26,7 +28,9 @@ type batch struct {
 	properties script.Properties
 	options    script.Options
 
-	model *Model
+	model     *Model
+	modules   map[string]*callable.Module
+	callables map[string]*callable.Callable
 
 	targetParsers targetParsers
 
@@ -128,6 +132,43 @@ func (b *batch) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
 		return
 	}
 
+	// load all the modules
+	modules := map[string]*callable.Module{}
+	for _, use := range properties.Use {
+		mod := &callable.Module{
+			Scope:    b.scope,
+			IndexURL: use.URL,
+			ParametersFunc: func() backend.Parameters {
+				return &callable.Parameters{}
+			},
+		}
+
+		if err = mod.Load(); err != nil {
+			return
+		}
+
+		modules[use.As] = mod
+	}
+
+	callables := map[string]*callable.Callable{}
+	// verify each callable is properly referenced:
+	for _, step := range properties.Steps {
+		path := strings.Split(step.Call, ".")
+		if len(path) < 2 {
+			return fmt.Errorf("call not completely specified")
+		}
+		mod, has := modules[path[0]]
+		if !has {
+			return fmt.Errorf("no such module: %v", path[0])
+		}
+		c, err := mod.Find(path[1:])
+		if err != nil {
+			return err
+		}
+
+		callables[step.Call] = c
+	}
+
 	log.Debug("Begin processing", "properties", properties, "previous", prevProperties, "options", options, "V", debugV2)
 
 	// build the fsm model
@@ -137,6 +178,8 @@ func (b *batch) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
 		return
 	}
 
+	b.modules = modules
+	b.callables = callables
 	b.model = model
 	b.spec = spec
 	b.properties = properties
@@ -168,9 +211,11 @@ func (b *batch) run(ctx context.Context) {
 			}
 
 			any, err := types.AnyValue(result)
-			if err == nil {
+			if err != nil {
 				log.Error("Error", "err", err)
 			}
+
+			log.Info("Result", "call", result.Step.Call, "target", result.Target, "result", any.String())
 
 			b.EventCh() <- event.Event{
 				Topic:   b.Topic(TopicResults),
@@ -227,6 +272,13 @@ func (b *batch) run(ctx context.Context) {
 						ID:      b.EventID(item.Key),
 						Message: "Batch completed.",
 					}.Init()
+
+					b.EventCh() <- event.Event{
+						Topic:   b.Topic(TopicResults),
+						Type:    event.Type("ResultEnd"),
+						ID:      b.EventID(item.Key),
+						Message: "ResultEnd",
+					}.Init()
 				}
 
 			case s, ok := <-b.model.ShardExec():
@@ -263,7 +315,7 @@ func (b *batch) run(ctx context.Context) {
 					ctx, _ = context.WithDeadline(ctx, time.Now().Add(b.options.StepDeadline.Duration()))
 				}
 
-				curShard.exec(ctx, b.results, b, b.scope, b.properties, defaultTargetParsers,
+				curShard.exec(ctx, b.results, b, b.scope, defaultTargetParsers,
 					func(err error) {
 						if err == nil {
 							item.State.Signal(shardDone)
@@ -369,7 +421,7 @@ func (b *batch) run(ctx context.Context) {
 				item := b.Collection.GetByFSM(s.FSM)
 				if item != nil {
 
-					log.Debug("!!!!!!!!!!!!!!!!! step-done", "shard", s, "item", item, "state", b.model.spec.StateName(item.State.State()))
+					log.Debug("step-done", "shard", s, "item", item, "state", b.model.spec.StateName(item.State.State()))
 
 					step := s.Step
 

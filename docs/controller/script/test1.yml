@@ -1,0 +1,58 @@
+{{/* =% controllerCommit %= */}}
+
+kind: script
+metadata:
+  name: test1
+options:
+  ChannelBufferSize : 1024
+  # How long to wait before we start the execution of each step, in unit of time (ticks)
+  WaitBeforeStart: 2
+properties:
+  use:
+    - url: file://{{env `PWD`}}/docs/controller/script/playbook.yml
+      as: pb
+  targets:
+    g1 :
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+    g2 :
+      - h0
+      - h1
+      - h2
+      - h3
+      - h4
+      - h5
+      - h6
+      - h7
+      - h8
+
+  steps:
+    - call: pb.opA
+      params:
+        message: this is pb.opA
+      result_is_string: true
+    - call: pb.opB
+    - call: pb.opC
+    - call: pb.op1
+      params:
+        message: this is pb.op1
+        count: 5
+      target: g1
+      result_is_string: true
+    - call: pb.op2
+      target: g2
+      parallelism: 2
+      params:
+        message: this is pb.op1
+        count: 5
+      result_is_string: true
+    - call: pb.op3
+      params:
+        message: this is pb.op3

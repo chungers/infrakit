@@ -136,18 +136,23 @@ func (m *Module) Load() error {
 		if err := callable.DefineParameters(); err == nil {
 			callables[name] = callable
 		} else {
-			// check for moudule.  A module has `index.yml` inside a directory
-			sub := Module{
-				Scope:          m.Scope,
-				IndexURL:       path.Join(source.String(), "index.yml"),
-				Options:        m.Options,
-				ParametersFunc: m.ParametersFunc,
-				Callables:      map[string]*Callable{},
-				Modules:        map[string]*Module{},
-			} // shallow copy
-			if err := sub.Load(); err == nil {
-				modules[name] = &sub
+
+			for _, possible := range []string{"index.yml", "playbook.yml"} {
+				// check for moudule.  A module has `index.yml` inside a directory or `playbook.yml`
+				sub := Module{
+					Scope:          m.Scope,
+					IndexURL:       path.Join(source.String(), possible),
+					Options:        m.Options,
+					ParametersFunc: m.ParametersFunc,
+					Callables:      map[string]*Callable{},
+					Modules:        map[string]*Module{},
+				} // shallow copy
+				if err := sub.Load(); err == nil {
+					modules[name] = &sub
+					break // first one wins -- index > playbook
+				}
 			}
+
 		}
 	}
 

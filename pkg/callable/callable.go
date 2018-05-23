@@ -525,7 +525,13 @@ func (c *Callable) Funcs() []template.Function {
 
 				}
 
-				return c.Options.Prompter(prompt, ftype, *c.AcceptDefaults, optional...)
+				if c.Options.Prompter != nil {
+					return c.Options.Prompter(prompt, ftype, *c.AcceptDefaults, optional...)
+				}
+				if len(optional) > 0 {
+					return optional[0], nil
+				}
+				return nil, nil
 			},
 		},
 		{

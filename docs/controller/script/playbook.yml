@@ -1,0 +1,13 @@
+
+# Start infrakit
+start : start.sh
+
+test1.yml : test1.yml
+
+opA : print.txt
+opB : print.txt
+opC : print.txt
+
+op1 : print2.txt
+op2 : print2.txt
+op3 : print2.txt

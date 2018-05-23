@@ -1,0 +1,5 @@
+{{/* =% print %= */}}
+{{- param "message" "string" "Message" | prompt "Message?" "string" "hello world" | var "message" -}}
+{{- param "count" "int" "Count" | prompt "Times?" "int" 1 | var "count" -}}
+{{- range $i, $m := until (var `count`) }}{{ $i }} - The message is '{{ var `message` }}.'
+{{ end -}}

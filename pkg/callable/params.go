@@ -19,9 +19,33 @@ type Parameters struct {
 }
 
 type param struct {
-	name  string
-	value interface{}
-	usage string
+	name      string
+	value     interface{}
+	usage     string
+	valueType reflect.Type
+}
+
+var converters = []interface{}{
+	func(v float64) int {
+		return int(v)
+	},
+	func(v int) float64 {
+		return float64(v)
+	},
+}
+
+func (p param) convert(other interface{}) interface{} {
+	if p.valueType == reflect.TypeOf(other) {
+		return other
+	}
+	for _, conv := range converters {
+		ft := reflect.TypeOf(conv)
+		if ft.In(0) == reflect.TypeOf(other) && ft.Out(0) == p.valueType {
+			out := reflect.ValueOf(conv).Call([]reflect.Value{reflect.ValueOf(other)})
+			return out[0].Interface()
+		}
+	}
+	return nil
 }
 
 func (p *Parameters) get(name string) (param, bool) {
@@ -45,62 +69,74 @@ func (p *Parameters) set(name string, pp param) {
 
 // SetParameter sets the value -- TOOD do runtime type checking.  Returns error if not found
 // or type mismatch (later).
-func (p *Parameters) SetParameter(name string, value interface{}) error {
+func (p *Parameters) SetParameter(name string, value interface{}) (err error) {
 	param, has := p.get(name)
 	if !has {
 		return fmt.Errorf("not found %v", name)
 	}
-	v := value
+
+	defer func() {
+		r := recover()
+		if r != nil {
+			if e, is := r.(error); is {
+				err = e
+				return
+			}
+		}
+	}()
+
+	v := param.convert(value)
 	reflect.Indirect(reflect.ValueOf(param.value)).Set(reflect.ValueOf(v))
+
 	return nil
 }
 
 // StringSlice defines a string slice param
 func (p *Parameters) StringSlice(name string, value []string, usage string) *[]string {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf([]string{})})
 	return &slot
 }
 
 // String defines a string param
 func (p *Parameters) String(name string, value string, usage string) *string {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf(value)})
 	return &slot
 }
 
 // Float64 defines a float64 param
 func (p *Parameters) Float64(name string, value float64, usage string) *float64 {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf(value)})
 	return &slot
 }
 
 // Int defines an int param
 func (p *Parameters) Int(name string, value int, usage string) *int {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf(value)})
 	return &slot
 }
 
 // Bool defines a bool param
 func (p *Parameters) Bool(name string, value bool, usage string) *bool {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf(value)})
 	return &slot
 }
 
 // IP defines an IP param
 func (p *Parameters) IP(name string, value net.IP, usage string) *net.IP {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf(value)})
 	return &slot
 }
 
 // Duration defines a duration param
 func (p *Parameters) Duration(name string, value time.Duration, usage string) *time.Duration {
 	slot := value
-	p.set(name, param{name: name, value: &slot, usage: usage})
+	p.set(name, param{name: name, value: &slot, usage: usage, valueType: reflect.TypeOf(value)})
 	return &slot
 }
 
