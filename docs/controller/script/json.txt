@@ -1,0 +1,5 @@
+{{/* =% print %= */}}
+{{- param "message" "string" "Message" | prompt "Message?" "string" "hello world" | var "message" -}}
+{
+	"message" : "{{ var `message` }}"
+}

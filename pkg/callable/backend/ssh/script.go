@@ -19,10 +19,11 @@ var log = logutil.New("module", "cli/backend/ssh")
 
 func init() {
 	backend.Register("ssh", Script, func(params backend.Parameters) {
-		params.StringSlice("hostport", []string{}, "Host:port eg. 10.10.100.101:22 or `localhost`")
-		params.String("user", "", "username")
-		params.String("password", "", "password")
-		params.String("keyfile", "", "keyfile[:user] e.g. $HOME/.ssh/id_rsa, if [:user] present, sets user too")
+		params.StringSlice("ssh-hostport", []string{}, "Host:port eg. 10.10.100.101:22 or `localhost`")
+		params.String("ssh-user", "", "username")
+		params.String("ssh-password", "", "password")
+		params.String("ssh-keyfile", "", "keyfile[:user] e.g. $HOME/.ssh/id_rsa, if [:user] present, sets user too")
+		params.String("target", "", "alias to --ssh-hostport")
 	})
 }
 
@@ -34,20 +35,26 @@ func Script(scope scope.Scope, test bool, opt ...interface{}) (backend.ExecFunc,
 
 	return func(ctx context.Context, script string, parameters backend.Parameters, args []string) error {
 
-		hostports, err := parameters.GetStringSlice("hostport")
-		if err != nil {
-			return err
+		hostports := []string{}
+		if h, err := parameters.GetString("target"); err == nil {
+			hostports = []string{h}
+		} else {
+			hh, err := parameters.GetStringSlice("ssh-hostport")
+			if err != nil {
+				return err
+			}
+			hostports = hh
 		}
 
-		user, err := parameters.GetString("user")
+		user, err := parameters.GetString("ssh-user")
 		if err != nil {
 			return err
 		}
-		password, err := parameters.GetString("password")
+		password, err := parameters.GetString("ssh-password")
 		if err != nil {
 			return err
 		}
-		keyfile, err := parameters.GetString("keyfile")
+		keyfile, err := parameters.GetString("ssh-keyfile")
 		if err != nil {
 			return err
 		}
@@ -60,10 +67,10 @@ func Script(scope scope.Scope, test bool, opt ...interface{}) (backend.ExecFunc,
 				fmt.Fprintf(out, "opt[%v] = %v\n", i, o)
 			}
 			fmt.Fprintln(out, "runtime cli flags")
-			fmt.Fprintf(out, "--hostport %v\n", hostports)
-			fmt.Fprintf(out, "--user %v\n", user)
-			fmt.Fprintf(out, "--password %v\n", password)
-			fmt.Fprintf(out, "--keyfile %v\n", keyfile)
+			fmt.Fprintf(out, "--ssh-hostport %v\n", hostports)
+			fmt.Fprintf(out, "--ssh-user %v\n", user)
+			fmt.Fprintf(out, "--ssh-password %v\n", password)
+			fmt.Fprintf(out, "--ssh-keyfile %v\n", keyfile)
 			fmt.Fprintln(out, "runtime cli args")
 			for i, a := range args {
 				fmt.Fprintf(out, "argv[%v] = %v\n", i, a)

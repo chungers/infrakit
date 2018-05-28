@@ -34,8 +34,7 @@ type batch struct {
 
 	targetParsers targetParsers
 
-	results chan Result
-	cancel  func()
+	cancel func()
 }
 
 // targetParsers is a list of parsers that takes a blob *types.Any to a list
@@ -47,7 +46,7 @@ var (
 	TopicStatus = types.PathFromString("status")
 
 	// TopicResults is the topic for results
-	TopicResults = types.PathFromString("results")
+	TopicResults = types.PathFromString("result")
 
 	// TopicErr is the topic for error
 	TopicErr = types.PathFromString("error")
@@ -84,7 +83,6 @@ func newBatch(scope scope.Scope, options script.Options) (internal.Managed, erro
 		scope:      scope,
 		Collection: base,
 		options:    options,
-		results:    make(chan Result),
 	}
 	// set the behaviors
 	base.StartFunc = b.run
@@ -189,6 +187,28 @@ func (b *batch) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
 	return
 }
 
+func (b *batch) sendResult(result script.Result) {
+
+	if result.Error != nil {
+		result.ErrorMessage = result.Error.Error()
+	}
+
+	any, err := types.AnyValue(result)
+	if err != nil {
+		log.Error("Error", "err", err)
+	}
+
+	log.Info("Result", "call", result.Step.Call, "target", result.Target, "result", any.String())
+
+	b.EventCh() <- event.Event{
+		Topic:   b.Topic(TopicResults),
+		Type:    event.Type("Result"),
+		ID:      fmt.Sprintf("%s/%s", result.Step.Call, result.Target),
+		Message: "Result",
+		Data:    any,
+	}.Init()
+}
+
 func (b *batch) run(ctx context.Context) {
 
 	// Start the model
@@ -201,31 +221,6 @@ func (b *batch) run(ctx context.Context) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	b.cancel = cancel
-
-	go func() {
-	loop:
-		for {
-			result, ok := <-b.results
-			if !ok {
-				break loop
-			}
-
-			any, err := types.AnyValue(result)
-			if err != nil {
-				log.Error("Error", "err", err)
-			}
-
-			log.Info("Result", "call", result.Step.Call, "target", result.Target, "result", any.String())
-
-			b.EventCh() <- event.Event{
-				Topic:   b.Topic(TopicResults),
-				Type:    event.Type("Result"),
-				ID:      fmt.Sprintf("%s/%s", result.Step.Call, result.Target),
-				Message: "Result",
-				Data:    any,
-			}.Init()
-		}
-	}()
 
 	go func() {
 
@@ -315,9 +310,9 @@ func (b *batch) run(ctx context.Context) {
 					ctx, _ = context.WithDeadline(ctx, time.Now().Add(b.options.StepDeadline.Duration()))
 				}
 
-				curShard.exec(ctx, b.results, b, b.scope, defaultTargetParsers,
-					func(err error) {
-						if err == nil {
+				curShard.exec(ctx, b.sendResult, b, b.scope, defaultTargetParsers,
+					func(e error) {
+						if e == nil {
 							item.State.Signal(shardDone)
 						} else {
 							item.State.Signal(fail)
@@ -486,8 +481,6 @@ func (b *batch) stop() error {
 	log.Info("stop")
 
 	if b.model != nil {
-
-		close(b.results)
 
 		b.cancel()
 

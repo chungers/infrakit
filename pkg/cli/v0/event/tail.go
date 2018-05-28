@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/docker/infrakit/pkg/cli"
 	"github.com/docker/infrakit/pkg/spi/event"
@@ -22,8 +23,7 @@ func Tail(name string, services *cli.Services) *cobra.Command {
 	globals := []string{}
 	templateURL := "str://{{jsonEncode .}}"
 	tail.Flags().StringVar(&templateURL, "view", templateURL, "URL for view template")
-	tail.RunE = func(cmd *cobra.Command, args []string) error {
-
+	runE := func(cmd *cobra.Command, args []string) error {
 		eventPlugin, err := LoadPlugin(services.Scope.Plugins(), name)
 		if err != nil {
 			return nil
@@ -153,6 +153,21 @@ func Tail(name string, services *cli.Services) *cobra.Command {
 
 		return nil
 	}
+
+	tail.RunE = func(cmd *cobra.Command, args []string) error {
+		for {
+			err := runE(cmd, args)
+			if err != nil {
+				log.Error("Error running tail", "err", err)
+			}
+
+			retry := 3 * time.Second
+			log.Info("Retrying connection in", "retry", retry)
+
+			<-time.After(retry)
+		}
+	}
+
 	return tail
 }
 

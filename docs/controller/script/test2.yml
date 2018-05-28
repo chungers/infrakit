@@ -2,7 +2,7 @@
 
 kind: script
 metadata:
-  name: test1
+  name: test2
 options:
   ChannelBufferSize : 1024
   # How long to wait before we start the execution of each step, in unit of time (ticks)
@@ -22,37 +22,12 @@ properties:
       - G
       - H
       - I
-    g2 :
-      - h0
-      - h1
-      - h2
-      - h3
-      - h4
-      - h5
-      - h6
-      - h7
-      - h8
 
   steps:
-    - call: pb.opA
-      params:
-        message: this is pb.opA
-
-    - call: pb.opB
-    - call: pb.opC
     - call: pb.op1
       params:
         message: this is pb.op1
       target: g1
-      resultTemplate: $m := jsonDecode . ; var `x` $m.message  # This will have an error
+      resultTemplate: $m := trim . | jsonDecode ; var `x` $m.message
       resultTemplateVar: x
-
     - call: pb.op2
-      target: g2
-      parallelism: 2
-      params:
-        message: this is pb.op2 ***
-
-    - call: pb.op3
-      params:
-        message: this is pb.op3

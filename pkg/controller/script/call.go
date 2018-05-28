@@ -9,6 +9,7 @@ import (
 	script "github.com/docker/infrakit/pkg/controller/script/types"
 	"github.com/docker/infrakit/pkg/fsm"
 	"github.com/docker/infrakit/pkg/run/scope"
+	"github.com/docker/infrakit/pkg/template"
 )
 
 func (l targetParsers) targets(properties script.Properties, target string) []string {
@@ -24,14 +25,6 @@ func (l targetParsers) targets(properties script.Properties, target string) []st
 }
 
 type shardsT []Step
-
-// Result captures the output or error of the call.
-type Result struct {
-	Step   script.Step
-	Target string
-	Output interface{}
-	Error  error
-}
 
 // Step is the runtime object for an executable step
 type Step struct {
@@ -94,65 +87,106 @@ func (e errors) Error() string {
 	return strings.Join(errs, ",")
 }
 
-func (s Step) exec(ctx context.Context, output chan<- Result, b *batch, scope scope.Scope,
+func (s Step) exec(ctx context.Context, output func(script.Result), b *batch, scope scope.Scope,
 	targetParsers targetParsers, finish func(error)) {
 
 	log.Debug("exec", "call", s.Call, "step", s, "targets", s.targets)
 
 	targets := s.targets
 	if len(targets) == 0 {
+
+		// No target specified... just execute the callable as-is.  Otherwise, fork into N goroutines
+		// and execute then collect the results.
 		if s.Target == nil {
+
+			key := fmt.Sprintf("%s/%s", b.spec.Metadata.Name, s.Call)
+			sm := b.model.NewFork(s)
+
+			// create an item for tracking
+			b.Put(key, sm, b.model.Spec(), nil)
+
 			// need to load *all* of the targets as specified in the 'targets' section:
 			v, err := blockingExec(b, s.Step, scope, "")
+
+			result := script.Result{Step: s.Step}
+			if err == nil {
+				sm.Signal(done)
+				result.Output = v
+			} else {
+				log.Error("error", "step", s.Step, "key", key, "err", err)
+				sm.Signal(fail)
+				result.Error = err
+			}
+
+			output(result)
+
+			// finish will signal to the caller the result of this execution
 			finish(err)
-			output <- Result{Step: s.Step, Output: v, Error: err}
+
 			return
+
 		} else {
 			// load from the target section
 			targets = targetParsers.targets(b.properties, *s.Target)
 		}
 	}
 
-	results := make(chan error, len(targets))
+	results := make(chan script.Result, len(targets))
 	// Need to 'fork' for each target.  The target list already takes into account parallelism.
 	for _, target := range targets {
 
-		key := fmt.Sprintf("%s/%s/%s/%s", b.spec.Metadata.Name, s.Call, strings.Join(s.targets, ","), target)
+		ref := strings.Join(targets, ",")
+		if s.Target != nil {
+			ref = fmt.Sprintf("@%v", *s.Target)
+		}
+
+		key := fmt.Sprintf("%s/%s/%s/%s", b.spec.Metadata.Name, s.Call, ref, target)
 		sm := b.model.NewFork(s)
 		// create an item for tracking
 		b.Put(key, sm, b.model.Spec(), nil)
 
 		go func(t string) {
 			v, err := blockingExec(b, s.Step, scope, t)
-			results <- err
+
+			result := script.Result{Step: s.Step, Target: target}
 			if err == nil {
 				sm.Signal(done)
+				result.Output = v
+
 			} else {
+				log.Error("error", "step", s.Step, "key", key, "err", err)
 				sm.Signal(fail)
+				result.Error = err
 			}
-			output <- Result{Step: s.Step, Target: target, Output: v, Error: err}
+
+			results <- result
+
+			output(result)
+
 		}(target)
 	}
 
 	errors := errors{}
 loop:
-	for i := 0; i < len(s.targets); i++ {
+	for i := 0; i < len(targets); i++ {
 		select {
 
 		case <-ctx.Done():
 			log.Info("Canceled", "step", s)
 			break loop
 
-		case err := <-results:
-			if err != nil {
-				errors = append(errors, err)
+		case result := <-results:
+			if result.Error != nil {
+				errors = append(errors, result.Error)
 			}
 		}
 	}
 
 	if len(errors) > 0 {
+		log.Error("errors", "errors", errors.Error(), "step", s.Step)
 		finish(errors)
 	} else {
+		log.Debug("no errors", "errors", errors.Error(), "step", s.Step)
 		finish(nil)
 	}
 }
@@ -180,19 +214,64 @@ func blockingExec(batch *batch, step script.Step, scope scope.Scope, target stri
 		}
 	}
 
-	log.Info("Running exec", "step", step, "target", target, "call", call, "params", params)
+	// Setting additional parameters....  This assumes the callables implement common 'interfaces' to
+	// receiving special parameters.  See the implementation of http and ssh for example.
+	call.SetParameter("target", target)
 
-	var buffer bytes.Buffer
+	buffer := &bytes.Buffer{}
 	args := []string{}
 
 	ctx := context.Background()
-	err := call.Execute(ctx, args, &buffer)
+	err := call.Execute(ctx, args, buffer)
+
+	log.Debug("Ran exec", "step", step, "target", target, "call", call, "params", params, "err", err)
+
 	if err != nil {
+		log.Error("error", "err", err)
 		return nil, err
 	}
 
-	if step.ResultIsBytes {
-		return buffer.Bytes(), nil
+	if step.ResultTemplate != nil {
+		return processResult(step, scope, target, buffer.String(), *step.ResultTemplate)
 	}
+
 	return buffer.String(), nil
+}
+
+func processResult(step script.Step, scope scope.Scope, target, result, expression string) (interface{}, error) {
+
+	parts := []string{}
+	for _, p := range strings.Split(expression, ";") {
+		parts = append(parts, fmt.Sprintf("{{%v}}", p))
+	}
+
+	var processor *template.Template
+
+	if len(parts) > 0 {
+
+		expr := strings.Join(parts, "")
+
+		t, err := scope.TemplateEngine("str://"+expr, template.Options{})
+		if err != nil {
+			log.Error("error", "err", err, "expr", expr)
+			return nil, err
+		}
+		processor = t
+	}
+
+	if processor == nil {
+		return result, nil
+	}
+
+	str, err := processor.Render(result)
+
+	if err != nil {
+		log.Error("error", "err", err, "parts", parts)
+		return nil, err
+	}
+
+	if step.ResultTemplateVar != nil {
+		return processor.Var(*step.ResultTemplateVar)
+	}
+	return str, nil
 }

@@ -8,6 +8,15 @@ import (
 	"github.com/docker/infrakit/pkg/types"
 )
 
+// Result captures the output or error of the call.
+type Result struct {
+	Step         Step
+	Target       string      `json:",omitempty" yaml:",omitempty"`
+	Output       interface{} `json:",omitempty" yaml:",omitempty"`
+	Error        error       `json:"-" yaml:"-"`
+	ErrorMessage string      `json:"Error,omitempty" yaml:"Error,omitempty"`
+}
+
 // Use contains the playbook 'use' short name with the source URL
 type Use struct {
 	URL string
@@ -17,22 +26,29 @@ type Use struct {
 // Step contains information about a single step of callable execution
 type Step struct {
 	Call   string
-	Params *types.Any
+	Params *types.Any `json:",omitempty" yaml:",omitempty"`
 
-	// ResultIsBytes is set true if the result from the call is just byte slice (default is string)
-	ResultIsBytes bool `json:"result_is_bytes,omitempty" yaml:"result_is_bytes,omitempty"`
+	// ResultTemplate  is an expression with that will be evaluated as a template.  The expression can have
+	// parts separated by `;` and each part will be enclosed in `{{}}` as interpolated template expression.
+	ResultTemplate *string `json:",omitempty" yaml:",omitempty"`
+
+	// ResultTemplateVar is the name of the var that can be used to retrieve a non-string/bytes, typed value
+	// by variable name.  For example, you can retrieve a typed value named x this way:
+	// resultTemplate: .Bytes | jsonDecode | var `x`
+	// resultTemplateVar: x
+	ResultTemplateVar *string `json:",omitempty" yaml:",omitempty"`
 
 	// Target references a name in the map of Properties.Targets
-	Target          *string
-	Parallelism     *int
-	Retries         *int
-	WaitBeforeRetry *fsm.Tick
+	Target          *string   `json:",omitempty" yaml:",omitempty"`
+	Parallelism     *int      `json:",omitempty" yaml:",omitempty"`
+	Retries         *int      `json:",omitempty" yaml:",omitempty"`
+	WaitBeforeRetry *fsm.Tick `json:",omitempty" yaml:",omitempty"`
 }
 
 // Properties is the schema of the configuration in the types.Spec.Properties
 type Properties struct {
-	Use     []Use
-	Targets map[string]*types.Any
+	Use     []Use                 `json:",omitempty" yaml:",omitempty"`
+	Targets map[string]*types.Any `json:",omitempty" yaml:",omitempty"`
 	Steps   []Step
 }
 
