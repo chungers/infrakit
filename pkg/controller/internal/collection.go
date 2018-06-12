@@ -253,6 +253,22 @@ func (c *Collection) MetadataGone(key func(instance.Description) (string, error)
 	}
 }
 
+// MetadataExportKV exports simple metadata by key and value
+func (c *Collection) MetadataExportKV(key string, value interface{}) error {
+	// A single update sets all of the instances
+	c.metadataUpdates <- func(view map[string]interface{}) {
+
+		types.Put(types.PathFromString(key), value, view)
+		c.events <- event.Event{
+			Topic:   c.Topic(TopicMetadataUpdate),
+			Type:    event.Type("MetadataUpdate"),
+			ID:      c.EventID(key),
+			Message: "update metadata",
+		}.Init().WithDataMust(value)
+	}
+	return nil
+}
+
 // MetadataExport exports the objects in the metadata plugin interface. A keyfunc is required to compute
 // the key based on the instance.
 func (c *Collection) MetadataExport(key func(instance.Description) (string, error), v []instance.Description) error {

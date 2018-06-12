@@ -198,15 +198,28 @@ func (b *batch) sendResult(result script.Result) {
 		log.Error("Error", "err", err)
 	}
 
-	log.Info("Result", "call", result.Step.Call, "target", result.Target, "result", any.String())
+	key := fmt.Sprintf("%s/%s", result.Step.Call, result.Target)
+	if result.Target == "" {
+		key = result.Step.Call
+	}
 
 	b.EventCh() <- event.Event{
 		Topic:   b.Topic(TopicResults),
 		Type:    event.Type("Result"),
-		ID:      fmt.Sprintf("%s/%s", result.Step.Call, result.Target),
+		ID:      key,
 		Message: "Result",
 		Data:    any,
 	}.Init()
+
+	// update metadata too
+	exported := result.Output
+	if result.Error != nil {
+		exported = result.Error.Error()
+	}
+	b.MetadataExportKV(key, exported)
+
+	log.Info("Result", "call", result.Step.Call, "target", result.Target, "result", any.String(), "exported", exported)
+
 }
 
 func (b *batch) run(ctx context.Context) {
