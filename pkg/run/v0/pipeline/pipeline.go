@@ -1,7 +1,7 @@
-package script
+package pipeline
 
 import (
-	"github.com/docker/infrakit/pkg/controller/script"
+	"github.com/docker/infrakit/pkg/controller/pipeline"
 	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/launch/inproc"
 	logutil "github.com/docker/infrakit/pkg/log"
@@ -17,13 +17,13 @@ import (
 
 const (
 	// Kind is the canonical name of the plugin for starting up, etc.
-	Kind = "script"
+	Kind = "pipeline"
 )
 
 var (
-	log = logutil.New("module", "run/v0/script")
+	log = logutil.New("module", "run/v0/pipeline")
 
-	defaultOptions = script.DefaultOptions
+	defaultOptions = pipeline.DefaultOptions
 )
 
 func init() {
@@ -68,7 +68,7 @@ func Run(scope scope.Scope, name plugin.Name,
 
 	transport.Name = name
 
-	script := script.NewComponents(scope, options)
+	pipeline := pipeline.NewComponents(scope, options)
 
 	leader := func() stack.Leadership {
 		return leadership(scope.Plugins)
@@ -77,15 +77,15 @@ func Run(scope scope.Scope, name plugin.Name,
 	impls = map[run.PluginCode]interface{}{
 		run.Controller: func() (map[string]controller.Controller, error) {
 			singletons := map[string]controller.Controller{}
-			if controllers, err := script.Controllers(); err == nil {
+			if controllers, err := pipeline.Controllers(); err == nil {
 				for k, c := range controllers {
 					singletons[k] = controller.Singleton(c, leader)
 				}
 			}
 			return singletons, nil
 		},
-		run.Metadata: script.Metadata,
-		run.Event:    script.Events,
+		run.Metadata: pipeline.Metadata,
+		run.Event:    pipeline.Events,
 	}
 
 	return

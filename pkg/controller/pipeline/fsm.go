@@ -1,11 +1,11 @@
-package script
+package pipeline
 
 import (
 	"fmt"
 	"sync"
 	"time"
 
-	script "github.com/docker/infrakit/pkg/controller/script/types"
+	script "github.com/docker/infrakit/pkg/controller/pipeline/types"
 	"github.com/docker/infrakit/pkg/fsm"
 )
 

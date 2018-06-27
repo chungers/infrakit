@@ -1,10 +1,10 @@
-package script
+package pipeline
 
 import (
 	"time"
 
 	"github.com/docker/infrakit/pkg/controller/internal"
-	script "github.com/docker/infrakit/pkg/controller/script/types"
+	script "github.com/docker/infrakit/pkg/controller/pipeline/types"
 	"github.com/docker/infrakit/pkg/fsm"
 	logutil "github.com/docker/infrakit/pkg/log"
 	"github.com/docker/infrakit/pkg/run/scope"

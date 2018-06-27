@@ -513,8 +513,8 @@ func (m *manager) execPlugins(config globalSpec,
 
 		// TODO(chungers) ==> temporary
 		switch k.Kind {
-		case "script":
-			log.Info("Skipping script controller spec because it's not safe to re-execute code on restart")
+		case "pipeline":
+			log.Info("Skipping pipeline controller spec because it's not safe to re-execute code on restart")
 
 		case "ingress", "enrollment", "gc", "resource", "inventory", "pool":
 

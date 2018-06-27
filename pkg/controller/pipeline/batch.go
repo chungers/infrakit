@@ -1,4 +1,4 @@
-package script
+package pipeline
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/docker/infrakit/pkg/callable"
 	"github.com/docker/infrakit/pkg/callable/backend"
 	"github.com/docker/infrakit/pkg/controller/internal"
-	script "github.com/docker/infrakit/pkg/controller/script/types"
+	script "github.com/docker/infrakit/pkg/controller/pipeline/types"
 	"github.com/docker/infrakit/pkg/fsm"
 	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/spi/event"

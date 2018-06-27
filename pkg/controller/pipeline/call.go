@@ -1,4 +1,4 @@
-package script
+package pipeline
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	script "github.com/docker/infrakit/pkg/controller/script/types"
+	script "github.com/docker/infrakit/pkg/controller/pipeline/types"
 	"github.com/docker/infrakit/pkg/fsm"
 	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/template"

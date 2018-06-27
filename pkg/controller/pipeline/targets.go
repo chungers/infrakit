@@ -1,4 +1,4 @@
-package script
+package pipeline
 
 import (
 	"github.com/docker/infrakit/pkg/controller/internal"

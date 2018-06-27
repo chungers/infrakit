@@ -1,9 +1,9 @@
-package script
+package pipeline
 
 import (
 	"testing"
 
-	"github.com/docker/infrakit/pkg/controller/script/types"
+	"github.com/docker/infrakit/pkg/controller/pipeline/types"
 	"github.com/stretchr/testify/require"
 )
 
