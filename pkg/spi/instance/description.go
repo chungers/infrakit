@@ -1,6 +1,7 @@
 package instance
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/deckarep/golang-set"
@@ -27,6 +28,9 @@ func (d Description) Compare(other Description) int {
 // View returns a view of the Description given the text template. The text template
 // can contain escaped \{\{\}\} template expression delimiters.
 func (d Description) View(viewTemplate string) (string, error) {
+	if viewTemplate == "" {
+		return "", fmt.Errorf("no template")
+	}
 	buff := template.Unescape([]byte(viewTemplate))
 	t, err := template.NewTemplate(
 		"str://"+string(buff),

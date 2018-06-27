@@ -12,11 +12,11 @@ import (
 	"github.com/docker/infrakit/pkg/template"
 )
 
-func (l targetParsers) targets(properties script.Properties, target string) []string {
+func (l targetParsers) targets(scope scope.Scope, properties script.Properties, target string) []string {
 	if blob, has := properties.Targets[target]; has {
 		// Go through all the defined parsers and return whatever on first success.
 		for _, parser := range l {
-			if t, err := parser(blob); err == nil {
+			if t, err := parser(scope, blob); err == nil {
 				return t
 			}
 		}
@@ -69,9 +69,9 @@ func computeShards(step Step, targets []string) shardsT {
 	return shards
 }
 
-func (s *Step) updateTargets(properties script.Properties, parsers targetParsers) {
+func (s *Step) updateTargets(scope scope.Scope, properties script.Properties, parsers targetParsers) {
 	if s.Target != nil {
-		s.targets = parsers.targets(properties, *s.Target)
+		s.targets = parsers.targets(scope, properties, *s.Target)
 	}
 	return
 }
@@ -127,7 +127,7 @@ func (s Step) exec(ctx context.Context, output func(script.Result), b *batch, sc
 
 		} else {
 			// load from the target section
-			targets = targetParsers.targets(b.properties, *s.Target)
+			targets = targetParsers.targets(b.scope, b.properties, *s.Target)
 		}
 	}
 

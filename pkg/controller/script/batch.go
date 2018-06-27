@@ -39,7 +39,7 @@ type batch struct {
 
 // targetParsers is a list of parsers that takes a blob *types.Any to a list
 // of hosts/ targets
-type targetParsers []func(*types.Any) ([]string, error)
+type targetParsers []func(scope.Scope, *types.Any) ([]string, error)
 
 var (
 	// TopicStatus is the topic for batch status
@@ -54,11 +54,8 @@ var (
 	defaultTargetParsers = targetParsers{
 
 		// Simple parsing a string list
-		func(any *types.Any) ([]string, error) {
-			list := []string{}
-			err := types.Decode(any.Bytes(), &list)
-			return list, err
-		},
+		targetsFromStringList,
+		targetsFromInstanceMatchingSelectTags,
 	}
 )
 
@@ -390,7 +387,7 @@ func (b *batch) run(ctx context.Context) {
 				// Do we need to shard this step?
 				shards := shardsT{}
 				if curStep.Target != nil {
-					shards = computeShards(curStep, defaultTargetParsers.targets(b.properties, *curStep.Target))
+					shards = computeShards(curStep, defaultTargetParsers.targets(b.scope, b.properties, *curStep.Target))
 				}
 
 				if len(shards) == 0 {

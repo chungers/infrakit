@@ -44,8 +44,8 @@ type InstanceObserver struct {
 	// lost is a channel to receive a slice of instances that have been lost in the current sample since last
 	lost chan []instance.Description
 
-	// observe is a function that returns the latest observations
-	observe func() ([]instance.Description, error)
+	// observeFunc is a function that returns the latest observations
+	observeFunc func() ([]instance.Description, error)
 
 	// extractKey is a function that can extract the key from an instance.Description
 	extractKey func(instance.Description) (string, error)
@@ -140,7 +140,7 @@ func (o *InstanceObserver) Init(scope scope.Scope, retry time.Duration) error {
 			retry)
 	}
 
-	o.observe = func() ([]instance.Description, error) {
+	o.observeFunc = func() ([]instance.Description, error) {
 
 		// Because we are using caching, we want to cache the result set
 		// where the individual instance name isn't part of the query.
@@ -196,7 +196,7 @@ func (o *InstanceObserver) Init(scope scope.Scope, retry time.Duration) error {
 		// This does the work
 		func() (err error) {
 
-			instances, err := o.observe()
+			instances, err := o.observeFunc()
 			if err != nil {
 				return err
 			}
@@ -263,6 +263,11 @@ func (o *InstanceObserver) Stop() {
 		o.poller.Stop()
 		o.poller = nil
 	}
+}
+
+// Observe returns a set of current observations
+func (o *InstanceObserver) Observe() ([]instance.Description, error) {
+	return o.observeFunc()
 }
 
 // Observations returns the channel to receive observations.  When stopped, the channel is closed.
