@@ -1,6 +1,6 @@
 {{/* =% controllerCommit %= */}}
 
-kind: script
+kind: pipeline
 metadata:
   name: test1
 options:
@@ -9,10 +9,15 @@ options:
   WaitBeforeStart: 2
 properties:
   use:
-    - url: file://{{env `PWD`}}/docs/controller/script/index.yml
+    - url: file://{{env `PWD`}}/docs/controller/pipeline/index.yml
       as: pb
-  targets:
-    g1 :
+  source:
+    parallelism: 2
+    from:
+      plugin: az1/compute
+      select:
+        infrakit_collection: az1-compute
+    from2:
       - A
       - B
       - C
@@ -22,16 +27,6 @@ properties:
       - G
       - H
       - I
-    g2 :
-      - h0
-      - h1
-      - h2
-      - h3
-      - h4
-      - h5
-      - h6
-      - h7
-      - h8
 
   steps:
     - call: pb.opA
@@ -43,13 +38,10 @@ properties:
     - call: pb.op1
       params:
         message: this is pb.op1
-      target: g1
       resultTemplate: $m := jsonDecode . ; var `x` $m.message  # This will have an error
       resultTemplateVar: x
 
     - call: pb.op2
-      target: g2
-      parallelism: 2
       params:
         message: this is pb.op2 ***
 

@@ -18,7 +18,7 @@ import (
 	"github.com/imdario/mergo"
 )
 
-type batch struct {
+type pipeline struct {
 	*internal.Collection
 
 	scope scope.Scope
@@ -34,15 +34,14 @@ type batch struct {
 
 	targetParsers targetParsers
 
+	source       <-chan string
+	sourceCancel func()
+
 	cancel func()
 }
 
-// targetParsers is a list of parsers that takes a blob *types.Any to a list
-// of hosts/ targets
-type targetParsers []func(scope.Scope, *types.Any) ([]string, error)
-
 var (
-	// TopicStatus is the topic for batch status
+	// TopicStatus is the topic for pipeline status
 	TopicStatus = types.PathFromString("status")
 
 	// TopicResults is the topic for results
@@ -59,7 +58,7 @@ var (
 	}
 )
 
-func newBatch(scope scope.Scope, options script.Options) (internal.Managed, error) {
+func newPipeline(scope scope.Scope, options script.Options) (internal.Managed, error) {
 
 	if err := mergo.Merge(&options, DefaultOptions); err != nil {
 		return nil, err
@@ -76,7 +75,7 @@ func newBatch(scope scope.Scope, options script.Options) (internal.Managed, erro
 	if err != nil {
 		return nil, err
 	}
-	b := &batch{
+	b := &pipeline{
 		scope:      scope,
 		Collection: base,
 		options:    options,
@@ -90,7 +89,7 @@ func newBatch(scope scope.Scope, options script.Options) (internal.Managed, erro
 	return b, nil
 }
 
-func (b *batch) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
+func (b *pipeline) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
 
 	prev := spec
 	if previous != nil {
@@ -164,6 +163,12 @@ func (b *batch) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
 		callables[step.Call] = c
 	}
 
+	// load the target source
+	source, sourceCancel, err := targetsFrom(properties.Source)
+	if err != nil {
+		return
+	}
+
 	log.Debug("Begin processing", "properties", properties, "previous", prevProperties, "options", options, "V", debugV2)
 
 	// build the fsm model
@@ -179,12 +184,14 @@ func (b *batch) updateSpec(spec types.Spec, previous *types.Spec) (err error) {
 	b.spec = spec
 	b.properties = properties
 	b.options = options
+	b.source = source
+	b.sourceCancel = sourceCancel
 
 	log.Debug("Starting with state", "properties", b.properties, "V", debugV)
 	return
 }
 
-func (b *batch) sendResult(result script.Result) {
+func (b *pipeline) sendResult(result script.Result) {
 
 	if result.Error != nil {
 		result.ErrorMessage = result.Error.Error()
@@ -219,7 +226,7 @@ func (b *batch) sendResult(result script.Result) {
 
 }
 
-func (b *batch) run(ctx context.Context) {
+func (b *pipeline) run(ctx context.Context) {
 
 	// Start the model
 	b.model.Start()
@@ -249,7 +256,19 @@ func (b *batch) run(ctx context.Context) {
 				b.terminate()
 				break loop
 
-			case f, ok := <-b.model.BatchStart():
+			case target, ok := <-b.source:
+				if !ok {
+					return
+				}
+
+				// Found target that should be processed...
+				// 1. Create an fsm
+				// 2. Start the fsm
+				item := b.Put(target, b.model.NewFlow(), b.model.Spec(), nil)
+
+				log.Debug("Found instance. Running", "id", item.State.ID(), "key", item.Key, "ordinal", item.Ordinal)
+
+			case f, ok := <-b.model.FlowStart():
 				if !ok {
 					return
 				}
@@ -265,7 +284,7 @@ func (b *batch) run(ctx context.Context) {
 
 				item.State.Signal(exec)
 
-			case f, ok := <-b.model.BatchDone():
+			case f, ok := <-b.model.FlowDone():
 				if !ok {
 					return
 				}
@@ -275,7 +294,7 @@ func (b *batch) run(ctx context.Context) {
 						Topic:   b.Topic(TopicStatus),
 						Type:    event.Type("Completed"),
 						ID:      b.EventID(item.Key),
-						Message: "Batch completed.",
+						Message: "Flow completed.",
 					}.Init()
 
 					b.EventCh() <- event.Event{
@@ -382,13 +401,14 @@ func (b *batch) run(ctx context.Context) {
 					Message: "Exec step: " + s.Call,
 				}.Init()
 
-				curStep := s
-
 				// Do we need to shard this step?
+
+				// curStep := s
 				shards := shardsT{}
-				if curStep.Target != nil {
-					shards = computeShards(curStep, defaultTargetParsers.targets(b.scope, b.properties, *curStep.Target))
-				}
+
+				// if curStep.Target != nil {
+				// 	shards = computeShards(curStep, defaultTargetParsers.targets(b.scope, b.properties, *curStep.Target))
+				// }
 
 				if len(shards) == 0 {
 					item.State.Signal(exec)
@@ -469,16 +489,9 @@ func (b *batch) run(ctx context.Context) {
 		}
 	}()
 
-	log.Debug("Seeding instances", "steps", len(b.properties.Steps), "V", debugV)
-
-	item := b.Put(b.spec.Metadata.Name, b.model.NewBatch(), b.model.Spec(), nil)
-
-	log.Debug("requested", "id", item.State.ID(), "key", item.Key, "ordinal", item.Ordinal)
-
-	log.Debug("Seeded instance. Running.")
 }
 
-func (b *batch) terminate() error {
+func (b *pipeline) terminate() error {
 	b.Visit(func(item internal.Item) bool {
 		item.State.Signal(terminate)
 		return true
@@ -487,16 +500,23 @@ func (b *batch) terminate() error {
 	return nil
 }
 
-func (b *batch) stop() error {
+func (b *pipeline) stop() error {
 	log.Info("stop")
+
+	if b.sourceCancel != nil {
+
+		b.sourceCancel()
+		log.Debug("Stopped source", "V", debugV)
+		b.sourceCancel = nil
+	}
 
 	if b.model != nil {
 
 		b.cancel()
-
-		log.Debug("Stopping", "V", debugV)
 		b.model.Stop()
 		b.model = nil
+		log.Debug("Stopped", "V", debugV)
 	}
+
 	return nil
 }

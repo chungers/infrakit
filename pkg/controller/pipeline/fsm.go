@@ -39,21 +39,22 @@ type Model struct {
 	script.Properties
 	script.Options
 
-	shardExecChan  chan Step
-	shardDoneChan  chan Step
-	stepExecChan   chan Step
-	stepDoneChan   chan Step
-	stepErrChan    chan Step
-	batchStartChan chan fsm.FSM
-	batchDoneChan  chan fsm.FSM
+	shardExecChan chan Step
+	shardDoneChan chan Step
+	stepExecChan  chan Step
+	stepDoneChan  chan Step
+	stepErrChan   chan Step
+
+	flowStartChan chan fsm.FSM
+	flowDoneChan  chan fsm.FSM
 
 	cleanupChan chan fsm.FSM
 
 	lock sync.RWMutex
 }
 
-// NewBatch adds a new fsm in the start state
-func (m *Model) NewBatch() fsm.FSM {
+// NewFlow adds a new fsm in the start state
+func (m *Model) NewFlow() fsm.FSM {
 	return m.set.Add(starting)
 }
 
@@ -67,14 +68,14 @@ func (m *Model) NewFork(step Step) fsm.FSM {
 	return m.set.Add(fsm.Index(step.start + 10))
 }
 
-// BatchStart is the channel to get signals of entire batch starting
-func (m *Model) BatchStart() <-chan fsm.FSM {
-	return m.batchStartChan
+// FlowStart is the channel to get signals of entire flow starting
+func (m *Model) FlowStart() <-chan fsm.FSM {
+	return m.flowStartChan
 }
 
-// BatchDone is the channel to get signals of entire batch completing successfully.
-func (m *Model) BatchDone() <-chan fsm.FSM {
-	return m.batchDoneChan
+// FlowDone is the channel to get signals of entire flow completing successfully.
+func (m *Model) FlowDone() <-chan fsm.FSM {
+	return m.flowDoneChan
 }
 
 // ShardExec is the channel to get signal to exec a shard of a step
@@ -137,8 +138,8 @@ func (m *Model) Stop() {
 		m.set.Stop()
 		m.clock.Stop()
 
-		close(m.batchStartChan)
-		close(m.batchDoneChan)
+		close(m.flowStartChan)
+		close(m.flowDoneChan)
 		close(m.shardExecChan)
 		close(m.shardDoneChan)
 		close(m.stepExecChan)
@@ -154,17 +155,17 @@ func BuildModel(properties script.Properties, options script.Options) (*Model, e
 
 	log.Info("Build model", "properties", properties, "options", options)
 	model := &Model{
-		Options:        options,
-		Properties:     properties,
-		shardExecChan:  make(chan Step, options.ChannelBufferSize),
-		shardDoneChan:  make(chan Step, options.ChannelBufferSize),
-		stepExecChan:   make(chan Step, options.ChannelBufferSize),
-		stepDoneChan:   make(chan Step, options.ChannelBufferSize),
-		stepErrChan:    make(chan Step, options.ChannelBufferSize),
-		batchStartChan: make(chan fsm.FSM, options.ChannelBufferSize),
-		batchDoneChan:  make(chan fsm.FSM, options.ChannelBufferSize),
-		cleanupChan:    make(chan fsm.FSM, options.ChannelBufferSize),
-		tickSize:       1 * time.Second,
+		Options:       options,
+		Properties:    properties,
+		shardExecChan: make(chan Step, options.ChannelBufferSize),
+		shardDoneChan: make(chan Step, options.ChannelBufferSize),
+		stepExecChan:  make(chan Step, options.ChannelBufferSize),
+		stepDoneChan:  make(chan Step, options.ChannelBufferSize),
+		stepErrChan:   make(chan Step, options.ChannelBufferSize),
+		flowStartChan: make(chan fsm.FSM, options.ChannelBufferSize),
+		flowDoneChan:  make(chan fsm.FSM, options.ChannelBufferSize),
+		cleanupChan:   make(chan fsm.FSM, options.ChannelBufferSize),
+		tickSize:      1 * time.Second,
 	}
 
 	model.clock = fsm.Wall(time.Tick(model.tickSize))
@@ -181,7 +182,7 @@ func BuildModel(properties script.Properties, options script.Options) (*Model, e
 			},
 			Actions: map[fsm.Signal]fsm.Action{
 				start: func(n fsm.FSM) error {
-					model.batchStartChan <- n
+					model.flowStartChan <- n
 					return nil
 				},
 			},
@@ -322,7 +323,7 @@ func BuildModel(properties script.Properties, options script.Options) (*Model, e
 			Actions: map[fsm.Signal]fsm.Action{
 				done: func(n fsm.FSM) error {
 					if next == complete {
-						model.batchDoneChan <- n
+						model.flowDoneChan <- n
 						return nil
 					}
 					n.Signal(exec)

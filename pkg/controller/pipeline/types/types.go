@@ -38,18 +38,23 @@ type Step struct {
 	// resultTemplateVar: x
 	ResultTemplateVar *string `json:",omitempty" yaml:",omitempty"`
 
-	// Target references a name in the map of Properties.Targets
-	Target          *string   `json:",omitempty" yaml:",omitempty"`
-	Parallelism     *int      `json:",omitempty" yaml:",omitempty"`
 	Retries         *int      `json:",omitempty" yaml:",omitempty"`
 	WaitBeforeRetry *fsm.Tick `json:",omitempty" yaml:",omitempty"`
 }
 
+// Targets specifies the source targets, ie. objects to operate the pipeline on.
+// Each target will be tracked by the FSM as steps in the pipeline operates on it.
+// Each stage has states associated with it and the states are tracked and visible.
+type Targets struct {
+	From        *types.Any
+	Parallelism *int `json:",omitempty" yaml:",omitempty"`
+}
+
 // Properties is the schema of the configuration in the types.Spec.Properties
 type Properties struct {
-	Use     []Use                 `json:",omitempty" yaml:",omitempty"`
-	Targets map[string]*types.Any `json:",omitempty" yaml:",omitempty"`
-	Steps   []Step
+	Use    []Use   `json:",omitempty" yaml:",omitempty"`
+	Source Targets `json:",omitempty" yaml:",omitempty"`
+	Steps  []Step
 }
 
 // ModelProperties contain fsm tuning parameters

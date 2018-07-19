@@ -57,7 +57,7 @@ func NewComponents(scope scope.Scope, options script.Options) *Components {
 	controller := internal.NewController(
 		// the constructor
 		func(spec types.Spec) (internal.Managed, error) {
-			return newBatch(scope, options)
+			return newPipeline(scope, options)
 		},
 		// the key function
 		func(metadata types.Metadata) string {
