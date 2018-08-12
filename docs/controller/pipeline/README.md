@@ -15,7 +15,7 @@ Building infrakit GOOS=darwin GOARCH=amd64, version=f9310606.m, revision=f931060
 
 2. Add this playbook
 ```
-infrakit playbook add pipeline https://raw.githubusercontent.com/docker/infrakit/master/docs/controller/pipeline/playbook.yml
+infrakit playbook add pipeline https://raw.githubusercontent.com/docker/infrakit/master/docs/controller/pipeline/index.yml
 ```
 
 2. Verify playbook added
