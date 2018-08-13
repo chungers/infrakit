@@ -8,6 +8,7 @@ import (
 
 	"github.com/docker/infrakit/pkg/plugin"
 	instance_plugin "github.com/docker/infrakit/pkg/plugin/instance"
+	"github.com/docker/infrakit/pkg/rpc/client"
 	"github.com/docker/infrakit/pkg/run/scope"
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/types"
@@ -89,31 +90,63 @@ var (
 	globalLock sync.RWMutex
 )
 
-func cachedPlugin(scope scope.Scope, name plugin.Name, ttl, retry time.Duration) instance.Plugin {
-	p := func() instance.Plugin {
+func (o *InstanceObserver) findPlugin(scope scope.Scope, retry time.Duration) instance.Plugin {
+
+	ttl := o.ObserveInterval.Duration()
+	name := o.Name
+
+	if retry == 0 {
+		retry = 5 * time.Second
+	}
+
+	var p instance.Plugin
+
+	{
 		globalLock.RLock()
-		defer globalLock.RUnlock()
-		return global[name]
-	}()
+		p = global[name]
+		globalLock.RUnlock()
+	}
 
-	if p == nil {
+	if p != nil {
+		log.Debug("Found plugin in global", "key", name, "plugin", p)
+		return p
+	}
 
-		instancePlugin := instance_plugin.LazyConnect(
-			func() (instance.Plugin, error) {
-				return scope.Instance(name.String())
-			},
-			retry)
+	// no plugin reference...  do a lazy connect and then cache
+	p = instance_plugin.LazyConnect(
+		func() (instance.Plugin, error) {
+			pp, err := scope.Instance(o.Name.String())
 
-		p = instance.CacheDescribeInstances(instancePlugin, ttl, time.Now)
+			if err == nil {
+				return pp, nil
+			}
 
+			if !client.IsErrNotSupported(err) {
+				return nil, err
+			}
+
+			cp, err := scope.Controller(o.Name.String())
+			if err != nil {
+				return nil, err
+			}
+
+			// Special case to provide a collection instance provisioner
+			log.Error("Not an instance plugin. creating a controller wrapper", "cp", cp, "err", err)
+			return newCollectionInstancePlugin(cp), err
+		}, retry)
+
+	if o.CacheDescribeInstances {
+		// if caching, use a wrapper
+		p = instance.CacheDescribeInstances(p, ttl, time.Now)
+		log.Info("Allocated caching plugin", "key", name, "plugin", p)
+	}
+
+	{
 		globalLock.Lock()
 		global[name] = p
 		globalLock.Unlock()
-
-		log.Info("Allocated cached plugin", "key", name, "plugin", p)
-		return p
 	}
-	log.Info("Using cached plugin", "key", name, "plugin", p)
+
 	return p
 }
 
@@ -123,23 +156,8 @@ func (o *InstanceObserver) Init(scope scope.Scope, retry time.Duration) error {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
-	if retry == 0 {
-		retry = 5 * time.Second
-	}
-
 	o.extractKey = KeyExtractor(o.KeySelector)
-
-	// add caching layer
-	if o.CacheDescribeInstances {
-		o.Plugin = cachedPlugin(scope, o.Name, o.ObserveInterval.Duration(), retry)
-	} else {
-		o.Plugin = instance_plugin.LazyConnect(
-			func() (instance.Plugin, error) {
-				return scope.Instance(o.Name.String())
-			},
-			retry)
-	}
-
+	o.Plugin = o.findPlugin(scope, retry)
 	o.observe = func() ([]instance.Description, error) {
 
 		// Because we are using caching, we want to cache the result set

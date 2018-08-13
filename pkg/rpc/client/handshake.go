@@ -19,6 +19,26 @@ func (e errNotSupported) Error() string {
 	return fmt.Sprintf("Plugin does not support interface %v", spi.InterfaceSpec(e).Encode())
 }
 
+func (e errNotSupported) equals(other spi.InterfaceSpec) bool {
+	return spi.InterfaceSpec(e) == other
+}
+
+// IsErrNotSupported returns whether the error is an interface unsupported error
+func IsErrNotSupported(e error) bool {
+	_, is := e.(errNotSupported)
+	return is
+}
+
+// IsInterfaceNoSupported returns whether the error is an error from the plugin not supporting the given interface.
+func IsInterfaceNotSupported(e error, that spi.InterfaceSpec) bool {
+	if IsErrNotSupported(e) {
+		if err, is := e.(errNotSupported); is {
+			return err.equals(that)
+		}
+	}
+	return false
+}
+
 type handshakingClient struct {
 	client *client
 	iface  spi.InterfaceSpec
