@@ -15,6 +15,9 @@ const (
 	// for infrakit.
 	EnvInfrakitHome = "INFRAKIT_HOME"
 
+	// EnvInfrakitHost is the environment variable for setting the infrakit host to connect to
+	EnvInfrakitHost = "INFRAKIT_HOST"
+
 	// EnvPlaybooks is the environment variable for storing the playbooks file
 	EnvPlaybooks = "INFRAKIT_PLAYBOOKS_FILE"
 
@@ -22,47 +25,47 @@ const (
 	EnvClientTimeout = "INFRAKIT_CLIENT_TIMEOUT"
 )
 
+func init() {
+
+	EnsureDir(defaultInfrakitHomeDir())
+
+}
+
 // ClientTimeout returns the client timeout
 func ClientTimeout() time.Duration {
 	return types.MustParseDuration(Getenv(EnvClientTimeout, "15s")).Duration()
+}
+
+// defaultInfrakitHomeDir returns the default
+func defaultInfrakitHomeDir() string {
+	top := ""
+	if usr, err := user.Current(); err == nil {
+		top = usr.HomeDir
+	} else if dir := os.Getenv("HOME"); dir != "" {
+		top = dir
+	} else if dir, err := os.Getwd(); err == nil {
+		top = dir
+	} else {
+		top = os.TempDir()
+	}
+	return filepath.Join(top, ".infrakit")
 }
 
 // InfrakitHome returns the directory of INFRAKIT_HOME if specified. Otherwise, it will return
 // the user's home directory.  If that cannot be determined, then it returns the current working
 // directory.  If that still cannot be determined, a temporary directory is returned.
 func InfrakitHome() string {
-	dir := os.Getenv(EnvInfrakitHome)
-	if dir != "" {
-		return dir
-	}
-	if usr, err := user.Current(); err == nil {
-		return usr.HomeDir
-	}
-	dir = os.Getenv("HOME")
-	if dir != "" {
-		return dir
-	}
-	dir, err := os.Getwd()
-	if err == nil {
-		return dir
-	}
-	return os.TempDir()
+	return Getenv(EnvInfrakitHome, defaultInfrakitHomeDir())
 }
 
 // InfrakitHost returns the value of the INFRAKIT_HOST environment
 func InfrakitHost() string {
-	if h := os.Getenv("INFRAKIT_HOST"); h != "" {
-		return h
-	}
-	return "local"
+	return Getenv(EnvInfrakitHost, "local")
 }
 
 // Playbooks returns the path to the playbooks
 func Playbooks() string {
-	if playbooksFile := os.Getenv(EnvPlaybooks); playbooksFile != "" {
-		return playbooksFile
-	}
-	return filepath.Join(InfrakitHome(), "playbooks.yml")
+	return Getenv(EnvPlaybooks, filepath.Join(InfrakitHome(), "playbooks.yml"))
 }
 
 // Getenv returns the value at the environment variable 'env'.  If the value is not found
