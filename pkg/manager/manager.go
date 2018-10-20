@@ -513,10 +513,8 @@ func (m *manager) execPlugins(config globalSpec,
 
 		// TODO(chungers) ==> temporary
 		switch k.Kind {
-		case "pipeline":
-			log.Info("Skipping pipeline controller spec because it's not safe to re-execute code on restart")
 
-		case "ingress", "enrollment", "gc", "resource", "inventory", "pool":
+		case "ingress", "enrollment", "gc", "resource", "inventory", "pool", "pipeline":
 
 			cp, err := m.scope.Controller(r.Handler.String())
 			if err != nil {
