@@ -2,6 +2,6 @@
 # Start infrakit
 start : start.sh
 
-chain.yml : chain.yml
-chain2.yml : chain2.yml
-chain3.yml : chain3.yml
+chain : chain.yml
+chain2 : chain2.yml
+chain3 : chain3.yml
